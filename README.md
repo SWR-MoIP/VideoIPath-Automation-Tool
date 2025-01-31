@@ -32,7 +32,7 @@ package index or download the build artifact manually.
 2. Install the package using pip:
 
 ```bash
-pip3 install "path/to/downloads/VideoIPath_Automation_Tool-0.4.14.tar.gz"
+pip3 install "path/to/downloads/VideoIPath_Automation_Tool-0.1.0.tar.gz"
 ```
 
 #### Option 2 (preferred): Set up Registry
