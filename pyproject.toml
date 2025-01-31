@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "videoipath-automation-tool"
+version = "0.4.15"
+description = "A Python package for automating VideoIPath configuration workflows"
+authors = ["Paul Winterstein <paul.winterstein@swr.de>", "Josia Hildebrandt <manuel_josia.hildebrandt@swr.de>"]
+readme = "README.md"
+packages = [{include = "videoipath_automation_tool", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31.0"
+pydantic = "^2.6.4"
+pydantic-extra-types = "^2.6.0"
+pydantic-settings = "^2.2.1"
+typing-extensions = "^4.11.0"
+urllib3 = "^2.2.3"
+deepdiff = "^8.1.1"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.1"
+pre-commit = "^4.0.1"
+
+[tool.ruff]
+include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]
+
+# Formatter config
+line-length = 120
+
+[tool.ruff.lint]
+# Linter config
+ignore = ["F403", "E722"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

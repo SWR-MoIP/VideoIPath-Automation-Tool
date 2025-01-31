@@ -1,0 +1,58 @@
+stages:
+  - test
+  - publish
+
+default:
+  image: python:3.11
+  tags:
+    - "PyPI"
+  before_script:
+    - python --version
+    - pip install poetry
+    - poetry --version
+    - poetry config virtualenvs.in-project true
+    - poetry install
+
+cache:
+  paths:
+    - .venv
+
+# Stage: Test
+test:
+  stage: test
+  script:
+    - echo "Running tests..."
+    # - poetry run pytest
+    - echo "Tests done!"
+  only:
+    - merge_requests
+    - main
+    - tags
+
+# Stage: Publish Package
+publish:
+  stage: publish
+  script:
+    # Determine version dynamically
+    - |
+      if [[ -n "$CI_COMMIT_TAG" ]]; then
+        VERSION=$(poetry version --short)
+        echo "Stable version for release: $VERSION"
+      elif [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
+        VERSION=$(poetry version --short).dev+$CI_COMMIT_SHORT_SHA
+        echo "Development version: $VERSION"
+        poetry version $VERSION
+      else
+        VERSION=$(poetry version --short).dev+$CI_COMMIT_SHORT_SHA
+        echo "Development version (Merge Request): $VERSION"
+        poetry version $VERSION
+      fi
+    - echo "Publishing version ${VERSION}"
+    - poetry config repositories.swr-gitlab ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi # add gitlab repository
+    - echo "Repository swr-gitlab configured ..."
+    - poetry publish --build --repository swr-gitlab -u gitlab-ci-token -p ${CI_JOB_TOKEN} --cert $CA_CERT
+    - echo "Publishing done!"
+  only:
+    - merge_requests
+    - main
+    - tags

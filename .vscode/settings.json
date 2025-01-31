@@ -1,0 +1,42 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnType": true
+    },
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/.venv"
+    ],
+    "python.analysis.indexing": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticMode": "openFilesOnly",
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "",
+            "depth": 3,
+            "includeAllSymbols": true
+        }
+    ],
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/.venv/*"
+    ],
+    "python.languageServer": "Pylance",
+    "python.analysis.addImport.exactMatchOnly": true,
+    "python.analysis.autoFormatStrings": true,
+    "python.analysis.fixAll": [
+        "source.unusedImports",
+        "source.convertImportFormat"
+    ],
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.venv": true
+    },
+    "files.watcherExclude": {
+        "**/__pycache__": true,
+        "**/.venv": true
+    },
+    "pylint.args": [
+        "\"pylint.args\": [\"--disable=C0114\", \"--max-line-length=140\"]"
+    ]
+}

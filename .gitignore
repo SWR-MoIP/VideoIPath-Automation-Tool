@@ -1,0 +1,14 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+dist/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# others
+__intern/
+*.egg-info/
