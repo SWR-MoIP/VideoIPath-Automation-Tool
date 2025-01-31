@@ -1,6 +1,9 @@
-# _VideoIPath Automation Tool_ - Python Package
+<div align="center">
+  <img alt="VideoIPath Automation Tool" src="./docs/images/readme_banner.svg" width="400" />
+</div>
 
-![VIP AT Banner Image](./docs/images/readme_banner.svg)
+<p align="center">A Python package for automating VideoIPath configuration workflows.<p align="center">
+<hr />
 
 ## ⚠️ Attention ⚠️
 
@@ -72,3 +75,7 @@ print(device.device_id)
 - [Examples](./docs/examples/README.md)
 - [Driver Compatibility](./docs/driver_compatibility.md)
 - [Development and Release](./docs/development-and-release.md)
+
+
+## License
+[Affero General Public License v3.0](LICENSE)
