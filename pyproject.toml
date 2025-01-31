@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "videoipath-automation-tool"
 version = "0.0.1"
-description = "A Python package for automating VideoIPath configuration workflows"
+description = "A Python package for automating VideoIPath configuration workflows."
 authors = ["Paul Winterstein <paul.winterstein@swr.de>"] 
 maintainers = ["Josia Hildebrandt <manuel_josia.hildebrandt@swr.de>"]
 readme = "README.md"
