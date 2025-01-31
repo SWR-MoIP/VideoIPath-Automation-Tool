@@ -66,31 +66,31 @@ class VideoIPathApp:
         # --- Setup VideoIPath API Connector ---
         self.logger.debug("Initialize VideoIPath API Connector.")
 
-        if ip is None and Settings().VIPAT_VIDEOIPATH_IP is None:
+        if ip is None and Settings().VIPAT_VIDEOIPATH_SERVER_ADDRESS is None:
             raise ValueError(
                 "No IP address provided. Please provide an IP address or set it as an environment variable: 'VIPAT_VIDEOIPATH_IP'."
             )
-        vip_ip = ip if ip is not None else Settings().VIPAT_VIDEOIPATH_IP
+        vip_ip = ip if ip is not None else Settings().VIPAT_VIDEOIPATH_SERVER_ADDRESS
         self.logger.debug(f"VideoIPath-Server IP: {vip_ip}")
 
-        if username is None and Settings().VIPAT_VIDEOIPATH_USER is None:
+        if username is None and Settings().VIPAT_VIDEOIPATH_USERNAME is None:
             raise ValueError(
                 "No username provided. Please provide a username or set it as an environment variable: 'VIPAT_VIDEOIPATH_USER'."
             )
-        vip_username = username if username is not None else Settings().VIPAT_VIDEOIPATH_USER
+        vip_username = username if username is not None else Settings().VIPAT_VIDEOIPATH_USERNAME
         self.logger.debug(f"Username: {vip_username}")
 
-        if password is None and Settings().VIPAT_VIDEOIPATH_PWD is None:
+        if password is None and Settings().VIPAT_VIDEOIPATH_PASSWORD is None:
             raise ValueError(
                 "No password provided. Please provide a password or set it as an environment variable: 'VIPAT_VIDEOIPATH_PWD'."
             )
-        vip_password = password if password is not None else Settings().VIPAT_VIDEOIPATH_PWD
+        vip_password = password if password is not None else Settings().VIPAT_VIDEOIPATH_PASSWORD
         self.logger.debug("Password provided!")
 
-        ssl = ssl if ssl is not None else Settings().VIPAT_HTTPS
+        ssl = ssl if ssl is not None else Settings().VIPAT_USE_HTTPS
         self.logger.debug("SSL enabled.") if ssl else self.logger.debug("SSL disabled.")
 
-        ssl_verify = ssl_verify if ssl_verify is not None else Settings().VIPAT_HTTPS_VERIFY
+        ssl_verify = ssl_verify if ssl_verify is not None else Settings().VIPAT_VERIFY_SSL_CERT
         if ssl:
             self.logger.debug("SSL verification enabled.") if ssl_verify else self.logger.debug(
                 "SSL verification disabled."
@@ -98,19 +98,24 @@ class VideoIPathApp:
 
         # Initialize VideoIPath API Connector
         self._videoipath_connector = VideoIPathConnector(
-            ip=vip_ip, username=vip_username, password=vip_password, ssl=ssl, ssl_verify=ssl_verify, logger=self.logger
+            server_address=vip_ip,
+            username=vip_username,
+            password=vip_password,
+            use_https=ssl,
+            verify_ssl_cert=ssl_verify,
+            logger=self.logger,
         )
 
         # Check connection
         if self._videoipath_connector.test_connection():
             version = self._videoipath_connector.videoipath_version  # Initially get the VideoIPath version
             self.logger.info(
-                f"Connection to VideoIPath-Server at '{self._videoipath_connector.ip}' with user '{self._videoipath_connector.username}' established."
+                f"Connection to VideoIPath-Server at '{self._videoipath_connector.server_address}' with user '{self._videoipath_connector.username}' established."
             )
             self.logger.debug(f"VideoIPath-Server version: {version}")
         else:
             self.logger.error(
-                f"Connection to VideoIPath-Server at '{self._videoipath_connector.ip}' with user '{self._videoipath_connector.username}' failed."
+                f"Connection to VideoIPath-Server at '{self._videoipath_connector.server_address}' with user '{self._videoipath_connector.username}' failed."
             )
             raise ConnectionError("Connection to VideoIPath-Server failed.")
 

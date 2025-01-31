@@ -26,9 +26,9 @@ class ProfileAPI(BaseModel):
         if self.logger is None:
             self.logger = logging.getLogger(
                 "videoipath_automation_tool_profile_api"
-            )  # use fallback logger if no logger is provided
+            )  # create fallback logger if no logger is provided
             self.logger.debug(
-                "No logger for connector provided. Using fallback logger: 'videoipath_automation_tool_profile_api'."
+                "No logger for connector provided. Creating fallback logger: 'videoipath_automation_tool_profile_api'."
             )
         self.logger.debug("Profile API logger initialized.")
         return self

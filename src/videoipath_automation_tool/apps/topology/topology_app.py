@@ -8,7 +8,7 @@ from videoipath_automation_tool.connector.vip_connector import VideoIPathConnect
 from videoipath_automation_tool.apps.topology.topology_api import TopologyAPI
 from videoipath_automation_tool.apps.topology.model.topology_device import TopologyDevice
 from videoipath_automation_tool.apps.topology.helper.placement import TopologyPlacement
-from videoipath_automation_tool.apps.utils.cross_app_utils import validate_device_id_string
+from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
 
 
 class TopologyApp:
@@ -23,9 +23,9 @@ class TopologyApp:
         if logger is None:
             self._logger = logging.getLogger(
                 "videoipath_automation_tool_inventory_app"
-            )  # use fallback logger if no logger is provided
+            )  # create fallback logger if no logger is provided
             self._logger.debug(
-                "No logger for Topology App provided. Using fallback logger: 'videoipath_automation_tool_inventory_app'."
+                "No logger for Topology App provided. Creating fallback logger: 'videoipath_automation_tool_inventory_app'."
             )
         else:
             self._logger = logger

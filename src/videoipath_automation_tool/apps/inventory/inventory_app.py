@@ -8,7 +8,7 @@ from videoipath_automation_tool.apps.inventory.model.inventory_device_configurat
 )
 from videoipath_automation_tool.apps.inventory.model import driver_literals
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.apps.utils.cross_app_utils import validate_device_id_string
+from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
 
 
 class InventoryApp:
@@ -23,7 +23,7 @@ class InventoryApp:
         if logger is None:
             self._logger = logging.getLogger(
                 "videoipath_automation_tool_inventory_app"
-            )  # use fallback logger if no logger is provided
+            )  # create fallback logger if no logger is provided
         else:
             self._logger = logger
 
@@ -82,7 +82,11 @@ class InventoryApp:
         return online_device
 
     def get_device(
-        self, label: Optional[str] = None, device_id: Optional[str] = None, address: Optional[str] = None, config_only: bool = False
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
     ) -> InventoryDevice:
         """Method to get a online device from VideoIPath-Inventory by label, device_id or address as InventoryDevice instance.
 
@@ -115,9 +119,7 @@ class InventoryApp:
                 if not self._inventory_api.device_id_exists(device_id):
                     raise ValueError(f"No device with id '{device_id}' found in Inventory.")
             else:
-                raise ValueError(
-                    f"Invalid device_id '{device_id}' provided!"
-                )
+                raise ValueError(f"Invalid device_id '{device_id}' provided!")
         elif address is not None:
             devices = self._inventory_api.get_device_ids(address=str(address))
             if len(devices["active"]) == 0:

@@ -7,7 +7,7 @@ from uuid import uuid4
 from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
-from videoipath_automation_tool.apps.utils.cross_app_utils import validate_device_id_string
+from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 
@@ -26,9 +26,9 @@ class InventoryAPI(BaseModel):
         if self.logger is None:
             self.logger = logging.getLogger(
                 "videoipath_automation_tool_inventory_api"
-            )  # use fallback logger if no logger is provided
+            )  # create fallback logger if no logger is provided
             self.logger.debug(
-                "No logger for connector provided. Using fallback logger: 'videoipath_automation_tool_inventory_api'."
+                "No logger for connector provided. Creating fallback logger: 'videoipath_automation_tool_inventory_api'."
             )
         self.logger.debug("Inventory API logger initialized.")
         return self

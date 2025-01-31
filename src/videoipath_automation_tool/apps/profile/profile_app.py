@@ -19,7 +19,7 @@ class ProfileApp:
         if logger is None:
             self.logger = logging.getLogger(
                 "videoipath_automation_tool_profile_app"
-            )  # use fallback logger if no logger is provided
+            )  # create fallback logger if no logger is provided
         else:
             self.logger = logger
 

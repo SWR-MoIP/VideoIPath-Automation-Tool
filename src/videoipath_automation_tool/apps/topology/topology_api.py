@@ -19,7 +19,7 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_un
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.apps.utils.cross_app_utils import validate_device_id_string
+from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
 
 
 class TopologyAPI(BaseModel):

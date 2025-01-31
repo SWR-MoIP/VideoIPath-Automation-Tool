@@ -56,7 +56,7 @@ class NGraphElementDiff(BaseModel):
                 "unprocessed"  # Indicates differences that were not processed by DeepDiff
                 "dictionary_item_added",  # Identifies items added to a dictionary
                 "dictionary_item_removed",  # Identifies items removed from a dictionary
-            ]  
+            ]
 
             disallowed_diff_types = [
                 "set_item_added",  # Shows items added to a set in the comparison object

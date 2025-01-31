@@ -1,6 +1,15 @@
+import logging
 import re
 
 
+# --- Fallback Logger ---
+def create_fallback_logger(name: str) -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.debug(f"No logger provided. Creating fallback logger: '{name}'.")
+    return logger
+
+
+# --- Device ID string validation ---
 def _validate_device_id_string(device_id: str) -> bool:
     """Validate the device_id string."""
     pattern_device = r"\bdevice\d+\b"

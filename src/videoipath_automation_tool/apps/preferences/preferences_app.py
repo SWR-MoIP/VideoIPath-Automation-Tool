@@ -23,9 +23,9 @@ class PreferencesApp:
         if logger is None:
             self.logger = logging.getLogger(
                 "videoipath_automation_tool_preferences_app"
-            )  # use fallback logger if no logger is provided
+            )  # create fallback logger if no logger is provided
             self.logger.debug(
-                "No logger for System Preferences App provided. Using fallback logger: 'videoipath_automation_tool_preferences_app'."
+                "No logger for System Preferences App provided. Creating fallback logger: 'videoipath_automation_tool_preferences_app'."
             )
         else:
             self.logger = logger

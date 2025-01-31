@@ -29,7 +29,7 @@ class InventoryDeviceComparison(BaseModel):
         difference_keys = element_differences.keys()
 
         if len(difference_keys) > 0:
-            allowed_diff_types = [  # noqa: F841 
+            allowed_diff_types = [  # noqa: F841
                 "values_changed",  # Indicates changes in values between two comparable objects
                 "type_changes",  # Indicates changes in the data type of an object
                 "iterable_item_added",  # Identifies items added to an iterable (e.g., lists, tuples)
@@ -37,7 +37,7 @@ class InventoryDeviceComparison(BaseModel):
                 "unprocessed"  # Indicates differences that were not processed by DeepDiff
                 "dictionary_item_added",  # Identifies items added to a dictionary
                 "dictionary_item_removed",  # Identifies items removed from a dictionary
-            ] 
+            ]
 
             disallowed_diff_types = [
                 "set_item_added",  # Shows items added to a set in the comparison object

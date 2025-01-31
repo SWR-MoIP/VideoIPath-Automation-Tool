@@ -1,48 +1,41 @@
-# External Imports
 import logging
-from typing import Optional
-from typing_extensions import deprecated
-import requests
 import json
+import requests
+from typing import Optional
 
-from pydantic import BaseModel, IPvAnyAddress, model_validator
-
-# Internal Imports
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get, ResponseV2Patch
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 
 
-class VideoIPathConnector(BaseModel):
+class VideoIPathConnector:
     """
     Class for VideoIPath API Connector using Basic Auth.
     VideoIPathConnector contains all HTTP methods to interact with the VideoIPath API.
     """
 
-    ip: str | IPvAnyAddress
-    username: str
-    password: str
-    ssl: bool
-    ssl_verify: bool
-    logger: Optional[logging.Logger] = None
-    model_config: dict = {"arbitrary_types_allowed": True}
-    _videoipath_version: str = ""
-    # definitions for timeout handling
-    _get_timeout: int = 5
-    _post_timeout: int = 10
-    _patch_timeout: int = 30
+    DEFAULT_TIMEOUTS = {"get": 5, "post": 10, "patch": 30}
 
-    @model_validator(mode="after")
-    def initialize_connector(self):
-        if self.logger is None:
-            self.logger = logging.getLogger(
-                "videoipath_automation_tool_connector"
-            )  # use fallback logger if no logger is provided
-            self.logger.debug(
-                "No logger for connector provided. Using fallback logger: 'videoipath_automation_tool_connector'."
-            )
-        self.logger.debug("Connector logger initialized.")
-        return self
+    def __init__(
+        self,
+        server_address: str,
+        username: str,
+        password: str,
+        use_https: bool = True,
+        verify_ssl_cert: bool = True,
+        logger: Optional[logging.Logger] = None,
+    ):
+        self.server_address = server_address
+        self.username = username
+        self.password = password
+        self.use_https = use_https
+        self.verify_ssl_cert = verify_ssl_cert
+        self._logger = logger or create_fallback_logger("videoipath_automation_tool_connector")
+        self._videoipath_version = ""
+        self._timeouts = self.DEFAULT_TIMEOUTS.copy()
+
+        self._logger.debug(f"VideoIPath connector logger initialized: '{self._logger.name}'")
 
     def http_get_v2(self, url_path: str) -> ResponseV2Get:
         """Method to execute a REST v2 GET request to the VideoIPath API.
@@ -60,26 +53,28 @@ class VideoIPathConnector(BaseModel):
         # 1. Check URL
         if not (
             url_path == "/rest/v2/data/*"
-            or url_path.startswith("/rest/v2/data/config")
-            or url_path.startswith("/rest/v2/data/status")
+            or url_path.startswith("/rest/v2/data/config/")
+            or url_path.startswith("/rest/v2/data/status/")
         ):
-            raise ValueError(
-                "REST v2 calls are only allowed for '/rest/v2/data/config' and '/rest/v2/data/status' URL paths."
-            )
+            error_message = "REST v2 calls are only allowed for URL paths starting with '/rest/v2/data/config' or '/rest/v2/data/status'."
+            self._logger.error(error_message)
+            raise ValueError(error_message)
 
         if "/..." in url_path:
-            raise ValueError("Wildcard '/...' is not allowed in URL path.")
+            error_message = "Wildcard '/...' is not allowed in URL path."
+            self._logger.error(error_message)
+            raise ValueError(error_message)
 
         # 2. Construct URL
-        protocol = "https" if self.ssl else "http"
-        url = f"{protocol}://{self.ip}{url_path}"
+        protocol = "https" if self.use_https else "http"
+        url = f"{protocol}://{self.server_address}{url_path}"
 
         # 3. Execute GET request and receive response
         response = requests.get(
             url,
             auth=(self.username, self.password),
-            timeout=self._get_timeout,
-            verify=self.ssl_verify,
+            timeout=self._timeouts["get"],
+            verify=self.verify_ssl_cert,
             headers={
                 "Content-Type": "application/json",
                 "Accept-Encoding": "gzip, deflate",
@@ -123,8 +118,8 @@ class VideoIPathConnector(BaseModel):
         if not url_path.startswith("/rest/v2/"):
             raise ValueError("REST v2 calls are only allowed for /rest/v2/ URL paths.")
 
-        protocol = "https" if self.ssl else "http"
-        url = f"{protocol}://{self.ip}{url_path}"
+        protocol = "https" if self.use_https else "http"
+        url = f"{protocol}://{self.server_address}{url_path}"
 
         # 2. Execute PATCH request and receive response
         data = body.model_dump(mode="json", by_alias=True)
@@ -134,16 +129,16 @@ class VideoIPathConnector(BaseModel):
             headers={"Content-Type": "application/json"},
             data=json.dumps(data),
             auth=(self.username, self.password),
-            timeout=self._patch_timeout,
-            verify=self.ssl_verify,
+            timeout=self._timeouts["patch"],
+            verify=self.verify_ssl_cert,
         )
 
         if not response.ok:
-            self.logger.debug(f"Response: {response.json()}")
+            self._logger.debug(f"Response: {response.json()}")
             raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
 
         # 3. Validate response format
-        self.logger.debug(f"Response: {response.json()}")
+        self._logger.debug(f"Response: {response.json()}")
         response_object = ResponseV2Patch.model_validate(response.json())
 
         # 4. Validate response status
@@ -171,8 +166,8 @@ class VideoIPathConnector(BaseModel):
         if not url_path.startswith("/api/"):
             raise ValueError("RPC calls are only allowed for /api/ URL paths.")
 
-        protocol = "https" if self.ssl else "http"
-        url = f"{protocol}://{self.ip}{url_path}"
+        protocol = "https" if self.use_https else "http"
+        url = f"{protocol}://{self.server_address}{url_path}"
 
         # print(json.dumps(body, indent=4))
         # 2. Execute POST request and receive response
@@ -181,8 +176,8 @@ class VideoIPathConnector(BaseModel):
             headers={"Content-Type": "application/json"},
             data=json.dumps(body),
             auth=(self.username, self.password),
-            timeout=self._post_timeout,
-            verify=self.ssl_verify,
+            timeout=self._timeouts["post"],
+            verify=self.verify_ssl_cert,
         )
 
         # 3. Validate response format
@@ -194,11 +189,11 @@ class VideoIPathConnector(BaseModel):
 
         return response_object
 
-    def test_connection(self) -> bool:
-        """Method to test the connection and authentication to the VideoIPath API by executing a GET request to the root path.
+    def test_authentication(self) -> bool:
+        """Method to test the authentication to the VideoIPath API by executing a GET request to the root path.
 
         Returns:
-            bool: True if connection and authentication successful, False otherwise
+            bool: True if authentication successful, False otherwise
         """
         url = "/rest/v2/data/*"
         try:
@@ -208,6 +203,26 @@ class VideoIPathConnector(BaseModel):
         if response is not None and response.header.code == "OK" and response.header.auth is True:
             return True
         return False
+
+    def test_connection(self) -> bool:
+        """Method to test the connection to the VideoIPath API by executing a GET request to the root path.
+
+        Returns:
+            bool: True if connection successful, False otherwise
+        """
+        url = "/rest/v2/data/*"
+        try:
+            response = self.http_get_v2(url)
+        except:
+            return False
+        if response is not None and response.header.code == "OK":
+            return True
+        return False
+
+    def refresh_videoipath_version(self):
+        """ Refresh the VideoIPath version. """
+        self._videoipath_version = ""
+        self.videoipath_version 
 
     # --- Internal Methods ---
     def _validate_v2_response_data(self, response: ResponseV2Get, url: str):
@@ -240,96 +255,3 @@ class VideoIPathConnector(BaseModel):
             except:
                 print("Error getting VideoIPath version.")
         return self._videoipath_version
-
-    # --- Deprecated Methods ---
-    @deprecated(
-        "This method is deprecated and will be removed in future versions. Please use the newer method for API requests."
-    )
-    def http_get_legacy(self, url_path: str):
-        """Method to execute a legacy (v1) GET request to the VideoIPath API.
-        Attention: No response validation implemented for legacy API
-
-        Args:
-            url_path (str): URL path (e.g. "/rest/v1/data/status/system/about/version")
-
-        Returns:
-            dict: Response body as dictionary
-        """
-        # 1. Construct URL
-        protocol = "https" if self.ssl else "http"
-        url = f"{protocol}://{self.ip}{url_path}"
-
-        # 2. Execute GET request and receive response
-        try:
-            response = requests.get(
-                url,
-                auth=(self.username, self.password),
-                timeout=self._get_timeout,
-                verify=self.ssl_verify,
-            )
-        except requests.exceptions.RequestException as e:
-            print(e)
-            return None
-
-        # Attention: No response validation implemented for legacy API
-
-        return response.json()
-
-    @deprecated(
-        "This method is deprecated and will be removed in future versions. Please use the newer method for API requests."
-    )
-    def http_patch_legacy(self, url_path: str, body: dict) -> dict:
-        # 1. Construct URL
-        protocol = "https" if self.ssl else "http"
-        url = f"{protocol}://{self.ip}{url_path}"
-
-        # 2. Execute PATCH request and receive response
-        try:
-            response = requests.patch(
-                url,
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(body),
-                auth=(self.username, self.password),
-                timeout=self._patch_timeout,
-                verify=self.ssl_verify,
-            )
-
-        # 3. Validate response format
-        except requests.exceptions.RequestException as e:
-            print(e)
-            return None
-
-        # Attention: No response validation implemented for legacy API
-
-        return response.json()
-
-    @deprecated(
-        "This method is deprecated and will be removed in future versions. Please use the newer method for API requests."
-    )
-    def http_post_legacy(self, url_path: str, body: dict) -> dict:
-        """Method to execute a legacy (v1) POST request to the VideoIPath API.
-
-        Args:
-            url_path (str): URL path (e.g. "/rest/v1/actions/status/pathman/validateTopologyUpdate")
-            body (dict): Request body as dictionary
-
-        Returns:
-            dict: Response body as dictionary
-        """
-        # 1. Construct URL
-        protocol = "https" if self.ssl else "http"
-        url = f"{protocol}://{self.ip}{url_path}"
-
-        # 2. Execute POST request and receive response
-        response = requests.post(
-            url,
-            headers={"Content-Type": "application/json"},
-            data=json.dumps(body),
-            auth=(self.username, self.password),
-            timeout=self._post_timeout,
-            verify=self.ssl_verify,
-        )
-
-        # Attention: No response validation implemented for legacy API
-
-        return response.json()

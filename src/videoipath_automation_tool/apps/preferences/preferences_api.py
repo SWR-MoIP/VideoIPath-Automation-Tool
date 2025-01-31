@@ -1,4 +1,3 @@
-from pydantic import BaseModel
 from typing import List
 
 from videoipath_automation_tool.apps.preferences.model import *
@@ -8,14 +7,15 @@ from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 
 
-class PreferencesAPI(BaseModel):
+class PreferencesAPI:
     """
     Class for VideoIPath System Preferences API.
     By now, only the Multicast Pools are supported.
 
     """
 
-    vip_connector: VideoIPathConnector
+    def __init__(self, vip_connector: VideoIPathConnector):
+        self.vip_connector = vip_connector
 
     def get_multicast_pools(self) -> List[MulticastRangeInfoEntry]:
         """
