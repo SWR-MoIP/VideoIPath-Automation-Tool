@@ -51,7 +51,7 @@ pip3 install "path/to/downloads/VideoIPath_Automation_Tool-0.1.0.tar.gz"
 from videoipath_automation_tool import VideoIPathApp
 
 # Initialize the VideoIPathApp
-app = VideoIPathApp(ip="10.1.100.10", username="api-user", password="VIP2024PWD")
+app = VideoIPathApp(server_address="10.1.100.10", username="api-user", password="VIP2024PWD")
 
 # Create a device object with NMOS driver
 staged_device = app.inventory.create_device(driver="com.nevion.NMOS_multidevice-0.1.0")

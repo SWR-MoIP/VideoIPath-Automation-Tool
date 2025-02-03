@@ -12,11 +12,11 @@ Create a `.env` file and define the following environment variables to configure
 
 ```bash
 VIPAT_ENVIRONMENT=DEV
-VIPAT_VIDEOIPATH_IP=10.1.100.10
-VIPAT_VIDEOIPATH_USER=api-user
-VIPAT_VIDEOIPATH_PWD=VIP2024PWD
-VIPAT_HTTPS=true
-VIPAT_HTTPS_VERIFY=false
+VIPAT_VIDEOIPATH_SERVER_ADDRESS=vip.company.com
+VIPAT_VIDEOIPATH_USERNAME=user_with_api_access
+VIPAT_VIDEOIPATH_PASSWORD=veryStrongPassword
+VIPAT_USE_HTTPS=true
+VIPAT_VERIFY_SSL_CERT=false
 VIPAT_LOG_LEVEL=debug
 ```
 
@@ -37,31 +37,38 @@ app = VideoIPathApp()
 from videoipath_automation_tool import VideoIPathApp
 
 # Initialize the VideoIPathApp
-app = VideoIPathApp(ip="10.1.100.10", username="api-user", password="VIP2024PWD", ssl=True, ssl_verify=False, log_level="DEBUG")
+app = VideoIPathApp(
+    server_address="vip.company.com",
+    username="user_with_api_access",
+    password="veryStrongPassword",
+    use_https=True,
+    verify_ssl_cert=False,
+    log_level="DEBUG"
+)
 ```
 
 ## Notes 
 
 ### Parameters
-- `ip`: The IP address or hostname of the VideoIPath Server
+- `server_address`: The IP address or hostname of the VideoIPath Server
 - `username`: The username of the user account with API access
 - `password`: The password of the user account with API access
-- `ssl`: Set to `True` if the VideoIPath Server uses HTTPS
-- `ssl_verify`: Set to `True` if the SSL certificate should be verified
+- `use_https`: Set to `True` if the VideoIPath Server uses HTTPS
+- `verify_ssl_cert`: Set to `True` if the SSL certificate should be verified
 - `log_level`: The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`
 - `environment`: The environment of the VideoIPath Server, possible values are `DEV`, `TEST`, and `PROD` (for future use)
 
 ### Environment Variables
 
-| Variable        | Values                                          | Description                                      |
-|-----------------|-------------------------------------------------|--------------------------------------------------|
-| `VIPAT_ENVIRONMENT`   | `DEV`, `TEST`, `PROD`                          | Optional: Define the environment. Defaults to `PROD`. |
-| `VIPAT_VIDEOIPATH_IP` | e.g. IP `10.200.10.21` or hostname `vip.company.com` | IP address or hostname of the VideoIPath server. |
-| `VIPAT_VIDEOIPATH_USER` | e.g. `api_user`                               | Username for the API User.                      |
-| `VIPAT_VIDEOIPATH_PWD` | e.g. `very_strong_passw0rd`                    | Password for the API User.                      |
-| `VIPAT_HTTPS`         | `true`, `false`                                | Optional: Use HTTPS for the connection. Defaults to `false`. |
-| `VIPAT_HTTPS_VERIFY`  | `true`, `false`                                | Optional: Verify the SSL certificate. Defaults to `false`. |
-| `VIPAT_LOG_LEVEL`     | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. Defaults to `info`. |
+| Variable                     | Values                                          | Description                                      |
+|------------------------------|-------------------------------------------------|--------------------------------------------------|
+| `VIPAT_ENVIRONMENT`          | `DEV`, `TEST`, `PROD`                           | Optional: Define the environment. Defaults to `PROD`. |
+| `VIPAT_VIDEOIPATH_SERVER_ADDRESS` | e.g. IP `10.200.10.21` or hostname `vip.company.com` | IP address or hostname of the VideoIPath server. |
+| `VIPAT_VIDEOIPATH_USERNAME`  | e.g. `api_user`                                 | Username for the API User.                      |
+| `VIPAT_VIDEOIPATH_PASSWORD`  | e.g. `very_strong_passw0rd`                     | Password for the API User.                      |
+| `VIPAT_USE_HTTPS`            | `true`, `false`                                 | Optional: Use HTTPS for the connection. Defaults to `true`. |
+| `VIPAT_VERIFY_SSL_CERT`      | `true`, `false`                                 | Optional: Verify the SSL certificate. Defaults to `true`. |
+| `VIPAT_LOG_LEVEL`            | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. Defaults to `info`. |
 
 ### Log Levels
 - `DEBUG`: Detailed information, typically of interest only when diagnosing problems
