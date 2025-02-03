@@ -20,17 +20,24 @@ class VideoIPathApp:
     """
 
     def __init__(
-        self, ip=None, username=None, password=None, ssl=None, ssl_verify=None, log_level=None, environment=None
+        self,
+        server_address=None,
+        username=None,
+        password=None,
+        use_https=None,
+        verify_ssl_cert=None,
+        log_level=None,
+        environment=None,
     ):
         """Initialize the VideoIPath Automation Tool, establish connection to the VideoIPath-Server and initialize the Apps for interaction.
         Parameters can be provided directly or read from the environment variables.
 
         Args:
-            ip (str, optional): IP or hostname of the VideoIPath-Server. [ENV: VIPAT_VIDEOIPATH_IP]
-            username (str, optional): Username for the API User. [ENV: VIPAT_VIDEOIPATH_USER]
-            password (str, optional): Password for the API User. [ENV: VIPAT_VIDEOIPATH_PWD]
-            ssl (bool, optional): Enable SSL / Usage of HTTPS. [ENV: VIPAT_HTTPS]
-            ssl_verify (bool, optional): Enable SSL verification. [ENV: VIPAT_HTTPS_VERIFY]
+            server_address (str, optional): IP or hostname of the VideoIPath-Server. [ENV: VIPAT_VIDEOIPATH_SERVER_ADDRESS]
+            username (str, optional): Username for the API User. [ENV: VIPAT_VIDEOIPATH_USERNAME]
+            password (str, optional): Password for the API User. [ENV: VIPAT_VIDEOIPATH_PASSWORD]
+            use_https (bool, optional): Use HTTPS for the connection. [ENV: VIPAT_USE_HTTPS]
+            verify_ssl_cert (bool, optional): Verify the SSL certificate of the VideoIPath-Server. [ENV: VIPAT_VERIFY_SSL_CERT]
             log_level (str, optional): Define the log level: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'. [ENV: VIPAT_LOG_LEVEL]
             environment (str, optional): Define the environment: 'DEV', 'TEST', 'PROD'. [ENV: VIPAT_ENVIRONMENT]
         """
@@ -61,63 +68,52 @@ class VideoIPathApp:
         if environment not in ["DEV", "TEST", "PROD"]:
             raise ValueError("Invalid environment provided. Please provide a valid environment: 'DEV', 'TEST', 'PROD'.")
 
-        self.logger.debug(f"Environment set to '{environment}' environment.")
+        self.logger.debug(f"Environment set to '{environment}'.")
 
         # --- Setup VideoIPath API Connector ---
         self.logger.debug("Initialize VideoIPath API Connector.")
 
-        if ip is None and Settings().VIPAT_VIDEOIPATH_SERVER_ADDRESS is None:
+        if server_address is None and Settings().VIPAT_VIDEOIPATH_SERVER_ADDRESS is None:
             raise ValueError(
-                "No IP address provided. Please provide an IP address or set it as an environment variable: 'VIPAT_VIDEOIPATH_IP'."
+                "No address provided. Please provide an address or set it as an environment variable: 'VIPAT_VIDEOIPATH_SERVER_ADDRESS'."
             )
-        vip_ip = ip if ip is not None else Settings().VIPAT_VIDEOIPATH_SERVER_ADDRESS
-        self.logger.debug(f"VideoIPath-Server IP: {vip_ip}")
+        vip_server_address = (
+            server_address if server_address is not None else Settings().VIPAT_VIDEOIPATH_SERVER_ADDRESS
+        )
+        self.logger.debug(f"Server address: '{vip_server_address}'")
 
         if username is None and Settings().VIPAT_VIDEOIPATH_USERNAME is None:
             raise ValueError(
-                "No username provided. Please provide a username or set it as an environment variable: 'VIPAT_VIDEOIPATH_USER'."
+                "No username provided. Please provide a username or set it as an environment variable: 'VIPAT_VIDEOIPATH_USERNAME'."
             )
         vip_username = username if username is not None else Settings().VIPAT_VIDEOIPATH_USERNAME
-        self.logger.debug(f"Username: {vip_username}")
+        self.logger.debug(f"Username: '{vip_username}'")
 
         if password is None and Settings().VIPAT_VIDEOIPATH_PASSWORD is None:
             raise ValueError(
-                "No password provided. Please provide a password or set it as an environment variable: 'VIPAT_VIDEOIPATH_PWD'."
+                "No password provided. Please provide a password or set it as an environment variable: 'VIPAT_VIDEOIPATH_PASSWORD'."
             )
         vip_password = password if password is not None else Settings().VIPAT_VIDEOIPATH_PASSWORD
         self.logger.debug("Password provided!")
 
-        ssl = ssl if ssl is not None else Settings().VIPAT_USE_HTTPS
-        self.logger.debug("SSL enabled.") if ssl else self.logger.debug("SSL disabled.")
+        use_https = use_https if use_https is not None else Settings().VIPAT_USE_HTTPS
+        self.logger.debug("HTTPS enabled.") if use_https else self.logger.debug("HTTP enabled.")
 
-        ssl_verify = ssl_verify if ssl_verify is not None else Settings().VIPAT_VERIFY_SSL_CERT
-        if ssl:
-            self.logger.debug("SSL verification enabled.") if ssl_verify else self.logger.debug(
-                "SSL verification disabled."
+        verify_ssl_cert = verify_ssl_cert if verify_ssl_cert is not None else Settings().VIPAT_VERIFY_SSL_CERT
+        if use_https:
+            self.logger.debug("Verify SSL certificate enabled.") if verify_ssl_cert else self.logger.debug(
+                "Verify SSL certificate disabled."
             )
 
-        # Initialize VideoIPath API Connector
+        # --- Initialize VideoIPath API Connector including check for connection and authentication ---
         self._videoipath_connector = VideoIPathConnector(
-            server_address=vip_ip,
+            server_address=vip_server_address,
             username=vip_username,
             password=vip_password,
-            use_https=ssl,
-            verify_ssl_cert=ssl_verify,
+            use_https=use_https,
+            verify_ssl_cert=verify_ssl_cert,
             logger=self.logger,
         )
-
-        # Check connection
-        if self._videoipath_connector.test_connection():
-            version = self._videoipath_connector.videoipath_version  # Initially get the VideoIPath version
-            self.logger.info(
-                f"Connection to VideoIPath-Server at '{self._videoipath_connector.server_address}' with user '{self._videoipath_connector.username}' established."
-            )
-            self.logger.debug(f"VideoIPath-Server version: {version}")
-        else:
-            self.logger.error(
-                f"Connection to VideoIPath-Server at '{self._videoipath_connector.server_address}' with user '{self._videoipath_connector.username}' failed."
-            )
-            raise ConnectionError("Connection to VideoIPath-Server failed.")
 
         # --- Initialize Apps ---
         self._inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self.logger)
