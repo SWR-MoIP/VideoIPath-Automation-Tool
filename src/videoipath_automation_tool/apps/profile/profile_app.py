@@ -126,4 +126,29 @@ class ProfileApp:
 
         return response
 
-    # def update_profile(self, profile: Profile) -> Profile:
+    def update_profile(self, profile: Profile) -> Profile:
+        """Update a Profile in the VideoIPath System.
+
+        Args:
+            profile (Profile): Profile object to update.
+
+        Returns:
+            Profile | None: Profile object if successful, None otherwise.
+        """
+        try:
+            data = self._profile_api.update_profile(profile)
+            if data:
+                return data
+            else:
+                raise ValueError("Error updating Profile. Empty response.")
+        except Exception as e:
+            raise ValueError(f"Error updating Profile: {e}")
+
+    def create_profile(self, name: str) -> Profile:
+        """ Create a new Profile-Object.
+        Profile can be added to the VideoIPath System using the add_profile() method.
+        
+        Args:
+            name (str): Name of the Profile.
+        """
+        return Profile.create(name)
