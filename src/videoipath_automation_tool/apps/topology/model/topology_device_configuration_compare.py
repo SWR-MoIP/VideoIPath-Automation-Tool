@@ -47,6 +47,8 @@ class NGraphElementDiff(BaseModel):
         element_differences = DeepDiff(reference_element, staged_element, ignore_order=True)
         difference_keys = element_differences.keys()
 
+        diff_object = NGraphElementConfigurationDiff()
+
         if len(difference_keys) > 0:
             allowed_diff_types = [  # noqa: F841
                 "values_changed",  # Indicates changes in values between two comparable objects
@@ -70,8 +72,6 @@ class NGraphElementDiff(BaseModel):
 
             if any([diff_type in difference_keys for diff_type in disallowed_diff_types]):
                 raise ValueError(f"Disallowed differences in nGraphElement: {difference_keys} - {element_differences}")
-
-            diff_object = NGraphElementConfigurationDiff()
 
             # Check allowed diff types
             if "values_changed" in element_differences:
