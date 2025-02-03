@@ -32,7 +32,7 @@ jobs:
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
-        with:
-          name: poetry-build
+        with: 
+          name: videoipath-automation-tool-${{ github.run_number }}
           path: dist/*
  
