@@ -141,7 +141,7 @@ class NGraphElementDiff(BaseModel):
             id=reference_element.id,
             reference_element=reference_element,
             staged_element=staged_element,
-            difference=diff_object,
+            configuration_diff=diff_object,
         )
 
 

@@ -477,17 +477,16 @@ class TopologyAPI(BaseModel):
         body = self._generate_nGraphElement_payload(add_elements=add_list, update_elements=[], remove_elements=[])
         return self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
 
-    # TODO: Check if this method is necessary!
     def apply_device_configuration_changes(
         self, device_difference: TopologyDeviceComparison, validate_only: bool = False
-    ) -> ResponseV2Patch:
+    ) -> ResponseV2Patch | None:
         """Automatically synchronize a device with the topology.
 
         Args:
             device_difference (TopologyCompareDevices): TopologyCompareDevices object.
 
         Returns:
-            RequestRestV2: RequestRestV2 object.
+            RequestRestV2 | None: RequestRestV2 object or None if no changes are necessary.
         """
         add_list = []
         update_list = []
@@ -507,8 +506,11 @@ class TopologyAPI(BaseModel):
         body = self._generate_nGraphElement_payload(
             add_elements=add_list, update_elements=update_list, remove_elements=remove_list, validate_only=validate_only
         )
-        # print(body.model_dump(mode="json", by_alias=True))
-        return self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
+
+        if len(body.actions) > 0:
+            return self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
+        else:
+            return None
 
     def _apply_reference_revision_to_element(
         self,

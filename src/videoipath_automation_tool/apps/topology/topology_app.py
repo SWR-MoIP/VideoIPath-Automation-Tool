@@ -75,7 +75,10 @@ class TopologyApp:
             changes = self._topology_api.analyze_device_configuration_changes(device)
             self._logger.debug(f"Changes: {changes.get_changed_elements()}")
             response = self._topology_api.apply_device_configuration_changes(changes)
-            self._logger.info(f"Device '{device.configuration.base_device.label}' updated in topology.")
+            if response:
+                self._logger.info(f"Device '{device.configuration.base_device.label}' updated in topology.")
+            else:
+                self._logger.info(f"No changes detected for device '{device.configuration.base_device.label}'.")
         else:
             response = self._topology_api.add_device_initially(device)
             self._logger.info(f"Device '{device.configuration.base_device.label}' added to topology.")
