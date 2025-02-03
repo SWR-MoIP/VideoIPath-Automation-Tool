@@ -1,4 +1,3 @@
-# from dictdiffer import diff
 import logging
 from pydantic import BaseModel
 from typing import List, Literal, Optional
@@ -57,6 +56,40 @@ class TopologyAPI(BaseModel):
         """
         device_configuration = self._fetch_device_configuration_from_driver(device_id)
         return TopologyDevice(configuration=device_configuration)
+
+    def get_vertex_by_label(self, label: str) -> BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge:
+        """ Get a vertex by its label.
+
+        Args:
+            label (str): Label of the vertex.
+
+        Returns:
+            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge: Vertex object.
+        """
+        response = self.vip_connector.http_get_v2(
+            f"/rest/v2/data/config/network/nGraphElements/* where descriptor.label='{label}' /**"
+        )
+        if response.data is None:
+            raise ValueError(f"nGraphElement with label {label} not found.")
+        payload_data = response.data["config"]["network"]["nGraphElements"]["_items"]
+        if len(payload_data) > 1:
+            raise ValueError(f"Multiple nGraphElements with label '{label}' found.")
+        elif len(payload_data) == 1:
+            return self._validate_nGraphElement(payload_data[0])
+        else:
+            raise ValueError(f"nGraphElement with label '{label}' not found.")
+
+    def update_single_nGraphElement(self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge):
+        """Update a single nGraphElement.
+
+        Args:
+            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): nGraphElement object.
+
+        Returns:
+            RequestRestV2: RequestRestV2 object.
+        """
+        body = self._generate_nGraphElement_payload(add_elements=[], update_elements=[element], remove_elements=[])
+        return self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
 
     def _fetch_device_configuration_from_topology(self, device_id: str) -> TopologyDeviceConfiguration:
         """Get a topology device by its device id.

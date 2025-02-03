@@ -354,11 +354,13 @@ class VideoIPathConnector:
         Comma-separated nodes are supported.
         Limitation: Validation stops at the first "*" or "_items" node, because the response data structure after these nodes is unknown.
         """
-        nodes = [
-            node
-            for node in resource_path.removeprefix("/rest/v2/").split("/")
-            if node and "*" not in node and "_items" not in node
-        ]
+
+        nodes = []
+        for node in resource_path.removeprefix("/rest/v2/").split("/"):
+            if node and "*" not in node and "_items" not in node:
+                nodes.append(node)
+            else:
+                break
 
         current_nodes = [response_data.model_dump(mode="json")]
 
