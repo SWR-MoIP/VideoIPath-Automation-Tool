@@ -145,9 +145,9 @@ class ProfileApp:
             raise ValueError(f"Error updating Profile: {e}")
 
     def create_profile(self, name: str) -> Profile:
-        """ Create a new Profile-Object.
+        """Create a new Profile-Object.
         Profile can be added to the VideoIPath System using the add_profile() method.
-        
+
         Args:
             name (str): Name of the Profile.
         """

@@ -57,29 +57,48 @@ class TopologyAPI(BaseModel):
         device_configuration = self._fetch_device_configuration_from_driver(device_id)
         return TopologyDevice(configuration=device_configuration)
 
-    def get_vertex_by_label(self, label: str) -> BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge:
-        """ Get a vertex by its label.
+    def get_vertex_by_label(
+        self, label: str, mode: Literal["user_defined", "factory"] = "user_defined"
+    ) -> (
+        BaseDevice
+        | CodecVertex
+        | GenericVertex
+        | IpVertex
+        | UnidirectionalEdge
+        | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]
+    ):
+        """Get a vertex by its label.
 
         Args:
             label (str): Label of the vertex.
+            mode (Literal[&quot;user_defined&quot;, &quot;factory&quot;], optional): Search mode. Defaults to "user_defined".
 
         Returns:
-            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge: Vertex object.
+            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]: Vertex object or list of vertex objects.
         """
-        response = self.vip_connector.http_get_v2(
-            f"/rest/v2/data/config/network/nGraphElements/* where descriptor.label='{label}' /**"
-        )
+
+        if mode == "user_defined":
+            path = f"/rest/v2/data/config/network/nGraphElements/* where descriptor.label='{label.replace("/", "%2F")}' /**"
+        elif mode == "factory":
+            path = f"/rest/v2/data/config/network/nGraphElements/* where fDescriptor.label='{label.replace("/", "%2F")}' /**"
+
+        response = self.vip_connector.http_get_v2(path)
+
         if response.data is None:
             raise ValueError(f"nGraphElement with label {label} not found.")
         payload_data = response.data["config"]["network"]["nGraphElements"]["_items"]
         if len(payload_data) > 1:
-            raise ValueError(f"Multiple nGraphElements with label '{label}' found.")
+            #     raise ValueError(f"Multiple nGraphElements with label '{label}' found.")
+            self.logger.warning(f"Multiple nGraphElements with label '{label}' found.")
+            return [self._validate_nGraphElement(item) for item in payload_data]
         elif len(payload_data) == 1:
             return self._validate_nGraphElement(payload_data[0])
         else:
             raise ValueError(f"nGraphElement with label '{label}' not found.")
 
-    def update_single_nGraphElement(self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge):
+    def update_single_nGraphElement(
+        self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge
+    ):
         """Update a single nGraphElement.
 
         Args:
