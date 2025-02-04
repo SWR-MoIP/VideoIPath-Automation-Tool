@@ -152,3 +152,17 @@ class ProfileApp:
             name (str): Name of the Profile.
         """
         return Profile.create(name)
+
+    def clone_profile(self, profile: Profile) -> Profile:
+        """Clone an existing Profile-Object.
+        Cloned Profile can be added to the VideoIPath System using the add_profile() method.
+
+        Args:
+            profile (Profile): Profile object to clone.
+        """
+        cloned_profile = profile.model_copy()
+        cloned_profile.id = cloned_profile._generate_uuid_4()
+        cloned_profile.vid = f"_: {cloned_profile.id}"
+        cloned_profile.name += " (clone)"
+        return cloned_profile
+        

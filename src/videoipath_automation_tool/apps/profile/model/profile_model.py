@@ -530,6 +530,10 @@ class Profile(SuperProfile):
 
     @classmethod
     def create(cls, name: str):
-        id = str(uuid.uuid4())
+        id = cls._generate_uuid_4()
         vid = f"_: {id}"
         return cls(_id=id, _vid=vid, name=name)
+
+    @staticmethod
+    def _generate_uuid_4():
+        return str(uuid.uuid4())
