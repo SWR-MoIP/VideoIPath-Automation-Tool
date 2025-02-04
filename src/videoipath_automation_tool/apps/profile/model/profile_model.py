@@ -524,9 +524,9 @@ class SuperProfile(BaseModel):
 # --- Main Model ---
 class Profile(SuperProfile):
     # (GUI HIDDEN)
-    id: str = Field(default=None, alias="_id")
-    vid: str = Field(default=None, alias="_vid")
-    rev: str = Field(default=None, alias="_rev")
+    id: None | str = Field(default=None, alias="_id")
+    vid: None | str = Field(default=None, alias="_vid")
+    rev: None | str = Field(default=None, alias="_rev")
 
     @classmethod
     def create(cls, name: str):

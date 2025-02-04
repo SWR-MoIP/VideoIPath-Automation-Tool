@@ -110,7 +110,7 @@ class ProfileApp:
             profile = self.get_profile(name=name)
         elif id:
             profile = self.get_profile(id=id)
-        else:
+        elif not (name or id or profile):
             raise ValueError("No name, ID or Profile provided.")
 
         if profile is None:

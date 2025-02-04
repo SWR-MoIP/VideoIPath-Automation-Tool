@@ -93,9 +93,9 @@ class UnidirectionalEdge(NGraphElement):
 
         """
         # check direction -> Always from out to in:
-        if from_ip_vertex.vertexType != VertexType.Out.value:
+        if from_ip_vertex.vertexType != "Out":
             raise ValueError(f"From edge must be of type 'Out' but is '{from_ip_vertex.vertexType}'")
-        if to_ip_vertex.vertexType != VertexType.In.value:
+        if to_ip_vertex.vertexType != "In":
             raise ValueError(f"To edge must be of type 'In' but is '{to_ip_vertex.vertexType}'")
 
         # generate key and name from vertices:
