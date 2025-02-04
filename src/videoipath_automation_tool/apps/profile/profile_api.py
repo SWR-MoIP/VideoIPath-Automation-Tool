@@ -1,6 +1,7 @@
 import logging
 from pydantic import BaseModel, model_validator
-from typing import List, Optional
+from typing import List, Literal, Optional
+from deepdiff.diff import DeepDiff
 
 from videoipath_automation_tool.apps.preferences.model import *
 
@@ -73,7 +74,7 @@ class ProfileAPI(BaseModel):
         data = self._validate_response(response)
         return [item["name"] for item in data] if data else None
 
-    def get_profiles(self) -> List[Profile] | List[None]:
+    def get_profiles(self) -> List[Profile]:
         """
         Get all VideoIPath Profiles.
         """
@@ -81,13 +82,17 @@ class ProfileAPI(BaseModel):
         data = self._validate_response(response)
 
         if len(data) == 0:
-            return []
+            raise ValueError("No Profiles found.")
         else:
             return [Profile(**item) for item in data]
 
     def get_profile_by_name(self, name: str) -> Profile | List[Profile] | None:
         """
         Get a VideoIPath Profile by its name.
+        If multiple Profiles are found with the same name, a list of Profiles is returned.
+
+        Args:
+            name (str): Name of the Profile to get.
         """
         self.logger.debug(f"Requesting Profile/s with name '{name}'")
 
@@ -157,10 +162,6 @@ class ProfileAPI(BaseModel):
             Profile | None: Profile object if successful, None otherwise.
         """
 
-        # if type(profile) != Profile:
-        #     raise ValueError("Invalid Profile object provided. Please provide a Profile object.")
-        #     # body = {'actions': [{'_action': 'update', '_id': profile.id, '_rev': profile.rev , **profile.superProfile.model_dump(mode="json")}]}
-
         body = self._generate_profile_action([], [profile], [])
 
         response = self.vip_connector.http_patch_v2("/rest/v2/data/config/pathman/profiles", body)
@@ -199,3 +200,50 @@ class ProfileAPI(BaseModel):
 
         response = self.vip_connector.http_patch_v2("/rest/v2/data/config/pathman/profiles", body)
         return response
+
+    def get_all_profile_tags(self, mode: Literal["all", "exclude_hidden", "hidden_only"] = "all") -> List[str]:
+        """
+        Get all VideoIPath Profile tags.
+
+        Args:
+            mode (Literal["all", "exclude_hidden", "hidden_only"], optional): Mode to get the tags. Defaults to "all".
+        """
+
+        if mode == "all":
+            response = self.vip_connector.http_get_v2("/rest/v2/data/config/profiles/*/tags/**")
+        else:
+            hidden = "true" if mode == "hidden_only" else "false"
+            response = self.vip_connector.http_get_v2(
+                f"/rest/v2/data/config/profiles/* where hidden={hidden} /tags/**"
+            )
+
+        tags = []
+        data = response.data["config"]["profiles"]["_items"]
+        if data:
+            for item in data:
+                tags.extend(item["tags"])
+
+        return tags
+
+    def analyze_profile_configuration_changes_local(self, reference_profile: Profile, staged_profile: Profile):
+        """
+        Analyze the configuration changes between two Profiles.
+
+        Args:
+            reference_profile (Profile): Reference Profile.
+            staged_profile (Profile): Staged Profile.
+        """
+        diff = DeepDiff(reference_profile.model_dump(mode="json"), staged_profile.model_dump(mode="json"), ignore_order=True)
+        return diff
+        
+    def analyze_profile_configuration_changes(self, staged_profile: Profile):
+        """
+        Analyze the configuration changes between a Profile and the VideoIPath System.
+
+        Args:
+            staged_profile (Profile): Staged Profile.
+        """
+        reference_profile = self.get_profile_by_id(staged_profile.id)
+        if type(reference_profile) is not Profile:
+            return None
+        return self.analyze_profile_configuration_changes_local(reference_profile, staged_profile)

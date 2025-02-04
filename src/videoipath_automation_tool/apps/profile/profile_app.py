@@ -66,7 +66,7 @@ class ProfileApp:
         elif isinstance(data, list):
             return data
 
-    def get_profiles(self) -> List[Profile] | List[None]:
+    def get_profiles(self) -> List[Profile]:
         """Get all VideoIPath Profiles.
 
         Returns:

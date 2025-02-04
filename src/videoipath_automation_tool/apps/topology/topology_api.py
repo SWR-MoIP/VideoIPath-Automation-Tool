@@ -511,6 +511,14 @@ class TopologyAPI(BaseModel):
             return self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
         else:
             return None
+        
+    def get_next_virtual_device_id(self):
+        """ Get the next virtual device id.
+        """
+        response = self.vip_connector.http_get_v2("/rest/v2/data/config/network/nGraphElements/* where isVirtual=true and type='baseDevice' /id")
+        ids = [int(item["_id"].replace("virtual.", "")) for item in response.data["config"]["network"]["nGraphElements"]["_items"] if type(item["_id"]) is str and item["_id"].startswith("virtual.")]
+        max_id = max(ids) if ids else 0
+        return f"virtual.{max_id + 1}"
 
     def _apply_reference_revision_to_element(
         self,
