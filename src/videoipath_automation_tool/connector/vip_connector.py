@@ -81,7 +81,7 @@ class VideoIPathConnector:
         self._videoipath_version = ""
 
         self.server_address = server_address  # Server address has to be set after use_https, because address might change use_https setting
-        
+
         # Validate and initialize connector
         self._validate_and_initialize_connector()
         self._logger.info("VideoIPath connector initialized.")
