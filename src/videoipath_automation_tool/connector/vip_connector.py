@@ -3,15 +3,15 @@ import json
 import requests
 from typing import Literal, Optional
 
-from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
-from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get, ResponseV2Patch
+from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 
 
 class VideoIPathConnector:
-    TIMEOUTS = {"GET": 5, "POST": 10, "PATCH": 30}
+    TIMEOUTS = {"GET": {"REST_V2": 5}, "POST": {"REST_V2": 10, "RPC_API": 10}, "PATCH": {"REST_V2": 10}}
 
     ALLOWED_URLS = {
         "GET": {
@@ -116,24 +116,10 @@ class VideoIPathConnector:
         # 2. Construct URL
         url = self._build_url(url_path)
 
-        # 3. Execute GET request and receive response
-        try:
-            response = requests.get(
-                url,
-                auth=(self.username, self.password),
-                timeout=self.TIMEOUTS["GET"],
-                verify=self.verify_ssl_cert,
-                headers=self.HEADERS["GET"]["REST_V2"],
-            )
-        except requests.exceptions.Timeout:
-            self._logger.warning(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
-            raise TimeoutError(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
-        except requests.exceptions.ConnectionError:
-            self._logger.warning(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
-            raise ConnectionError(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
-        except requests.exceptions.RequestException as e:
-            self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=e))
-            raise
+        # 3. Execute GET request, log and check response
+        response = self._execute_request(
+            method="GET", url=url, headers=self.HEADERS["GET"]["REST_V2"], timeout=self.TIMEOUTS["GET"]["REST_V2"]
+        )
 
         # 4. Log response
         try:
@@ -145,14 +131,14 @@ class VideoIPathConnector:
         if not response.ok:
             raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
 
-        # 5. Validate basic response format
+        # 4. Validate basic response format
         response_object = ResponseV2Get.model_validate(response.json())
 
-        # 6. Validate response status
+        # 5. Validate response status
         if response_object.header.code != "OK":
             raise ValueError(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
 
-        # 7. Check if authentication is successful
+        # 6. Check if authentication is successful
         if auth_check:
             if not response_object.header.auth:
                 raise PermissionError(
@@ -161,7 +147,7 @@ class VideoIPathConnector:
         else:
             self._logger.debug("Authentication check skipped.")
 
-        # 8. Check if all nodes in the URL path are present in the response data
+        # 7. Check if all nodes in the URL path are present in the response data
         if node_check:
             self._validate_v2_response_data(response_object, url_path)
         else:
@@ -199,46 +185,25 @@ class VideoIPathConnector:
         # 2. Construct URL
         url = self._build_url(url_path)
 
-        # 3. Execute PATCH request and receive response
+        # 3. Execute PATCH request, log and check response
         request_payload = body.model_dump(mode="json", by_alias=True)
 
-        try:
-            response = requests.patch(
-                url,
-                headers=self.HEADERS["PATCH"]["REST_V2"],
-                data=json.dumps(request_payload),
-                auth=(self.username, self.password),
-                timeout=self.TIMEOUTS["PATCH"],
-                verify=self.verify_ssl_cert,
-            )
-        except requests.exceptions.Timeout:
-            self._logger.warning(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
-            raise TimeoutError(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
-        except requests.exceptions.ConnectionError:
-            self._logger.warning(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
-            raise ConnectionError(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
-        except requests.exceptions.RequestException as e:
-            self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=e))
-            raise
+        response = self._execute_request(
+            method="PATCH",
+            url=url,
+            headers=self.HEADERS["PATCH"]["REST_V2"],
+            timeout=self.TIMEOUTS["PATCH"]["REST_V2"],
+            request_payload=request_payload,
+        )
 
-        # 4. Log response
-        try:
-            self._logger.debug(f"HTTP-PATCH Response [{response.status_code}]: {response.json()}")
-        except json.JSONDecodeError:
-            self._logger.debug(f"HTTP-PATCH Response [{response.status_code}] (RAW): {response.text}")
-        self._logger.debug(f"HTTP-PATCH Response Headers: {response.headers}")
-
-        if not response.ok:
-            raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
-
-        # 5. Validate basic response format
+        # 4. Validate basic response format
         response_object = ResponseV2Patch.model_validate(response.json())
 
-        # 6. Validate response status
+        # 5. Validate response status
         if response_object.header.code != "OK":
             raise ValueError(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
 
-        # 7. Check if authentication is successful
+        # 6. Check if authentication is successful
         if auth_check:
             if not response_object.header.auth:
                 raise PermissionError(
@@ -282,42 +247,21 @@ class VideoIPathConnector:
         # 2. Construct URL
         url = self._build_url(url_path)
 
-        # 3. Execute POST request and receive response
+        # 3. Execute POST request, log and check response
         request_payload = body.model_dump(mode="json", by_alias=True)
 
-        try:
-            response = requests.post(
-                url,
-                headers=self.HEADERS["POST"]["RPC_API"],
-                data=json.dumps(request_payload),
-                auth=(self.username, self.password),
-                timeout=self.TIMEOUTS["POST"],
-                verify=self.verify_ssl_cert,
-            )
-        except requests.exceptions.Timeout:
-            self._logger.warning(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
-            raise TimeoutError(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
-        except requests.exceptions.ConnectionError:
-            self._logger.warning(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
-            raise ConnectionError(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
-        except requests.exceptions.RequestException as e:
-            self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=e))
-            raise
+        response = self._execute_request(
+            method="POST",
+            url=url,
+            headers=self.HEADERS["POST"]["RPC_API"],
+            timeout=self.TIMEOUTS["POST"]["RPC_API"],
+            request_payload=request_payload,
+        )
 
-        # 4. Log response
-        try:
-            self._logger.debug(f"HTTP-POST Response [{response.status_code}]: {response.json()}")
-        except json.JSONDecodeError:
-            self._logger.debug(f"HTTP-POST Response [{response.status_code}] (RAW): {response.text}")
-        self._logger.debug(f"HTTP-POST Response Headers: {response.headers}")
-
-        if not response.ok:
-            raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
-
-        # 5. Validate basic response format
+        # 4. Validate basic response format
         response_object = ResponseRPC.model_validate(response.json())
 
-        # 6. Validate response status
+        # 5. Validate response status
         if not response_object.header.ok:
             raise ValueError(
                 f"Error in API response for path {url}: {response_object.header.caption}, {response_object.header.msg}"
@@ -517,6 +461,66 @@ class VideoIPathConnector:
             str: The full URL. E.g., "https://vip.company.com/rest/v2/data/status/system/about/version"
         """
         return f"{self.base_url.rstrip('/')}/{url_path.lstrip('/')}"
+
+    def _handle_request_exceptions(self, url: str, exception: Exception):
+        """Handles exceptions raised during an HTTP request."""
+        if isinstance(exception, requests.exceptions.Timeout):
+            self._logger.warning(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
+            raise TimeoutError(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
+        elif isinstance(exception, requests.exceptions.ConnectionError):
+            self._logger.warning(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
+            raise ConnectionError(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
+        else:
+            self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=exception))
+            raise
+
+    def _log_response(self, response):
+        """Logs the HTTP response."""
+        try:
+            self._logger.debug(f"HTTP Response [{response.status_code}]: {response.json()}")
+        except json.JSONDecodeError:
+            self._logger.debug(f"HTTP Response [{response.status_code}] (RAW): {response.text}")
+        self._logger.debug(f"HTTP Response Headers: {response.headers}")
+
+    def _execute_request(
+        self, method: str, url: str, headers: dict, timeout: int, request_payload: Optional[dict] = None
+    ) -> requests.Response:
+        """Executes an HTTP request and returns the response."""
+        try:
+            if method == "GET":
+                response = requests.get(
+                    url,
+                    auth=(self.username, self.password),
+                    timeout=timeout,
+                    verify=self.verify_ssl_cert,
+                    headers=headers,
+                )
+            elif method == "PATCH":
+                response = requests.patch(
+                    url,
+                    auth=(self.username, self.password),
+                    timeout=timeout,
+                    verify=self.verify_ssl_cert,
+                    headers=headers,
+                    data=json.dumps(request_payload),
+                )
+            elif method == "POST":
+                response = requests.post(
+                    url,
+                    auth=(self.username, self.password),
+                    timeout=timeout,
+                    verify=self.verify_ssl_cert,
+                    headers=headers,
+                    data=json.dumps(request_payload),
+                )
+            else:
+                raise ValueError(f"Unsupported HTTP method: {method}")
+        except Exception as e:
+            self._handle_request_exceptions(url, e)
+        self._log_response(response)
+        if not response.ok:
+            raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
+        return response
 
     # --- Getter and Setter ---
     @property
