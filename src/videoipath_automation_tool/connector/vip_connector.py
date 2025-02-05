@@ -3,6 +3,7 @@ import json
 import requests
 from typing import Optional
 
+from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get, ResponseV2Patch
@@ -199,13 +200,13 @@ class VideoIPathConnector:
         url = self._build_url(url_path)
 
         # 3. Execute PATCH request and receive response
-        data = body.model_dump(mode="json", by_alias=True)
+        request_payload = body.model_dump(mode="json", by_alias=True)
 
         try:
             response = requests.patch(
                 url,
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(data),
+                headers=self.HEADERS["PATCH"]["REST_V2"],
+                data=json.dumps(request_payload),
                 auth=(self.username, self.password),
                 timeout=self.TIMEOUTS["PATCH"],
                 verify=self.verify_ssl_cert,
@@ -252,50 +253,61 @@ class VideoIPathConnector:
 
         return response_object
 
-    def http_post_rpc(self, url_path: str, body: dict) -> ResponseRPC:
-        """Method to execute a POST request to the VideoIPath API for RPC calls.
+    def http_post_rpc(self, url_path: str, body: RequestRPC) -> ResponseRPC:
+        """
+        Executes a RPC POST request to the VideoIPath API.
+
+        This method validates the URL, constructs the request, and handles API responses.
 
         Args:
-            url_path (str): URL path (e.g. "/api/getCurrentUser"). Attention: Only allowed for RPC calls.
-            body (dict): Request body as dictionary
-
-        Raises:
-            e: RequestException
-            ValueError: Not a valid RPC URL path or error in API response
-
-        Returns:
-            ResponseRPC: validated response object
+            url_path (str): The API endpoint path (e.g., "/api/updateDevices").
+            body (RequestRPC): The request body object.
+        ...
         """
+        # 1. Check URL Path
+        self._validate_url(url_path, "POST", "RPC_API")
 
-        # 1. Construct URL
-        if not url_path.startswith("/api/"):
-            raise ValueError("RPC calls are only allowed for /api/ URL paths.")
+        # 2. Construct URL
+        url = self._build_url(url_path)
 
-        protocol = "https" if self.use_https else "http"
-        url = f"{protocol}://{self.server_address}{url_path}"
+        # 3. Execute POST request and receive response
+        request_payload = body.model_dump(mode="json", by_alias=True)
 
-        # 2. Execute POST request and receive response
         try:
             response = requests.post(
                 url,
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(body),
+                headers=self.HEADERS["POST"]["RPC_API"],
+                data=json.dumps(request_payload),
                 auth=(self.username, self.password),
                 timeout=self.TIMEOUTS["POST"],
                 verify=self.verify_ssl_cert,
             )
+        except requests.exceptions.Timeout:
+            self._logger.warning(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
+            raise TimeoutError(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
+        except requests.exceptions.ConnectionError:
+            self._logger.warning(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
+            raise ConnectionError(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
         except requests.exceptions.RequestException as e:
-            self._logger.error(f"Error in POST request: {e}")
-            raise e from None
+            self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=e))
+            raise
 
-        self._logger.debug(f"HTTP-POST Response: {response.json()}")
+        # 4. Log response
+        try:
+            self._logger.debug(f"HTTP-POST Response [{response.status_code}]: {response.json()}")
+        except json.JSONDecodeError:
+            self._logger.debug(f"HTTP-POST Response [{response.status_code}] (RAW): {response.text}")
+        self._logger.debug(f"HTTP-POST Response Headers: {response.headers}")
 
-        # 3. Validate response format
+        if not response.ok:
+            raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
+        
+        # 5. Validate basic response format
         response_object = ResponseRPC.model_validate(response.json())
 
-        # 4. Validate response status
+        # 6. Validate response status
         if not response_object.header.ok:
-            raise ValueError(f"Error in API response: {response_object.header.caption}, {response_object.header.msg}")
+            raise ValueError(f"Error in API response for path {url}: {response_object.header.caption}, {response_object.header.msg}")
 
         return response_object
 

@@ -15,13 +15,13 @@ class RequestRpcData(BaseModel):
     remove: list = Field(default_factory=list)
 
 
-class RequestRpc(BaseModel):
+class RequestRPC(BaseModel):
     """Request RPC Model."""
 
     header: RequestRpcHeader = Field(default_factory=RequestRpcHeader)
     data: RequestRpcData = Field(default_factory=RequestRpcData)
 
-    def add(self, id: str, model: BaseModel) -> "RequestRpc":
+    def add(self, id: str, model: BaseModel) -> "RequestRPC":
         """Method to add a new Config to VideoIPath
 
         Args:
@@ -31,7 +31,7 @@ class RequestRpc(BaseModel):
         self.data.add[id] = model.model_dump(mode="json", by_alias=True)
         return self
 
-    def update(self, id: str, model: BaseModel) -> "RequestRpc":
+    def update(self, id: str, model: BaseModel) -> "RequestRPC":
         """Method to update a Config in VideoIPath
 
         Args:
@@ -41,7 +41,7 @@ class RequestRpc(BaseModel):
         self.data.update[id] = model.model_dump(mode="json", by_alias=True)
         return self
 
-    def remove(self, id: str | list[str]) -> "RequestRpc":
+    def remove(self, id: str | list[str]) -> "RequestRPC":
         """Method to remove a Config from VideoIPath
 
         Args:

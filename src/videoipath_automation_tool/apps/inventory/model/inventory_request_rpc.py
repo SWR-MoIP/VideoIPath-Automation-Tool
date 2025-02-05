@@ -1,8 +1,8 @@
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
-from videoipath_automation_tool.connector.models.request_rpc import RequestRpc
+from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
 
 
-class InventoryRequestRpc(RequestRpc):
+class InventoryRequestRpc(RequestRPC):
     # Wrapper class for RequestRpc
 
     def add(self, device: InventoryDevice):
