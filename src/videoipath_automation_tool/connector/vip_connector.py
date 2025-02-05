@@ -30,7 +30,14 @@ class VideoIPathConnector:
     HEADERS = {
         "GET": {
             "REST_V2": {"Content-Type": "application/json", "Accept-Encoding": "gzip, deflate"},
-        }
+        },
+        "PATCH": {
+            "REST_V2": {"Content-Type": "application/json", "Accept-Encoding": "gzip, deflate"},
+        },
+        "POST": {
+            "REST_V2": {"Content-Type": "application/json", "Accept-Encoding": "gzip, deflate"},
+            "RPC_API": {"Content-Type": "application/json", "Accept-Encoding": "gzip, deflate"},
+        },
     }
 
     EXCEPTION_MESSAGES = {
@@ -281,7 +288,7 @@ class VideoIPathConnector:
         self._logger.debug(f"Verifying connection to '{url}'")
         response = self.http_get_v2(url, auth_check=False)
 
-        if response is not None and response.header.code == "OK":
+        if response and hasattr(response, "header") and response.header.code == "OK":
             return True
 
         return False
@@ -301,7 +308,7 @@ class VideoIPathConnector:
         except PermissionError:
             return False
 
-        if response is not None and response.header.code == "OK" and response.header.auth is True:
+        if response and hasattr(response, "header") and response.header.code == "OK" and response.header.auth is True:
             return True
 
         return False
@@ -503,7 +510,7 @@ class VideoIPathConnector:
                     timeout=timeout,
                     verify=self.verify_ssl_cert,
                     headers=headers,
-                    data=json.dumps(request_payload),
+                    data=json.dumps(request_payload) if request_payload else None,
                 )
             elif method == "POST":
                 response = requests.post(
@@ -512,7 +519,7 @@ class VideoIPathConnector:
                     timeout=timeout,
                     verify=self.verify_ssl_cert,
                     headers=headers,
-                    data=json.dumps(request_payload),
+                    data=json.dumps(request_payload) if request_payload else None,
                 )
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
