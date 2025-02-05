@@ -1,7 +1,7 @@
 import logging
 import json
 import requests
-from typing import Optional
+from typing import Literal, Optional
 
 from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
@@ -262,7 +262,19 @@ class VideoIPathConnector:
         Args:
             url_path (str): The API endpoint path (e.g., "/api/updateDevices").
             body (RequestRPC): The request body object.
-        ...
+
+        Returns:
+            ResponseRPC: The validated API response object.
+
+        Raises:
+            ValueError: If the URL path is invalid or the API response contains an error.
+            TimeoutError: If the request times out.
+            ConnectionError: If the server cannot be reached.
+            requests.RequestException: For other network-related errors.
+
+        Example:
+            response = connector.http_post_rpc("/api/updateDevices", body)
+            print(response.data)
         """
         # 1. Check URL Path
         self._validate_url(url_path, "POST", "RPC_API")
@@ -301,13 +313,15 @@ class VideoIPathConnector:
 
         if not response.ok:
             raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
-        
+
         # 5. Validate basic response format
         response_object = ResponseRPC.model_validate(response.json())
 
         # 6. Validate response status
         if not response_object.header.ok:
-            raise ValueError(f"Error in API response for path {url}: {response_object.header.caption}, {response_object.header.msg}")
+            raise ValueError(
+                f"Error in API response for path {url}: {response_object.header.caption}, {response_object.header.msg}"
+            )
 
         return response_object
 
@@ -354,7 +368,9 @@ class VideoIPathConnector:
             version = response.data["status"]["system"]["about"]["version"]
             self._videoipath_version = version
         except:
-            print("Error while fetching VideoIPath version.")
+            error_message = "Error while fetching VideoIPath version."
+            self._logger.error(error_message)
+            raise ValueError(error_message)
 
     # --- Internal Methods ---
     def _validate_and_initialize_connector(self):
@@ -460,13 +476,15 @@ class VideoIPathConnector:
                         raise ValueError(error_message) from None
             current_nodes = next_nodes
 
-    def _validate_url(self, url_path: str, http_method: str, api_type: str):
+    def _validate_url(
+        self, url_path: str, http_method: Literal["GET", "PATCH", "POST"], api_type: Literal["REST_V2", "RPC_API"]
+    ):
         """Validates if a given URL is allowed based on the method and API type.
 
         Args:
             url_path (str): The API URL path to validate.
-            http_method (str): The HTTP method (GET, PATCH, POST).
-            api_type (str): The API type (REST_V2, RPC_API).
+            http_method (Literal["GET", "PATCH", "POST"]): The HTTP method to validate.
+            api_type (Literal["REST_V2", "RPC_API"]): The API type to validate.
 
         Raises:
             ValueError: If the URL is not allowed.
