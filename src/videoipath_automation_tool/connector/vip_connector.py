@@ -69,11 +69,12 @@ class VideoIPathConnector:
         self.password = password
         self.use_https = use_https
         self.verify_ssl_cert = verify_ssl_cert
-        self.server_address = server_address  # Server address has to be set after use_https, because address might change use_https setting
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_connector")
         self._logger.debug(f"Logger initialized: '{self._logger.name}'")
         self._videoipath_version = ""
 
+        self.server_address = server_address  # Server address has to be set after use_https, because address might change use_https setting
+        
         # Validate and initialize connector
         self._validate_and_initialize_connector()
         self._logger.info("VideoIPath connector initialized.")
