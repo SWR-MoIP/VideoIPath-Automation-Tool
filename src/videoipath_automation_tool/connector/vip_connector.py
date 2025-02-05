@@ -62,21 +62,19 @@ class VideoIPathConnector:
             use_https (bool): If `True`, HTTPS is used for the connection (default: `True`).
             verify_ssl_cert (bool): If `True`, SSL certificate verification is enabled (default: `True`).
             logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
-            _videoipath_version (str): VideoIPath version retrieved from the server.
-            _timeouts (dict): Default timeout values for HTTP methods (`get`: 5s, `post`: 10s, `patch`: 30s).
         """
+        # Initialize attributes
         self.username = username
         self.password = password
+        self.use_https = use_https
         self.verify_ssl_cert = verify_ssl_cert
+        self.server_address = server_address # Server address has to be set after use_https, because address might change use_https setting
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_connector")
+        self._logger.debug(f"Logger initialized: '{self._logger.name}'")
         self._videoipath_version = ""
 
-        self.use_https = use_https
-        self.server_address = server_address
-
-        self._logger.debug(f"Logger initialized: '{self._logger.name}'")
-
-        self._initialize_connector()
+        # Validate and initialize connector
+        self._validate_and_initialize_connector()
         self._logger.info("VideoIPath connector initialized.")
 
     def http_get_v2(self, url_path: str, auth_check: bool = True, node_check: bool = True) -> ResponseV2Get:
@@ -106,7 +104,7 @@ class VideoIPathConnector:
             print(response.data)
         """
 
-        # 1. Check URL
+        # 1. Check URL Path
         self._validate_url(url_path, "GET", "REST_V2")
 
         if "/..." in url_path:
@@ -135,7 +133,8 @@ class VideoIPathConnector:
         except requests.exceptions.RequestException as e:
             self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=e))
             raise
-
+        
+        # 4. Log response
         try:
             self._logger.debug(f"HTTP-GET Response [{response.status_code}]: {response.json()}")
         except json.JSONDecodeError:
@@ -145,13 +144,14 @@ class VideoIPathConnector:
         if not response.ok:
             raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
 
-        # 4. Validate response format
+        # 5. Validate basic response format
         response_object = ResponseV2Get.model_validate(response.json())
 
-        # 5. Validate response status
+        # 6. Validate response status
         if response_object.header.code != "OK":
             raise ValueError(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
 
+        # 7. Check if authentication is successful
         if auth_check:
             if not response_object.header.auth:
                 raise PermissionError(
@@ -160,7 +160,7 @@ class VideoIPathConnector:
         else:
             self._logger.debug("Authentication check skipped.")
 
-        # 6. Check if all nodes in the URL path are present in the response data
+        # 8. Check if all nodes in the URL path are present in the response data
         if node_check:
             self._validate_v2_response_data(response_object, url_path)
         else:
@@ -169,28 +169,36 @@ class VideoIPathConnector:
         return response_object
 
     def http_patch_v2(self, url_path: str, body: RequestV2Patch) -> ResponseV2Patch:
-        """Method to execute a REST v2 PATCH request to the VideoIPath API.
+        """
+        Executes a REST v2 PATCH request to the VideoIPath API.
+
+        This method validates the URL, constructs the request, and handles API responses.
 
         Args:
-            url_path (str): URL path (e.g. "/rest/v2/data/status/system/about/version")
-            body (dict): Request body as dictionary
-
-        Raises:
-            e: RequestException
-            ValueError: Not a valid REST v2 URL path or error in API response
+            url_path (str): The API endpoint path (e.g., "/rest/v2/data/config/network/nGraphElements").
+            body (RequestV2Patch): The request body object.
 
         Returns:
-            ResponseV2: validated response object
+            ResponseV2Patch: The validated API response object.
+
+        Raises:
+            ValueError: If the URL path is invalid or the API response contains an error.
+            TimeoutError: If the request times out.
+            ConnectionError: If the server cannot be reached.
+            requests.RequestException: For other network-related errors.
+
+        Example:
+            response = connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
+            print(response.data)
         """
 
-        # 1. Construct URL
-        if not url_path.startswith("/rest/v2/"):
-            raise ValueError("REST v2 calls are only allowed for /rest/v2/ URL paths.")
+        # 1. Check URL Path
+        self._validate_url(url_path, "PATCH", "REST_V2")
 
-        protocol = "https" if self.use_https else "http"
-        url = f"{protocol}://{self.server_address}{url_path}"
+        # 2. Construct URL
+        url = self._build_url(url_path)
 
-        # 2. Execute PATCH request and receive response
+        # 3. Execute PATCH request and receive response
         data = body.model_dump(mode="json", by_alias=True)
 
         try:
@@ -202,19 +210,30 @@ class VideoIPathConnector:
                 timeout=self.TIMEOUTS["PATCH"],
                 verify=self.verify_ssl_cert,
             )
+        except requests.exceptions.Timeout:
+            self._logger.warning(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
+            raise TimeoutError(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
+        except requests.exceptions.ConnectionError:
+            self._logger.warning(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
+            raise ConnectionError(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
         except requests.exceptions.RequestException as e:
-            self._logger.error(f"Error in PATCH request: {e}")
-            raise e from None
+            self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=e))
+            raise
 
-        self._logger.debug(f"HTTP-PATCH Response: {response.json()}")
+        # 4. Log response
+        try:
+            self._logger.debug(f"HTTP-PATCH Response [{response.status_code}]: {response.json()}")
+        except json.JSONDecodeError:
+            self._logger.debug(f"HTTP-PATCH Response [{response.status_code}] (RAW): {response.text}")
+        self._logger.debug(f"HTTP-PATCH Response Headers: {response.headers}")
 
         if not response.ok:
             raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
 
-        # 3. Validate response format
+        # 5. Validate basic response format
         response_object = ResponseV2Patch.model_validate(response.json())
 
-        # 4. Validate response status
+        # 6. Validate response status
         if response_object.header.code != "OK":
             raise ValueError(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
 
@@ -313,7 +332,7 @@ class VideoIPathConnector:
             print("Error while fetching VideoIPath version.")
 
     # --- Internal Methods ---
-    def _initialize_connector(self):
+    def _validate_and_initialize_connector(self):
         # --- Validate server address ---
         if not self.server_address:
             error_message = "Server address is required."
@@ -446,8 +465,15 @@ class VideoIPathConnector:
             raise ValueError(error_message)
 
     def _build_url(self, url_path: str) -> str:
-        """Builds the full API URL."""
-        return f"{self.base_url}{url_path}"
+        """Builds the full API URL.
+        
+        Args:
+            url_path (str): The relative URL path. E.g., "/rest/v2/data/status/system/about/version"
+
+        Returns:
+            str: The full URL. E.g., "https://vip.company.com/rest/v2/data/status/system/about/version"
+        """
+        return f"{self.base_url.rstrip('/')}/{url_path.lstrip('/')}"
 
     # --- Getter and Setter ---
     @property
