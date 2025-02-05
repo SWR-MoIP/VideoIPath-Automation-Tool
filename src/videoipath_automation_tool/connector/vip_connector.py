@@ -35,8 +35,8 @@ class VideoIPathConnector:
             password (str): Password for authentication.
             use_https (bool): If `True`, HTTPS is used for the connection (default: `True`).
             verify_ssl_cert (bool): If `True`, SSL certificate verification is enabled (default: `True`).
-            _logger (logging.Logger): Logger instance
-            _videoipath_version (str): VideoIPath version
+            logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
+            _videoipath_version (str): VideoIPath version retrieved from the server.
             _timeouts (dict): Default timeout values for HTTP methods (`get`: 5s, `post`: 10s, `patch`: 30s).
         """
         self.username = username
@@ -70,12 +70,12 @@ class VideoIPathConnector:
         """
 
         # 1. Check URL
-        if not (
-            url_path == "/rest/v2/data/*"
-            or url_path.startswith("/rest/v2/data/config/")
-            or url_path.startswith("/rest/v2/data/status/")
-        ):
-            error_message = "REST v2 calls are only allowed for URL paths starting with '/rest/v2/data/config/' or '/rest/v2/data/status/'."
+        ALLOWED_URL_PREFIXES = {"/rest/v2/data/config/", "/rest/v2/data/status/"}
+
+        if url_path != "/rest/v2/data/*" and not any(url_path.startswith(prefix) for prefix in ALLOWED_URL_PREFIXES):
+            error_message = (
+                f"Invalid URL path '{url_path}'. Allowed prefixes: '/rest/v2/data/*', {', '.join(ALLOWED_URL_PREFIXES)}"
+            )
             self._logger.error(error_message)
             raise ValueError(error_message)
 
@@ -85,8 +85,7 @@ class VideoIPathConnector:
             raise ValueError(error_message)
 
         # 2. Construct URL
-        protocol = "https" if self.use_https else "http"
-        url = f"{protocol}://{self.server_address}{url_path}"
+        url = self._build_url(url_path)
 
         # 3. Execute GET request and receive response
         try:
@@ -100,11 +99,23 @@ class VideoIPathConnector:
                     "Accept-Encoding": "gzip, deflate",
                 },
             )
-        except requests.exceptions.RequestException as e:
-            self._logger.error(f"Error in GET request: {e}")
-            raise e from None
 
-        self._logger.debug(f"HTTP-GET Response: {response.json()}")
+        except requests.exceptions.Timeout:
+            self._logger.error(f"Timeout error while requesting {url}")
+            raise TimeoutError(f"Timeout while requesting {url}")
+
+        except requests.exceptions.ConnectionError:
+            self._logger.error(f"Connection error while requesting {url}")
+            raise ConnectionError(f"Could not connect to {url}")
+
+        except requests.exceptions.RequestException as e:
+            self._logger.error(f"General request error for {url}: {e}")
+            raise
+
+        try:
+            self._logger.debug(f"HTTP-GET Response: {response.json()}")
+        except json.JSONDecodeError:
+            self._logger.debug(f"HTTP-GET Response could not be decoded as JSON. Response as text: {response.text}")
 
         if not response.ok:
             raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
@@ -379,6 +390,10 @@ class VideoIPathConnector:
                         self._logger.debug(f"Response Data: {response_data.model_dump(mode='json')}")
                         raise ValueError(error_message) from None
             current_nodes = next_nodes
+
+    def _build_url(self, url_path: str) -> str:
+        protocol = "https" if self.use_https else "http"
+        return f"{protocol}://{self.server_address}{url_path}"
 
     # --- Getter and Setter ---
     @property

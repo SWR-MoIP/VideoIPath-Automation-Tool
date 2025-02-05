@@ -213,9 +213,7 @@ class ProfileAPI(BaseModel):
             response = self.vip_connector.http_get_v2("/rest/v2/data/config/profiles/*/tags/**")
         else:
             hidden = "true" if mode == "hidden_only" else "false"
-            response = self.vip_connector.http_get_v2(
-                f"/rest/v2/data/config/profiles/* where hidden={hidden} /tags/**"
-            )
+            response = self.vip_connector.http_get_v2(f"/rest/v2/data/config/profiles/* where hidden={hidden} /tags/**")
 
         tags = []
         data = response.data["config"]["profiles"]["_items"]
@@ -233,9 +231,11 @@ class ProfileAPI(BaseModel):
             reference_profile (Profile): Reference Profile.
             staged_profile (Profile): Staged Profile.
         """
-        diff = DeepDiff(reference_profile.model_dump(mode="json"), staged_profile.model_dump(mode="json"), ignore_order=True)
+        diff = DeepDiff(
+            reference_profile.model_dump(mode="json"), staged_profile.model_dump(mode="json"), ignore_order=True
+        )
         return diff
-        
+
     def analyze_profile_configuration_changes(self, staged_profile: Profile):
         """
         Analyze the configuration changes between a Profile and the VideoIPath System.

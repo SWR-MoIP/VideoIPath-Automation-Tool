@@ -165,4 +165,3 @@ class ProfileApp:
         cloned_profile.vid = f"_: {cloned_profile.id}"
         cloned_profile.name += " (clone)"
         return cloned_profile
-        

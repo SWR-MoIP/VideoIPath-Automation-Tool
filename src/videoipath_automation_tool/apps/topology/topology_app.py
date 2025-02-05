@@ -105,7 +105,16 @@ class TopologyApp:
         """
         return self._topology_api._fetch_nGraphElement_by_key(vertex_id)
 
-    def get_vertex_by_label(self, vertex_label: str, mode: Literal["user_defined", "factory"] = "user_defined") -> BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | List[BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex]:
+    def get_vertex_by_label(
+        self, vertex_label: str, mode: Literal["user_defined", "factory"] = "user_defined"
+    ) -> (
+        BaseDevice
+        | CodecVertex
+        | IpVertex
+        | UnidirectionalEdge
+        | GenericVertex
+        | List[BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex]
+    ):
         """
         Get a vertex by its user defined label.
         In case of multiple vertices with the same label, a list of vertices will be returned.
