@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import (
     NGraphElement,
     Descriptor,
-    VertexType,
 )
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ip_vertex import IpVertex
 

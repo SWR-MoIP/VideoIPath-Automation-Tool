@@ -68,7 +68,7 @@ class VideoIPathConnector:
         self.password = password
         self.use_https = use_https
         self.verify_ssl_cert = verify_ssl_cert
-        self.server_address = server_address # Server address has to be set after use_https, because address might change use_https setting
+        self.server_address = server_address  # Server address has to be set after use_https, because address might change use_https setting
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_connector")
         self._logger.debug(f"Logger initialized: '{self._logger.name}'")
         self._videoipath_version = ""
@@ -133,7 +133,7 @@ class VideoIPathConnector:
         except requests.exceptions.RequestException as e:
             self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=e))
             raise
-        
+
         # 4. Log response
         try:
             self._logger.debug(f"HTTP-GET Response [{response.status_code}]: {response.json()}")
@@ -236,7 +236,7 @@ class VideoIPathConnector:
         # 6. Validate response status
         if response_object.header.code != "OK":
             raise ValueError(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
-        
+
         # 7. Check if authentication is successful
         if auth_check:
             if not response_object.header.auth:
@@ -246,7 +246,6 @@ class VideoIPathConnector:
         else:
             self._logger.debug("Authentication check skipped.")
 
-        # Attention: No content validation for PATCH requests implemented at this point, this should be done in the calling method
         # Note: Content validation for PATCH responses is not implemented in this method.
         # It is recommended to perform any necessary validation of the response content
         # in the calling method after receiving the response from this PATCH request.
@@ -480,7 +479,7 @@ class VideoIPathConnector:
 
     def _build_url(self, url_path: str) -> str:
         """Builds the full API URL.
-        
+
         Args:
             url_path (str): The relative URL path. E.g., "/rest/v2/data/status/system/about/version"
 
