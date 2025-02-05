@@ -3,6 +3,7 @@ from typing import List
 from videoipath_automation_tool.apps.preferences.model import *
 
 from videoipath_automation_tool.apps.preferences.model.preferences_allocator_pools import MulticastRangeInfoEntry
+from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 
@@ -34,7 +35,9 @@ class PreferencesAPI:
         Remove one or multiple multicast pools from the VideoIPath System Preferences by label.
         """
 
-        body = {"header": {"id": 0}, "data": {"remove": remove_list}}
+        body = RequestRPC()
+        body.header.id = 0
+        body.data.remove = remove_list
 
         return self.vip_connector.http_post_rpc("/api/updateMulticastRanges", body=body)
 
@@ -51,7 +54,10 @@ class PreferencesAPI:
         for pool in pool_list:
             update_dict[pool.id] = pool.dump_range_rpc()
 
-        body = {"header": {"id": 0}, "data": {"update": update_dict}}
+        # body = {"header": {"id": 0}, "data": {"update": update_dict}}
         # print(body)
+        body = RequestRPC()
+        body.header.id = 0
+        body.data.update = update_dict
 
         return self.vip_connector.http_post_rpc("/api/updateMulticastRanges", body=body)

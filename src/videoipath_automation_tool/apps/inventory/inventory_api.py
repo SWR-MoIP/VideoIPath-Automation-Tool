@@ -145,10 +145,9 @@ class InventoryAPI(BaseModel):
         body.add(modified_device)
         # remove driver_id from customSettings
         modified_device.configuration.config.customSettings.__delattr__("driver_id")
-        dumped_body = body.model_dump(mode="json")
-        self.logger.debug(f"RPC Request body generated: {dumped_body}")
+        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode="json")}")
 
-        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=dumped_body)
+        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
 
         if response.header.status != "OK":
             raise ValueError(f"Failed to add device to VideoIPath-Inventory. Error: {response}")
@@ -199,10 +198,10 @@ class InventoryAPI(BaseModel):
         body.update(device)
         # remove driver_id from customSettings
         device.configuration.config.customSettings.__delattr__("driver_id")
-        dumped_body = body.model_dump(mode="json")
-        self.logger.debug(f"RPC Request body generated: {dumped_body}")
 
-        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=dumped_body)
+        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode="json")}")
+
+        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
 
         if response.header.status != "OK":
             raise ValueError(f"Failed to update device in VideoIPath-Inventory. Error: {response}")
@@ -216,10 +215,10 @@ class InventoryAPI(BaseModel):
         self.logger.debug(f"Removing device with id '{device_id}' from VideoIPath-Inventory.")
         body = InventoryRequestRpc()
         body.remove(device_id)
-        dumped_body = body.model_dump(mode="json")
-        self.logger.debug(f"RPC Request body generated: {dumped_body}")
 
-        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=dumped_body)
+        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode="json")}")
+
+        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
 
         if response.header.status != "OK":
             raise ValueError(f"Failed to remove device from VideoIPath-Inventory. Error: {response}")
