@@ -168,7 +168,7 @@ class VideoIPathConnector:
 
         return response_object
 
-    def http_patch_v2(self, url_path: str, body: RequestV2Patch) -> ResponseV2Patch:
+    def http_patch_v2(self, url_path: str, body: RequestV2Patch, auth_check: bool = True) -> ResponseV2Patch:
         """
         Executes a REST v2 PATCH request to the VideoIPath API.
 
@@ -236,6 +236,20 @@ class VideoIPathConnector:
         # 6. Validate response status
         if response_object.header.code != "OK":
             raise ValueError(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
+        
+        # 7. Check if authentication is successful
+        if auth_check:
+            if not response_object.header.auth:
+                raise PermissionError(
+                    f"Authentication failed for path {url}: {response.status_code}, {response.reason}"
+                )
+        else:
+            self._logger.debug("Authentication check skipped.")
+
+        # Attention: No content validation for PATCH requests implemented at this point, this should be done in the calling method
+        # Note: Content validation for PATCH responses is not implemented in this method.
+        # It is recommended to perform any necessary validation of the response content
+        # in the calling method after receiving the response from this PATCH request.
 
         return response_object
 
