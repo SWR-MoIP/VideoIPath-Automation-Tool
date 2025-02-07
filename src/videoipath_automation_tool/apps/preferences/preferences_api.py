@@ -1,7 +1,6 @@
 from typing import List
 
 from videoipath_automation_tool.apps.preferences.model import *
-
 from videoipath_automation_tool.apps.preferences.model.preferences_allocator_pools import MulticastRangeInfoEntry
 from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC

@@ -1,15 +1,16 @@
 import logging
 import time
 from typing import List, Optional
-from pydantic import BaseModel, IPvAnyAddress, model_validator
 from uuid import uuid4
+
+from pydantic import BaseModel, IPvAnyAddress, model_validator
 
 from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
-from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
+from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
 
 
 class InventoryAPI(BaseModel):

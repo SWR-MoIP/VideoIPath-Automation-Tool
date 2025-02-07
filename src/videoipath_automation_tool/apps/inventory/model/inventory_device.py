@@ -1,12 +1,13 @@
 from typing import Optional
+
 from pydantic import BaseModel
 
+from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
 from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration import (
     Auth,
     DeviceConfiguration,
     DriverInfos,
 )
-from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
 
 
 class InventoryDevice(BaseModel, validate_assignment=True):

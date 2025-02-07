@@ -1,5 +1,4 @@
 import logging
-
 from typing import List, Optional
 
 from videoipath_automation_tool.apps.profile.model.profile_model import Profile, SuperProfile

@@ -1,12 +1,12 @@
 import logging
 from typing import List, Optional
 
-from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
+from videoipath_automation_tool.apps.inventory.model import driver_literals
+from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration_compare import (
     InventoryDeviceComparison,
 )
-from videoipath_automation_tool.apps.inventory.model import driver_literals
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
 

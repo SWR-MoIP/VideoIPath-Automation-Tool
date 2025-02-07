@@ -1,15 +1,14 @@
 import logging
-from pydantic import BaseModel, model_validator
 from typing import List, Literal, Optional
+
 from deepdiff.diff import DeepDiff
+from pydantic import BaseModel, model_validator
 
 from videoipath_automation_tool.apps.preferences.model import *
-
+from videoipath_automation_tool.apps.profile.model.profile_model import Profile, SuperProfile
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-
-from videoipath_automation_tool.apps.profile.model.profile_model import Profile, SuperProfile
 
 
 class ProfileAPI(BaseModel):

@@ -6,6 +6,7 @@
 # Implement model for device status
 
 from typing import List
+
 from pydantic import BaseModel, Field
 
 

@@ -1,6 +1,7 @@
+import uuid
 from enum import Enum
 from typing import List, Optional, Union
-import uuid
+
 from pydantic import BaseModel, Field, field_validator
 
 # REST V2 Model

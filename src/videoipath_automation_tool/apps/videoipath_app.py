@@ -1,18 +1,15 @@
-# External Imports
 import logging
-from typing import Literal
 
-# Internal Imports
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
+from videoipath_automation_tool.apps.inventory.inventory_app import InventoryApp
 from videoipath_automation_tool.apps.preferences.preferences_api import PreferencesAPI
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
 from videoipath_automation_tool.apps.profile.profile_api import ProfileAPI
 from videoipath_automation_tool.apps.profile.profile_app import ProfileApp
 from videoipath_automation_tool.apps.topology.topology_api import TopologyAPI
-from videoipath_automation_tool.settings import Settings
-from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.apps.inventory.inventory_app import InventoryApp
 from videoipath_automation_tool.apps.topology.topology_app import TopologyApp
+from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
+from videoipath_automation_tool.settings import Settings
 
 
 class VideoIPathApp:
@@ -22,12 +19,12 @@ class VideoIPathApp:
 
     def __init__(
         self,
-        server_address=None,
-        username=None,
-        password=None,
+        server_address: str | None = None,
+        username: str | None = None,
+        password: str | None = None,
         use_https=None,
         verify_ssl_cert=None,
-        log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
+        log_level: str | None = None,
         environment=None,
     ):
         """Initialize the VideoIPath Automation Tool, establish connection to the VideoIPath-Server and initialize the Apps for interaction.
@@ -107,6 +104,15 @@ class VideoIPathApp:
             )
 
         # --- Initialize VideoIPath API Connector including check for connection and authentication ---
+        if vip_server_address is None:
+            raise ValueError("No server address provided. Please provide a server address.")
+
+        if not vip_username:
+            raise ValueError("No username provided. Please provide a username.")
+
+        if not vip_password:
+            raise ValueError("No password provided. Please provide a password.")
+
         self._videoipath_connector = VideoIPathConnector(
             server_address=vip_server_address,
             username=vip_username,

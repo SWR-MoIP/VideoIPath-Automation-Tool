@@ -1,6 +1,5 @@
 from typing import Literal
 
-
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get, ResponseV2Patch
 from videoipath_automation_tool.connector.vip_base_connector import VideoIPathBaseConnector

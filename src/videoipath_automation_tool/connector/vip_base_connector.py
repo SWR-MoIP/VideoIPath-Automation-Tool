@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
 import json
 import logging
+from abc import ABC, abstractmethod
 from typing import Optional
 
 import requests

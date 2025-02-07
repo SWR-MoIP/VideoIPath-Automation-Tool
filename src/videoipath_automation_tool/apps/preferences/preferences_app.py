@@ -1,5 +1,6 @@
 import logging
 from typing import List, Optional
+
 from pydantic.networks import IPvAnyAddress
 
 from videoipath_automation_tool.apps.preferences.model.preferences_allocator_pools import (
