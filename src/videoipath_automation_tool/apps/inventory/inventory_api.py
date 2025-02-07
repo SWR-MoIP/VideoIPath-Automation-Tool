@@ -145,7 +145,7 @@ class InventoryAPI(BaseModel):
         body.add(modified_device)
         # remove driver_id from customSettings
         modified_device.configuration.config.customSettings.__delattr__("driver_id")
-        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode="json")}")
+        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
         response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
 
@@ -199,7 +199,7 @@ class InventoryAPI(BaseModel):
         # remove driver_id from customSettings
         device.configuration.config.customSettings.__delattr__("driver_id")
 
-        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode="json")}")
+        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
         response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
 
@@ -216,7 +216,7 @@ class InventoryAPI(BaseModel):
         body = InventoryRequestRpc()
         body.remove(device_id)
 
-        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode="json")}")
+        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
         response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
 
