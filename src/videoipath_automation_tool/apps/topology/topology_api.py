@@ -78,9 +78,9 @@ class TopologyAPI(BaseModel):
         """
 
         if mode == "user_defined":
-            path = f"/rest/v2/data/config/network/nGraphElements/* where descriptor.label='{label.replace("/", "%2F")}' /**"
+            path = f"/rest/v2/data/config/network/nGraphElements/* where descriptor.label='{label.replace('/', '%2F')}' /**"
         elif mode == "factory":
-            path = f"/rest/v2/data/config/network/nGraphElements/* where fDescriptor.label='{label.replace("/", "%2F")}' /**"
+            path = f"/rest/v2/data/config/network/nGraphElements/* where fDescriptor.label='{label.replace('/', '%2F')}' /**"
 
         response = self.vip_connector.http_get_v2(path)
 

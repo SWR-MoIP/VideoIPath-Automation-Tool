@@ -318,3 +318,21 @@ class InventoryAPI(BaseModel):
             if "_id" in response.data["config"]["devman"]["devices"]["_items"][0]:
                 return True
         return False
+
+    def device_label_exists(self, label: str) ->  List[str] | None:
+        """Method to check if a device with given user-defined label exists in VideoIPath-Inventory
+
+        Args:
+            label (str): User defined label to check
+
+        Returns:
+            None | List[str]: List of device ids with the given label, None if label does not exist
+        """
+        response = self.vip_connector.http_get_v2(
+            f"/rest/v2/data/config/devman/devices/* where config.desc.label='{label}' /id"
+        )
+        if response.data and [] != response.data["config"]["devman"]["devices"]["_items"]:
+            if "_id" in response.data["config"]["devman"]["devices"]["_items"][0]:
+                if len(response.data["config"]["devman"]["devices"]["_items"]) >= 1:
+                    return [device["id"] for device in response.data["config"]["devman"]["devices"]["_items"]]
+        return None

@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
@@ -190,6 +190,14 @@ class InventoryApp:
                 raise ValueError(message)
             else:
                 self._logger.info(f"Device with id '{device_id}' removed from Inventory.")
+
+    def check_device_exists(self, label: str) -> None | List[str]:
+        """Method to check if a device with the given user-defined label exists in VideoIPath-Inventory.
+            Returns List of device_ids with the given label.
+            If no device with the given label exists, None is returned.
+        """
+        devices = self._inventory_api.device_label_exists(label)
+        return devices
 
     @staticmethod
     def dump_configuration(device: InventoryDevice) -> dict:
