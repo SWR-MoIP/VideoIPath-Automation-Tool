@@ -37,6 +37,7 @@ class VideoIPathConnector:
             logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
         """
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_connector")
+        self._videoipath_version = ""
 
         self._rest_connector = VideoIPathRestConnector(
             server_address=server_address,

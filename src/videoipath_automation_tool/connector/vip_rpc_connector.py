@@ -95,6 +95,8 @@ class VideoIPathRPCConnector(VideoIPathBaseConnector):
         except PermissionError:
             return False
 
+    # --- Internal methods ---
+
     def _validate_url(self, url_path: str):
         """Validates if a given URL is allowed.
 

@@ -32,8 +32,6 @@ class VideoIPathBaseConnector(ABC):
             verify_ssl_cert (bool): If `True`, SSL certificate verification is enabled (default: `True`).
             logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
         """
-
-        # Initialize attributes
         self._username = username
         self._password = password
         self._logger = logger
@@ -46,7 +44,6 @@ class VideoIPathBaseConnector(ABC):
             server_address
         )  # Server address has to be set after use_https, because address might change use_https setting
 
-        # Validate and initialize connector
         self._validate_and_initialize_connector()
         self._logger.info(f"{self.__class__.__name__} initialized.")
 
@@ -68,20 +65,18 @@ class VideoIPathBaseConnector(ABC):
         """
         raise NotImplementedError
 
+    # --- Internal methods ---
+
     def _validate_and_initialize_connector(self):
-        # --- Validate server address ---
         if not self.server_address:
             raise ValueError("Server address is required.")
 
-        # --- Validate username ---
         if not self._username:
             raise ValueError("Username is required.")
 
-        # --- Validate password ---
         if not self._password:
             raise ValueError("Password is required.")
 
-        # --- Test connection and authentication ---
         self._logger.debug(
             f"Testing connection to VideoIPath-Server with address: '{self.server_address}', username: '{self._username}' and provided password (Use HTTPS: '{self.use_https}', Verify SSL Cert: '{self.verify_ssl_cert}')."
         )
@@ -163,19 +158,6 @@ class VideoIPathBaseConnector(ABC):
         return response
 
     def _parse_server_address(self, server_address: str) -> str:
-        # Todo: Implement/Improve validation of server address
-        # Behaviors:
-        # 1. Check if valid hostname (?), URL, IPv4 or IPv6 (ToDo: Port allowed ? Yes/No)
-        # 2. If URL with http or https => remove http or https, if https => inform that https is enforced and set use_https to True
-        # 3. If "/" at the end => remove
-        # Format: e.g
-        #   - "192.168.0.1"
-        #   - "vip.company.com"
-        #   - "http://vip.company.com"
-        #   - "https://vip.company.com"
-        #   - "PC31543" (???)
-        # ToDo: Regex validation for hostname, URL, IPv4, IPv6
-
         if server_address.startswith("http://"):
             server_address = server_address.removeprefix("http://")
             self._logger.debug("Server address contains 'http://'. Removed.")
