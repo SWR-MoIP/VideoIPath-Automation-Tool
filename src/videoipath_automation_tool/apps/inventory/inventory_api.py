@@ -58,7 +58,7 @@ class InventoryAPI(BaseModel):
             mode = "all"
             request_filter = "/active"
 
-        response = self.vip_connector.http_get_v2(f"{request_base_url} {request_filter}")
+        response = self.vip_connector.rest.get(f"{request_base_url} {request_filter}")
 
         if response.data:
             devices = response.data["config"]["devman"]["devices"]["_items"]
@@ -147,7 +147,7 @@ class InventoryAPI(BaseModel):
         modified_device.configuration.config.customSettings.__delattr__("driver_id")
         self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
-        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
+        response = self.vip_connector.rpc.post("/api/updateDevices", body=body)
 
         if response.header.status != "OK":
             raise ValueError(f"Failed to add device to VideoIPath-Inventory. Error: {response}")
@@ -201,7 +201,7 @@ class InventoryAPI(BaseModel):
 
         self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
-        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
+        response = self.vip_connector.rpc.post("/api/updateDevices", body=body)
 
         if response.header.status != "OK":
             raise ValueError(f"Failed to update device in VideoIPath-Inventory. Error: {response}")
@@ -218,7 +218,7 @@ class InventoryAPI(BaseModel):
 
         self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
-        response = self.vip_connector.http_post_rpc("/api/updateDevices", body=body)
+        response = self.vip_connector.rpc.post("/api/updateDevices", body=body)
 
         if response.header.status != "OK":
             raise ValueError(f"Failed to remove device from VideoIPath-Inventory. Error: {response}")
@@ -237,7 +237,7 @@ class InventoryAPI(BaseModel):
         """
         if not validate_device_id_string(device_id=device_id, include_virtual=False):
             raise ValueError("device_id must start with 'device'.")
-        response = self.vip_connector.http_get_v2(f"/rest/v2/data/config/devman/devices/* where id='{device_id}' /**")
+        response = self.vip_connector.rest.get(f"/rest/v2/data/config/devman/devices/* where id='{device_id}' /**")
         if response.data and response.data["config"]["devman"]["devices"]["_items"]:
             device = InventoryDevice.parse_configuration(response.data["config"]["devman"]["devices"]["_items"][0])
             return device
@@ -252,7 +252,7 @@ class InventoryAPI(BaseModel):
         Returns:
             InventoryDevice: Device object
         """
-        response = self.vip_connector.http_get_v2(f"/rest/v2/data/config/devman/devices/* where meta.uuid='{uuid}' /**")
+        response = self.vip_connector.rest.get(f"/rest/v2/data/config/devman/devices/* where meta.uuid='{uuid}' /**")
         if response.data and response.data["config"]["devman"]["devices"]["_items"]:
             items = response.data["config"]["devman"]["devices"]["_items"]
             if len(items) > 1:
@@ -270,7 +270,7 @@ class InventoryAPI(BaseModel):
         Returns:
             DeviceStatus: Device status.
         """
-        response = self.vip_connector.http_get_v2(f"/rest/v2/data/status/devman/devices/* where id='{device_id}' /**")
+        response = self.vip_connector.rest.get(f"/rest/v2/data/status/devman/devices/* where id='{device_id}' /**")
         if response.data and response.data["status"]["devman"]["devices"]["_items"]:
             return DeviceStatus(**response.data["status"]["devman"]["devices"]["_items"][0])
         raise ValueError(f"Device with id '{device_id}' not found.")
@@ -278,7 +278,7 @@ class InventoryAPI(BaseModel):
     # Helpers
     def get_device_id_list(self) -> List[str]:
         url_path = "/rest/v2/data/config/devman/devices/*"
-        response = self.vip_connector.http_get_v2(url_path)
+        response = self.vip_connector.rest.get(url_path)
         if not response.data:
             raise ValueError("Response data is empty.")
         return [device["_id"] for device in response.data["config"]["devman"]["devices"]["_items"]]
@@ -289,9 +289,9 @@ class InventoryAPI(BaseModel):
             dict: {device_id: {"label": device_label_manually_set, "canonicalLabel": device_label_canonical, "address": device_ip}}
         """
         url = "/rest/v2/data/config/devman/devices/*/config/*/label,address"
-        config_data = self.vip_connector.http_get_v2(url)
+        config_data = self.vip_connector.rest.get(url)
         url = "/rest/v2/data/status/devman/devices/*/canonicalLabel"
-        status_data = self.vip_connector.http_get_v2(url)
+        status_data = self.vip_connector.rest.get(url)
 
         if not config_data.data or not status_data.data:
             raise ValueError("Response data is empty.")
@@ -313,13 +313,13 @@ class InventoryAPI(BaseModel):
 
     def device_id_exists(self, device_id: str) -> bool:
         """Method to check if a device id exists in VideoIPath-Inventory"""
-        response = self.vip_connector.http_get_v2(f"/rest/v2/data/config/devman/devices/* where id='{device_id}' /_id")
+        response = self.vip_connector.rest.get(f"/rest/v2/data/config/devman/devices/* where id='{device_id}' /_id")
         if response.data and [] != response.data["config"]["devman"]["devices"]["_items"]:
             if "_id" in response.data["config"]["devman"]["devices"]["_items"][0]:
                 return True
         return False
 
-    def device_label_exists(self, label: str) ->  List[str] | None:
+    def device_label_exists(self, label: str) -> List[str] | None:
         """Method to check if a device with given user-defined label exists in VideoIPath-Inventory
 
         Args:
@@ -328,7 +328,7 @@ class InventoryAPI(BaseModel):
         Returns:
             None | List[str]: List of device ids with the given label, None if label does not exist
         """
-        response = self.vip_connector.http_get_v2(
+        response = self.vip_connector.rest.get(
             f"/rest/v2/data/config/devman/devices/* where config.desc.label='{label}' /id"
         )
         if response.data and [] != response.data["config"]["devman"]["devices"]["_items"]:

@@ -1,5 +1,6 @@
 # External Imports
 import logging
+from typing import Literal
 
 # Internal Imports
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
@@ -26,7 +27,7 @@ class VideoIPathApp:
         password=None,
         use_https=None,
         verify_ssl_cert=None,
-        log_level=None,
+        log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
         environment=None,
     ):
         """Initialize the VideoIPath Automation Tool, establish connection to the VideoIPath-Server and initialize the Apps for interaction.

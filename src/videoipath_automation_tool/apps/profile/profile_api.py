@@ -70,7 +70,7 @@ class ProfileAPI(BaseModel):
         """
         Get all VideoIPath Profile names.
         """
-        response = self.vip_connector.http_get_v2("/rest/v2/data/config/pathman/profiles/*/name")
+        response = self.vip_connector.rest.get("/rest/v2/data/config/pathman/profiles/*/name")
         data = self._validate_response(response)
         return [item["name"] for item in data] if data else None
 
@@ -78,7 +78,7 @@ class ProfileAPI(BaseModel):
         """
         Get all VideoIPath Profiles.
         """
-        response = self.vip_connector.http_get_v2("/rest/v2/data/config/pathman/profiles/**")
+        response = self.vip_connector.rest.get("/rest/v2/data/config/pathman/profiles/**")
         data = self._validate_response(response)
 
         if len(data) == 0:
@@ -96,7 +96,7 @@ class ProfileAPI(BaseModel):
         """
         self.logger.debug(f"Requesting Profile/s with name '{name}'")
 
-        response = self.vip_connector.http_get_v2(f"/rest/v2/data/config/pathman/profiles/* where name='{name}'/**")
+        response = self.vip_connector.rest.get(f"/rest/v2/data/config/pathman/profiles/* where name='{name}'/**")
         data = self._validate_response(response)
 
         if len(data) == 0:
@@ -115,9 +115,7 @@ class ProfileAPI(BaseModel):
         """
         self.logger.debug(f"Requesting Profile with id '{profile_id}'")
 
-        response = self.vip_connector.http_get_v2(
-            f"/rest/v2/data/config/pathman/profiles/* where _id='{profile_id}' /**"
-        )
+        response = self.vip_connector.rest.get(f"/rest/v2/data/config/pathman/profiles/* where _id='{profile_id}' /**")
         data = self._validate_response(response)
 
         if len(data) == 0:
@@ -140,7 +138,7 @@ class ProfileAPI(BaseModel):
         """
         body = self._generate_profile_action([super_profile], [], [])
 
-        response = self.vip_connector.http_patch_v2("/rest/v2/data/config/pathman/profiles", body)
+        response = self.vip_connector.rest.patch("/rest/v2/data/config/pathman/profiles", body)
 
         # Check if response is OK and if the Profile was added, then fetch the Profile by ID and return it
         if response.header.ok and response.result:
@@ -164,7 +162,7 @@ class ProfileAPI(BaseModel):
 
         body = self._generate_profile_action([], [profile], [])
 
-        response = self.vip_connector.http_patch_v2("/rest/v2/data/config/pathman/profiles", body)
+        response = self.vip_connector.rest.patch("/rest/v2/data/config/pathman/profiles", body)
 
         # Check if response is OK and if the Profile was updated, then fetch the Profile by ID and return it
         if response.header.ok and response.result:
@@ -198,7 +196,7 @@ class ProfileAPI(BaseModel):
         else:
             raise ValueError("Invalid Profile object provided. Please provide a Profile or list of Profile objects.")
 
-        response = self.vip_connector.http_patch_v2("/rest/v2/data/config/pathman/profiles", body)
+        response = self.vip_connector.rest.patch("/rest/v2/data/config/pathman/profiles", body)
         return response
 
     def get_all_profile_tags(self, mode: Literal["all", "exclude_hidden", "hidden_only"] = "all") -> List[str]:
@@ -210,10 +208,10 @@ class ProfileAPI(BaseModel):
         """
 
         if mode == "all":
-            response = self.vip_connector.http_get_v2("/rest/v2/data/config/profiles/*/tags/**")
+            response = self.vip_connector.rest.get("/rest/v2/data/config/profiles/*/tags/**")
         else:
             hidden = "true" if mode == "hidden_only" else "false"
-            response = self.vip_connector.http_get_v2(f"/rest/v2/data/config/profiles/* where hidden={hidden} /tags/**")
+            response = self.vip_connector.rest.get(f"/rest/v2/data/config/profiles/* where hidden={hidden} /tags/**")
 
         tags = []
         data = response.data["config"]["profiles"]["_items"]

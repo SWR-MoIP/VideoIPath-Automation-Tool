@@ -1,51 +1,16 @@
 import logging
-import json
-import requests
-from typing import Literal, Optional
+from typing import Optional
 
-from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
-from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get, ResponseV2Patch
-from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
-from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
+from videoipath_automation_tool.connector.vip_rest_connector import (
+    VideoIPathRestConnector,
+)
+from videoipath_automation_tool.connector.vip_rpc_connector import (
+    VideoIPathRPCConnector,
+)
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 
 
 class VideoIPathConnector:
-    TIMEOUTS = {"GET": {"REST_V2": 5}, "POST": {"REST_V2": 10, "RPC_API": 10}, "PATCH": {"REST_V2": 10}}
-
-    ALLOWED_URLS = {
-        "GET": {
-            "REST_V2": {
-                "PREFIXES": {"/rest/v2/data/config/", "/rest/v2/data/status/"},
-                "EXACT_MATCHES": {"/rest/v2/data/*"},
-            }
-        },
-        "PATCH": {"REST_V2": {"PREFIXES": {"/rest/v2/data/config/"}, "EXACT_MATCHES": set()}},
-        "POST": {
-            "REST_V2": {"PREFIXES": set(), "EXACT_MATCHES": set()},
-            "RPC_API": {"PREFIXES": {"/api/"}, "EXACT_MATCHES": set()},
-        },
-    }
-
-    HEADERS = {
-        "GET": {
-            "REST_V2": {"Content-Type": "application/json", "Accept-Encoding": "gzip, deflate"},
-        },
-        "PATCH": {
-            "REST_V2": {"Content-Type": "application/json", "Accept-Encoding": "gzip, deflate"},
-        },
-        "POST": {
-            "REST_V2": {"Content-Type": "application/json", "Accept-Encoding": "gzip, deflate"},
-            "RPC_API": {"Content-Type": "application/json", "Accept-Encoding": "gzip, deflate"},
-        },
-    }
-
-    EXCEPTION_MESSAGES = {
-        "Timeout": "Timeout while requesting '{url}'",
-        "ConnectionError": "Connection error while requesting '{url}'",
-        "RequestException": "General request error for '{url}': {exception}",
-    }
-
     def __init__(
         self,
         server_address: str,
@@ -71,487 +36,47 @@ class VideoIPathConnector:
             verify_ssl_cert (bool): If `True`, SSL certificate verification is enabled (default: `True`).
             logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
         """
-        # Initialize attributes
-        self.username = username
-        self.password = password
-        self.use_https = use_https
-        self.verify_ssl_cert = verify_ssl_cert
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_connector")
-        self._logger.debug(f"Logger initialized: '{self._logger.name}'")
-        self._videoipath_version = ""
 
-        self.server_address = server_address  # Server address has to be set after use_https, because address might change use_https setting
-
-        # Validate and initialize connector
-        self._validate_and_initialize_connector()
-        self._logger.info("VideoIPath connector initialized.")
-
-    def http_get_v2(self, url_path: str, auth_check: bool = True, node_check: bool = True) -> ResponseV2Get:
-        """
-        Executes a REST v2 GET request to the VideoIPath API.
-
-        This method validates the URL, constructs the request, and handles API responses.
-        It optionally checks authentication and validates if response data matches the expected structure.
-
-        Args:
-            url_path (str): The API endpoint path (e.g., "/rest/v2/data/status/system/about/version").
-            auth_check (bool, optional): If `True`, verifies authentication status in the response (default: `True`).
-            node_check (bool, optional): If `True`, ensures that all expected nodes are present in the response data (default: `True`).
-
-        Returns:
-            ResponseV2Get: The validated API response object.
-
-        Raises:
-            ValueError: If the URL path is invalid or the API response contains an error.
-            PermissionError: If authentication fails.
-            TimeoutError: If the request times out.
-            ConnectionError: If the server cannot be reached.
-            requests.RequestException: For other network-related errors.
-
-        Example:
-            response = connector.http_get_v2("/rest/v2/data/status/system/about/version")
-            print(response.data)
-        """
-
-        # 1. Check URL Path
-        self._validate_url(url_path, "GET", "REST_V2")
-
-        if "/..." in url_path:
-            error_message = "Wildcard '/...' is not allowed in URL path."
-            self._logger.error(error_message)
-            raise ValueError(error_message)
-
-        # 2. Construct URL
-        url = self._build_url(url_path)
-
-        # 3. Execute GET request, log and check response
-        response = self._execute_request(
-            method="GET", url=url, headers=self.HEADERS["GET"]["REST_V2"], timeout=self.TIMEOUTS["GET"]["REST_V2"]
+        self._rest_connector = VideoIPathRestConnector(
+            server_address=server_address,
+            username=username,
+            password=password,
+            use_https=use_https,
+            verify_ssl_cert=verify_ssl_cert,
+            logger=self._logger,
         )
-
-        # 4. Log response
-        try:
-            self._logger.debug(f"HTTP-GET Response [{response.status_code}]: {response.json()}")
-        except json.JSONDecodeError:
-            self._logger.debug(f"HTTP-GET Response [{response.status_code}] (RAW): {response.text}")
-        self._logger.debug(f"HTTP-GET Response Headers: {response.headers}")
-
-        if not response.ok:
-            raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
-
-        # 4. Validate basic response format
-        response_object = ResponseV2Get.model_validate(response.json())
-
-        # 5. Validate response status
-        if response_object.header.code != "OK":
-            raise ValueError(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
-
-        # 6. Check if authentication is successful
-        if auth_check:
-            if not response_object.header.auth:
-                raise PermissionError(
-                    f"Authentication failed for path {url}: {response.status_code}, {response.reason}"
-                )
-        else:
-            self._logger.debug("Authentication check skipped.")
-
-        # 7. Check if all nodes in the URL path are present in the response data
-        if node_check:
-            self._validate_v2_response_data(response_object, url_path)
-        else:
-            self._logger.debug("Node check skipped.")
-
-        return response_object
-
-    def http_patch_v2(self, url_path: str, body: RequestV2Patch, auth_check: bool = True) -> ResponseV2Patch:
-        """
-        Executes a REST v2 PATCH request to the VideoIPath API.
-
-        This method validates the URL, constructs the request, and handles API responses.
-
-        Args:
-            url_path (str): The API endpoint path (e.g., "/rest/v2/data/config/network/nGraphElements").
-            body (RequestV2Patch): The request body object.
-
-        Returns:
-            ResponseV2Patch: The validated API response object.
-
-        Raises:
-            ValueError: If the URL path is invalid or the API response contains an error.
-            TimeoutError: If the request times out.
-            ConnectionError: If the server cannot be reached.
-            requests.RequestException: For other network-related errors.
-
-        Example:
-            response = connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
-            print(response.data)
-        """
-
-        # 1. Check URL Path
-        self._validate_url(url_path, "PATCH", "REST_V2")
-
-        # 2. Construct URL
-        url = self._build_url(url_path)
-
-        # 3. Execute PATCH request, log and check response
-        request_payload = body.model_dump(mode="json", by_alias=True)
-
-        response = self._execute_request(
-            method="PATCH",
-            url=url,
-            headers=self.HEADERS["PATCH"]["REST_V2"],
-            timeout=self.TIMEOUTS["PATCH"]["REST_V2"],
-            request_payload=request_payload,
+        self._rpc_connector = VideoIPathRPCConnector(
+            server_address=server_address,
+            username=username,
+            password=password,
+            use_https=use_https,
+            verify_ssl_cert=verify_ssl_cert,
+            logger=self._logger,
         )
-
-        # 4. Validate basic response format
-        response_object = ResponseV2Patch.model_validate(response.json())
-
-        # 5. Validate response status
-        if response_object.header.code != "OK":
-            raise ValueError(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
-
-        # 6. Check if authentication is successful
-        if auth_check:
-            if not response_object.header.auth:
-                raise PermissionError(
-                    f"Authentication failed for path {url}: {response.status_code}, {response.reason}"
-                )
-        else:
-            self._logger.debug("Authentication check skipped.")
-
-        # Note: Content validation for PATCH responses is not implemented in this method.
-        # It is recommended to perform any necessary validation of the response content
-        # in the calling method after receiving the response from this PATCH request.
-
-        return response_object
-
-    def http_post_rpc(self, url_path: str, body: RequestRPC) -> ResponseRPC:
-        """
-        Executes a RPC POST request to the VideoIPath API.
-
-        This method validates the URL, constructs the request, and handles API responses.
-
-        Args:
-            url_path (str): The API endpoint path (e.g., "/api/updateDevices").
-            body (RequestRPC): The request body object.
-
-        Returns:
-            ResponseRPC: The validated API response object.
-
-        Raises:
-            ValueError: If the URL path is invalid or the API response contains an error.
-            TimeoutError: If the request times out.
-            ConnectionError: If the server cannot be reached.
-            requests.RequestException: For other network-related errors.
-
-        Example:
-            response = connector.http_post_rpc("/api/updateDevices", body)
-            print(response.data)
-        """
-        # 1. Check URL Path
-        self._validate_url(url_path, "POST", "RPC_API")
-
-        # 2. Construct URL
-        url = self._build_url(url_path)
-
-        # 3. Execute POST request, log and check response
-        request_payload = body.model_dump(mode="json", by_alias=True)
-
-        response = self._execute_request(
-            method="POST",
-            url=url,
-            headers=self.HEADERS["POST"]["RPC_API"],
-            timeout=self.TIMEOUTS["POST"]["RPC_API"],
-            request_payload=request_payload,
-        )
-
-        # 4. Validate basic response format
-        response_object = ResponseRPC.model_validate(response.json())
-
-        # 5. Validate response status
-        if not response_object.header.ok:
-            raise ValueError(
-                f"Error in API response for path {url}: {response_object.header.caption}, {response_object.header.msg}"
-            )
-
-        return response_object
-
-    def verify_api_connection(self) -> bool:
-        """Method to test the connection to the VideoIPath API by executing a GET request to the root path.
-
-        Returns:
-            bool: True if connection successful, False otherwise
-        """
-        url = "/rest/v2/data/*"
-
-        self._logger.debug(f"Verifying connection to '{url}'")
-        response = self.http_get_v2(url, auth_check=False)
-
-        if response and hasattr(response, "header") and response.header.code == "OK":
-            return True
-
-        return False
-
-    def verify_api_authentication(self) -> bool:
-        """Method to test the authentication to the VideoIPath API by executing a GET request to the root path.
-
-        Returns:
-            bool: True if authentication successful, False otherwise
-        """
-        url = "/rest/v2/data/*"
-
-        self._logger.debug(f"Verifying authentication to '{url}' with user '{self.username}'")
-
-        try:
-            response = self.http_get_v2(url)
-        except PermissionError:
-            return False
-
-        if response and hasattr(response, "header") and response.header.code == "OK" and response.header.auth is True:
-            return True
-
-        return False
 
     def refresh_videoipath_version(self):
         """Method to refresh the VideoIPath version attribute."""
         try:
-            response = self.http_get_v2("/rest/v2/data/status/system/about/version", auth_check=False)
+            response = self.rest.get("/rest/v2/data/status/system/about/version", auth_check=False)
             version = response.data["status"]["system"]["about"]["version"]
             self._videoipath_version = version
-        except:
-            error_message = "Error while fetching VideoIPath version."
-            self._logger.error(error_message)
-            raise ValueError(error_message)
-
-    # --- Internal Methods ---
-    def _validate_and_initialize_connector(self):
-        # --- Validate server address ---
-        if not self.server_address:
-            error_message = "Server address is required."
-            self._logger.error(error_message)
-            raise ValueError(error_message)
-
-        # --- Validate username ---
-        if not self.username:
-            error_message = "Username is required."
-            self._logger.error(error_message)
-            raise ValueError(error_message)
-
-        # --- Validate password ---
-        if not self.password:
-            error_message = "Password is required."
-            self._logger.error(error_message)
-            raise ValueError(error_message)
-
-        # --- Test connection and authentication ---
-        self._logger.debug(
-            f"Testing connection to VideoIPath-Server with address: '{self.server_address}', username: '{self.username}' and provided password (Use HTTPS: '{self.use_https}', Verify SSL Cert: '{self.verify_ssl_cert}')."
-        )
-
-        if not self.verify_api_connection():
-            error_message = "Connection to VideoIPath failed."
-            self._logger.error(error_message)
-            raise ConnectionError(error_message)
-
-        if not self.verify_api_authentication():
-            error_message = "Authentication to VideoIPath failed."
-            self._logger.error(error_message)
-            raise PermissionError(error_message)
-
-        self._logger.debug("Connection and authentication to VideoIPath successful.")
-
-    def _validate_server_address(self, server_address: str) -> str:
-        # Todo: Implement/Improve validation of server address
-        # Behaviors:
-        # 1. Check if valid hostname (?), URL, IPv4 or IPv6 (ToDo: Port allowed ? Yes/No)
-        # 2. If URL with http or https => remove http or https, if https => inform that https is enforced and set use_https to True
-        # 3. If "/" at the end => remove
-        # Format: e.g
-        #   - "192.168.0.1"
-        #   - "vip.company.com"
-        #   - "http://vip.company.com"
-        #   - "https://vip.company.com"
-        #   - "PC31543" (???)
-
-        # raise ValueError(f"Server address '{value}' is not valid.")
-
-        if server_address.startswith("http://"):
-            server_address = server_address.removeprefix("http://")
-            self._logger.debug("Server address contains 'http://'. Removed.")
-        elif server_address.startswith("https://"):
-            server_address = server_address.removeprefix("https://")
-
-            if not self.use_https:
-                self._logger.warning("Server address contains 'https://' but HTTPS is not set. Enforcing HTTPS.")
-                self.use_https = True
-            else:
-                self._logger.debug("Server address contains 'https://'. Removed.")
-
-        if server_address.endswith("/"):
-            server_address = server_address.removesuffix("/")
-            self._logger.info("Server address contains trailing '/'. Removed.")
-
-        # ToDo: Regex validation for hostname, URL, IPv4, IPv6
-
-        return server_address
-
-    def _validate_v2_response_data(self, response_data: ResponseV2Get, resource_path: str):
-        """
-        Validate if all nodes in the URL path are present in the response data.
-        Comma-separated nodes are supported.
-        Limitation: Validation stops at the first "*" or "_items" node, because the response data structure after these nodes is unknown.
-        """
-
-        nodes = []
-        for node in resource_path.removeprefix("/rest/v2/").split("/"):
-            if node and "*" not in node and "_items" not in node:
-                nodes.append(node)
-            else:
-                break
-
-        current_nodes = [response_data.model_dump(mode="json")]
-
-        for node in nodes:
-            node_parts = node.split(",")
-            next_nodes = []
-            for current_node in current_nodes:
-                for part in node_parts:
-                    try:
-                        next_nodes.append(current_node[part])
-                    except KeyError:
-                        error_message = (
-                            f"Node '{part}' ('/{node}') not found in response. Check the URL path: {resource_path}"
-                        )
-                        self._logger.error(error_message)
-                        self._logger.debug(f"Response Data: {response_data.model_dump(mode='json')}")
-                        raise ValueError(error_message) from None
-            current_nodes = next_nodes
-
-    def _validate_url(
-        self, url_path: str, http_method: Literal["GET", "PATCH", "POST"], api_type: Literal["REST_V2", "RPC_API"]
-    ):
-        """Validates if a given URL is allowed based on the method and API type.
-
-        Args:
-            url_path (str): The API URL path to validate.
-            http_method (Literal["GET", "PATCH", "POST"]): The HTTP method to validate.
-            api_type (Literal["REST_V2", "RPC_API"]): The API type to validate.
-
-        Raises:
-            ValueError: If the URL is not allowed.
-        """
-        try:
-            allowed_prefixes = self.ALLOWED_URLS[http_method][api_type]["PREFIXES"]
-            allowed_exact_matches = self.ALLOWED_URLS[http_method][api_type]["EXACT_MATCHES"]
-        except KeyError:
-            valid_methods = ", ".join(self.ALLOWED_URLS.keys())
-            valid_apis = ", ".join(self.ALLOWED_URLS.get(http_method, {}).keys())
-            error_message = f"Invalid method/API type: '{http_method}/{api_type}'. Valid methods: {valid_methods}. Valid APIs for {http_method}: {valid_apis}."
-            self._logger.error(error_message)
-            raise ValueError(error_message)
-
-        if not (url_path in allowed_exact_matches or any(url_path.startswith(prefix) for prefix in allowed_prefixes)):
-            error_message = (
-                f"Invalid URL path '{url_path}'. Allowed exact matches: {allowed_exact_matches}, "
-                f"allowed prefixes: {', '.join(allowed_prefixes)}"
-            )
-            self._logger.error(error_message)
-            raise ValueError(error_message)
-
-    def _build_url(self, url_path: str) -> str:
-        """Builds the full API URL.
-
-        Args:
-            url_path (str): The relative URL path. E.g., "/rest/v2/data/status/system/about/version"
-
-        Returns:
-            str: The full URL. E.g., "https://vip.company.com/rest/v2/data/status/system/about/version"
-        """
-        return f"{self.base_url.rstrip('/')}/{url_path.lstrip('/')}"
-
-    def _handle_request_exceptions(self, url: str, exception: Exception):
-        """Handles exceptions raised during an HTTP request."""
-        if isinstance(exception, requests.exceptions.Timeout):
-            self._logger.warning(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
-            raise TimeoutError(self.EXCEPTION_MESSAGES["Timeout"].format(url=url))
-        elif isinstance(exception, requests.exceptions.ConnectionError):
-            self._logger.warning(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
-            raise ConnectionError(self.EXCEPTION_MESSAGES["ConnectionError"].format(url=url))
-        else:
-            self._logger.error(self.EXCEPTION_MESSAGES["RequestException"].format(url=url, exception=exception))
-            raise
-
-    def _log_response(self, response):
-        """Logs the HTTP response."""
-        try:
-            self._logger.debug(f"HTTP Response [{response.status_code}]: {response.json()}")
-        except json.JSONDecodeError:
-            self._logger.debug(f"HTTP Response [{response.status_code}] (RAW): {response.text}")
-        self._logger.debug(f"HTTP Response Headers: {response.headers}")
-
-    def _execute_request(
-        self, method: str, url: str, headers: dict, timeout: int, request_payload: Optional[dict] = None
-    ) -> requests.Response:
-        """Executes an HTTP request and returns the response."""
-        try:
-            if method == "GET":
-                response = requests.get(
-                    url,
-                    auth=(self.username, self.password),
-                    timeout=timeout,
-                    verify=self.verify_ssl_cert,
-                    headers=headers,
-                )
-            elif method == "PATCH":
-                response = requests.patch(
-                    url,
-                    auth=(self.username, self.password),
-                    timeout=timeout,
-                    verify=self.verify_ssl_cert,
-                    headers=headers,
-                    data=json.dumps(request_payload) if request_payload else None,
-                )
-            elif method == "POST":
-                response = requests.post(
-                    url,
-                    auth=(self.username, self.password),
-                    timeout=timeout,
-                    verify=self.verify_ssl_cert,
-                    headers=headers,
-                    data=json.dumps(request_payload) if request_payload else None,
-                )
-            else:
-                raise ValueError(f"Unsupported HTTP method: {method}")
-        except Exception as e:
-            self._handle_request_exceptions(url, e)
-        self._log_response(response)
-        if not response.ok:
-            raise ValueError(f"Error in API response for path {url}: {response.status_code}, {response.reason}")
-        return response
+        except Exception as error:
+            error_message = f"Error while fetching VideoIPath version: {error}"
+            raise Exception(error_message)
 
     # --- Getter and Setter ---
+
+    @property
+    def rest(self) -> VideoIPathRestConnector:
+        return self._rest_connector
+
+    @property
+    def rpc(self) -> VideoIPathRPCConnector:
+        return self._rpc_connector
+
     @property
     def videoipath_version(self) -> str:
         if self._videoipath_version == "":
             self.refresh_videoipath_version()
         return self._videoipath_version
-
-    @property
-    def server_address(self) -> str:
-        return self._server_address
-
-    @property
-    def base_url(self) -> str:
-        """Returns the base URL of the API (including protocol)."""
-        protocol = "https" if self.use_https else "http"
-        return f"{protocol}://{self.server_address}"
-
-    @server_address.setter
-    def server_address(self, value: str):
-        value = self._validate_server_address(value)
-
-        if not value or value.strip() == "":
-            raise ValueError("Server address cannot be empty.")
-
-        self._server_address = value

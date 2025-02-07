@@ -23,7 +23,7 @@ class PreferencesAPI:
         Get all multicast pools from the VideoIPath System Preferences.
         """
         multicast_pools = []
-        response = self.vip_connector.http_get_v2("/rest/v2/data/status/configman/multicastRangeInfo/**")
+        response = self.vip_connector.rest.get("/rest/v2/data/status/configman/multicastRangeInfo/**")
         if not response.data:
             raise ValueError("No data returned from VideoIPath API.")
         for pool in response.data["status"]["configman"]["multicastRangeInfo"]["_items"]:
@@ -39,7 +39,7 @@ class PreferencesAPI:
         body.header.id = 0
         body.data.remove = remove_list
 
-        return self.vip_connector.http_post_rpc("/api/updateMulticastRanges", body=body)
+        return self.vip_connector.rpc.post("/api/updateMulticastRanges", body=body)
 
     def update_multicast_pool(self, pools: MulticastRangeInfoEntry | List[MulticastRangeInfoEntry]):
         """
@@ -60,4 +60,4 @@ class PreferencesAPI:
         body.header.id = 0
         body.data.update = update_dict
 
-        return self.vip_connector.http_post_rpc("/api/updateMulticastRanges", body=body)
+        return self.vip_connector.rpc.post("/api/updateMulticastRanges", body=body)

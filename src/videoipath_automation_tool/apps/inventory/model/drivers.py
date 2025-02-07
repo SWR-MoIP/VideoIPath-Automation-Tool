@@ -371,6 +371,7 @@ class CustomSettings_com_nevion_virtuoso_mi_0_1_0(BaseModel, validate_assignment
         title="Support uplink routing for MADI cards",
     )
 
+
 class CustomSettings_com_nevion_virtuoso_re_0_1_0(BaseModel, validate_assignment=True):
     driver_id: Literal["com.nevion.virtuoso_re-0.1.0"] = "com.nevion.virtuoso_re-0.1.0"
     enable_advanced_communication_check: bool = Field(

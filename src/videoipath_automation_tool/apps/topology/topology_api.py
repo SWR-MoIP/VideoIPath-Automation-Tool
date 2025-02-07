@@ -82,7 +82,7 @@ class TopologyAPI(BaseModel):
         elif mode == "factory":
             path = f"/rest/v2/data/config/network/nGraphElements/* where fDescriptor.label='{label.replace('/', '%2F')}' /**"
 
-        response = self.vip_connector.http_get_v2(path)
+        response = self.vip_connector.rest.get(path)
 
         if response.data is None:
             raise ValueError(f"nGraphElement with label {label} not found.")
@@ -108,7 +108,7 @@ class TopologyAPI(BaseModel):
             RequestRestV2: RequestRestV2 object.
         """
         body = self._generate_nGraphElement_payload(add_elements=[], update_elements=[element], remove_elements=[])
-        return self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
+        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
     def _fetch_device_configuration_from_topology(self, device_id: str) -> TopologyDeviceConfiguration:
         """Get a topology device by its device id.
@@ -175,7 +175,7 @@ class TopologyAPI(BaseModel):
         if not device_id.startswith("device"):
             raise ValueError("device_id must start with 'device'.")
 
-        data = self.vip_connector.http_get_v2(
+        data = self.vip_connector.rest.get(
             f"/rest/v2/data/status/network/nGraphFromDrivers/* where _id='{device_id}' /**"
         )
 
@@ -254,7 +254,7 @@ class TopologyAPI(BaseModel):
             return_data.append(BaseDevice.model_validate(self._fetch_nGraphElement_by_key(device_id)))
 
         elif type_filter == "codecVertex":
-            api_response = self.vip_connector.http_get_v2(
+            api_response = self.vip_connector.rest.get(
                 f"/rest/v2/data/config/network/nGraphElements/* where deviceId='{device_id}' and type='codecVertex' /**"
             )
             if api_response is None:
@@ -264,7 +264,7 @@ class TopologyAPI(BaseModel):
                     return_data.append(CodecVertex.model_validate(item))
 
         elif type_filter == "genericVertex":
-            api_response = self.vip_connector.http_get_v2(
+            api_response = self.vip_connector.rest.get(
                 f"/rest/v2/data/config/network/nGraphElements/* where deviceId='{device_id}' and type='genericVertex' /**"
             )
             if api_response is None:
@@ -274,7 +274,7 @@ class TopologyAPI(BaseModel):
                     return_data.append(GenericVertex.model_validate(item))
 
         elif type_filter == "ipVertex":
-            api_response = self.vip_connector.http_get_v2(
+            api_response = self.vip_connector.rest.get(
                 f"/rest/v2/data/config/network/nGraphElements/* where deviceId='{device_id}' and type='ipVertex' /**"
             )
             if api_response is None:
@@ -290,7 +290,7 @@ class TopologyAPI(BaseModel):
             # Therefore all revision values are fetched first and merged with the edge config data.
 
             # 1. Fetch revision data
-            revision_data = self.vip_connector.http_get_v2(
+            revision_data = self.vip_connector.rest.get(
                 "/rest/v2/data/config/network/nGraphElements/* where type = 'unidirectionalEdge' /id,rev,vid"
             )
             rev_dict = {}
@@ -300,7 +300,7 @@ class TopologyAPI(BaseModel):
                 rev_dict[id] = rev
 
             # 2. Fetch edge data
-            api_response = self.vip_connector.http_get_v2(
+            api_response = self.vip_connector.rest.get(
                 f"/rest/v2/data/status/network/edgesByDevice/* where _id='{device_id}' /**"
             )
             if api_response is None:
@@ -349,9 +349,7 @@ class TopologyAPI(BaseModel):
         Returns:
             BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge: nGraphElement object.
         """
-        response = self.vip_connector.http_get_v2(
-            f"/rest/v2/data/config/network/nGraphElements/* where _id='{key}' /**"
-        )
+        response = self.vip_connector.rest.get(f"/rest/v2/data/config/network/nGraphElements/* where _id='{key}' /**")
         if response.data is None:
             raise ValueError(f"nGraphElement with key {key} not found.")
         if response.data["config"]["network"]["nGraphElements"]["_items"]:
@@ -475,7 +473,7 @@ class TopologyAPI(BaseModel):
             + device.configuration.external_edges
         )
         body = self._generate_nGraphElement_payload(add_elements=add_list, update_elements=[], remove_elements=[])
-        return self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
+        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
     def apply_device_configuration_changes(
         self, device_difference: TopologyDeviceComparison, validate_only: bool = False
@@ -508,13 +506,13 @@ class TopologyAPI(BaseModel):
         )
 
         if len(body.actions) > 0:
-            return self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
+            return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
         else:
             return None
 
     def get_next_virtual_device_id(self):
         """Get the next virtual device id."""
-        response = self.vip_connector.http_get_v2(
+        response = self.vip_connector.rest.get(
             "/rest/v2/data/config/network/nGraphElements/* where isVirtual=true and type='baseDevice' /id"
         )
         ids = [
@@ -554,7 +552,7 @@ class TopologyAPI(BaseModel):
         Raises:
             ValueError: If the response from the server is invalid or incomplete.
         """
-        response_data = self.vip_connector.http_get_v2(
+        response_data = self.vip_connector.rest.get(
             "/rest/v2/data/config/network/nGraphElements/* where type = 'baseDevice' /maps/0/x,y"
         )
 
@@ -577,7 +575,7 @@ class TopologyAPI(BaseModel):
         Returns:
             tuple[int, int]: Tuple containing the x and y position of the device.
         """
-        data = self.vip_connector.http_get_v2(
+        data = self.vip_connector.rest.get(
             f"/rest/v2/data/config/network/nGraphElements/* where _id='{device_id}' /maps/0/x,y"
         )
         return data.data["config"]["network"]["nGraphElements"]["_items"][0]["maps"][0]["x"], data.data["config"][
@@ -643,7 +641,7 @@ class TopologyAPI(BaseModel):
             raise ValueError("Mode must be 'absolute' or 'relative'")
 
         body = self._generate_nGraphElement_payload(add_elements=[], update_elements=[base_device], remove_elements=[])
-        resp = self.vip_connector.http_patch_v2("/rest/v2/data/config/network/nGraphElements", body)
+        resp = self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
         return resp
 
