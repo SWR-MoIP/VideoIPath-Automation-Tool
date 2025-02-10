@@ -319,8 +319,12 @@ class CodecVertex(Vertex):
         """GUI: Connection Defaults | MAIN | Destination Mac-address"""
         self.mainDstMac = mac_address
 
-    # --- Getter and Setter Aliases ---
-    main_multicast_pool = main_destination_pool
-    spare_multicast_pool = spare_destination_pool
-    main_multicast_ip = main_destination_ip
-    spare_multicast_ip = spare_destination_ip
+    @property
+    def spare_destination_mac(self) -> None | MacAddress:
+        """GUI: Connection Defaults | SPARE | Destination Mac-address"""
+        return self.spareDstMac
+
+    @spare_destination_mac.setter
+    def spare_destination_mac(self, mac_address: MacAddress):
+        """GUI: Connection Defaults | SPARE | Destination Mac-address"""
+        self.spareDstMac = mac_address
