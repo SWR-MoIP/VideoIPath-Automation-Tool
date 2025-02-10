@@ -1,16 +1,16 @@
 import re
-from typing import Union, List
+from typing import List, Union
 
 from pydantic import Field, field_validator
 
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import (
-    NGraphElement,
-    Gpid,
-    MapsElement,
-    VertexType,
     ConfigPriority,
     Control,
+    Gpid,
+    MapsElement,
+    NGraphElement,
     SipsMode,
+    VertexType,
 )
 
 

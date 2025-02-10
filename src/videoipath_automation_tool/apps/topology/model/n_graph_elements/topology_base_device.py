@@ -1,11 +1,10 @@
-from typing import Literal, List, Optional
-
+from typing import List, Literal, Optional
 
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import (
-    NGraphElement,
     IconSize,
     IconType,
     MapsElement,
+    NGraphElement,
     SdpStrategy,
 )
 

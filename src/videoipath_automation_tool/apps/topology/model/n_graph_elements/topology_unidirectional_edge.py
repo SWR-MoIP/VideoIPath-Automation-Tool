@@ -1,13 +1,13 @@
 from enum import Enum
-from typing import Literal, Optional, List
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import (
-    NGraphElement,
-    Descriptor,
-)
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ip_vertex import IpVertex
+from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import (
+    Descriptor,
+    NGraphElement,
+)
 
 
 class Bandwidth(BaseModel, validate_assignment=True):

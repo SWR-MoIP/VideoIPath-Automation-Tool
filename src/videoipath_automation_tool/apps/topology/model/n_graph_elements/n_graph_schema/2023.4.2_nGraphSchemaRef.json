@@ -3633,15 +3633,5 @@
                 }
             }
         }
-    },
-    "header": {
-        "auth": true,
-        "caption": "Operation Successful",
-        "code": "OK",
-        "errorDetails": [],
-        "id": "",
-        "msg": [],
-        "ok": true,
-        "user": "bfe-lab"
     }
 }

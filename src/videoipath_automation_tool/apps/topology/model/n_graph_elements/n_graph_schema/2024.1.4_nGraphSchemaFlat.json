@@ -13,6 +13,7 @@
                                     "label": "BaseDevice"
                                 },
                                 "isNullable": false,
+                                "options": [],
                                 "status": "Current",
                                 "type": "map",
                                 "values": {
@@ -282,6 +283,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -294,6 +296,7 @@
                                                 "label": ""
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -358,10 +361,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "User defined tags",
+                                                "label": "Tags"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -379,6 +383,7 @@
                                     "label": "CodecVertex"
                                 },
                                 "isNullable": false,
+                                "options": [],
                                 "status": "Current",
                                 "type": "map",
                                 "values": {
@@ -394,6 +399,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -551,6 +557,7 @@
                                                 "label": "DtMap"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -605,9 +612,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Extra Alert Filters"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -616,10 +624,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "Formats added when used as endpoint",
+                                                "label": "Extra Formats"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -850,6 +859,7 @@
                                                 "label": "Point ID"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -877,6 +887,7 @@
                                                 "label": "Igmp Source"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -893,6 +904,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -905,6 +917,7 @@
                                                 "label": "Main Destination Ip Address"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -953,6 +966,7 @@
                                                 "label": "Main Destination Vlan"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -965,6 +979,7 @@
                                                 "label": "Main Source Ip Gateway"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -977,6 +992,7 @@
                                                 "label": "Main Source Ip Address"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1004,6 +1020,7 @@
                                                 "label": "Main Source Ip Netmask"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1012,10 +1029,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "Collection of object coordinates for various maps/contexts.",
+                                                "label": "Maps"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1043,6 +1061,7 @@
                                                 "label": "Vertex Partner Config"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1055,6 +1074,7 @@
                                                 "label": "Public"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -1067,6 +1087,7 @@
                                                 "label": "SDP support"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -1149,6 +1170,7 @@
                                                 "label": "Spare Destination Ip Address"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1197,6 +1219,7 @@
                                                 "label": "Spare Destination Vlan"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1209,6 +1232,7 @@
                                                 "label": "Spare Source Ip Gateway"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1221,6 +1245,7 @@
                                                 "label": "Spare Source Ip Address"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1248,6 +1273,7 @@
                                                 "label": "Spare Source Ip Netmask"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1256,10 +1282,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "User defined tags",
+                                                "label": "Tags"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1276,6 +1303,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -1348,6 +1376,7 @@
                                     "label": "GenericVertex"
                                 },
                                 "isNullable": false,
+                                "options": [],
                                 "status": "Current",
                                 "type": "map",
                                 "values": {
@@ -1363,6 +1392,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -1457,6 +1487,7 @@
                                                 "label": "DtMap"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1511,9 +1542,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Extra Alert Filters"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1744,6 +1776,7 @@
                                                 "label": "Point ID"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1775,6 +1808,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -1783,10 +1817,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "Collection of object coordinates for various maps/contexts.",
+                                                "label": "Maps"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1850,10 +1885,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "User defined tags",
+                                                "label": "Tags"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -1870,6 +1906,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -1942,6 +1979,7 @@
                                     "label": "IpTransformVertex"
                                 },
                                 "isNullable": false,
+                                "options": [],
                                 "status": "Current",
                                 "type": "map",
                                 "values": {
@@ -1957,6 +1995,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -2051,6 +2090,7 @@
                                                 "label": "DtMap"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2105,9 +2145,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Extra Alert Filters"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2338,6 +2379,7 @@
                                                 "label": "Point ID"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2369,6 +2411,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -2377,10 +2420,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "Collection of object coordinates for various maps/contexts.",
+                                                "label": "Maps"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2444,10 +2488,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "User defined tags",
+                                                "label": "Tags"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2464,6 +2509,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -2536,6 +2582,7 @@
                                     "label": "IpVertex"
                                 },
                                 "isNullable": false,
+                                "options": [],
                                 "status": "Current",
                                 "type": "map",
                                 "values": {
@@ -2551,6 +2598,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -2645,6 +2693,7 @@
                                                 "label": "DtMap"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2699,9 +2748,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Extra Alert Filters"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2932,6 +2982,7 @@
                                                 "label": "Point ID"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2959,6 +3010,7 @@
                                                 "label": "IP Address"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2971,6 +3023,7 @@
                                                 "label": "IP Netmask"
                                             },
                                             "isNullable": true,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -2987,6 +3040,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -2995,10 +3049,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "Collection of object coordinates for various maps/contexts.",
+                                                "label": "Maps"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3011,6 +3066,7 @@
                                                 "label": "Public"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3078,6 +3134,7 @@
                                                 "label": "Supports C-Pipe Config"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3090,6 +3147,7 @@
                                                 "label": "Supports Igmp Config"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3102,6 +3160,7 @@
                                                 "label": "Supports Mac Forwarding Config"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3114,6 +3173,7 @@
                                                 "label": "Supports Nso Config"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3126,6 +3186,7 @@
                                                 "label": "Supports Openflow Config"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3138,6 +3199,7 @@
                                                 "label": "Supports Static Igmp Config"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3150,6 +3212,7 @@
                                                 "label": "Supports Vlan Config"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3162,6 +3225,7 @@
                                                 "label": "Supports VPLS Config"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3170,10 +3234,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "User defined tags",
+                                                "label": "Tags"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3190,6 +3255,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3292,6 +3358,7 @@
                                     "label": "ResourceTransform"
                                 },
                                 "isNullable": false,
+                                "options": [],
                                 "status": "Current",
                                 "type": "map",
                                 "values": {
@@ -3307,6 +3374,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3375,10 +3443,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "Factory resource ids",
+                                                "label": "fResourceIds"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3402,10 +3471,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "User resource ids",
+                                                "label": "resourceIds"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3415,9 +3485,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Tags"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3450,6 +3521,7 @@
                                     "label": "RouterVertex"
                                 },
                                 "isNullable": false,
+                                "options": [],
                                 "status": "Current",
                                 "type": "map",
                                 "values": {
@@ -3465,6 +3537,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3559,6 +3632,7 @@
                                                 "label": "DtMap"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3613,9 +3687,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Extra Alert Filters"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3846,6 +3921,7 @@
                                                 "label": "Point ID"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3877,6 +3953,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -3885,10 +3962,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "Collection of object coordinates for various maps/contexts.",
+                                                "label": "Maps"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3967,10 +4045,11 @@
                                         "_schema": {
                                             "default": {},
                                             "descriptor": {
-                                                "desc": "",
-                                                "label": ""
+                                                "desc": "User defined tags",
+                                                "label": "Tags"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -3987,6 +4066,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -4059,6 +4139,7 @@
                                     "label": "UnidirectionalEdge"
                                 },
                                 "isNullable": false,
+                                "options": [],
                                 "status": "Current",
                                 "type": "map",
                                 "values": {
@@ -4074,6 +4155,7 @@
                                                 "widget": "CheckBox"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "bool"
                                         }
@@ -4199,9 +4281,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Exclude Formats"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -4256,9 +4339,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Include Formats"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -4309,9 +4393,10 @@
                                             "default": {},
                                             "descriptor": {
                                                 "desc": "",
-                                                "label": ""
+                                                "label": "Tags"
                                             },
                                             "isNullable": false,
+                                            "options": [],
                                             "status": "Current",
                                             "type": "unknown"
                                         }
@@ -4415,15 +4500,5 @@
                 }
             }
         }
-    },
-    "header": {
-        "auth": true,
-        "caption": "Operation Successful",
-        "code": "OK",
-        "errorDetails": [],
-        "id": "",
-        "msg": [],
-        "ok": true,
-        "user": "bfe-lab"
     }
 }

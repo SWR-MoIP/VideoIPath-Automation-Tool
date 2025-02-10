@@ -1,7 +1,7 @@
 from typing import Literal
-from typing_extensions import deprecated
 
 from pydantic import BaseModel, Field
+from typing_extensions import deprecated
 
 
 class Descriptor(BaseModel, validate_assignment=True):
