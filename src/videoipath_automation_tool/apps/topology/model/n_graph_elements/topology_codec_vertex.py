@@ -55,7 +55,7 @@ class CodecVertex(Vertex):
     mainSrcMac: None | MacAddress
     mainSrcNetmask: None | IPvAnyAddress
     multiplicity: int = Field(..., ge=1)
-    partnerConfig: None | dict[str, Union[str, int, bool]]  # TODO !!!
+    partnerConfig: None | dict[str, Union[str, int, bool]]
     public: bool = False
     sdpSupport: bool = True
     serviceId: None | int
