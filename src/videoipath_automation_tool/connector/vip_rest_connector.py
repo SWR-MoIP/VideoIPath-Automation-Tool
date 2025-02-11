@@ -6,7 +6,7 @@ from videoipath_automation_tool.connector.vip_base_connector import VideoIPathBa
 
 
 class VideoIPathRestConnector(VideoIPathBaseConnector):
-    TIMEOUTS = {"GET": 5, "POST": 10, "PATCH": 10}
+    TIMEOUTS = {"GET": 5, "PATCH": 10, "POST": 10}
 
     ALLOWED_URLS = {
         "GET": {
