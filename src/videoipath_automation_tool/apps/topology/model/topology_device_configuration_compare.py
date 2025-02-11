@@ -1,7 +1,8 @@
 # External Imports
 from typing import List
-from pydantic import BaseModel, Field
+
 from deepdiff.diff import DeepDiff
+from pydantic import BaseModel, Field
 
 # Internal Imports
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
@@ -30,6 +31,24 @@ class NGraphElementConfigurationDiff(BaseModel):
                     changed_list.append(change)
         return changed_list
 
+    def get_removed_ignore_rev(self) -> list:
+        """Method to get the removed values of the nGraphElement, ignoring the revision."""
+        removed_list = []
+        if len(self.removed) > 0:
+            for remove in self.removed:
+                if remove["path"] != "root.rev":
+                    removed_list.append(remove)
+        return removed_list
+
+    def get_added_ignore_rev(self) -> list:
+        """Method to get the added values of the nGraphElement, ignoring the revision."""
+        added_list = []
+        if len(self.added) > 0:
+            for add in self.added:
+                if add["path"] != "root.rev":
+                    added_list.append(add)
+        return added_list
+
 
 class NGraphElementDiff(BaseModel):
     id: str = Field(default_factory=str)
@@ -44,7 +63,7 @@ class NGraphElementDiff(BaseModel):
         """Method to compare two nGraphElements.
         Returns a dictionary with the differences between the two nGraphElements.
         """
-        element_differences = DeepDiff(reference_element, staged_element, ignore_order=True)
+        element_differences = DeepDiff(reference_element, staged_element)  # , ignore_order=True)
         difference_keys = element_differences.keys()
 
         diff_object = NGraphElementConfigurationDiff()
@@ -161,8 +180,8 @@ class NGraphElementListComparison(BaseModel):
         return self.removed
 
     def get_changed(self, include_rev=True) -> List[NGraphElementDiff]:
-        """Method to get the changed nGraphElements."""
-        return [
+        """Method to get the nGraphElements with changed values (including removed and added values)."""
+        elements_with_changed_values = [
             element
             for element in self.common
             if (
@@ -171,6 +190,21 @@ class NGraphElementListComparison(BaseModel):
                 else element.configuration_diff.get_changed_ignore_rev()
             )
         ]
+        elements_with_removed_values = [
+            element
+            for element in self.common
+            if (
+                element.configuration_diff.removed
+                if include_rev
+                else element.configuration_diff.get_removed_ignore_rev()
+            )
+        ]
+        elements_with_added_values = [
+            element
+            for element in self.common
+            if (element.configuration_diff.added if include_rev else element.configuration_diff.get_added_ignore_rev())
+        ]
+        return elements_with_changed_values + elements_with_removed_values + elements_with_added_values
 
 
 class TopologyDeviceComparison(BaseModel):
