@@ -58,12 +58,9 @@ class TopologyApp:
             TopologyDevice: TopologyDevice object.
         """
         if not validate_device_id_string(device_id=device_id, include_virtual=True):
-            message = f"Device id '{device_id}' is not a valid device id."
-            self._logger.debug(message)
-            raise ValueError(message)
+            raise ValueError(f"Device id '{device_id}' is not a valid device id.")
 
         if not self._topology_api.check_device_in_topology_available(device_id):
-            self._logger.info(f"Device with id '{device_id}' not found in topology, create device from driver.")
             if not self.check_device_from_driver_available(device_id):
                 raise ValueError(f"Device with id '{device_id}' not found in topology and driver not available")
             return self._topology_api.get_device_from_driver(device_id)
@@ -377,10 +374,26 @@ class TopologyExperimental:
 
         return edges
 
+    def list_bookings_impacted_by_device_update(self, device: TopologyDevice) -> list[str]:
+        """
+        List all bookings that are impacted if the given device configuration is applied.
+
+        Args:
+            device (TopologyDevice): The device whose configuration changes should be analyzed.
+
+        Returns:
+            list[str]: A list of affected booking IDs. Returns an empty list if no bookings are impacted.
+        """
+        changes = self._topology_api.analyze_device_configuration_changes(device)
+        validation = self._topology_api.validate_topology_update(changes)
+
+        details = validation.data.get("details", {})
+        return list(details) if details else []
+
 
 class TopologySynchronize:
     def __init__(self) -> None:
         pass
 
-    def say_hello(self):
-        print("Hello from TopologySynchronize!")
+    def synchronize_topology(self):
+        pass

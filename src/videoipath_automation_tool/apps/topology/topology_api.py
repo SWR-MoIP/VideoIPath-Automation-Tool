@@ -3,6 +3,7 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel
 
+from videoipath_automation_tool.apps.topology.model.actions.validate_topology_update import ValidateTopologyUpdateData
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_base_device import BaseDevice
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_generic_vertex import GenericVertex
@@ -15,7 +16,7 @@ from videoipath_automation_tool.apps.topology.model.topology_device import Topol
 from videoipath_automation_tool.apps.topology.model.topology_device_configuration_compare import (
     TopologyDeviceComparison,
 )
-from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
+from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch, RequestV2Post
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
@@ -107,7 +108,9 @@ class TopologyAPI(BaseModel):
         Returns:
             RequestRestV2: RequestRestV2 object.
         """
-        body = self._generate_nGraphElement_payload(add_elements=[], update_elements=[element], remove_elements=[])
+        body = self._generate_nGraphElements_patch_payload(
+            add_elements=[], update_elements=[element], remove_elements=[]
+        )
         return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
     def _fetch_device_configuration_from_topology(self, device_id: str) -> TopologyDeviceConfiguration:
@@ -472,8 +475,30 @@ class TopologyAPI(BaseModel):
             + device.configuration.internal_edges
             + device.configuration.external_edges
         )
-        body = self._generate_nGraphElement_payload(add_elements=add_list, update_elements=[], remove_elements=[])
+        body = self._generate_nGraphElements_patch_payload(
+            add_elements=add_list, update_elements=[], remove_elements=[]
+        )
         return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
+
+    def validate_topology_update(self, device_difference: TopologyDeviceComparison):
+        """Validate change operation in the topology.
+
+        Args:
+            device_difference (TopologyCompareDevices): TopologyCompareDevices object.
+
+        """
+        remove_list = device_difference.get_removed_elements()
+        changed_list = device_difference.get_changed_elements()
+
+        added_list = []
+        for element in changed_list:
+            added_list.append(element.staged_element)
+        added_list.extend(
+            device_difference.get_added_elements()
+        )  # Note: added_list contains the elements that are added or updated!
+
+        body = self._generate_validateTopologyUpdate_post_payload(added_list, remove_list)
+        return self.vip_connector.rest.post("/rest/v2/actions/status/pathman/validateTopologyUpdate", body)
 
     def apply_device_configuration_changes(
         self, device_difference: TopologyDeviceComparison, validate_only: bool = False
@@ -501,7 +526,7 @@ class TopologyAPI(BaseModel):
         for element in update_staged_elements:
             update_list.append(self._apply_reference_revision_to_element(element, device_difference.reference_device))
 
-        body = self._generate_nGraphElement_payload(
+        body = self._generate_nGraphElements_patch_payload(
             add_elements=add_list, update_elements=update_list, remove_elements=remove_list, validate_only=validate_only
         )
 
@@ -640,13 +665,15 @@ class TopologyAPI(BaseModel):
         else:
             raise ValueError("Mode must be 'absolute' or 'relative'")
 
-        body = self._generate_nGraphElement_payload(add_elements=[], update_elements=[base_device], remove_elements=[])
+        body = self._generate_nGraphElements_patch_payload(
+            add_elements=[], update_elements=[base_device], remove_elements=[]
+        )
         resp = self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
         return resp
 
-    # --- Building the RequestRestV2 object ---
-    def _generate_nGraphElement_payload(
+    # --- Building the RequestRestV2Patch object ---
+    def _generate_nGraphElements_patch_payload(
         self,
         add_elements: List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge],
         update_elements: List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge],
@@ -675,4 +702,29 @@ class TopologyAPI(BaseModel):
                     body.update(action)
                 elif action.action == "remove":
                     body.remove(action)
+        return body
+
+    # --- Building the RequestRestV2Post object ---
+    def _generate_validateTopologyUpdate_post_payload(
+        self,
+        added_elements: List[NGraphElement],
+        removed_elements: List[NGraphElement],
+    ) -> "RequestV2Post":
+        """
+        Generate a RequestRestV2Post object for validating topology updates (/rest/v2/actions/status/pathman/validateTopologyUpdate).
+
+        Args:
+            added_elements (List[]): List of elements which should be added or updated.
+            removed_elements (List[]): List of elements which should be removed.
+
+        Returns:
+            RequestV2Post: RequestV2Post object for validating topology updates (/rest/v2/actions/status/pathman/validateTopologyUpdate).
+        """
+        body = RequestV2Post()
+
+        data = ValidateTopologyUpdateData()
+        data.added_elements(element_list=added_elements)
+        data.removed_elements(element_list=removed_elements)
+
+        body.data = data.model_dump(mode="json", by_alias=True)
         return body

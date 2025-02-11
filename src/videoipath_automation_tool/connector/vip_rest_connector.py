@@ -14,7 +14,10 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
             "EXACT_MATCHES": {"/rest/v2/data/*"},
         },
         "PATCH": {"PREFIXES": {"/rest/v2/data/config/"}, "EXACT_MATCHES": set()},
-        "POST": {"PREFIXES": {"/rest/v2/actions/status/collector/"}, "EXACT_MATCHES": set()},
+        "POST": {
+            "PREFIXES": {"/rest/v2/actions/status/collector/"},
+            "EXACT_MATCHES": {"/rest/v2/actions/status/pathman/validateTopologyUpdate"},
+        },
     }
 
     def get(
