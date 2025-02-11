@@ -25,12 +25,14 @@ jobs:
 
       - name: Extract package version
         id: get_version
-        run: echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+        run: |
+          echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+          echo "VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: videoipath-automation-tool-${{ env.VERSION }}
+          name: videoipath-automation-tool-${{ steps.get_version.outputs.VERSION }}
           path: dist/
 
       - name: Create or update release
