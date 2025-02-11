@@ -12,3 +12,4 @@ __pycache__/
 # others
 __intern/
 *.egg-info/
+.DS_Store
