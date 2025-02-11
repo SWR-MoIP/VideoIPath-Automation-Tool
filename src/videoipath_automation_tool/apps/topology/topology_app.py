@@ -67,10 +67,23 @@ class TopologyApp:
         else:
             return self._topology_api.get_device_from_topology(device_id)
 
-    def update_device(self, device: TopologyDevice) -> TopologyDevice:
+    def update_device(self, device: TopologyDevice, ignore_affected_services: bool = False) -> TopologyDevice:
         if self.check_device_in_topology_available(device.configuration.base_device.id):
             changes = self._topology_api.analyze_device_configuration_changes(device)
             self._logger.debug(f"Changes: {changes.get_changed_elements()}")
+
+            if not ignore_affected_services:
+                affected_services_list = self.list_services_affected_by_device_update(device)
+                if len(affected_services_list) == 0:
+                    self._logger.info(
+                        f"No services affected by updating device '{device.configuration.base_device.label}'."
+                    )
+                else:
+                    self._logger.warning(
+                        f"Services affected by updating device '{device.configuration.base_device.label}': {affected_services_list}. No changes applied. Release the affected services or set 'ignore_affected_services' to True."
+                    )
+                    return device
+
             response = self._topology_api.apply_device_configuration_changes(changes)
             if response:
                 self._logger.info(f"Device '{device.configuration.base_device.label}' updated in topology.")
@@ -162,6 +175,22 @@ class TopologyApp:
             RequestRestV2: RequestRestV2 object.
         """
         return self._topology_api.add_device_initially(device)
+
+    def list_services_affected_by_device_update(self, device: TopologyDevice) -> list[str]:
+        """
+        List all bookings that are impacted if the given device configuration is applied.
+
+        Args:
+            device (TopologyDevice): The device whose configuration changes should be analyzed.
+
+        Returns:
+            list[str]: A list of affected booking IDs. Returns an empty list if no bookings are impacted.
+        """
+        changes = self._topology_api.analyze_device_configuration_changes(device)
+        validation = self._topology_api.validate_topology_update(changes)
+
+        details = validation.data.get("details", {})
+        return list(details) if details else []
 
     def create_edges(
         self,
@@ -373,22 +402,6 @@ class TopologyExperimental:
                 raise ValueError("Invalid redundancy mode, must be 'OnlyMain', 'OnlySpare' or 'Any'.")
 
         return edges
-
-    def list_bookings_impacted_by_device_update(self, device: TopologyDevice) -> list[str]:
-        """
-        List all bookings that are impacted if the given device configuration is applied.
-
-        Args:
-            device (TopologyDevice): The device whose configuration changes should be analyzed.
-
-        Returns:
-            list[str]: A list of affected booking IDs. Returns an empty list if no bookings are impacted.
-        """
-        changes = self._topology_api.analyze_device_configuration_changes(device)
-        validation = self._topology_api.validate_topology_update(changes)
-
-        details = validation.data.get("details", {})
-        return list(details) if details else []
 
 
 class TopologySynchronize:
