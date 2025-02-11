@@ -31,7 +31,7 @@ Once the repository is public, the package will be available via the public PyPI
 #### Install the package using pip
 
 ```bash
-pip3 install "path/to/downloads/VideoIPath_Automation_Tool-0.1.0.tar.gz"
+pip3 install "path/to/downloads/videoipath_automation_tool-0.0.1.tar.gz"
 ```
 
 ### A Simple Example
