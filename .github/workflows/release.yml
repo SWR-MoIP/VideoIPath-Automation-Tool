@@ -1,0 +1,48 @@
+name: Release Python Package
+# Note: This is a temporary workflow for the repository in a private state.
+# Before making the repository public, it will be replaced!
+
+on:
+  workflow_run:
+    workflows: ["Build and Upload Python Package"]
+    types:
+      - completed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Extract package version
+        id: get_version
+        run: echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: videoipath-automation-tool-${{ env.VERSION }}
+          path: dist/
+
+      - name: Create or update release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_ID=$(gh release view "v${{ env.VERSION }}" --json id -q .id || echo "")
+
+          if [ -z "$RELEASE_ID" ]; then
+            echo "Creating new release v${{ env.VERSION }}"
+            gh release create "v${{ env.VERSION }}" dist/* --title "Release v${{ env.VERSION }}" --notes "Automated release for version ${{ env.VERSION }}"
+          else
+            echo "Updating existing release v${{ env.VERSION }}"
+            gh release upload "v${{ env.VERSION }}" dist/* --clobber
+          fi
