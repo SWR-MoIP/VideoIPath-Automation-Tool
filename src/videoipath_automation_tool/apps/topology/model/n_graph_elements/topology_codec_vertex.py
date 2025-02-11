@@ -1,4 +1,5 @@
-from typing import Literal, Union
+import warnings
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 from pydantic.networks import IPvAnyAddress
@@ -21,7 +22,7 @@ class QinQ(BaseModel, validate_assignment=True):
 
 class nVlanPattern(BaseModel, validate_assignment=True):
     type: Literal["nVlanPattern"] = "nVlanPattern"
-    vlanP: int = Field(..., ge=1, le=4094)
+    vlanP: str = ""
 
 
 # Destination IP
@@ -72,7 +73,7 @@ class CodecVertex(Vertex):
 
     # - IP Defaults -
     @property
-    def main_source_ip(self) -> None | IPvAnyAddress:
+    def main_source_ip(self) -> Optional[IPvAnyAddress]:
         """GUI: IP Defaults | MAIN | Source IP"""
         return self.mainSrcIp
 
@@ -82,7 +83,7 @@ class CodecVertex(Vertex):
         self.mainSrcIp = ip_address
 
     @property
-    def spare_source_ip(self) -> None | IPvAnyAddress:
+    def spare_source_ip(self) -> Optional[IPvAnyAddress]:
         """GUI: IP Defaults | SPARE | Source IP"""
         return self.spareSrcIp
 
@@ -92,7 +93,7 @@ class CodecVertex(Vertex):
         self.spareSrcIp = ip_address
 
     @property
-    def main_source_gateway(self) -> None | IPvAnyAddress:
+    def main_source_gateway(self) -> Optional[IPvAnyAddress]:
         """GUI: IP Defaults | MAIN | Source Gateway"""
         return self.mainSrcGateway
 
@@ -102,7 +103,7 @@ class CodecVertex(Vertex):
         self.mainSrcGateway = ip_address
 
     @property
-    def spare_source_gateway(self) -> None | IPvAnyAddress:
+    def spare_source_gateway(self) -> Optional[IPvAnyAddress]:
         """GUI: IP Defaults | SPARE | Source Gateway"""
         return self.spareSrcGateway
 
@@ -112,7 +113,7 @@ class CodecVertex(Vertex):
         self.spareSrcGateway = ip_address
 
     @property
-    def main_source_netmask(self) -> None | IPvAnyAddress:
+    def main_source_netmask(self) -> Optional[IPvAnyAddress]:
         """GUI: IP Defaults | MAIN | Source Netmask"""
         return self.mainSrcNetmask
 
@@ -122,7 +123,7 @@ class CodecVertex(Vertex):
         self.mainSrcNetmask = ip_address
 
     @property
-    def spare_source_netmask(self) -> None | IPvAnyAddress:
+    def spare_source_netmask(self) -> Optional[IPvAnyAddress]:
         """GUI: IP Defaults | SPARE | Source Netmask"""
         return self.spareSrcNetmask
 
@@ -133,17 +134,22 @@ class CodecVertex(Vertex):
 
     # - Connection Defaults -
     @property
-    def main_destination_vlan_dot1Q(self) -> None | nVlan1Q:
+    def main_destination_vlan_dot1Q(self) -> Optional[int]:
         """GUI: Connection Defaults | MAIN | VLAN (dot1Q - IEEE 802.1Q)"""
         if self.mainDstVlan is None:
             return None
         if isinstance(self.mainDstVlan, QinQ):
-            raise ValueError("Main Destination is set to QinQ, not dot1Q. Use 'main_destination_vlan_qinq' instead.")
-        elif isinstance(self.mainDstVlan, nVlanPattern):
-            raise ValueError(
-                "Main Destination is set to VLAN Ranges, not dot1Q. Use 'main_destination_vlan_ranges' instead."
+            warnings.warn(
+                "Main Destination is set to QinQ, not dot1Q. Use 'main_destination_vlan_qinq' instead.", UserWarning
             )
-        return self.mainDstVlan
+            return None
+        elif isinstance(self.mainDstVlan, nVlanPattern):
+            warnings.warn(
+                "Main Destination is set to VLAN Ranges, not dot1Q. Use 'main_destination_vlan_ranges' instead.",
+                UserWarning,
+            )
+            return None
+        return self.mainDstVlan.vlan
 
     @main_destination_vlan_dot1Q.setter
     def main_destination_vlan_dot1Q(self, vlan_tag: int):
@@ -151,17 +157,22 @@ class CodecVertex(Vertex):
         self.mainDstVlan = nVlan1Q(vlan=vlan_tag)
 
     @property
-    def spare_destination_vlan_dot1Q(self) -> None | nVlan1Q:
+    def spare_destination_vlan_dot1Q(self) -> Optional[int]:
         """GUI: Connection Defaults | SPARE | VLAN (dot1Q - IEEE 802.1Q)"""
         if self.spareDstVlan is None:
             return None
         if isinstance(self.spareDstVlan, QinQ):
-            raise ValueError("Spare Destination is set to QinQ, not dot1Q. Use 'spare_destination_vlan_qinq' instead.")
-        elif isinstance(self.spareDstVlan, nVlanPattern):
-            raise ValueError(
-                "Spare Destination is set to VLAN Ranges, not dot1Q. Use 'spare_destination_vlan_ranges' instead."
+            warnings.warn(
+                "Spare Destination is set to QinQ, not dot1Q. Use 'spare_destination_vlan_qinq' instead.", UserWarning
             )
-        return self.spareDstVlan
+            return None
+        elif isinstance(self.spareDstVlan, nVlanPattern):
+            warnings.warn(
+                "Spare Destination is set to VLAN Ranges, not dot1Q. Use 'spare_destination_vlan_ranges' instead.",
+                UserWarning,
+            )
+            return None
+        return self.spareDstVlan.vlan
 
     @spare_destination_vlan_dot1Q.setter
     def spare_destination_vlan_dot1Q(self, vlan_tag: int):
@@ -169,16 +180,21 @@ class CodecVertex(Vertex):
         self.spareDstVlan = nVlan1Q(vlan=vlan_tag)
 
     @property
-    def main_destination_vlan_qinq(self) -> None | QinQ:
+    def main_destination_vlan_qinq(self) -> Optional[QinQ]:
         """GUI: Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)"""
         if self.mainDstVlan is None:
             return None
         if isinstance(self.mainDstVlan, nVlan1Q):
-            raise ValueError("Main Destination is set to dot1Q, not QinQ. Use 'main_destination_vlan_dot1Q' instead.")
-        elif isinstance(self.mainDstVlan, nVlanPattern):
-            raise ValueError(
-                "Main Destination is set to VLAN Ranges, not QinQ. Use 'main_destination_vlan_ranges' instead."
+            warnings.warn(
+                "Main Destination is set to dot1Q, not QinQ. Use 'main_destination_vlan_dot1Q' instead.", UserWarning
             )
+            return None
+        elif isinstance(self.mainDstVlan, nVlanPattern):
+            warnings.warn(
+                "Main Destination is set to VLAN Ranges, not QinQ. Use 'main_destination_vlan_ranges' instead.",
+                UserWarning,
+            )
+            return None
         return self.mainDstVlan
 
     @main_destination_vlan_qinq.setter
@@ -187,16 +203,21 @@ class CodecVertex(Vertex):
         self.mainDstVlan = QinQ(vlanOuter=outer_vlan_tag, vlanInner=inner_vlan_tag)
 
     @property
-    def spare_destination_vlan_qinq(self) -> None | QinQ:
+    def spare_destination_vlan_qinq(self) -> Optional[QinQ]:
         """GUI: Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)"""
         if self.spareDstVlan is None:
             return None
         if isinstance(self.spareDstVlan, nVlan1Q):
-            raise ValueError("Spare Destination is set to dot1Q, not QinQ. Use 'spare_destination_vlan_dot1Q' instead.")
-        elif isinstance(self.spareDstVlan, nVlanPattern):
-            raise ValueError(
-                "Spare Destination is set to VLAN Ranges, not QinQ. Use 'spare_destination_vlan_ranges' instead."
+            warnings.warn(
+                "Spare Destination is set to dot1Q, not QinQ. Use 'spare_destination_vlan_dot1Q' instead.", UserWarning
             )
+            return None
+        elif isinstance(self.spareDstVlan, nVlanPattern):
+            warnings.warn(
+                "Spare Destination is set to VLAN Ranges, not QinQ. Use 'spare_destination_vlan_ranges' instead.",
+                UserWarning,
+            )
+            return None
         return self.spareDstVlan
 
     @spare_destination_vlan_qinq.setter
@@ -204,9 +225,56 @@ class CodecVertex(Vertex):
         """GUI: Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)"""
         self.spareDstVlan = QinQ(vlanOuter=outer_vlan_tag, vlanInner=inner_vlan_tag)
 
-    # Port
     @property
-    def main_destination_port(self) -> None | int:
+    def main_destination_vlan_ranges(self) -> Optional[str]:
+        """GUI: Connection Defaults | MAIN | VLAN (Ranges)"""
+        if self.mainDstVlan is None:
+            return None
+        if isinstance(self.mainDstVlan, nVlan1Q):
+            warnings.warn(
+                "Main Destination is set to dot1Q, not VLAN Ranges. Use 'main_destination_vlan_dot1Q' instead.",
+                UserWarning,
+            )
+            return None
+        elif isinstance(self.mainDstVlan, QinQ):
+            warnings.warn(
+                "Main Destination is set to QinQ, not VLAN Ranges. Use 'main_destination_vlan_qinq' instead.",
+                UserWarning,
+            )
+            return None
+        return self.mainDstVlan.vlanP
+
+    @main_destination_vlan_ranges.setter
+    def main_destination_vlan_ranges(self, vlan_range: str):
+        """GUI: Connection Defaults | MAIN | VLAN (Ranges)"""
+        self.mainDstVlan = nVlanPattern(vlanP=vlan_range)
+
+    @property
+    def spare_destination_vlan_ranges(self) -> Optional[str]:
+        """GUI: Connection Defaults | SPARE | VLAN (Ranges)"""
+        if self.spareDstVlan is None:
+            return None
+        if isinstance(self.spareDstVlan, nVlan1Q):
+            warnings.warn(
+                "Spare Destination is set to dot1Q, not VLAN Ranges. Use 'spare_destination_vlan_dot1Q' instead.",
+                UserWarning,
+            )
+            return None
+        elif isinstance(self.spareDstVlan, QinQ):
+            warnings.warn(
+                "Spare Destination is set to QinQ, not VLAN Ranges. Use 'spare_destination_vlan_qinq' instead.",
+                UserWarning,
+            )
+            return None
+        return self.spareDstVlan.vlanP
+
+    @spare_destination_vlan_ranges.setter
+    def spare_destination_vlan_ranges(self, vlan_range: str):
+        """GUI: Connection Defaults | SPARE | VLAN (Ranges)"""
+        self.spareDstVlan = nVlanPattern(vlanP=vlan_range)
+
+    @property
+    def main_destination_port(self) -> Optional[int]:
         """GUI: Connection Defaults | MAIN | Port"""
         return self.mainDstPort
 
@@ -216,7 +284,7 @@ class CodecVertex(Vertex):
         self.mainDstPort = port
 
     @property
-    def spare_destination_port(self) -> None | int:
+    def spare_destination_port(self) -> Optional[int]:
         """GUI: Connection Defaults | SPARE | Port"""
         return self.spareDstPort
 
@@ -226,71 +294,79 @@ class CodecVertex(Vertex):
         self.spareDstPort = port
 
     @property
-    def main_destination_pool(self) -> None | str:
+    def main_destination_address_pool(self) -> Optional[str]:
         """GUI: Connection Defaults | MAIN | Multicast Address (poolId)"""
         if self.mainDstIp is None:
             return None
         if isinstance(self.mainDstIp, nAddress):
-            raise ValueError(
-                "Main Destination is set to an IP Address, not a Pool ID. Use 'main_destination_ip' instead."
+            warnings.warn(
+                "Main Destination is set to an IP Address, not a Pool ID. Use 'main_destination_address_ip' instead.",
+                UserWarning,
             )
+            return None
         return self.mainDstIp.poolId
 
-    @main_destination_pool.setter
-    def main_destination_pool(self, pool_label: str):
+    @main_destination_address_pool.setter
+    def main_destination_address_pool(self, pool_label: str):
         """GUI: Connection Defaults | MAIN | Multicast Address (poolId)"""
         self.mainDstIp = nPoolId(poolId=pool_label)
 
     @property
-    def spare_destination_pool(self) -> None | str:
+    def spare_destination_address_pool(self) -> Optional[str]:
         """GUI: Connection Defaults | SPARE | Multicast Address (poolId)"""
         if self.spareDstIp is None:
             return None
         if isinstance(self.spareDstIp, nAddress):
-            raise ValueError(
-                "Spare Destination is set to an IP Address, not a Pool ID. Use 'spare_destination_ip' instead."
+            warnings.warn(
+                "Spare Destination is set to an IP Address, not a Pool ID. Use 'spare_destination_address_ip' instead.",
+                UserWarning,
             )
+            return None
         return self.spareDstIp.poolId
 
-    @spare_destination_pool.setter
-    def spare_destination_pool(self, pool_label: str):
+    @spare_destination_address_pool.setter
+    def spare_destination_address_pool(self, pool_label: str):
         """GUI: Connection Defaults | SPARE | Multicast Address (poolId)"""
         self.spareDstIp = nPoolId(poolId=pool_label)
 
     @property
-    def main_destination_ip(self) -> None | IPvAnyAddress:
+    def main_destination_address_ip(self) -> Optional[IPvAnyAddress]:
         """GUI: Connection Defaults | MAIN | Multicast Address (address)"""
         if self.mainDstIp is None:
             return None
         if isinstance(self.mainDstIp, nPoolId):
-            raise ValueError(
-                "Main Destination is set to a Pool ID, not an IP Address. Use 'main_destination_pool' instead."
+            warnings.warn(
+                "Main Destination is set to a Pool ID, not an IP Address. Use 'main_destination_address_pool' instead.",
+                UserWarning,
             )
+            return None
         return self.mainDstIp.addr
 
-    @main_destination_ip.setter
-    def main_destination_ip(self, ip_address: IPvAnyAddress):
+    @main_destination_address_ip.setter
+    def main_destination_address_ip(self, multicast_ip_address: IPvAnyAddress):
         """GUI: Connection Defaults | MAIN | Multicast Address (address)"""
-        self.mainDstIp = nAddress(addr=ip_address)
+        self.mainDstIp = nAddress(addr=multicast_ip_address)
 
     @property
-    def spare_destination_ip(self) -> None | IPvAnyAddress:
+    def spare_destination_address_ip(self) -> Optional[IPvAnyAddress]:
         """GUI: Connection Defaults | SPARE | Multicast Address (address)"""
         if self.spareDstIp is None:
             return None
         if isinstance(self.spareDstIp, nPoolId):
-            raise ValueError(
-                "Spare Destination is set to a Pool ID, not an IP Address. Use 'spare_destination_pool' instead."
+            warnings.warn(
+                "Spare Destination is set to a Pool ID, not an IP Address. Use 'spare_destination_address_pool' instead.",
+                UserWarning,
             )
+            return None
         return self.spareDstIp.addr
 
-    @spare_destination_ip.setter
-    def spare_destination_ip(self, ip_address: IPvAnyAddress):
+    @spare_destination_address_ip.setter
+    def spare_destination_address_ip(self, multicast_ip_address: IPvAnyAddress):
         """GUI: Connection Defaults | SPARE | Multicast Address (address)"""
-        self.spareDstIp = nAddress(addr=ip_address)
+        self.spareDstIp = nAddress(addr=multicast_ip_address)
 
     @property
-    def main_source_mac(self) -> None | MacAddress:
+    def main_source_mac(self) -> Optional[MacAddress]:
         """GUI: Connection Defaults | MAIN | Source Mac-address"""
         return self.mainSrcMac
 
@@ -300,7 +376,7 @@ class CodecVertex(Vertex):
         self.mainSrcMac = mac_address
 
     @property
-    def spare_source_mac(self) -> None | MacAddress:
+    def spare_source_mac(self) -> Optional[MacAddress]:
         """GUI: Connection Defaults | SPARE | Source Mac-address"""
         return self.spareSrcMac
 
@@ -310,7 +386,7 @@ class CodecVertex(Vertex):
         self.spareSrcMac = mac_address
 
     @property
-    def main_destination_mac(self) -> None | MacAddress:
+    def main_destination_mac(self) -> Optional[MacAddress]:
         """GUI: Connection Defaults | MAIN | Destination Mac-address"""
         return self.mainDstMac
 
@@ -320,7 +396,7 @@ class CodecVertex(Vertex):
         self.mainDstMac = mac_address
 
     @property
-    def spare_destination_mac(self) -> None | MacAddress:
+    def spare_destination_mac(self) -> Optional[MacAddress]:
         """GUI: Connection Defaults | SPARE | Destination Mac-address"""
         return self.spareDstMac
 
