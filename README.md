@@ -18,31 +18,21 @@ The provided methods and data models ensure easy handling, robust validation, co
 
 ### Prerequisites
 
-- Access to a VideoIPath Server
+- Access to a VideoIPath Server (version 2023.4.2 or higher, LTS versions recommended)
 - A user account with API access credentials
 - Python 3.11 or higher
 
 ### Installation
 
-The package is available via the [Gitlab Package Index of the MOIP group](https://gitlab.swr.ard/groups/moip/-/packages/). There are multiple ways to install
-it, but since it's not available in the public PyPI you either have to setup authentication to the private
-package index or download the build artifact manually.
+Since the repository is currently private, the package must be downloaded manually as a build artifact from the [GitHub Releases section](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/releases).
 
-#### Option 1 (quick): Downloading the Build Artifact manually
+Once the repository is public, the package will be available via the public PyPI registry for easy installation.
 
-1. Download the latest version of the package from the [Package Registry]()
-2. Install the package using pip:
+#### Install the package using pip
 
 ```bash
 pip3 install "path/to/downloads/VideoIPath_Automation_Tool-0.1.0.tar.gz"
 ```
-
-#### Option 2 (preferred): Set up Registry
-
-1. Create a [personal access token](https://gitlab.swr.ard/-/user_settings/personal_access_tokens) with the `api` scope. Don't use whitespace in the name because it might cause issues with the authentication later.
-2. Go to the [videoipath-automation-tool](https://gitlab.swr.ard/groups/moip/-/packages/594) package index entry and follow the instructions there.
-
-> **Note**: On Windows, `~/.piprc` or `pip.conf` does not work, instead create a `%APPDATA%\pip\pip.ini` file. For more information on PIP configuration on different operating systems see the [official documentation](https://pip.pypa.io/en/stable/topics/configuration/)
 
 ### A Simple Example
 
