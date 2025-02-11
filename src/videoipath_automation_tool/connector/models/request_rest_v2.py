@@ -134,5 +134,5 @@ class RequestV2Post(BaseModel):
             The data to be sent in the request.
     """
 
-    header: Header
-    data: dict
+    header: Header = Header()
+    data: dict = Field(default_factory=dict)
