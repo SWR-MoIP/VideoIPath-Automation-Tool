@@ -8,6 +8,13 @@ from pydantic_extra_types.mac_address import MacAddress
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_vertex import Vertex
 
 
+class DataTypeMismatchWarning(Warning):
+    pass
+
+
+warnings.simplefilter("always", DataTypeMismatchWarning)
+
+
 # VLAN
 class nVlan1Q(BaseModel, validate_assignment=True):
     type: Literal["nVlan1Q"] = "nVlan1Q"
@@ -140,13 +147,14 @@ class CodecVertex(Vertex):
             return None
         if isinstance(self.mainDstVlan, QinQ):
             warnings.warn(
-                "Main Destination is set to QinQ, not dot1Q. Use 'main_destination_vlan_qinq' instead.", UserWarning
+                "Main Destination is set to QinQ, not dot1Q. Use 'main_destination_vlan_qinq' instead.",
+                DataTypeMismatchWarning,
             )
             return None
         elif isinstance(self.mainDstVlan, nVlanPattern):
             warnings.warn(
                 "Main Destination is set to VLAN Ranges, not dot1Q. Use 'main_destination_vlan_ranges' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.mainDstVlan.vlan
@@ -163,13 +171,14 @@ class CodecVertex(Vertex):
             return None
         if isinstance(self.spareDstVlan, QinQ):
             warnings.warn(
-                "Spare Destination is set to QinQ, not dot1Q. Use 'spare_destination_vlan_qinq' instead.", UserWarning
+                "Spare Destination is set to QinQ, not dot1Q. Use 'spare_destination_vlan_qinq' instead.",
+                DataTypeMismatchWarning,
             )
             return None
         elif isinstance(self.spareDstVlan, nVlanPattern):
             warnings.warn(
                 "Spare Destination is set to VLAN Ranges, not dot1Q. Use 'spare_destination_vlan_ranges' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.spareDstVlan.vlan
@@ -186,13 +195,14 @@ class CodecVertex(Vertex):
             return None
         if isinstance(self.mainDstVlan, nVlan1Q):
             warnings.warn(
-                "Main Destination is set to dot1Q, not QinQ. Use 'main_destination_vlan_dot1Q' instead.", UserWarning
+                "Main Destination is set to dot1Q, not QinQ. Use 'main_destination_vlan_dot1Q' instead.",
+                DataTypeMismatchWarning,
             )
             return None
         elif isinstance(self.mainDstVlan, nVlanPattern):
             warnings.warn(
                 "Main Destination is set to VLAN Ranges, not QinQ. Use 'main_destination_vlan_ranges' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.mainDstVlan
@@ -209,13 +219,14 @@ class CodecVertex(Vertex):
             return None
         if isinstance(self.spareDstVlan, nVlan1Q):
             warnings.warn(
-                "Spare Destination is set to dot1Q, not QinQ. Use 'spare_destination_vlan_dot1Q' instead.", UserWarning
+                "Spare Destination is set to dot1Q, not QinQ. Use 'spare_destination_vlan_dot1Q' instead.",
+                DataTypeMismatchWarning,
             )
             return None
         elif isinstance(self.spareDstVlan, nVlanPattern):
             warnings.warn(
                 "Spare Destination is set to VLAN Ranges, not QinQ. Use 'spare_destination_vlan_ranges' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.spareDstVlan
@@ -233,13 +244,13 @@ class CodecVertex(Vertex):
         if isinstance(self.mainDstVlan, nVlan1Q):
             warnings.warn(
                 "Main Destination is set to dot1Q, not VLAN Ranges. Use 'main_destination_vlan_dot1Q' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         elif isinstance(self.mainDstVlan, QinQ):
             warnings.warn(
                 "Main Destination is set to QinQ, not VLAN Ranges. Use 'main_destination_vlan_qinq' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.mainDstVlan.vlanP
@@ -257,13 +268,13 @@ class CodecVertex(Vertex):
         if isinstance(self.spareDstVlan, nVlan1Q):
             warnings.warn(
                 "Spare Destination is set to dot1Q, not VLAN Ranges. Use 'spare_destination_vlan_dot1Q' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         elif isinstance(self.spareDstVlan, QinQ):
             warnings.warn(
                 "Spare Destination is set to QinQ, not VLAN Ranges. Use 'spare_destination_vlan_qinq' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.spareDstVlan.vlanP
@@ -301,7 +312,7 @@ class CodecVertex(Vertex):
         if isinstance(self.mainDstIp, nAddress):
             warnings.warn(
                 "Main Destination is set to an IP Address, not a Pool ID. Use 'main_destination_address_ip' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.mainDstIp.poolId
@@ -319,7 +330,7 @@ class CodecVertex(Vertex):
         if isinstance(self.spareDstIp, nAddress):
             warnings.warn(
                 "Spare Destination is set to an IP Address, not a Pool ID. Use 'spare_destination_address_ip' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.spareDstIp.poolId
@@ -337,7 +348,7 @@ class CodecVertex(Vertex):
         if isinstance(self.mainDstIp, nPoolId):
             warnings.warn(
                 "Main Destination is set to a Pool ID, not an IP Address. Use 'main_destination_address_pool' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.mainDstIp.addr
@@ -355,7 +366,7 @@ class CodecVertex(Vertex):
         if isinstance(self.spareDstIp, nPoolId):
             warnings.warn(
                 "Spare Destination is set to a Pool ID, not an IP Address. Use 'spare_destination_address_pool' instead.",
-                UserWarning,
+                DataTypeMismatchWarning,
             )
             return None
         return self.spareDstIp.addr
