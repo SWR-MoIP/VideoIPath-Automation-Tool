@@ -63,7 +63,9 @@ class NGraphElementDiff(BaseModel):
         """Method to compare two nGraphElements.
         Returns a dictionary with the differences between the two nGraphElements.
         """
-        element_differences = DeepDiff(reference_element, staged_element)  # , ignore_order=True)
+        element_differences = DeepDiff(
+            reference_element.model_dump(), staged_element.model_dump()
+        )  # Note: To exclude Getters, model_dump() is used
         difference_keys = element_differences.keys()
 
         diff_object = NGraphElementConfigurationDiff()
