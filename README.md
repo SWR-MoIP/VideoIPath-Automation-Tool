@@ -1,5 +1,5 @@
 <div align="center">
-  <img alt="VideoIPath Automation Tool" src="./docs/images/readme_banner.svg" width="400" />
+  <img alt="VideoIPath Automation Tool" src="./docs/images/logo.svg" width="400" />
 </div>
 
 <p align="center">A Python package for automating VideoIPath configuration workflows.<p align="center">
