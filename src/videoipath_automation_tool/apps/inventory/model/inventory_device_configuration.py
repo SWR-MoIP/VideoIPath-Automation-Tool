@@ -1,9 +1,8 @@
+from typing import Annotated, Generic
+
 from pydantic import BaseModel, Field
 
-from videoipath_automation_tool.apps.inventory.model.drivers import (
-    CustomSettings,
-)  # Union which contains all driver specific custom settings models !
-# => Problem/TODO: IntelliSense shows in any case every property of all custom settings models => not very helpful for the user!
+from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
 
 
 class CinfoOverridesSNMP(BaseModel, validate_assignment=True):
@@ -93,26 +92,28 @@ class Desc(BaseModel, validate_assignment=True):
     label: str = ""
 
 
-class Config(BaseModel):
+class Config(BaseModel, Generic[CustomSettingsType]):
     cinfo: Cinfo = Cinfo()
     driver: DriverInfos = DriverInfos()
     desc: Desc = Desc()
-    customSettings: CustomSettings = Field(
-        ..., discriminator="driver_id"
-    )  # This is the discriminator field for the customSettings!
-    # Information about "Union Discriminator" concept can be found here:
-    # https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions-with-str-discriminators
+    customSettings: Annotated[
+        CustomSettingsType,
+        Field(..., discriminator="driver_id"),
+        # This is the discriminator field for the customSettings!
+        # Information about "Union Discriminator" concept can be found here:
+        # https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions-with-str-discriminators
+    ]
 
 
-class DeviceConfiguration(BaseModel, validate_assignment=True):
+class DeviceConfiguration(BaseModel, Generic[CustomSettingsType], validate_assignment=True):
     """DeviceConfiguration class is used to represent a device configuration for VideoIPath inventory."""
 
     cinfoOverrides: CinfoOverrides = CinfoOverrides()
-    config: Config
+    config: Config[CustomSettingsType]
     meta: dict = {}
     active: bool = True
     id: str = ""
 
     @property  # Map the customSettings to "custom" for easier access
-    def custom(self) -> CustomSettings:
+    def custom(self) -> CustomSettingsType:
         return self.config.customSettings

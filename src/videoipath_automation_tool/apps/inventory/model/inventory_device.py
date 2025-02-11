@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Generic, Optional
 
 from pydantic import BaseModel
 
 from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
+from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
 from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration import (
     Auth,
     DeviceConfiguration,
@@ -10,10 +11,10 @@ from videoipath_automation_tool.apps.inventory.model.inventory_device_configurat
 )
 
 
-class InventoryDevice(BaseModel, validate_assignment=True):
+class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignment=True):
     """InventoryDevice class is used to represent a device configuration for VideoIPath inventory."""
 
-    configuration: DeviceConfiguration
+    configuration: DeviceConfiguration[CustomSettingsType]
     status: Optional[DeviceStatus] = None
 
     # Setter / getter to improve the usability of the class
@@ -96,7 +97,7 @@ class InventoryDevice(BaseModel, validate_assignment=True):
         return instance
 
     @classmethod
-    def parse_configuration(cls, data: dict) -> "InventoryDevice":
+    def parse_configuration(cls, data: dict) -> "InventoryDevice":  # TODO evtl. Return hint weg?
         """Method to create a inventory device instance from a API style configuration dictionary."""
         # Use driver_id string to fill driver info, then remove "driver_id" from customSettings!
         driver_organization = data["config"]["driver"]["organization"]

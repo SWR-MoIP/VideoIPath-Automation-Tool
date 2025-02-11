@@ -1,8 +1,22 @@
 import logging
-from typing import List, Optional
+from typing import List, Literal, Optional, overload
 
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
-from videoipath_automation_tool.apps.inventory.model import driver_literals
+from videoipath_automation_tool.apps.inventory.model import DriverLiteral
+from videoipath_automation_tool.apps.inventory.model.drivers import (
+    CustomSettings_com_nevion_arista_0_1_0,
+    CustomSettings_com_nevion_dhd_series52_0_1_0,
+    CustomSettings_com_nevion_lawo_ravenna_0_1_0,
+    CustomSettings_com_nevion_NMOS_0_1_0,
+    CustomSettings_com_nevion_NMOS_multidevice_0_1_0,
+    CustomSettings_com_nevion_nodectrl_0_1_0,
+    CustomSettings_com_nevion_openflow_0_0_1,
+    CustomSettings_com_nevion_powercore_0_1_0,
+    CustomSettings_com_nevion_r3lay_0_1_0,
+    CustomSettings_com_nevion_selenio_13p_0_1_0,
+    CustomSettings_com_nevion_virtuoso_mi_0_1_0,
+    CustomSettings_com_sony_MLS_X1_1_0,
+)
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration_compare import (
     InventoryDeviceComparison,
@@ -35,7 +49,72 @@ class InventoryApp:
             self._logger.error(f"Error initializing Inventory API: {e}")
             raise ConnectionError("Error initializing Inventory API.")
 
-    def create_device(self, driver: driver_literals) -> InventoryDevice:
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.NMOS_multidevice-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_NMOS_multidevice_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.NMOS-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_NMOS_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.selenio_13p-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_selenio_13p_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.arista-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_arista_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.r3lay-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_r3lay_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.powercore-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_powercore_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.nodectrl-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_nodectrl_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.sony.MLS-X1-1.0"]
+    ) -> InventoryDevice[CustomSettings_com_sony_MLS_X1_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.dhd_series52-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_dhd_series52_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.virtuoso_mi-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_virtuoso_mi_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.openflow-0.0.1"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_openflow_0_0_1]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.lawo_ravenna-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_lawo_ravenna_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: DriverLiteral
+    ) -> InventoryDevice: ...  # workaround to show all drivers in intellisense because otherwise it will only show intellisense for the closest matching overload
+
+    def create_device(self, driver: DriverLiteral) -> InventoryDevice:
         """Method to create a new device configuration for VideoIPath-Inventory.
         Returns an empty InventoryDevice instance with the given driver.
 
@@ -131,6 +210,8 @@ class InventoryApp:
             device_id = devices["active"][0]
 
         # Get online configuration of device from VideoIPath-Inventory and return configured InventoryDevice instance:
+        if type(device_id) is not str:
+            raise ValueError("device_id must be a string.")
         online_device = self._inventory_api.get_device(device_id=device_id, config_only=config_only)
         return online_device
 

@@ -1,9 +1,4 @@
-# Workflow:
-# -> Python: Request on Property => (If Cache outdated) Request on API => Parse / Validate Response => Return Result
-#  Timestamps for last update => Cache for given time (via environment variable)
-
-# TODO:
-# Implement model for device status
+# TODO: finalise the model for device status
 
 from typing import List
 
