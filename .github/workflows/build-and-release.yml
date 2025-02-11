@@ -50,16 +50,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_ID=$(gh release view "v${{ env.VERSION }}" --json id -q .id || echo "")
+          TAG="v${{ env.VERSION }}"
 
-          if [ -z "$RELEASE_ID" ]; then
-            echo "Creating new release v${{ env.VERSION }}"
-          else
-            echo "Deleting existing release v${{ env.VERSION }} and creating a new one"
-            gh release delete "v${{ env.VERSION }}" --yes
+          # Check if tag exists
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG"; then
+            echo "Deleting old tag and release for $TAG"
+            gh release delete "$TAG" --yes || true
+            git push --delete origin "$TAG" || true
           fi
 
-          gh release create "v${{ env.VERSION }}" dist/* \
-            --title "Release v${{ env.VERSION }}" \
-            --notes "Automated release for version ${{ env.VERSION }}" \
+          # Create new tag from the latest commit
+          git tag "$TAG"
+          git push origin "$TAG"
+
+          # Create new release with the correct source code
+          gh release create "$TAG" dist/* \
+            --title "Release $TAG" \
+            --notes "Automated release for version $TAG" \
             --latest
