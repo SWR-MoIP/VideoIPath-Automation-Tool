@@ -321,8 +321,8 @@ class InventoryApp:
             label (str, optional): Label of the device to get.
             device_id (str, optional): Device ID of the device to get.
             address (str, optional): Address of the device to get.
-            config_only (bool, optional): If True, only the configuration of the device is returned.
-            custom_settings_type (str, optional): Type of custom settings to get for the device.
+            config_only (bool, optional): If True, only the configuration of the device is fetched.
+            custom_settings_type (str, optional): Set optional driver_id to get Intellisense for custom settings.
 
         Raises:
             ValueError:  If more than one parameter is given.
