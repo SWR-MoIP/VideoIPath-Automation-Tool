@@ -50,7 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v${{ env.VERSION }}"
+          TAG="v${{ steps.get_version.outputs.VERSION }}" 
 
           # Check if tag exists
           if git ls-remote --tags origin | grep -q "refs/tags/$TAG"; then
