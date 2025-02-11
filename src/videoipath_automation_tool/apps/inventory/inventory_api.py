@@ -1,11 +1,12 @@
 import logging
 import time
-from typing import List, Optional
+from typing import List, Optional, Type
 from uuid import uuid4
 
 from pydantic import BaseModel, IPvAnyAddress, model_validator
 
 from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
+from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
@@ -80,11 +81,15 @@ class InventoryAPI(BaseModel):
             "inactive": [device["_id"] for device in devices if not device["active"]],
         }
 
-    def get_device(self, device_id: str, config_only: bool = False) -> InventoryDevice:
+    def get_device(
+        self, device_id: str, config_only: bool = False, custom_settings_type: Optional[Type[CustomSettingsType]] = None
+    ) -> InventoryDevice[CustomSettingsType]:
         """Method to get a device by device id from VideoIPath-Inventory
 
         Args:
             device_id (str): Device ID
+            config_only (bool, optional): Get only the configuration of the device. Defaults to False.
+            custom_settings_type (Optional[Type[CustomSettingsType]], optional): Custom settings type to use. Defaults to None.
 
         Returns:
             InventoryDevice: Device object

@@ -20,6 +20,7 @@ DriverLiteral = Literal[
     "com.sony.MLS-X1-1.0",
     "com.nevion.dhd_series52-0.1.0",
     "com.nevion.virtuoso_mi-0.1.0",
+    "com.nevion.virtuoso_re-0.1.0",
     "com.nevion.openflow-0.0.1",
     "com.nevion.lawo_ravenna-0.1.0",
 ]
@@ -367,26 +368,51 @@ class CustomSettings_com_nevion_dhd_series52_0_1_0(DriverCustomSettings):
 class CustomSettings_com_nevion_virtuoso_mi_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.virtuoso_mi-0.1.0"] = "com.nevion.virtuoso_mi-0.1.0"
     enable_advanced_communication_check: bool = Field(
+        default=True, alias="com.nevion.virtuoso_mi.AdvancedReachabilityCheck"
+    )
+    """
+    Enable advanced communication check.\n
+    Use a more thorough communication check, this will report an IP address as down if all HBR cards have a status of 'Booting'.
+    """
+    enable_bulk_config: bool = Field(default=False, alias="com.nevion.virtuoso_mi.enable_bulk_config")
+    """
+    Enable bulk config.\n
+    Configure this unit's audio elements using bulk API.
+    """
+    linear_uplink_support: bool = Field(default=False, alias="com.nevion.virtuoso_mi.linear_uplink_support")
+    """Support uplink routing for Linear cards.\n
+    Support backplane routing to Uplink cards for Linear cards.
+    """
+
+    madi_uplink_support: bool = Field(default=False, alias="com.nevion.virtuoso_mi.madi_uplink_support")
+    """Support uplink routing for MADI cards.\n
+    Support backplane routing to Uplink cards for MADI cards.
+    """
+
+
+class CustomSettings_com_nevion_virtuoso_re_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.virtuoso_re-0.1.0"] = "com.nevion.virtuoso_re-0.1.0"
+    enable_advanced_communication_check: bool = Field(
         default=True,
-        alias="com.nevion.virtuoso_mi.AdvancedReachabilityCheck",
+        alias="com.nevion.virtuoso_re.AdvancedReachabilityCheck",
         description="Use a more thorough communication check, this will report an IP address as down if all HBR cards have a status of 'Booting'",
         title="Enable advanced communication check",
     )
     enable_bulk_config: bool = Field(
         default=False,
-        alias="com.nevion.virtuoso_mi.enable_bulk_config",
+        alias="com.nevion.virtuoso_re.enable_bulk_config",
         description="Configure this unit's audio elements using bulk API",
         title="Enable bulk config",
     )
     linear_uplink_support: bool = Field(
         default=False,
-        alias="com.nevion.virtuoso_mi.linear_uplink_support",
+        alias="com.nevion.virtuoso_re.linear_uplink_support",
         description="Support backplane routing to Uplink cards for Linear cards",
         title="Support uplink routing for Linear cards",
     )
     madi_uplink_support: bool = Field(
         default=False,
-        alias="com.nevion.virtuoso_mi.madi_uplink_support",
+        alias="com.nevion.virtuoso_re.madi_uplink_support",
         description="Support backplane routing to Uplink cards for MADI cards",
         title="Support uplink routing for MADI cards",
     )
@@ -519,6 +545,7 @@ CustomSettings = Union[
     CustomSettings_com_sony_MLS_X1_1_0,
     CustomSettings_com_nevion_dhd_series52_0_1_0,
     CustomSettings_com_nevion_virtuoso_mi_0_1_0,
+    CustomSettings_com_nevion_virtuoso_re_0_1_0,
     CustomSettings_com_nevion_openflow_0_0_1,
     CustomSettings_com_nevion_lawo_ravenna_0_1_0,
 ]

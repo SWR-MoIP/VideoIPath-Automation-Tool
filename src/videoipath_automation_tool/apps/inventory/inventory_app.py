@@ -15,6 +15,7 @@ from videoipath_automation_tool.apps.inventory.model.drivers import (
     CustomSettings_com_nevion_r3lay_0_1_0,
     CustomSettings_com_nevion_selenio_13p_0_1_0,
     CustomSettings_com_nevion_virtuoso_mi_0_1_0,
+    CustomSettings_com_nevion_virtuoso_re_0_1_0,
     CustomSettings_com_sony_MLS_X1_1_0,
 )
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
@@ -49,6 +50,7 @@ class InventoryApp:
             self._logger.error(f"Error initializing Inventory API: {e}")
             raise ConnectionError("Error initializing Inventory API.")
 
+    # Note: For each driver, an overload is defined to show the correct intellisense for the driver.
     @overload
     def create_device(
         self, driver: Literal["com.nevion.NMOS_multidevice-0.1.0"]
@@ -101,6 +103,11 @@ class InventoryApp:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.virtuoso_re-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_virtuoso_re_0_1_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.openflow-0.0.1"]
     ) -> InventoryDevice[CustomSettings_com_nevion_openflow_0_0_1]: ...
 
@@ -112,7 +119,7 @@ class InventoryApp:
     @overload
     def create_device(
         self, driver: DriverLiteral
-    ) -> InventoryDevice: ...  # workaround to show all drivers in intellisense because otherwise it will only show intellisense for the closest matching overload
+    ) -> InventoryDevice: ...  # Workaround to list all overloads in Intellisense
 
     def create_device(self, driver: DriverLiteral) -> InventoryDevice:
         """Method to create a new device configuration for VideoIPath-Inventory.
@@ -124,7 +131,7 @@ class InventoryApp:
         Returns:
             InventoryDevice: Empty device configuration for the given driver.
         """
-        return InventoryDevice.create(driver=str(driver))
+        return InventoryDevice.create(driver_id=str(driver))
 
     def add_device(
         self, device: InventoryDevice, label_check: bool = True, address_check: bool = True, config_only: bool = False
@@ -160,14 +167,162 @@ class InventoryApp:
         self._logger.info(f"Device '{online_device.label}' added to Inventory with id '{online_device.device_id}'.")
         return online_device
 
+    @overload
     def get_device(
         self,
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
         config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.NMOS_multidevice-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_NMOS_multidevice_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.NMOS-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_NMOS_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.selenio_13p-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_selenio_13p_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.arista-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_arista_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.r3lay-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_r3lay_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.powercore-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_powercore_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.nodectrl-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_nodectrl_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.sony.MLS-X1-1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_sony_MLS_X1_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.dhd_series52-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_dhd_series52_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.virtuoso_mi-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_virtuoso_mi_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.virtuoso_re-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_virtuoso_re_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.openflow-0.0.1"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_openflow_0_0_1]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[Literal["com.nevion.lawo_ravenna-0.1.0"]] = None,
+    ) -> InventoryDevice[CustomSettings_com_nevion_lawo_ravenna_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[DriverLiteral] = None,
+    ) -> InventoryDevice: ...  # Workaround to list all overloads in Intellisense
+
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        config_only: bool = False,
+        custom_settings_type: Optional[DriverLiteral] = None,
     ) -> InventoryDevice:
         """Method to get a online device from VideoIPath-Inventory by label, device_id or address as InventoryDevice instance.
+
+        Args:
+            label (str, optional): Label of the device to get.
+            device_id (str, optional): Device ID of the device to get.
+            address (str, optional): Address of the device to get.
+            config_only (bool, optional): If True, only the configuration of the device is returned.
+            custom_settings_type (str, optional): Type of custom settings to get for the device.
 
         Raises:
             ValueError:  If more than one parameter is given.
@@ -212,7 +367,9 @@ class InventoryApp:
         # Get online configuration of device from VideoIPath-Inventory and return configured InventoryDevice instance:
         if type(device_id) is not str:
             raise ValueError("device_id must be a string.")
-        online_device = self._inventory_api.get_device(device_id=device_id, config_only=config_only)
+        online_device = self._inventory_api.get_device(
+            device_id=device_id, config_only=config_only, custom_settings_type=custom_settings_type
+        )
         return online_device
 
     def update_device(self, device: InventoryDevice) -> InventoryDevice:

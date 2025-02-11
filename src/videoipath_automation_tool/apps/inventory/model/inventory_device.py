@@ -42,7 +42,7 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
     def address(self, value):
         self.configuration.config.cinfo.address = value
 
-    @property  # Access to custom settings via "custom" property => e.g. device.custom.experimental_alarm_port
+    @property
     def custom(self):
         return self.configuration.config.customSettings
 
@@ -50,9 +50,6 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
     def custom(self, value):
         self.configuration.config.customSettings = value
 
-    # TODO:
-    # Known Issue: If a password is set, it is not possible to change the user without setting the password again!
-    # TO FIX!
     @property
     def user(self):
         if self.configuration.config.cinfo.auth is None:
@@ -82,34 +79,53 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
         return self.configuration.id
 
     @classmethod
-    def create(cls, driver: str):
-        """Method to create a inventory device instance with a specific driver and default values."""
-        instance = cls.model_validate({"configuration": {"config": {"customSettings": {"driver_id": driver}}}})
-        # Use driver_id string to fill driver info, then remove "driver_id" from customSettings!
+    def create(cls, driver_id: str) -> "InventoryDevice":
+        """Method to create an inventory device instance with a specific driver and default values.
+
+        Args:
+            driver_id: The driver_id string of the driver to use, e.g. "com.nevion.NMOS_multidevice-0.1.0".
+
+        Returns:
+            InventoryDevice: The created inventory device instance
+        """
+        instance = cls.model_validate({"configuration": {"config": {"customSettings": {"driver_id": driver_id}}}})
+
         driver_id = instance.configuration.config.customSettings.driver_id
         driver_name = driver_id.split("-")[0].split(".")[2]
         driver_organization = driver_id.split(".")[0] + "." + driver_id.split(".")[1]
         driver_version = driver_id.split("-")[1]
+
         instance.configuration.config.driver = DriverInfos(
             name=driver_name, organization=driver_organization, version=driver_version
         )
-        instance.configuration.config.customSettings.__delattr__("driver_id")
         return instance
 
     @classmethod
-    def parse_configuration(cls, data: dict) -> "InventoryDevice":  # TODO evtl. Return hint weg?
-        """Method to create a inventory device instance from a API style configuration dictionary."""
-        # Use driver_id string to fill driver info, then remove "driver_id" from customSettings!
+    def parse_configuration(cls, data: dict):
+        """Method to create an inventory device instance from a API style configuration dictionary.
+
+        Args:
+            data: The API style configuration dictionary to parse (e.g. fetched from /rest/v2/data/config/devman/devices/device10/**).
+
+        Returns:
+            InventoryDevice: The created inventory device instance
+        """
         driver_organization = data["config"]["driver"]["organization"]
         driver_name = data["config"]["driver"]["name"]
         driver_version = data["config"]["driver"]["version"]
         driver_id = f"{driver_organization}.{driver_name}-{driver_version}"
+
         data["config"]["customSettings"]["driver_id"] = driver_id
+
         instance = cls.model_validate({"configuration": data})
-        instance.configuration.config.customSettings.__delattr__("driver_id")
         return instance
 
     def dump_configuration(self) -> dict:
         """Method to dump the device configuration as a API style configuration dictionary."""
-        # Important: by_alias must be set to True, because the API uses "." in the keys, which is not allowed in Python and workarounded by using the alias of a pydatic field.
-        return self.configuration.model_dump(mode="json", by_alias=True)
+        # Important: by_alias must be set to True, because the API uses "." in the keys,
+        # which is not allowed in Python and workarounded by using the alias of a pydatic field.
+        return self.configuration.model_dump(
+            mode="json",
+            by_alias=True,
+            exclude={"config": {"customSettings": {"driver_id"}}},
+        )
