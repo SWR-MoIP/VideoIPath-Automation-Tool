@@ -5,9 +5,8 @@
 <p align="center">A Python package for automating VideoIPath configuration workflows.<p align="center">
 <hr />
 
-## ⚠️ Attention ⚠️
-
-This Python package, the VideoIPath Automation Tool, is still under development and currently in the alpha phase. Features and interfaces may change significantly as development progresses. Feel free to use the module and provide feedback, but be aware that breaking changes may occur in future versions.
+> **⚠️ Attention ⚠️**<br>
+>This Python package, the VideoIPath Automation Tool, is still under development and currently in the alpha phase. Features and interfaces may change significantly as development progresses. Feel free to use the module and provide feedback, but be aware that breaking changes may occur in future versions.
 
 ## Introduction
 
@@ -46,6 +45,7 @@ pip3 install "path/to/downloads/VideoIPath_Automation_Tool-0.1.0.tar.gz"
 > **Note**: On Windows, `~/.piprc` or `pip.conf` does not work, instead create a `%APPDATA%\pip\pip.ini` file. For more information on PIP configuration on different operating systems see the [official documentation](https://pip.pypa.io/en/stable/topics/configuration/)
 
 ### A Simple Example
+
 ```python
 # Import the `VideoIPathApp` class from the videoipath_automation_tool package
 from videoipath_automation_tool import VideoIPathApp
@@ -76,6 +76,6 @@ print(device.device_id)
 - [Driver Compatibility](./docs/driver_compatibility.md)
 - [Development and Release](./docs/development-and-release.md)
 
-
 ## License
+
 [Affero General Public License v3.0](LICENSE)

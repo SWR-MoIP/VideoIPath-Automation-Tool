@@ -1,7 +1,5 @@
 # Development and Release
 
-> **IMPORTANT**: This section is still WiP and the desired state, not how it currently is.
-
 ## Naming Conventions
 
 Work on a branch should always be related to an issue. The branch should be linked to the issue to have full transparency and traceability. The branch name can be the auto-generated one from Gitlab (when creating a branch for an issue) or a custom one - preferably including the issue ID.
@@ -12,7 +10,7 @@ Commits messages should briefly describe the changes they're introducing but don
 
 ## Versioning
 
-For versioning, mostly [semantic versioning](https://semver.org/) is used. Unfortunately, Python doesn't understand all details of semver, but it's 
+For versioning, mostly [semantic versioning](https://semver.org/) is used. Unfortunately, Python doesn't understand all details of semver, but it's
 still the most viable solution and the basics can be used.
 
 For stable/official versions, the common semver pattern is used:
