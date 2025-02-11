@@ -1,20 +1,20 @@
 import logging
-from pydantic import BaseModel
 from typing import List, Literal, Optional
 
-from videoipath_automation_tool.apps.topology.model.topology_device_configuration_compare import (
-    TopologyDeviceComparison,
-)
-from videoipath_automation_tool.apps.topology.model.topology_device import TopologyDevice, TopologyDeviceConfiguration
+from pydantic import BaseModel
+
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_base_device import BaseDevice
-from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import NGraphElement
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_generic_vertex import GenericVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ip_vertex import IpVertex
+from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import NGraphElement
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_unidirectional_edge import (
     UnidirectionalEdge,
 )
-
+from videoipath_automation_tool.apps.topology.model.topology_device import TopologyDevice, TopologyDeviceConfiguration
+from videoipath_automation_tool.apps.topology.model.topology_device_configuration_compare import (
+    TopologyDeviceComparison,
+)
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector

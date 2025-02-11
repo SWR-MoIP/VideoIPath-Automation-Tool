@@ -1,6 +1,7 @@
 import logging
 from typing import List, Literal, Optional
 
+from videoipath_automation_tool.apps.topology.helper.placement import TopologyPlacement
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_base_device import BaseDevice
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_generic_vertex import GenericVertex
@@ -8,10 +9,9 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ip
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_unidirectional_edge import (
     UnidirectionalEdge,
 )
-from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.apps.topology.topology_api import TopologyAPI
 from videoipath_automation_tool.apps.topology.model.topology_device import TopologyDevice
-from videoipath_automation_tool.apps.topology.helper.placement import TopologyPlacement
+from videoipath_automation_tool.apps.topology.topology_api import TopologyAPI
+from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
 
 
