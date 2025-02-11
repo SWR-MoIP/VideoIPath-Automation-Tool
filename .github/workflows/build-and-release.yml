@@ -1,16 +1,20 @@
-name: Release Python Package
+name: Build and Release Python Package
+
 # Note: This is a temporary workflow for the repository in a private state.
 # Before making the repository public, it will be replaced!
 
 on:
-  workflow_run:
-    workflows: ["Build and Upload Python Package"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  release:
+  build_and_release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,17 +27,21 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Build package
+        run: poetry build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with: 
+          name: videoipath-automation-tool-${{ github.run_number }}
+          path: dist/*
+
       - name: Extract package version
         id: get_version
-        run: |
-          echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
-          echo "VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: videoipath-automation-tool-${{ steps.get_version.outputs.VERSION }}
-          path: dist/
+        run: echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
 
       - name: Create or update release
         env:
