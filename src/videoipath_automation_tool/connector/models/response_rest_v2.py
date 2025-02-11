@@ -22,13 +22,14 @@ class ResponseHeaderV2(BaseModel):
     user: str
 
 
-# ---- GET ----
+# ---- Base ----
 class ResponseV2(BaseModel, extra="forbid"):
     """REST API v2 Response Header"""
 
     header: ResponseHeaderV2
 
 
+# ---- GET ----
 class ResponseV2Get(ResponseV2):
     """REST API v2 GET Response"""
 
@@ -64,3 +65,10 @@ class ResponseV2Patch(ResponseV2):
     """REST API v2 PATCH Response"""
 
     result: ResponseV2PatchData
+
+
+# --- POST ---
+class ResponseV2Post(ResponseV2):
+    """REST API v2 POST Response"""
+
+    data: dict

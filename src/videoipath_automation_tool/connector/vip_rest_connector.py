@@ -1,7 +1,7 @@
 from typing import Literal
 
-from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
-from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get, ResponseV2Patch
+from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch, RequestV2Post
+from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get, ResponseV2Patch, ResponseV2Post
 from videoipath_automation_tool.connector.vip_base_connector import VideoIPathBaseConnector
 
 
@@ -14,6 +14,7 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
             "EXACT_MATCHES": {"/rest/v2/data/*"},
         },
         "PATCH": {"PREFIXES": {"/rest/v2/data/config/"}, "EXACT_MATCHES": set()},
+        "POST": {"PREFIXES": {"/rest/v2/actions/status/collector/"}, "EXACT_MATCHES": set()},
     }
 
     def get(
@@ -145,6 +146,69 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         # Note: Content validation for PATCH responses is not implemented in this method.
         # It is recommended to perform any necessary validation of the response content
         # in the calling method after receiving the response from this PATCH request.
+
+        return response_object
+
+    def post(
+        self,
+        url_path: str,
+        body: RequestV2Post,
+        auth_check: bool = True,
+        url_validation: bool = True,
+        version: Literal["v2"] = "v2",
+    ) -> ResponseV2Post:
+        """
+        Executes a REST v2 POST request to the VideoIPath API.
+
+        This method validates the URL, constructs the request, and handles API responses.
+
+        Args:
+            url_path (str): The API endpoint path (e.g., "/rest/v2/actions/status/collector/lookupGraphElement").
+            body (RequestV2Post): The request body object.
+            auth_check (bool, optional): If `True`, verifies authentication status in the response (default: `True`).
+            url_validation (bool, optional): If `True`, validates the URL path (default: `True`).
+            version (Literal["v2"], optional): The API version to use (default: "v2").
+
+        Returns:
+            ResponseV2Post: The validated API response object.
+
+        Raises:
+            ValueError: If the URL path is invalid or the API response contains an error.
+            PermissionError: If authentication fails.
+            TimeoutError: If the request times out.
+            ConnectionError: If the server cannot be reached.
+            requests.RequestException: For other network-related errors.
+
+        Example:
+            response = connector.post("/rest/v2/actions/status/collector/lookupGraphElement", body)
+            print(response.data)
+        """
+        if url_validation:
+            self._validate_url(url_path, "POST")
+
+        response = self._execute_request(
+            method="POST",
+            url=self._build_url(url_path),
+            timeout=self.TIMEOUTS["POST"],
+            request_payload=body.model_dump(mode="json", by_alias=True),
+        )
+
+        response_object = ResponseV2Post.model_validate(response.json())
+
+        if response_object.header.code != "OK":
+            raise Exception(f"Error in API response: {response_object.header.code}, {response_object.header.msg}")
+
+        if auth_check:
+            if not response_object.header.auth:
+                raise PermissionError(
+                    f"Authentication failed for path {url_path}: {response.status_code}, {response.reason}"
+                )
+        else:
+            self._logger.debug("Authentication check skipped.")
+
+        # Note: Content validation for POST responses is not implemented in this method.
+        # It is recommended to perform any necessary validation of the response content
+        # in the calling method after receiving the response from this POST request.
 
         return response_object
 

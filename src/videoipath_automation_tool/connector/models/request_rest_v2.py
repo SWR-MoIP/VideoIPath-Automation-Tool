@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+# --- HTTP REST V2 Patch Request ---
 class Action(BaseModel, extra="allow"):
     """
     Basemodel for REST V2 Patch Action.
@@ -101,3 +102,37 @@ class RequestV2Patch(BaseModel):
         action = Action(_action="remove", **model.model_dump(mode="json", include={"rev", "id"}, by_alias=True))
         self.actions.append(action)
         return self
+
+
+# --- HTTP REST V2 Post Request ---
+class Header(BaseModel):
+    """
+    Basemodel for REST V2 Post Header.
+
+    This model represents the header of a REST V2 Post request.
+
+    Attributes:
+        id (int):
+            ID, defaults to 0.
+    """
+
+    id: int = 0
+
+
+class RequestV2Post(BaseModel):
+    """
+    Model for REST V2 Post Request Body.
+
+    This model is designed to handle post requests in REST V2 API, which are used
+    to execute the newer generation of remote procedure calls in the VideoIPath system.
+
+    Attributes:
+        header (Header):
+            The header of the request, containing the ID.
+
+        data (dict):
+            The data to be sent in the request.
+    """
+
+    header: Header
+    data: dict
