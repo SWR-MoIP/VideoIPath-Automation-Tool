@@ -54,8 +54,12 @@ jobs:
 
           if [ -z "$RELEASE_ID" ]; then
             echo "Creating new release v${{ env.VERSION }}"
-            gh release create "v${{ env.VERSION }}" dist/* --title "Release v${{ env.VERSION }}" --notes "Automated release for version ${{ env.VERSION }}"
           else
-            echo "Updating existing release v${{ env.VERSION }}"
-            gh release upload "v${{ env.VERSION }}" dist/* --clobber
+            echo "Deleting existing release v${{ env.VERSION }} and creating a new one"
+            gh release delete "v${{ env.VERSION }}" --yes
           fi
+
+          gh release create "v${{ env.VERSION }}" dist/* \
+            --title "Release v${{ env.VERSION }}" \
+            --notes "Automated release for version ${{ env.VERSION }}" \
+            --latest
