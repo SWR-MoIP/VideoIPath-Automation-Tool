@@ -194,6 +194,7 @@ class TopologyApp:
 
         # print(device_1_vertices)
         # print(device_2_vertices)
+        # TODO!
 
         if "in" in device_1_vertices and "out" in device_1_vertices:
             if device_1_vertices["in"] and device_1_vertices["out"]:
