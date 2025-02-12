@@ -1,6 +1,7 @@
 from typing import Generic, Optional
 
 from pydantic import BaseModel
+from typing_extensions import deprecated
 
 from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
 from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
@@ -17,67 +18,132 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
     configuration: DeviceConfiguration[CustomSettingsType]
     status: Optional[DeviceStatus] = None
 
-    # Setter / getter to improve the usability of the class
+    @property
+    def device_id(self):
+        return self.configuration.id
+
+    # --- Deprecated properties ---
+    @deprecated(
+        "The property `label` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.label`. ",
+        category=None,
+    )
     @property
     def label(self):
         return self.configuration.config.desc.label
 
+    @deprecated(
+        "The property `label` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.label`. ",
+        category=None,
+    )
     @label.setter
     def label(self, value):
         self.configuration.config.desc.label = value
 
+    @deprecated(
+        "The property `description` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.description`. ",
+        category=None,
+    )
     @property
     def description(self):
         return self.configuration.config.desc.desc
 
+    @deprecated(
+        "The property `description` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.description`. ",
+        category=None,
+    )
     @description.setter
     def description(self, value):
         self.configuration.config.desc.desc = value
 
+    @deprecated(
+        "The property `address` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.address`. ",
+        category=None,
+    )
     @property
     def address(self):
         return self.configuration.config.cinfo.address
 
+    @deprecated(
+        "The property `address` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.address`. ",
+        category=None,
+    )
     @address.setter
     def address(self, value):
         self.configuration.config.cinfo.address = value
 
+    @deprecated(
+        "The property `custom` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.custom_settings`. ",
+        category=None,
+    )
     @property
     def custom(self):
         return self.configuration.config.customSettings
 
+    @deprecated(
+        "The property `custom` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.custom_settings`. ",
+        category=None,
+    )
     @custom.setter
     def custom(self, value):
         self.configuration.config.customSettings = value
 
+    @deprecated(
+        "The property `user` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.username`. ",
+        category=None,
+    )
     @property
     def user(self):
         if self.configuration.config.cinfo.auth is None:
             raise ValueError("No user set in device configuration.")
         return self.configuration.config.cinfo.auth.user
 
+    @deprecated(
+        "The property `user` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.username`. ",
+        category=None,
+    )
     @user.setter
     def user(self, value):
         if self.configuration.config.cinfo.auth is None:
             self.configuration.config.cinfo.auth = Auth()
         self.configuration.config.cinfo.auth.user = value
 
+    @deprecated(
+        "The property `password` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.password`. ",
+        category=None,
+    )
     @property
     def password(self):
         if self.configuration.config.cinfo.auth is None:
             raise ValueError("No password set in device configuration.")
         return self.configuration.config.cinfo.auth.password
 
+    @deprecated(
+        "The property `password` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.password`. ",
+        category=None,
+    )
     @password.setter
     def password(self, value):
         if self.configuration.config.cinfo.auth is None:
             self.configuration.config.cinfo.auth = Auth()
         self.configuration.config.cinfo.auth.password = value
 
-    @property
-    def device_id(self):
-        return self.configuration.id
-
+    @deprecated(
+        "The property `device_id` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        " It is moved to the `configuration` property: `configuration.id`. ",
+        category=None,
+    )
     @classmethod
     def create(cls, driver_id: str) -> "InventoryDevice":
         """Method to create an inventory device instance with a specific driver and default values.

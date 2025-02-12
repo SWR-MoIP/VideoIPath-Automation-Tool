@@ -83,7 +83,7 @@ class Cinfo(BaseModel, validate_assignment=True):
     auth: None | Auth = None
     http: CinfoHttp = CinfoHttp()
     snmp: CinfoSnmp = CinfoSnmp()
-    address: str = "192.168.0.1"  # type: ignore
+    address: str = "192.168.0.1"
     socketTimeout: None | str = None
     traps: None | Traps = Traps()
 
@@ -100,6 +100,7 @@ class Config(BaseModel, Generic[CustomSettingsType]):
     customSettings: Annotated[
         CustomSettingsType,
         Field(..., discriminator="driver_id"),
+        # Note:
         # This is the discriminator field for the customSettings!
         # Information about "Union Discriminator" concept can be found here:
         # https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions-with-str-discriminators
@@ -107,7 +108,7 @@ class Config(BaseModel, Generic[CustomSettingsType]):
 
 
 class DeviceConfiguration(BaseModel, Generic[CustomSettingsType], validate_assignment=True):
-    """DeviceConfiguration class is used to represent a device configuration for VideoIPath inventory."""
+    """DeviceConfiguration class is used to represent a device configuration in inventory."""
 
     cinfoOverrides: CinfoOverrides = CinfoOverrides()
     config: Config[CustomSettingsType]
@@ -116,9 +117,70 @@ class DeviceConfiguration(BaseModel, Generic[CustomSettingsType], validate_assig
     id: str = ""
 
     @property
+    def address(self):
+        return self.config.cinfo.address
+
+    @address.setter
+    def address(self, value):
+        self.config.cinfo.address = value
+
+    @property
+    def label(self):
+        return self.config.desc.label
+
+    @label.setter
+    def label(self, value):
+        self.config.desc.label = value
+
+    @property
+    def description(self):
+        return self.config.desc.desc
+
+    @description.setter
+    def description(self, value):
+        self.config.desc.desc = value
+
+    @property
+    def username(self):
+        if self.config.cinfo.auth is None:
+            raise ValueError("No user set in device configuration.")
+        return self.config.cinfo.auth.user
+
+    @username.setter
+    def username(self, value):
+        if self.config.cinfo.auth is None:
+            self.config.cinfo.auth = Auth()
+        self.config.cinfo.auth.user = value
+
+    @property
+    def password(self):
+        if self.config.cinfo.auth is None:
+            raise ValueError("No password set in device configuration.")
+        return self.config.cinfo.auth.password
+
+    @password.setter
+    def password(self, value):
+        if self.config.cinfo.auth is None:
+            self.config.cinfo.auth = Auth()
+        self.config.cinfo.auth.password = value
+
+    @property
     def custom_settings(self) -> CustomSettingsType:
         return self.config.customSettings
 
+    @property
+    def device_id(self):
+        return self.id
+
+    @property
+    def metadata(self):
+        return self.meta
+
+    @metadata.setter
+    def metadata(self, value):
+        self.meta = value
+
+    # --- Deprecated properties ---
     @deprecated(
         "The property `custom` is deprecated, use `custom_settings` instead.",
         category=None,
