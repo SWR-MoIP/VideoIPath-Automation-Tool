@@ -1,8 +1,7 @@
-from pydantic.networks import IPvAnyAddress
 from typing import List
 
 from pydantic import BaseModel, Field
-
+from pydantic.networks import IPvAnyAddress
 
 # REST API Model
 
@@ -71,19 +70,19 @@ class MulticastRangeInfoEntry(BaseModel, validate_assignment=True):
 # User Interface Model
 
 
-class MulticastPools(BaseModel):
-    available_pools: List[str] = Field(default_factory=list)
+class MulticastRanges(BaseModel):
+    available_ranges: List[str] = Field(default_factory=list)
     _pool_list: List[MulticastRangeInfoEntry]
 
     @classmethod
-    def create(cls, pools: List[MulticastRangeInfoEntry]) -> "MulticastPools":
+    def create(cls, pools: List[MulticastRangeInfoEntry]) -> "MulticastRanges":
         """Method to create a Multicast Pool instance from a "API style" dictionary."""
         instance = cls()
 
         instance._pool_list = pools
 
         for pool in pools:
-            instance.available_pools.append(pool.id)
+            instance.available_ranges.append(pool.id)
 
         return instance
 

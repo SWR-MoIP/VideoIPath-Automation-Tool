@@ -1,5 +1,7 @@
 # Example 2: Multicast Pools
 
+# NOTE / TODO: OUTDATED - Needs to be updated
+
 ## Code Example 1: Querying Multicast Pools from VideoIPath-Server
 
 ```python
@@ -10,14 +12,12 @@ print("\nPool object with the name 'A':")
 print(pools.get_pool_by_name("A"))  # Returns the pool object with the name "A"
 ```
 
-
 ## Code Example 2: Create a new Multicast Pool
 
 ```python
 b_pool_staged = app.preferences.create_local_multicast_pool("B", start_ip="234.0.0.0", end_ip="234.255.255.254")
 print(app.preferences.add_multicast_pool(b_pool_staged))
 ```
-
 
 ## Code Example 3: Extend a pool with a range
 
@@ -26,7 +26,6 @@ b_pool = pools.get_pool_by_name("B")
 b_pool.add_range(start_ip="236.0.0.1", end_ip="236.0.0.2")
 print(app.preferences.update_multicast_pool(b_pool))
 ```
-
 
 # Code Example 4: Remove a range from a pool
 
@@ -38,14 +37,12 @@ print(f"\nAfter Removal:\n{b_pool.ranges}")
 print(app.preferences.update_multicast_pool(b_pool))
 ```
 
-
 # Code Example 5: Delete a pool
 
 ```python
 # Can be done either by pool name or the pool object itself
 print(app.preferences.remove_multicast_pool("Test_Pool"))
 ```
-
 
 # Code Example 6: Use Information to validate a vertex configuration
 

@@ -17,7 +17,7 @@ class PreferencesAPI:
     def __init__(self, vip_connector: VideoIPathConnector):
         self.vip_connector = vip_connector
 
-    def get_multicast_pools(self) -> List[MulticastRangeInfoEntry]:
+    def get_multicast_ranges(self) -> List[MulticastRangeInfoEntry]:
         """
         Get all multicast pools from the VideoIPath System Preferences.
         """
