@@ -1,5 +1,5 @@
 import re
-from typing import List, Union
+from typing import Union
 
 from pydantic import Field, field_validator
 
@@ -7,7 +7,6 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_
     ConfigPriority,
     Control,
     Gpid,
-    MapsElement,
     NGraphElement,
     SipsMode,
     VertexType,
@@ -15,7 +14,7 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_
 
 
 class Vertex(NGraphElement, validate_assignment=True):
-    """Template for generic Vertex, IP Vertex and Codec Vertex"""
+    """Base class for all vertex types (generic, codec, ip)"""
 
     active: bool = True
     configPriority: ConfigPriority = "off"
@@ -26,7 +25,7 @@ class Vertex(NGraphElement, validate_assignment=True):
     gpid: Gpid
     imgUrl: str = ""
     isVirtual: bool = False
-    maps: Union[List[MapsElement], List] = Field(default_factory=List)  # TODO Prüfen!
+    maps: list = Field(default_factory=list)
     sipsMode: SipsMode = "NONE"
     useAsEndpoint: bool = False
     vertexType: VertexType = "Undecided"

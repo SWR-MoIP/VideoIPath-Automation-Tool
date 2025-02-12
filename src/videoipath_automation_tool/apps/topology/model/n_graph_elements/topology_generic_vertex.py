@@ -4,4 +4,6 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ve
 
 
 class GenericVertex(Vertex):
+    """Represents a generic vertex in the topology."""
+
     type: Literal["genericVertex"] = "genericVertex"

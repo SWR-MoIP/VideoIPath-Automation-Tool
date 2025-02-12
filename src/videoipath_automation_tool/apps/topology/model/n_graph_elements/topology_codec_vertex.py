@@ -9,7 +9,7 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ve
 from videoipath_automation_tool.utils.custom_warnings import DataTypeMismatchWarning
 
 
-# VLAN
+# --- VLAN Types ---
 class nVlan1Q(BaseModel, validate_assignment=True):
     type: Literal["nVlan1Q"] = "nVlan1Q"
     vlan: int = Field(..., ge=1, le=4094)
@@ -26,7 +26,7 @@ class nVlanPattern(BaseModel, validate_assignment=True):
     vlanP: str = ""
 
 
-# Destination IP
+# --- Multicast Address Types ---
 class nAddress(BaseModel, validate_assignment=True):
     type: Literal["nAddress"] = "nAddress"
     addr: IPvAnyAddress
@@ -37,38 +37,58 @@ class nPoolId(BaseModel, validate_assignment=True):
     poolId: str
 
 
-# Literal Types
+# --- Codec Format Literal ---
 CodecFormat = Literal["Video", "Audio", "ASI", "Ancillary"]
 
 
-# Codec Vertex
 class CodecVertex(Vertex):
     type: Literal["codecVertex"] = "codecVertex"
-    bidirPartnerId: None | str = None
+    bidirPartnerId: Optional[str] = None
     codecFormat: CodecFormat = "Video"
-    extraFormats: list = []
+    extraFormats: list = Field(default_factory=list)
     isIgmpSource: bool = False
-    mainDstIp: None | Union[nAddress, nPoolId]
-    mainDstMac: None | MacAddress
-    mainDstPort: None | int
-    mainDstVlan: None | Union[nVlan1Q, QinQ, nVlanPattern]
-    mainSrcGateway: None | IPvAnyAddress
-    mainSrcIp: None | IPvAnyAddress
-    mainSrcMac: None | MacAddress
-    mainSrcNetmask: None | IPvAnyAddress
+    mainDstIp: Optional[Union[nAddress, nPoolId]]
+    mainDstMac: Optional[MacAddress]
+    mainDstPort: Optional[int]
+    mainDstVlan: Optional[Union[nVlan1Q, QinQ, nVlanPattern]]
+    mainSrcGateway: Optional[IPvAnyAddress]
+    mainSrcIp: Optional[IPvAnyAddress]
+    mainSrcMac: Optional[MacAddress]
+    mainSrcNetmask: Optional[IPvAnyAddress]
     multiplicity: int = Field(..., ge=1)
-    partnerConfig: None | dict[str, Union[str, int, bool]]
+    partnerConfig: Optional[dict[str, Union[str, int, bool]]]
     public: bool = False
     sdpSupport: bool = True
-    serviceId: None | int
-    spareDstIp: None | Union[nAddress, nPoolId]
-    spareDstMac: None | MacAddress
-    spareDstPort: None | int
-    spareDstVlan: None | Union[nVlan1Q, QinQ, nVlanPattern]
-    spareSrcGateway: None | IPvAnyAddress
-    spareSrcIp: None | IPvAnyAddress
-    spareSrcMac: None | MacAddress
-    spareSrcNetmask: None | IPvAnyAddress
+    serviceId: Optional[int]
+    spareDstIp: Optional[Union[nAddress, nPoolId]]
+    spareDstMac: Optional[MacAddress]
+    spareDstPort: Optional[int]
+    spareDstVlan: Optional[Union[nVlan1Q, QinQ, nVlanPattern]]
+    spareSrcGateway: Optional[IPvAnyAddress]
+    spareSrcIp: Optional[IPvAnyAddress]
+    spareSrcMac: Optional[MacAddress]
+    spareSrcNetmask: Optional[IPvAnyAddress]
+
+    @staticmethod
+    def _warn_type_mismatch(component_name: str, actual: str, expected: str, method_name: str):
+        """
+        Issues a warning when a data type mismatch occurs.
+
+        Args:
+            component_name (str): A user-friendly, GUI-oriented description of the component
+                                (e.g., 'MAIN | VLAN', 'SPARE | Multicast Address').
+            actual (str): The current data type assigned to the component.
+            expected (str): The expected or required data type.
+            method_name (str): The correct method to use for setting the expected data type.
+
+        Example:
+            _warn_type_mismatch("SPARE | Multicast Address", "Pool ID", "IP Address", "spare_destination_address_ip")
+            -> "Warning: 'SPARE | Multicast Address' is set to 'Pool ID', not 'IP Address'. Use 'spare_destination_address_ip' instead."
+        """
+        warnings.warn(
+            f"Warning: {component_name} is set to '{actual}', not '{expected}'. Use '{method_name}' instead.",
+            DataTypeMismatchWarning,
+        )
 
     # --- Setters and Getters ---
 
@@ -140,16 +160,10 @@ class CodecVertex(Vertex):
         if self.mainDstVlan is None:
             return None
         if isinstance(self.mainDstVlan, QinQ):
-            warnings.warn(
-                "Main VLAN is set to QinQ, not dot1Q. Use 'main_destination_vlan_qinq' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("MAIN | VLAN", "QinQ", "dot1Q", "main_destination_vlan_qinq")
             return None
         elif isinstance(self.mainDstVlan, nVlanPattern):
-            warnings.warn(
-                "Main VLAN is set to VLAN Ranges, not dot1Q. Use 'main_destination_vlan_ranges' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("MAIN | VLAN", "VLAN Ranges", "dot1Q", "main_destination_vlan_ranges")
             return None
         return self.mainDstVlan.vlan
 
@@ -164,16 +178,10 @@ class CodecVertex(Vertex):
         if self.spareDstVlan is None:
             return None
         if isinstance(self.spareDstVlan, QinQ):
-            warnings.warn(
-                "Spare Destination is set to QinQ, not dot1Q. Use 'spare_destination_vlan_qinq' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("SPARE | VLAN", "QinQ", "dot1Q", "spare_destination_vlan_qinq")
             return None
         elif isinstance(self.spareDstVlan, nVlanPattern):
-            warnings.warn(
-                "Spare Destination is set to VLAN Ranges, not dot1Q. Use 'spare_destination_vlan_ranges' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("SPARE | VLAN", "VLAN Ranges", "dot1Q", "spare_destination_vlan_ranges")
             return None
         return self.spareDstVlan.vlan
 
@@ -188,23 +196,18 @@ class CodecVertex(Vertex):
         if self.mainDstVlan is None:
             return None
         if isinstance(self.mainDstVlan, nVlan1Q):
-            warnings.warn(
-                "Main VLAN is set to dot1Q, not QinQ. Use 'main_destination_vlan_dot1Q' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("MAIN | VLAN", "dot1Q", "QinQ", "main_destination_vlan_dot1Q")
             return None
         elif isinstance(self.mainDstVlan, nVlanPattern):
-            warnings.warn(
-                "Main VLAN is set to VLAN Ranges, not QinQ. Use 'main_destination_vlan_ranges' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("MAIN | VLAN", "VLAN Ranges", "QinQ", "main_destination_vlan_ranges")
             return None
         return self.mainDstVlan
 
     @main_destination_vlan_qinq.setter
-    def main_destination_vlan_qinq(self, outer_vlan_tag: int, inner_vlan_tag: int):
-        """GUI: Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)"""
-        self.mainDstVlan = QinQ(vlanOuter=outer_vlan_tag, vlanInner=inner_vlan_tag)
+    def main_destination_vlan_qinq(self, vlan_pair: tuple[int, int]):
+        """GUI: Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)\n
+        Expects a tuple (outer_vlan, inner_vlan)"""
+        self.mainDstVlan = QinQ(vlanOuter=vlan_pair[0], vlanInner=vlan_pair[1])
 
     @property
     def spare_destination_vlan_qinq(self) -> Optional[QinQ]:
@@ -212,16 +215,10 @@ class CodecVertex(Vertex):
         if self.spareDstVlan is None:
             return None
         if isinstance(self.spareDstVlan, nVlan1Q):
-            warnings.warn(
-                "Spare VLAN is set to dot1Q, not QinQ. Use 'spare_destination_vlan_dot1Q' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("SPARE | VLAN", "dot1Q", "QinQ", "spare_destination_vlan_dot1Q")
             return None
         elif isinstance(self.spareDstVlan, nVlanPattern):
-            warnings.warn(
-                "Spare VLAN is set to VLAN Ranges, not QinQ. Use 'spare_destination_vlan_ranges' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("SPARE | VLAN", "VLAN Ranges", "QinQ", "spare_destination_vlan_ranges")
             return None
         return self.spareDstVlan
 
@@ -236,16 +233,10 @@ class CodecVertex(Vertex):
         if self.mainDstVlan is None:
             return None
         if isinstance(self.mainDstVlan, nVlan1Q):
-            warnings.warn(
-                "Main VLAN is set to dot1Q, not VLAN Ranges. Use 'main_destination_vlan_dot1Q' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("MAIN | VLAN", "dot1Q", "VLAN Ranges", "main_destination_vlan_dot1Q")
             return None
         elif isinstance(self.mainDstVlan, QinQ):
-            warnings.warn(
-                "Main VLAN is set to QinQ, not VLAN Ranges. Use 'main_destination_vlan_qinq' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("MAIN | VLAN", "QinQ", "VLAN Ranges", "main_destination_vlan_qinq")
             return None
         return self.mainDstVlan.vlanP
 
@@ -260,16 +251,10 @@ class CodecVertex(Vertex):
         if self.spareDstVlan is None:
             return None
         if isinstance(self.spareDstVlan, nVlan1Q):
-            warnings.warn(
-                "Spare VLAN is set to dot1Q, not VLAN Ranges. Use 'spare_destination_vlan_dot1Q' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("SPARE | VLAN", "dot1Q", "VLAN Ranges", "spare_destination_vlan_dot1Q")
             return None
         elif isinstance(self.spareDstVlan, QinQ):
-            warnings.warn(
-                "Spare VLAN is set to QinQ, not VLAN Ranges. Use 'spare_destination_vlan_qinq' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("SPARE | VLAN", "QinQ", "VLAN Ranges", "spare_destination_vlan_qinq")
             return None
         return self.spareDstVlan.vlanP
 
@@ -304,10 +289,7 @@ class CodecVertex(Vertex):
         if self.mainDstIp is None:
             return None
         if isinstance(self.mainDstIp, nAddress):
-            warnings.warn(
-                "Main Destination Address is set to an IP Address, not a Pool ID. Use 'main_destination_address_ip' instead.",
-                DataTypeMismatchWarning,
-            )
+            self._warn_type_mismatch("MAIN | Multicast Address", "IP Address", "Pool ID", "main_destination_address_ip")
             return None
         return self.mainDstIp.poolId
 
@@ -322,9 +304,8 @@ class CodecVertex(Vertex):
         if self.spareDstIp is None:
             return None
         if isinstance(self.spareDstIp, nAddress):
-            warnings.warn(
-                "Spare Destination Address is set to an IP Address, not a Pool ID. Use 'spare_destination_address_ip' instead.",
-                DataTypeMismatchWarning,
+            self._warn_type_mismatch(
+                "SPARE | Multicast Address", "IP Address", "Pool ID", "spare_destination_address_ip"
             )
             return None
         return self.spareDstIp.poolId
@@ -340,9 +321,8 @@ class CodecVertex(Vertex):
         if self.mainDstIp is None:
             return None
         if isinstance(self.mainDstIp, nPoolId):
-            warnings.warn(
-                "Main Destination Address is set to a Pool ID, not an IP Address. Use 'main_destination_address_pool' instead.",
-                DataTypeMismatchWarning,
+            self._warn_type_mismatch(
+                "MAIN | Multicast Address", "Pool ID", "IP Address", "main_destination_address_pool"
             )
             return None
         return self.mainDstIp.addr
@@ -358,9 +338,8 @@ class CodecVertex(Vertex):
         if self.spareDstIp is None:
             return None
         if isinstance(self.spareDstIp, nPoolId):
-            warnings.warn(
-                "Spare Destination Address is set to a Pool ID, not an IP Address. Use 'spare_destination_address_pool' instead.",
-                DataTypeMismatchWarning,
+            self._warn_type_mismatch(
+                "SPARE | Multicast Address", "Pool ID", "IP Address", "spare_destination_address_pool"
             )
             return None
         return self.spareDstIp.addr

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,8 +22,8 @@ class MapsElement(BaseModel, validate_assignment=True):
     y: float = 0.0
 
 
-# Literal types
-Type = Literal[
+# --- Literal Types ---
+NGraphElementType = Literal[
     "ipVertex",
     "codecVertex",
     "genericVertex",
@@ -34,7 +34,6 @@ Type = Literal[
     "routerVertex",  # Note: Not implemented yet
 ]
 
-
 VertexType = Literal["Bidirectional", "In", "Internal", "Out", "Undecided"]
 
 ConfigPriority = Literal["high", "low", "off"]
@@ -43,10 +42,7 @@ Control = Literal["full", "off", "semi"]
 
 SipsMode = Literal["NONE", "SIPSAuto", "SIPSDuplicate", "SIPSMerge", "SIPSSplit"]
 
-
-# Literal types baseDevice
 IconSize = Literal["auto", "large", "medium", "small"]
-
 
 IconType = Literal[
     "default",
@@ -80,51 +76,57 @@ class NGraphElement(BaseModel, validate_assignment=True):
     """Base class for all nGraphElements"""
 
     id: str = Field(..., alias="_id")
-    rev: None | str = Field(..., alias="_rev")
+    rev: Optional[str] = Field(..., alias="_rev")
     vid: str = Field(..., alias="_vid")
     descriptor: Descriptor
     fDescriptor: Descriptor
-    tags: list[str] = []
-    type: Type
+    tags: list[str] = Field(default_factory=list)
+    type: NGraphElementType
 
     @property
     def label(self) -> str:
+        """User defined label of the nGraphElement"""
         return self.descriptor.label
 
     @label.setter
     def label(self, value: str):
+        """User defined label of the nGraphElement"""
         self.descriptor.label = value
 
     @property
     def description(self) -> str:
+        """User defined description of the nGraphElement"""
         return self.descriptor.desc
 
     @description.setter
     def description(self, value: str):
+        """User defined description of the nGraphElement"""
         self.descriptor.desc = value
 
     @property
     def factory_label(self) -> str:
+        """Factory label of the nGraphElement"""
         return self.fDescriptor.label
 
     @property
     def factory_description(self) -> str:
+        """Factory description of the nGraphElement"""
         return self.fDescriptor.desc
 
     def action(self, action: Literal["add", "replace", "remove"]) -> dict:
         """Method to create an API action for the nGraphElement.
 
         Args:
-            action (Literal[&quot;add&quot;, &quot;replace&quot;, &quot;remove&quot;])
+            action (Literal['add', 'replace', 'remove']): Type of action to be performed
 
         Returns:
             dict: Body of the API Request
         """
-        if action == "add":
-            rev = None
-        else:
-            rev = self.rev
+        rev = None if action == "add" else self.rev
+
         body = {"action": action, "clientId": "topologyManagerSpec", "key": self.id, "rev": rev, "skey": self.id}
-        if action != "remove":
+
+        if action in ["add", "replace"]:
             body["value"] = self.model_dump(mode="json", exclude={"id", "rev", "vid"}, by_alias=True)
+
         return body
