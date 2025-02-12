@@ -17,3 +17,7 @@ class BaseDevice(NGraphElement):
     maps: List[MapsElement] = []
     sdpStrategy: SdpStrategy = "always"
     siteId: Optional[str] = None
+
+    # Note:
+    # To provide easy access to the properties of the BaseDevice class,
+    # corresponding getter and setter methods are defined in TopologyDeviceConfiguration Class.

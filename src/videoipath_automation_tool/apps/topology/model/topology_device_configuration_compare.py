@@ -1,10 +1,8 @@
-# External Imports
 from typing import List
 
 from deepdiff.diff import DeepDiff
 from pydantic import BaseModel, Field
 
-# Internal Imports
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_generic_vertex import GenericVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ip_vertex import IpVertex
