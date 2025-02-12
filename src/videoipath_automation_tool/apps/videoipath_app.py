@@ -34,9 +34,9 @@ class VideoIPathApp:
             server_address (str, optional): IP or hostname of the VideoIPath-Server. [ENV: VIPAT_VIDEOIPATH_SERVER_ADDRESS]
             username (str, optional): Username for the API User. [ENV: VIPAT_VIDEOIPATH_USERNAME]
             password (str, optional): Password for the API User. [ENV: VIPAT_VIDEOIPATH_PASSWORD]
-            use_https (bool, optional): Use HTTPS for the connection. [ENV: VIPAT_USE_HTTPS]
-            verify_ssl_cert (bool, optional): Verify the SSL certificate of the VideoIPath-Server. [ENV: VIPAT_VERIFY_SSL_CERT]
-            log_level (str, optional): Define the log level: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'. [ENV: VIPAT_LOG_LEVEL]
+            use_https (bool, optional): Set to `True` if the VideoIPath Server uses HTTPS. [ENV: VIPAT_USE_HTTPS]
+            verify_ssl_cert (bool, optional): Set to `True` if the SSL certificate should be verified. [ENV: VIPAT_VERIFY_SSL_CERT]
+            log_level (str, optional): The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. [ENV: VIPAT_LOG_LEVEL]
             environment (str, optional): Define the environment: 'DEV', 'TEST', 'PROD'. [ENV: VIPAT_ENVIRONMENT]
         """
 

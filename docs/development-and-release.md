@@ -2,7 +2,7 @@
 
 ## Naming Conventions
 
-Work on a branch should always be related to an issue. The branch should be linked to the issue to have full transparency and traceability. The branch name can be the auto-generated one from Gitlab (when creating a branch for an issue) or a custom one - preferably including the issue ID.
+Work on a branch should always be related to an issue. The branch should be linked to the issue to have full transparency and traceability. The branch name can be the auto-generated one from GitHub (when creating a branch for an issue) or a custom one - preferably including the issue ID.
 
 In order to trigger CI/CD flows properly and for transparency, **hotfix**-branches should always have the `hotfix/` prefix so we can have a custom automation for this case.
 
@@ -54,7 +54,7 @@ gitGraph
 
 ## Publishing / Releasing new Package Versions
 
-In order to publish a new version of the package, update the version in the `pyproject.toml` and create a new Gitlab Release associated with a version tag. The release notes should contain all relevant changes, especially breaking changes, features & bug fixes.
+In order to publish a new version of the package, update the version in the `pyproject.toml` and create a new GitHub Release associated with a version tag. The release notes should contain all relevant changes, especially breaking changes, features & bug fixes.
 
 The CI/CD pipeline listens on created tags and builds an publishes a new package version to the registry. Additionally, for each commit in a Merge-Request or on the main and hotfix branches that is not a release, development versions are published.
 
