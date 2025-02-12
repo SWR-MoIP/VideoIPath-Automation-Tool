@@ -1,6 +1,7 @@
 from typing import Annotated, Generic
 
 from pydantic import BaseModel, Field
+from typing_extensions import deprecated
 
 from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
 
@@ -114,6 +115,14 @@ class DeviceConfiguration(BaseModel, Generic[CustomSettingsType], validate_assig
     active: bool = True
     id: str = ""
 
-    @property  # Map the customSettings to "custom" for easier access
-    def custom(self) -> CustomSettingsType:
+    @property
+    def custom_settings(self) -> CustomSettingsType:
         return self.config.customSettings
+
+    @deprecated(
+        "The property `custom` is deprecated, use `custom_settings` instead.",
+        category=None,
+    )
+    @property
+    def custom(self) -> CustomSettingsType:
+        return self.custom_settings
