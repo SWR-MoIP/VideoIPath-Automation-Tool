@@ -25,7 +25,7 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
     # --- Deprecated properties ---
     @property
     @deprecated(
-        "The property `device_id` at the root level of the inventory device is deprecated and will be removed in the future.\n"
+        "The property `label` at the root level of the inventory device is deprecated and will be removed in the future.\n"
     )
     def label(self):
         return self.configuration.config.desc.label
