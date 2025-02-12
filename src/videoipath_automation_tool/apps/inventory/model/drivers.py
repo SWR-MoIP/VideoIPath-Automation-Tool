@@ -1901,7 +1901,7 @@ class CustomSettings_com_sony_MLS_X1_1_0(DriverCustomSettings):
     NS-BUS Tally Type.\n
     Tally type usually auto-populated by device discovery.
     Possible values:\n
-    `NOT_USE_TALLY` - No Tally\n
+    `NOT_USE_TALLY` - No Tally (default)\n
     `TALLY_MASTER_DEVICE` - Tally Master Device\n
     `TALLY_DISPLAY_DEVICE` - Tally Display Device\n
     `MASTER_AND_DISPLAY_DEVICE` - Tally Master and Display Device"""
@@ -1932,7 +1932,7 @@ class CustomSettings_com_sony_Panel_1_0(DriverCustomSettings):
     NS-BUS Tally Type.\n
     Tally type usually auto-populated by device discovery.
     Possible values:\n
-    `NOT_USE_TALLY` - No Tally\n
+    `NOT_USE_TALLY` - No Tally (default)\n
     `TALLY_MASTER_DEVICE` - Tally Master Device\n
     `TALLY_DISPLAY_DEVICE` - Tally Display Device\n
     `MASTER_AND_DISPLAY_DEVICE` - Tally Master and Display Device"""
@@ -1963,7 +1963,7 @@ class CustomSettings_com_sony_SC1_1_0(DriverCustomSettings):
     NS-BUS Tally Type.\n
     Tally type usually auto-populated by device discovery.
     Possible values:\n
-    `NOT_USE_TALLY` - No Tally\n
+    `NOT_USE_TALLY` - No Tally (default)\n
     `TALLY_MASTER_DEVICE` - Tally Master Device\n
     `TALLY_DISPLAY_DEVICE` - Tally Display Device\n
     `MASTER_AND_DISPLAY_DEVICE` - Tally Master and Display Device"""
@@ -2005,7 +2005,7 @@ class CustomSettings_com_sony_generic_external_control_1_0(DriverCustomSettings)
     NS-BUS Tally Type.\n
     Tally type usually auto-populated by device discovery.
     Possible values:\n
-    `NOT_USE_TALLY` - No Tally\n
+    `NOT_USE_TALLY` - No Tally (default)\n
     `TALLY_MASTER_DEVICE` - Tally Master Device\n
     `TALLY_DISPLAY_DEVICE` - Tally Display Device\n
     `MASTER_AND_DISPLAY_DEVICE` - Tally Master and Display Device"""
@@ -2036,7 +2036,7 @@ class CustomSettings_com_sony_nsbus_generic_router_1_0(DriverCustomSettings):
     NS-BUS Tally Type.\n
     Tally type usually auto-populated by device discovery.
     Possible values:\n
-    `NOT_USE_TALLY` - No Tally\n
+    `NOT_USE_TALLY` - No Tally (default)\n
     `TALLY_MASTER_DEVICE` - Tally Master Device\n
     `TALLY_DISPLAY_DEVICE` - Tally Display Device\n
     `MASTER_AND_DISPLAY_DEVICE` - Tally Master and Display Device"""
