@@ -181,10 +181,7 @@ class DeviceConfiguration(BaseModel, Generic[CustomSettingsType], validate_assig
         self.meta = value
 
     # --- Deprecated properties ---
-    @deprecated(
-        "The property `custom` is deprecated, use `custom_settings` instead.",
-        category=None,
-    )
     @property
+    @deprecated("The property `custom` is deprecated, use `custom_settings` instead.")
     def custom(self) -> CustomSettingsType:
         return self.custom_settings

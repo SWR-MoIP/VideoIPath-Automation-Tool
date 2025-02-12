@@ -10,6 +10,8 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_
 
 
 class BaseDevice(NGraphElement):
+    """BaseDevice represents the appearance, position, and basic properties of a device in the topology.\n"""
+
     type: Literal["baseDevice"] = "baseDevice"
     iconSize: IconSize = "medium"
     iconType: IconType = "default"

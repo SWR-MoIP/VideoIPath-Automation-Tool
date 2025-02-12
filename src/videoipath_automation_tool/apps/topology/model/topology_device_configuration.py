@@ -1,6 +1,6 @@
 import warnings
 from itertools import chain
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 from typing_extensions import deprecated
@@ -43,35 +43,37 @@ class TopologyDeviceConfiguration(BaseModel):
 
     # --- Setters and Getters ---
 
-    # Note: Every Topology Device has a Base Device,
-    # therefore, the getters and setters for the Base Device are defined here to provide
-    # a more convenient way to access the Base Device properties.
+    # Note: Every Topology Device contains at least the base device object,
+    # therefore, the getters and setters for the Base Device are already defined at this level
+    # to provide a more convenient way to access the Base Device properties.
 
     @property
-    def label(self):
+    def label(self) -> str:
         """User defined label of the device"""
         return self.base_device.label
 
     @label.setter
-    def label(self, value):
+    def label(self, value: str) -> None:
+        """User defined label of the device"""
         self.base_device.label = value
 
     @property
-    def description(self):
+    def description(self) -> str:
         """User defined description of the device"""
         return self.base_device.description
 
     @description.setter
-    def description(self, value):
+    def description(self, value: str) -> None:
+        """User defined description of the device"""
         self.base_device.description = value
 
     @property
-    def factory_label(self):
+    def factory_label(self) -> str:
         """Factory label of the device"""
         return self.base_device.factory_label
 
     @property
-    def factory_description(self):
+    def factory_description(self) -> str:
         """Factory description of the device"""
         return self.base_device.factory_description
 
@@ -81,7 +83,8 @@ class TopologyDeviceConfiguration(BaseModel):
         return self.base_device.iconSize
 
     @icon_size.setter
-    def icon_size(self, value: IconSize):
+    def icon_size(self, value: IconSize) -> None:
+        """Size of the icon representing the device"""
         self.base_device.iconSize = value
 
     @property
@@ -90,19 +93,21 @@ class TopologyDeviceConfiguration(BaseModel):
         return self.base_device.iconType
 
     @icon_type.setter
-    def icon_type(self, value: IconType):
+    def icon_type(self, value: IconType) -> None:
+        """Type of the icon representing the device"""
         self.base_device.iconType = value
 
     @property
     def position_x(self) -> float:
         """X position of the device on the topology canvas"""
-        if not self.base_device.maps or type(self.base_device.maps[0]) is not MapsElement:
-            return 0
+        if not self.base_device.maps or not isinstance(self.base_device.maps[0], MapsElement):
+            return float("nan")
         return self.base_device.maps[0].x
 
     @position_x.setter
-    def position_x(self, value: float):
-        if not self.base_device.maps or type(self.base_device.maps[0]) is not MapsElement:
+    def position_x(self, value: float) -> None:
+        """X position of the device on the topology canvas"""
+        if not self.base_device.maps or not isinstance(self.base_device.maps[0], MapsElement):
             self.base_device.maps = [MapsElement(x=value, y=0)]
         else:
             self.base_device.maps[0].x = value
@@ -110,13 +115,14 @@ class TopologyDeviceConfiguration(BaseModel):
     @property
     def position_y(self) -> float:
         """Y position of the device on the topology canvas"""
-        if not self.base_device.maps or type(self.base_device.maps[0]) is not MapsElement:
-            return 0
+        if not self.base_device.maps or not isinstance(self.base_device.maps[0], MapsElement):
+            return float("nan")
         return self.base_device.maps[0].y
 
     @position_y.setter
-    def position_y(self, value: float):
-        if not self.base_device.maps or type(self.base_device.maps[0]) is not MapsElement:
+    def position_y(self, value: float) -> None:
+        """Y position of the device on the topology canvas"""
+        if not self.base_device.maps or not isinstance(self.base_device.maps[0], MapsElement):
             self.base_device.maps = [MapsElement(x=0, y=value)]
         else:
             self.base_device.maps[0].y = value
@@ -127,35 +133,42 @@ class TopologyDeviceConfiguration(BaseModel):
         return self.base_device.tags
 
     @tags.setter
-    def tags(self, value: List[str]):
+    def tags(self, value: List[str]) -> None:
+        """Tags associated with the device"""
         self.base_device.tags = value
 
     @property
     def sdp_polling_strategy(self) -> SdpStrategy:
-        """SDP polling strategy of the device. Possible values are:
-        - `always` for 'Continuous'
-        - `once` for 'Fetch and Confirm'
+        """SDP polling strategy of the device. Possible values are:\n
+        - `always` for 'Continuous'\n
+        - `once` for 'Fetch and Confirm'\n
         - `video` for 'Always Video, Confirm Others'
         """
         return self.base_device.sdpStrategy
 
     @sdp_polling_strategy.setter
-    def sdp_polling_strategy(self, value: SdpStrategy):
+    def sdp_polling_strategy(self, value: SdpStrategy) -> None:
+        """SDP polling strategy of the device. Possible values are:\n
+        - `always` for 'Continuous'\n
+        - `once` for 'Fetch and Confirm'\n
+        - `video` for 'Always Video, Confirm Others'
+        """
         self.base_device.sdpStrategy = value
 
     @property
-    def site_id(self) -> str | None:
+    def site_id(self) -> Optional[str]:
         """Site ID of the device"""
         return self.base_device.siteId
 
     @site_id.setter
-    def site_id(self, value: str):
+    def site_id(self, value: str) -> None:
+        """Site ID of the device"""
         self.base_device.siteId = value
 
     # --- Methods ---
     def get_nGraphElement_by_id(
         self, element_id: str
-    ) -> BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | None:
+    ) -> Optional[BaseDevice | GenericVertex | IpVertex | CodecVertex | UnidirectionalEdge]:
         """Get an nGraphElement by its ID. Method will return the first element found with the specified ID.
 
         Args:
@@ -176,7 +189,7 @@ class TopologyDeviceConfiguration(BaseModel):
         matching_element = next((element for element in all_elements if element.id == element_id), None)
 
         if matching_element is None:
-            warnings.warn(f"Element with ID '{element_id}' not found.", ElementNotFoundWarning)
+            warnings.warn(f"Element with ID '{element_id}' not found.", ElementNotFoundWarning, stacklevel=2)
 
         return matching_element
 
@@ -185,7 +198,7 @@ class TopologyDeviceConfiguration(BaseModel):
         label: str,
         label_type: Literal["user_defined", "factory", "all"] = "user_defined",
         vertex_type: Literal["all", "codec_vertex", "ip_vertex", "generic_vertex"] = "all",
-    ) -> CodecVertex | IpVertex | GenericVertex | None:
+    ) -> Optional[GenericVertex | IpVertex | CodecVertex]:
         """Get a codec, ip or generic vertex by its label. The search can be filtered by vertex type and label type.
         Method will return the first vertex found with the specified label.
 
@@ -223,13 +236,13 @@ class TopologyDeviceConfiguration(BaseModel):
             warnings.warn(
                 f"Vertex with label '{label}' (label_type: {label_type}, vertex_type: {vertex_type}) not found.",
                 ElementNotFoundWarning,
+                stacklevel=2,
             )
 
         return matching_vertex
 
     @deprecated(
         "The method `get_ip_vertex_by_label` is deprecated and will be removed in a future release. ",
-        category=None,
     )
     def get_ip_vertex_by_label(self, label: str) -> IpVertex:
         """Get an IpVertex by its label"""
@@ -240,7 +253,6 @@ class TopologyDeviceConfiguration(BaseModel):
 
     @deprecated(
         "The method `get_ip_vertex_by_label` is deprecated and will be removed in a future release. ",
-        category=None,
     )
     def get_ip_vertex_by_factory_label_and_direction(
         self, factory_label: str, direction: Literal["out", "in"]
@@ -259,10 +271,9 @@ class TopologyDeviceConfiguration(BaseModel):
                 if f" ({direction}) " in ip_vertex.factory_label:
                     # remove the direction part from the factory label
                     fallback_label = (
-                        f'{ip_vertex.factory_label.split(" (")[0]} {ip_vertex.factory_label.split(") ")[1]}'
+                        f"{ip_vertex.factory_label.split(' (')[0]} {ip_vertex.factory_label.split(') ')[1]}"
                     )
                     if fallback_label == factory_label:
                         return_value = ip_vertex
 
         return return_value
-        # raise ValueError(f"IP Vertex with factory label '{factory_label}' not found.")
