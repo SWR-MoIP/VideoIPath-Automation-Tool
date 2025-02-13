@@ -35,7 +35,7 @@ class TopologyApp:
         # --- Setup Experimental Layer ---
         self.experimental = TopologyExperimental(self._topology_api, self._logger)
 
-        self._logger.debug("Topology APP successfully initialized.")
+        self._logger.debug("Topology APP initialized.")
 
     def get_device(self, device_id: str) -> TopologyDevice:
         """Get a topology device by its device id. If the device does not exist, method will try to create the device from the driver.

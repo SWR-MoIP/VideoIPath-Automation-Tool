@@ -23,7 +23,7 @@ class ProfileApp:
         # --- Setup Profile API ---
         self._profile_api = ProfileAPI(vip_connector=vip_connector, logger=self._logger)
 
-        self._logger.debug("Profile APP successfully initialized.")
+        self._logger.debug("Profile APP initialized.")
 
     def get_profile_names(self) -> List[str] | None:
         """Get all VideoIPath Profile names.

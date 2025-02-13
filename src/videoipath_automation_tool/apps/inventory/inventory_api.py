@@ -24,7 +24,7 @@ class InventoryAPI:
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_inventory_api")
         self.vip_connector = vip_connector
 
-        self._logger.debug("Inventory API successfully initialized.")
+        self._logger.debug("Inventory API initialized.")
 
     def get_device_ids(self, address: Optional[IPvAnyAddress | str] = None, label: Optional[str] = None) -> dict:
         """Method to get device id/s from VideoIPath-Inventory filtered by ip_address or label.

@@ -167,7 +167,7 @@ class InventoryApp:
         # --- Setup Inventory API ---
         self._inventory_api = InventoryAPI(vip_connector=vip_connector, logger=self._logger)
 
-        self._logger.debug("Inventory APP successfully initialized.")
+        self._logger.debug("Inventory APP initialized.")
 
     # Note: For each driver, an overload is defined to show the correct intellisense for the driver.
     @overload

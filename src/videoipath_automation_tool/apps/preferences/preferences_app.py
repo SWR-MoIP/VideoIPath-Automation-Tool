@@ -28,7 +28,7 @@ class PreferencesApp:
         # --- Setup System Preferences API ---
         try:
             self._preferences_api = PreferencesAPI(vip_connector=vip_connector)
-            self.logger.debug("System Preferences API successfully initialized.")
+            self.logger.debug("System Preferences API initialized.")
         except Exception as e:
             self.logger.error(f"Error initializing System Preferences API: {e}")
             raise ConnectionError("Error initializing System Preferences API.")
@@ -36,7 +36,7 @@ class PreferencesApp:
         # --- Setup System Configuration ---
         try:
             self.system_configuration = SystemConfiguration(preferences_api=self._preferences_api, logger=self.logger)
-            self.logger.debug("System Configuration successfully initialized.")
+            self.logger.debug("System Configuration initialized.")
         except Exception as e:
             self.logger.error(f"Error initializing System Configuration: {e}")
             raise ConnectionError("Error initializing System Configuration.")

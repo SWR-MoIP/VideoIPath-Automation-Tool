@@ -34,7 +34,7 @@ class TopologyAPI:
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_api")
         self.vip_connector = vip_connector
 
-        self._logger.debug("Topology API successfully initialized.")
+        self._logger.debug("Topology API initialized.")
 
     # --- Fetching device configuration ---
     def get_device_from_topology(self, device_id: str) -> TopologyDevice:

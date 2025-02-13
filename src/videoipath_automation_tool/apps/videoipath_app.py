@@ -135,7 +135,7 @@ class VideoIPathApp:
             self.preferences_api = self._preferences._preferences_api
             self.profile_api = self._profile._profile_api
 
-        self.logger.info("VideoIPath Automation Tool successfully initialized.")
+        self.logger.info("VideoIPath Automation Tool initialized.")
 
     # def demo_method_using_multiple_apps(self):
     #     self._inventory.create_device()                            # (not a real method, just for demonstration)
