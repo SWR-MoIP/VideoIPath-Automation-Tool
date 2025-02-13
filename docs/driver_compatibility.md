@@ -12,7 +12,7 @@
 ## Driver compatibility matrix
 
 | Driver alias                                  | Status                     | Model version   | Notes           |
-| --------------------------------------------- | :-:                        | :-:             |                 |
+| --------------------------------------------- | :-:                        | :-:             | :-:             |
 | com.nevion.NMOS-0.1.0                         |     :white_check_mark:     | 2024.1.4        |                 |
 | com.nevion.NMOS_multidevice-0.1.0             |     :white_check_mark:     | 2024.1.4        |                 |
 | com.nevion.abb_dpa_upscale_st-0.1.0           |  :hourglass_flowing_sand:  | 2024.1.4        |                 |
@@ -143,7 +143,7 @@
 | com.nevion.virtuoso-0.1.0                     |  :hourglass_flowing_sand:  | 2024.1.4        |                 |
 | com.nevion.virtuoso_fa-0.1.0                  |  :hourglass_flowing_sand:  | 2024.1.4        |                 |
 | com.nevion.virtuoso_mi-0.1.0                  |     :white_check_mark:     | 2024.1.4        |                 |
-| com.nevion.virtuoso_re-0.1.0                  |  :hourglass_flowing_sand:  | TODO    |
+| com.nevion.virtuoso_re-0.1.0                  |  :hourglass_flowing_sand:  | 2024.1.4        |                 |
 | com.nevion.vizrt_vizengine-0.1.0              |  :hourglass_flowing_sand:  | 2024.1.4        |                 |
 | com.nevion.zman-0.1.0                         |  :hourglass_flowing_sand:  | 2024.1.4        |                 |
 | com.sony.MLS-X1-1.0                           |     :white_check_mark:     | 2024.1.4        |                 |
