@@ -1,4 +1,3 @@
-import re
 from typing import Union
 
 from pydantic import Field, field_validator
@@ -7,10 +6,14 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_
     ConfigPriority,
     Control,
     Gpid,
+    MapsElement,
     NGraphElement,
     SipsMode,
     VertexType,
 )
+from videoipath_automation_tool.validators.alarm_filter import validate_alarm_filter
+from videoipath_automation_tool.validators.device_id import validate_device_id
+from videoipath_automation_tool.validators.virtual_device_id import validate_virtual_device_id
 
 
 class Vertex(NGraphElement, validate_assignment=True):
@@ -25,61 +28,86 @@ class Vertex(NGraphElement, validate_assignment=True):
     gpid: Gpid
     imgUrl: str = ""
     isVirtual: bool = False
-    maps: list = Field(default_factory=list)
+    maps: list[MapsElement] = Field(default_factory=list)
     sipsMode: SipsMode = "NONE"
     useAsEndpoint: bool = False
     vertexType: VertexType = "Undecided"
 
+    # --- Validators ---
+    @field_validator("deviceId", mode="before")
+    @classmethod
+    def validate_device_id(cls, value: str) -> str:
+        errors = []
+
+        for validator in [validate_device_id, validate_virtual_device_id]:
+            try:
+                return validator(value)
+            except ValueError as e:
+                errors.append(str(e))
+
+        raise ValueError("\n".join(errors))
+
     @field_validator("extraAlertFilters", mode="before")
     @classmethod
-    def validate_extra_alert_filters(cls, value) -> list[str]:
+    def validate_extra_alert_filters(cls, value: list[str]) -> list[str]:
         if not isinstance(value, list):
             raise ValueError("extraAlertFilters must be a list.")
 
-        pattern = r"^\d+:([a-zA-Z0-9\-\.]+|\*\*|\*):([a-zA-Z0-9\-\s\[\]/]+|/[^/]+/|[\w\-,]+):(\*|[1-6])$"
-        # Regular expression pattern explanation:
-        # ^\d+:                     - The filter starts with a numeric scFilter (one or more digits) followed by a colon (:).
-        # ([a-zA-Z0-9\-\.]+|\*\*|\*) - pointIdFilter: Matches:
-        #                              - Alphanumeric strings with dots (.), dashes (-),
-        #                              - '**' as a wildcard for all remaining depth,
-        #                              - '*' as a wildcard for a single element.
-        # :                          - Separator between pointIdFilter and alarmIdFilter.
-        # ([a-zA-Z0-9\-\s\[\]/]+|/[^/]+/|[\w\-,]+) - alarmIdFilter: Matches:
-        #                              - Alphanumeric strings with dashes (-), spaces, square brackets ([]), and slashes (/),
-        #                              - Regular expressions enclosed in slashes (/regex/),
-        #                              - Or comma-separated values.
-        # :                          - Separator between alarmIdFilter and severityFilter.
-        # (\*|[1-6])                 - severityFilter: Matches:
-        #                              - '*' as a wildcard for any severity,
-        #                              - Or a numeric severity level between 1 and 6.
-        # $                          - Ensures the string ends at this point (no extra characters allowed).
+        return [validate_alarm_filter(filter_element) for filter_element in value]
 
-        for filter_str in value:
-            if not isinstance(filter_str, str):
-                raise ValueError(f"Each alarm filter must be a string. Invalid filter: {filter_str}")
-            if not re.match(pattern, filter_str):
-                raise ValueError(
-                    f"Invalid alarm filter syntax: '{filter_str}'. The expected format is: "
-                    "scFilter:pointIdFilter:alarmIdFilter:severityFilter."
-                )
+    # --- Getters and Setters ---
 
-            # Additional logic for severity validation
-            parts = filter_str.split(":")
-            if len(parts) != 4:
-                raise ValueError(
-                    f"Invalid filter structure: '{filter_str}'. It must contain exactly three colons (':')."
-                )
+    @property
+    def config_priority(self) -> ConfigPriority:
+        """Config priority level"""
+        return self.configPriority
 
-            severity_filter = parts[3]
-            if severity_filter != "*" and not severity_filter.isdigit():
-                raise ValueError(
-                    f"Invalid severity filter in '{filter_str}'. It must be '*' or a number between 1 and 6."
-                )
-            if severity_filter.isdigit():
-                severity_value = int(severity_filter)
-                if not 1 <= severity_value <= 6:
-                    raise ValueError(
-                        f"Severity filter out of range in '{filter_str}'. It must be a number between 1 and 6."
-                    )
+    @config_priority.setter
+    def config_priority(self, value: ConfigPriority):
+        """Config priority level"""
+        self.configPriority = value
 
-        return value
+    @property
+    def extra_alert_filters(self) -> list[str]:
+        """Extra Alert Filters"""
+        return self.extraAlertFilters
+
+    @extra_alert_filters.setter
+    def extra_alert_filters(self, value: list[str]):
+        """Extra Alert Filters"""
+        self.extraAlertFilters = value
+
+    @property
+    def sips_mode(self) -> SipsMode:
+        """SIPS mode type"""
+        return self.sipsMode
+
+    @sips_mode.setter
+    def sips_mode(self, value: SipsMode):
+        """SIPS mode type"""
+        self.sipsMode = value
+
+    @property
+    def use_as_endpoint(self) -> bool:
+        """Use as Endpoint"""
+        return self.useAsEndpoint
+
+    @use_as_endpoint.setter
+    def use_as_endpoint(self, value: bool):
+        """Use as Endpoint"""
+        self.useAsEndpoint = value
+
+    @property
+    def device_id(self) -> str:
+        """ID of the corresponding base device"""
+        return self.deviceId
+
+    @property
+    def is_virtual(self) -> bool:
+        """Indicates if the vertex is virtual"""
+        return self.isVirtual
+
+    @property
+    def vertex_type(self) -> VertexType:
+        """Type of the vertex"""
+        return self.vertexType

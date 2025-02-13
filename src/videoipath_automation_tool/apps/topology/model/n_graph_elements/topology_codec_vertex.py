@@ -70,7 +70,7 @@ class CodecVertex(Vertex):
     spareSrcNetmask: Optional[IPvAnyAddress]
 
     @staticmethod
-    def _warn_type_mismatch(component_name: str, actual: str, expected: str, method_name: str):
+    def _warn_type_mismatch(component_name: str, actual: str, expected: str, method_name: str) -> None:
         """
         Issues a warning when a data type mismatch occurs.
 
@@ -92,71 +92,121 @@ class CodecVertex(Vertex):
 
     # --- Setters and Getters ---
 
+    @property
+    def extra_formats(self) -> list:
+        """Extra Formats"""
+        return self.extraFormats
+
+    @extra_formats.setter
+    def extra_formats(self, formats: list):
+        """Extra Formats"""
+        self.extraFormats = formats
+
+    @property
+    def bidirectional_partner_id(self) -> Optional[str]:
+        """Bidirectional partner ID"""
+        return self.bidirPartnerId
+
+    @bidirectional_partner_id.setter
+    def bidirectional_partner_id(self, partner_id: str):
+        """Bidirectional partner ID"""
+        self.bidirPartnerId = partner_id
+
+    @property
+    def codec_format(self) -> CodecFormat:
+        """Codec format type"""
+        return self.codecFormat
+
+    @codec_format.setter
+    def codec_format(self, format_type: CodecFormat):
+        """Codec format type"""
+        self.codecFormat = format_type
+
+    @property
+    def igmp_source(self) -> bool:
+        """IGMP Source"""
+        return self.isIgmpSource
+
+    @igmp_source.setter
+    def igmp_source(self, is_igmp_source: bool):
+        """IGMP Source"""
+        self.isIgmpSource = is_igmp_source
+
+    @property
+    def sdp_support(self) -> bool:
+        """SDP Support"""
+        return self.sdpSupport
+
+    @sdp_support.setter
+    def sdp_support(self, is_sdp_supported: bool):
+        """SDP Support"""
+        self.sdpSupport = is_sdp_supported
+
     # - IP Defaults -
     @property
     def main_source_ip(self) -> Optional[IPvAnyAddress]:
-        """GUI: IP Defaults | MAIN | Source IP"""
+        """IP Defaults | MAIN | Source IP"""
         return self.mainSrcIp
 
     @main_source_ip.setter
     def main_source_ip(self, ip_address: IPvAnyAddress):
-        """GUI: IP Defaults | MAIN | Source IP"""
+        """IP Defaults | MAIN | Source IP"""
         self.mainSrcIp = ip_address
 
     @property
     def spare_source_ip(self) -> Optional[IPvAnyAddress]:
-        """GUI: IP Defaults | SPARE | Source IP"""
+        """IP Defaults | SPARE | Source IP"""
         return self.spareSrcIp
 
     @spare_source_ip.setter
     def spare_source_ip(self, ip_address: IPvAnyAddress):
-        """GUI: IP Defaults | SPARE | Source IP"""
+        """IP Defaults | SPARE | Source IP"""
         self.spareSrcIp = ip_address
 
     @property
     def main_source_gateway(self) -> Optional[IPvAnyAddress]:
-        """GUI: IP Defaults | MAIN | Source Gateway"""
+        """IP Defaults | MAIN | Source Gateway"""
         return self.mainSrcGateway
 
     @main_source_gateway.setter
     def main_source_gateway(self, ip_address: IPvAnyAddress):
-        """GUI: IP Defaults | MAIN | Source Gateway"""
+        """IP Defaults | MAIN | Source Gateway"""
         self.mainSrcGateway = ip_address
 
     @property
     def spare_source_gateway(self) -> Optional[IPvAnyAddress]:
-        """GUI: IP Defaults | SPARE | Source Gateway"""
+        """IP Defaults | SPARE | Source Gateway"""
         return self.spareSrcGateway
 
     @spare_source_gateway.setter
     def spare_source_gateway(self, ip_address: IPvAnyAddress):
-        """GUI: IP Defaults | SPARE | Source Gateway"""
+        """IP Defaults | SPARE | Source Gateway"""
         self.spareSrcGateway = ip_address
 
     @property
     def main_source_netmask(self) -> Optional[IPvAnyAddress]:
-        """GUI: IP Defaults | MAIN | Source Netmask"""
+        """IP Defaults | MAIN | Source Netmask"""
         return self.mainSrcNetmask
 
     @main_source_netmask.setter
     def main_source_netmask(self, ip_address: IPvAnyAddress):
-        """GUI: IP Defaults | MAIN | Source Netmask"""
+        """IP Defaults | MAIN | Source Netmask"""
         self.mainSrcNetmask = ip_address
 
     @property
     def spare_source_netmask(self) -> Optional[IPvAnyAddress]:
-        """GUI: IP Defaults | SPARE | Source Netmask"""
+        """IP Defaults | SPARE | Source Netmask"""
         return self.spareSrcNetmask
 
     @spare_source_netmask.setter
     def spare_source_netmask(self, ip_address: IPvAnyAddress):
-        """GUI: IP Defaults | SPARE | Source Netmask"""
+        """IP Defaults | SPARE | Source Netmask"""
         self.spareSrcNetmask = ip_address
 
     # - Connection Defaults -
     @property
     def main_destination_vlan_dot1Q(self) -> Optional[int]:
-        """GUI: Connection Defaults | MAIN | VLAN (dot1Q - IEEE 802.1Q)"""
+        """Connection Defaults | MAIN | VLAN (dot1Q - IEEE 802.1Q)"""
         if self.mainDstVlan is None:
             return None
         if isinstance(self.mainDstVlan, QinQ):
@@ -169,12 +219,12 @@ class CodecVertex(Vertex):
 
     @main_destination_vlan_dot1Q.setter
     def main_destination_vlan_dot1Q(self, vlan_tag: int):
-        """GUI: Connection Defaults | MAIN | VLAN (dot1Q - IEEE 802.1Q)"""
+        """Connection Defaults | MAIN | VLAN (dot1Q - IEEE 802.1Q)"""
         self.mainDstVlan = nVlan1Q(vlan=vlan_tag)
 
     @property
     def spare_destination_vlan_dot1Q(self) -> Optional[int]:
-        """GUI: Connection Defaults | SPARE | VLAN (dot1Q - IEEE 802.1Q)"""
+        """Connection Defaults | SPARE | VLAN (dot1Q - IEEE 802.1Q)"""
         if self.spareDstVlan is None:
             return None
         if isinstance(self.spareDstVlan, QinQ):
@@ -187,12 +237,12 @@ class CodecVertex(Vertex):
 
     @spare_destination_vlan_dot1Q.setter
     def spare_destination_vlan_dot1Q(self, vlan_tag: int):
-        """GUI: Connection Defaults | SPARE | VLAN (dot1Q - IEEE 802.1Q)"""
+        """Connection Defaults | SPARE | VLAN (dot1Q - IEEE 802.1Q)"""
         self.spareDstVlan = nVlan1Q(vlan=vlan_tag)
 
     @property
     def main_destination_vlan_qinq(self) -> Optional[QinQ]:
-        """GUI: Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)"""
+        """Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)"""
         if self.mainDstVlan is None:
             return None
         if isinstance(self.mainDstVlan, nVlan1Q):
@@ -205,13 +255,13 @@ class CodecVertex(Vertex):
 
     @main_destination_vlan_qinq.setter
     def main_destination_vlan_qinq(self, vlan_pair: tuple[int, int]):
-        """GUI: Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)\n
+        """Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)\n
         Expects a tuple (outer_vlan, inner_vlan)"""
         self.mainDstVlan = QinQ(vlanOuter=vlan_pair[0], vlanInner=vlan_pair[1])
 
     @property
     def spare_destination_vlan_qinq(self) -> Optional[QinQ]:
-        """GUI: Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)"""
+        """Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)"""
         if self.spareDstVlan is None:
             return None
         if isinstance(self.spareDstVlan, nVlan1Q):
@@ -224,12 +274,12 @@ class CodecVertex(Vertex):
 
     @spare_destination_vlan_qinq.setter
     def spare_destination_vlan_qinq(self, outer_vlan_tag: int, inner_vlan_tag: int):
-        """GUI: Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)"""
+        """Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)"""
         self.spareDstVlan = QinQ(vlanOuter=outer_vlan_tag, vlanInner=inner_vlan_tag)
 
     @property
     def main_destination_vlan_ranges(self) -> Optional[str]:
-        """GUI: Connection Defaults | MAIN | VLAN (Ranges)"""
+        """Connection Defaults | MAIN | VLAN (Ranges)"""
         if self.mainDstVlan is None:
             return None
         if isinstance(self.mainDstVlan, nVlan1Q):
@@ -242,12 +292,12 @@ class CodecVertex(Vertex):
 
     @main_destination_vlan_ranges.setter
     def main_destination_vlan_ranges(self, vlan_range: str):
-        """GUI: Connection Defaults | MAIN | VLAN (Ranges)"""
+        """Connection Defaults | MAIN | VLAN (Ranges)"""
         self.mainDstVlan = nVlanPattern(vlanP=vlan_range)
 
     @property
     def spare_destination_vlan_ranges(self) -> Optional[str]:
-        """GUI: Connection Defaults | SPARE | VLAN (Ranges)"""
+        """Connection Defaults | SPARE | VLAN (Ranges)"""
         if self.spareDstVlan is None:
             return None
         if isinstance(self.spareDstVlan, nVlan1Q):
@@ -260,32 +310,32 @@ class CodecVertex(Vertex):
 
     @spare_destination_vlan_ranges.setter
     def spare_destination_vlan_ranges(self, vlan_range: str):
-        """GUI: Connection Defaults | SPARE | VLAN (Ranges)"""
+        """Connection Defaults | SPARE | VLAN (Ranges)"""
         self.spareDstVlan = nVlanPattern(vlanP=vlan_range)
 
     @property
     def main_destination_port(self) -> Optional[int]:
-        """GUI: Connection Defaults | MAIN | Port"""
+        """Connection Defaults | MAIN | Port"""
         return self.mainDstPort
 
     @main_destination_port.setter
     def main_destination_port(self, port: int):
-        """GUI: Connection Defaults | MAIN | Port"""
+        """Connection Defaults | MAIN | Port"""
         self.mainDstPort = port
 
     @property
     def spare_destination_port(self) -> Optional[int]:
-        """GUI: Connection Defaults | SPARE | Port"""
+        """Connection Defaults | SPARE | Port"""
         return self.spareDstPort
 
     @spare_destination_port.setter
     def spare_destination_port(self, port: int):
-        """GUI: Connection Defaults | SPARE | Port"""
+        """Connection Defaults | SPARE | Port"""
         self.spareDstPort = port
 
     @property
     def main_destination_address_pool(self) -> Optional[str]:
-        """GUI: Connection Defaults | MAIN | Multicast Address (poolId)"""
+        """Connection Defaults | MAIN | Multicast Address (poolId)"""
         if self.mainDstIp is None:
             return None
         if isinstance(self.mainDstIp, nAddress):
@@ -295,12 +345,12 @@ class CodecVertex(Vertex):
 
     @main_destination_address_pool.setter
     def main_destination_address_pool(self, pool_label: str):
-        """GUI: Connection Defaults | MAIN | Multicast Address (poolId)"""
+        """Connection Defaults | MAIN | Multicast Address (poolId)"""
         self.mainDstIp = nPoolId(poolId=pool_label)
 
     @property
     def spare_destination_address_pool(self) -> Optional[str]:
-        """GUI: Connection Defaults | SPARE | Multicast Address (poolId)"""
+        """Connection Defaults | SPARE | Multicast Address (poolId)"""
         if self.spareDstIp is None:
             return None
         if isinstance(self.spareDstIp, nAddress):
@@ -312,12 +362,12 @@ class CodecVertex(Vertex):
 
     @spare_destination_address_pool.setter
     def spare_destination_address_pool(self, pool_label: str):
-        """GUI: Connection Defaults | SPARE | Multicast Address (poolId)"""
+        """Connection Defaults | SPARE | Multicast Address (poolId)"""
         self.spareDstIp = nPoolId(poolId=pool_label)
 
     @property
     def main_destination_address_ip(self) -> Optional[IPvAnyAddress]:
-        """GUI: Connection Defaults | MAIN | Multicast Address (address)"""
+        """Connection Defaults | MAIN | Multicast Address (address)"""
         if self.mainDstIp is None:
             return None
         if isinstance(self.mainDstIp, nPoolId):
@@ -329,12 +379,12 @@ class CodecVertex(Vertex):
 
     @main_destination_address_ip.setter
     def main_destination_address_ip(self, multicast_ip_address: IPvAnyAddress):
-        """GUI: Connection Defaults | MAIN | Multicast Address (address)"""
+        """Connection Defaults | MAIN | Multicast Address (address)"""
         self.mainDstIp = nAddress(addr=multicast_ip_address)
 
     @property
     def spare_destination_address_ip(self) -> Optional[IPvAnyAddress]:
-        """GUI: Connection Defaults | SPARE | Multicast Address (address)"""
+        """Connection Defaults | SPARE | Multicast Address (address)"""
         if self.spareDstIp is None:
             return None
         if isinstance(self.spareDstIp, nPoolId):
@@ -346,45 +396,45 @@ class CodecVertex(Vertex):
 
     @spare_destination_address_ip.setter
     def spare_destination_address_ip(self, multicast_ip_address: IPvAnyAddress):
-        """GUI: Connection Defaults | SPARE | Multicast Address (address)"""
+        """Connection Defaults | SPARE | Multicast Address (address)"""
         self.spareDstIp = nAddress(addr=multicast_ip_address)
 
     @property
     def main_source_mac(self) -> Optional[MacAddress]:
-        """GUI: Connection Defaults | MAIN | Source Mac-address"""
+        """Connection Defaults | MAIN | Source Mac-address"""
         return self.mainSrcMac
 
     @main_source_mac.setter
     def main_source_mac(self, mac_address: MacAddress):
-        """GUI: Connection Defaults | MAIN | Source Mac-address"""
+        """Connection Defaults | MAIN | Source Mac-address"""
         self.mainSrcMac = mac_address
 
     @property
     def spare_source_mac(self) -> Optional[MacAddress]:
-        """GUI: Connection Defaults | SPARE | Source Mac-address"""
+        """Connection Defaults | SPARE | Source Mac-address"""
         return self.spareSrcMac
 
     @spare_source_mac.setter
     def spare_source_mac(self, mac_address: MacAddress):
-        """GUI: Connection Defaults | SPARE | Source Mac-address"""
+        """Connection Defaults | SPARE | Source Mac-address"""
         self.spareSrcMac = mac_address
 
     @property
     def main_destination_mac(self) -> Optional[MacAddress]:
-        """GUI: Connection Defaults | MAIN | Destination Mac-address"""
+        """Connection Defaults | MAIN | Destination Mac-address"""
         return self.mainDstMac
 
     @main_destination_mac.setter
     def main_destination_mac(self, mac_address: MacAddress):
-        """GUI: Connection Defaults | MAIN | Destination Mac-address"""
+        """Connection Defaults | MAIN | Destination Mac-address"""
         self.mainDstMac = mac_address
 
     @property
     def spare_destination_mac(self) -> Optional[MacAddress]:
-        """GUI: Connection Defaults | SPARE | Destination Mac-address"""
+        """Connection Defaults | SPARE | Destination Mac-address"""
         return self.spareDstMac
 
     @spare_destination_mac.setter
     def spare_destination_mac(self, mac_address: MacAddress):
-        """GUI: Connection Defaults | SPARE | Destination Mac-address"""
+        """Connection Defaults | SPARE | Destination Mac-address"""
         self.spareDstMac = mac_address
