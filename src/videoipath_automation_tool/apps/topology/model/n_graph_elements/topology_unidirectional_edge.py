@@ -25,13 +25,13 @@ class Service(BaseModel, validate_assignment=True):
         ge=0,
         description="The maximum value that service weighting will contribute with. Useful to define an absolute.",
         title="Max total",
-    )  # TODO: Find MAX
+    )
     weight: int = Field(
         default=0,
         ge=0,
         description="Enables service-based weight calculation. The given number is the weight that each service contributes with.",
         title="Weight per service",
-    )  # TODO: Find MAX
+    )
 
 
 class WeightFactors(BaseModel, validate_assignment=True):
@@ -39,7 +39,7 @@ class WeightFactors(BaseModel, validate_assignment=True):
     service: Service
 
 
-class ConfigPriority(int, Enum):  # Important: In this case, the Enum is based on int, not str !
+class ConfigPriority(int, Enum):  # Note: Enum is based on int
     high = 1
     low = 3
     normal = 2
@@ -149,3 +149,121 @@ class UnidirectionalEdge(NGraphElement):
             return True
         else:
             return False
+
+    # --- Getters, Setters and Resetters ---
+    @property
+    def include_formats(self) -> List[str]:
+        """Include Formats: List of formats to include in the edge."""
+        return self.includeFormats
+
+    @include_formats.setter
+    def include_formats(self, value: List[str]):
+        """Include Formats: List of formats to include in the edge."""
+        self.includeFormats = value
+
+    @property
+    def exclude_formats(self) -> List[str]:
+        """Exclude Formats: List of formats to exclude from the edge."""
+        return self.excludeFormats
+
+    @exclude_formats.setter
+    def exclude_formats(self, value: List[str]):
+        """Exclude Formats: List of formats to exclude from the edge."""
+        self.excludeFormats = value
+
+    @property
+    def conflict_priority(self) -> Literal["high", "low", "normal", "off"]:
+        """Conflict Priority (`high`, `low`, `normal`, `off`)."""
+        return self.conflictPri.name
+
+    @conflict_priority.setter
+    def conflict_priority(self, value: Literal["high", "low", "normal", "off"]):
+        """Conflict Priority (`high`, `low`, `normal`, `off`)."""
+        self.conflictPri = ConfigPriority[value]
+
+    @property
+    def redundancy_mode(self) -> RedundancyMode:
+        """Redundancy Mode: `Any`, `OnlyMain` or `OnlySpare`."""
+        return self.redundancyMode
+
+    @redundancy_mode.setter
+    def redundancy_mode(self, value: RedundancyMode):
+        """Redundancy Mode: `Any`, `OnlyMain` or `OnlySpare`."""
+        self.redundancyMode = value
+
+    @property
+    def fixed_weight(self) -> int:
+        """Fixed weight: The edge weight/cost for routing."""
+        return self.weight
+
+    @property
+    def bandwidth_capacity(self) -> float:
+        """Bandwidth capacity: Max allowed bandwidth."""
+        return self.bandwidth
+
+    @bandwidth_capacity.setter
+    def bandwidth_capacity(self, value: float):
+        """Bandwidth capacity: Max allowed bandwidth."""
+        self.bandwidth = value
+
+    def disable_bandwidth_capacity(self):
+        """Disable bandwidth capacity (Set to `Disabled` / internal value: -1)."""
+        self.bandwidth = -1
+
+    @property
+    def services_capacity(self) -> int:
+        """Services capacity: Max number of simultaneous services."""
+        return self.capacity
+
+    @services_capacity.setter
+    def services_capacity(self, value: int):
+        """Services capacity: Max number of simultaneous services."""
+        self.capacity = value
+
+    def disable_service_capacity(self):
+        """Disable service capacity (Set to `Unlimited` / internal value: 65535)."""
+        self.capacity = 65535
+
+    @property
+    def bandwidth_weight_factor(self) -> int:
+        """Bandwidth weight factor: Enables bandwidth-based weight calculation. The number corresponds to the weight at 100 percent link utilization."""
+        return self.weightFactors.bandwidth.weight
+
+    @bandwidth_weight_factor.setter
+    def bandwidth_weight_factor(self, value: int):
+        """Bandwidth weight factor: Enables bandwidth-based weight calculation. The number corresponds to the weight at 100 percent link utilization."""
+        self.weightFactors.bandwidth.weight = value
+
+    def disable_bandwidth_weight_factor(self):
+        """Disable bandwidth weight factor (Set to `Disabled` / internal value: 0)."""
+        self.weightFactors.bandwidth.weight = 0
+
+    @property
+    def weight_per_service(self) -> Service:
+        """Weight per service: Enables service-based weight calculation. The given number is the weight that each service contributes with."""
+        return self.weightFactors.service
+
+    @weight_per_service.setter
+    def weight_per_service(self, value: Service | tuple[int, int]):
+        """Weight per service: Enables service-based weight calculation. The given number is the weight that each service contributes with.\n
+        Expects a tuple (max, weight) or a Service object"""
+        if isinstance(value, tuple):
+            self.weightFactors.service.max = value[0]
+            self.weightFactors.service.weight = value[1]
+        else:
+            self.weightFactors.service = value
+
+    def disable_weight_per_service(self):
+        """Disable weight per service (Set to `Disabled` / internal values: max=100, weight=0)."""
+        self.weightFactors.service.max = 100
+        self.weightFactors.service.weight = 0
+
+    @property
+    def from_id(self) -> str:
+        """The source vertex ID."""
+        return self.fromId
+
+    @property
+    def to_id(self) -> str:
+        """The destination vertex ID."""
+        return self.toId

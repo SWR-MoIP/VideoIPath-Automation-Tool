@@ -6,7 +6,8 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ve
 
 
 class IpVertex(Vertex):
-    """Represents an IP vertex in the topology.
+    """
+    Represents an IP vertex in the topology.
 
     Attributes:
         ipAddress (Optional[IPvAnyAddress]): IP Address
@@ -20,8 +21,8 @@ class IpVertex(Vertex):
         supportsStaticIgmpCfg (bool): Supports Static Igmp Config
         supportsVlanCfg (bool): Supports Vlan Config
         supportsVplsCfg (bool): Supports VPLS Config
-        vlanId (Optional[str]): Vlan Id
-        vrfId (Optional[str]): VRF Id
+        vlanId (Optional[str]): ID of VLAN to use
+        vrfId (Optional[str]): ID of VRF to use
     """
 
     ipAddress: Optional[IPvAnyAddress]

@@ -17,7 +17,24 @@ from videoipath_automation_tool.validators.virtual_device_id import validate_vir
 
 
 class Vertex(NGraphElement, validate_assignment=True):
-    """Base class for all vertex types (generic, codec, ip)"""
+    """
+    Base class for all vertex types (generic, codec, ip).
+
+    Attributes:
+        active (bool): Indicates whether the vertex is active. Default is `True`.
+        configPriority (ConfigPriority): The priority level of the vertex during configuration. Default is `"off"`.
+        control (Control): Determines if the configuration should be replied each time (`Full`), initially (`Initial`), or disabled (`Off`).
+        custom (dict[str, Union[str, int, bool]]): A dictionary of custom attributes for the vertex. Default is `{}`.
+        deviceId (str): The ID of the corresponding base device.
+        extraAlertFilters (list[str]): A list of extra alert filters for the vertex. Users can configure alarm point ID on a selected vertex (i.e. network switch interface X) once this alarm is active (meaning interface X is down) then this alarm is raised on that vertex where the user applied alarm point ID.
+        gpid (Gpid): The GPID of the vertex, containing the component and point ID.
+        imgUrl (str): imgUrl. Default is `""`.
+        isVirtual (bool): Indicates whether the vertex is virtual.
+        maps (List[MapsElement]): A list of maps. Default is `[]`.
+        sipsMode (SipsMode): The SIPS mode of the vertex (`NONE`, `SIPSAuto`, `SIPSDuplicate`, `SIPSMerge`, `SIPSSplit`).
+        useAsEndpoint (bool): Indicates whether the vertex is used as an endpoint. Default is `False`.
+        vertexType (VertexType): The type (direction) of the vertex (`In`, `Out`, `Internal`, `Bidirectional`, `Undecided`).
+    """
 
     active: bool = True
     configPriority: ConfigPriority = "off"

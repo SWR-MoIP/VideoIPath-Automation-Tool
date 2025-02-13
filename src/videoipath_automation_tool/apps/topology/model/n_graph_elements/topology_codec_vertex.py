@@ -42,6 +42,38 @@ CodecFormat = Literal["Video", "Audio", "ASI", "Ancillary"]
 
 
 class CodecVertex(Vertex):
+    """
+    Represents the attributes of a codec vertex.
+
+    Attributes:
+        type (Literal["codecVertex"]): Specifies the type of the vertex element, fixed as `"codecVertex"`.
+        bidirPartnerId (Optional[str]): The bidirectional partner ID.
+        codecFormat (CodecFormat): The codec format type (`"Video"`, `"Audio"`, `"ASI"`, `"Ancillary"`).
+        extraFormats (list): A list of additional codec formats.
+        isIgmpSource (bool): Vertex can function as the last hop in the IGMP configuration.
+        mainDstIp (Optional[Union[nAddress, nPoolId]]): The main (multicast) destination IP address or pool ID.
+        mainDstMac (Optional[MacAddress]): The main destination MAC address.
+        mainDstPort (Optional[int]): The main destination port.
+        mainDstVlan (Optional[Union[nVlan1Q, QinQ, nVlanPattern]]): The main destination VLAN.
+        mainSrcGateway (Optional[IPvAnyAddress]): The main source gateway IP address.
+        mainSrcIp (Optional[IPvAnyAddress]): The main source IP address.
+        mainSrcMac (Optional[MacAddress]): The main source MAC address.
+        mainSrcNetmask (Optional[IPvAnyAddress]): The main source netmask.
+        multiplicity (int): (Experimental feature)
+        partnerConfig (Optional[dict[str, Union[str, int, bool]]]): The partner configuration.
+        public (bool): Indicates whether the vertex is public (Federation).
+        sdpSupport (bool): The vertex is publishing SDP.
+        serviceId (Optional[int]): The service ID.
+        spareDstIp (Optional[Union[nAddress, nPoolId]]): The spare (multicast) destination IP address or pool ID.
+        spareDstMac (Optional[MacAddress]): The spare destination MAC address.
+        spareDstPort (Optional[int]): The spare destination port.
+        spareDstVlan (Optional[Union[nVlan1Q, QinQ, nVlanPattern]]): The spare destination VLAN.
+        spareSrcGateway (Optional[IPvAnyAddress]): The spare source gateway IP address.
+        spareSrcIp (Optional[IPvAnyAddress]): The spare source IP address.
+        spareSrcMac (Optional[MacAddress]): The spare source MAC address.
+        spareSrcNetmask (Optional[IPvAnyAddress]): The spare source netmask.
+    """
+
     type: Literal["codecVertex"] = "codecVertex"
     bidirPartnerId: Optional[str] = None
     codecFormat: CodecFormat = "Video"
@@ -254,10 +286,13 @@ class CodecVertex(Vertex):
         return self.mainDstVlan
 
     @main_destination_vlan_qinq.setter
-    def main_destination_vlan_qinq(self, vlan_pair: tuple[int, int]):
+    def main_destination_vlan_qinq(self, vlan_pair: tuple[int, int] | QinQ):
         """Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)\n
-        Expects a tuple (outer_vlan, inner_vlan)"""
-        self.mainDstVlan = QinQ(vlanOuter=vlan_pair[0], vlanInner=vlan_pair[1])
+        Expects a tuple (outer_vlan, inner_vlan) or a QinQ object"""
+        if isinstance(vlan_pair, QinQ):
+            self.mainDstVlan = vlan_pair
+        else:
+            self.mainDstVlan = QinQ(vlanOuter=vlan_pair[0], vlanInner=vlan_pair[1])
 
     @property
     def spare_destination_vlan_qinq(self) -> Optional[QinQ]:
@@ -273,9 +308,13 @@ class CodecVertex(Vertex):
         return self.spareDstVlan
 
     @spare_destination_vlan_qinq.setter
-    def spare_destination_vlan_qinq(self, outer_vlan_tag: int, inner_vlan_tag: int):
-        """Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)"""
-        self.spareDstVlan = QinQ(vlanOuter=outer_vlan_tag, vlanInner=inner_vlan_tag)
+    def spare_destination_vlan_qinq(self, vlan_pair: tuple[int, int] | QinQ):
+        """Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)\n
+        Expects a tuple (outer_vlan, inner_vlan) or a QinQ object"""
+        if isinstance(vlan_pair, QinQ):
+            self.spareDstVlan = vlan_pair
+        else:
+            self.spareDstVlan = QinQ(vlanOuter=vlan_pair[0], vlanInner=vlan_pair[1])
 
     @property
     def main_destination_vlan_ranges(self) -> Optional[str]:

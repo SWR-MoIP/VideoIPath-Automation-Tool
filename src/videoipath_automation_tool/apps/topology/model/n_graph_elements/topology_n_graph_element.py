@@ -73,7 +73,18 @@ SdpStrategy = Literal[
 
 
 class NGraphElement(BaseModel, validate_assignment=True):
-    """Base class for all nGraphElements"""
+    """
+    Base class for all nGraphElements.
+
+    Attributes:
+        id (str): Unique identifier of the nGraphElement
+        rev (Optional[str]): Revision of the nGraphElement
+        vid (str): vid of the nGraphElement
+        descriptor (Descriptor): User defined label and description of the nGraphElement
+        fDescriptor (Descriptor): Factory label and description of the nGraphElement
+        tags (list[str]): Tags associated with the nGraphElement
+        type (NGraphElementType): Type of the nGraph (`baseDevice`, `ipVertex`, `codecVertex`, `genericVertex`, `unidirectionalEdge`, `nGraphResourceTransform`, `ipTransformVertex`, `routerVertex`)
+    """
 
     id: str = Field(..., alias="_id")
     rev: Optional[str] = Field(..., alias="_rev")
