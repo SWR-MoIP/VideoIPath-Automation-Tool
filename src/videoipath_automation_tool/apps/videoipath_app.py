@@ -129,38 +129,20 @@ class VideoIPathApp:
         del log_level
 
         # --- Initialize Apps ---
-        self._inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self._logger)
-        self._topology = TopologyApp(vip_connector=self._videoipath_connector, logger=self._logger)
-        self._preferences = PreferencesApp(vip_connector=self._videoipath_connector, logger=self._logger)
-        self._profile = ProfileApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        self.inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        self.topology = TopologyApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        self.preferences = PreferencesApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        self.profile = ProfileApp(vip_connector=self._videoipath_connector, logger=self._logger)
 
         # --- For Development, map the internal methods to the VideoIPathApp ---
         if environment == "DEV":
-            self._connector = self._videoipath_connector
-            self._inventory_api = self._inventory._inventory_api
-            self._topology_api = self._topology._topology_api
-            self._preferences_api = self._preferences._preferences_api
-            self._profile_api = self._profile._profile_api
+            self.__inventory_api = self.inventory._inventory_api
+            self.__topology_api = self.topology._topology_api
+            self.__preferences_api = self.preferences._preferences_api
+            self.__profile_api = self.profile._profile_api
 
         self._logger.info("VideoIPath Automation Tool initialized.")
 
     # def demo_method_using_multiple_apps(self):
     #     self._inventory.create_device()                            # (not a real method, just for demonstration)
     #     self._inspect.move_device_relative(100, 100, "device371")
-
-    # --- Getters ---
-    @property
-    def inventory(self):
-        return self._inventory
-
-    @property
-    def topology(self):
-        return self._topology
-
-    @property
-    def preferences(self):
-        return self._preferences
-
-    @property
-    def profile(self):
-        return self._profile
