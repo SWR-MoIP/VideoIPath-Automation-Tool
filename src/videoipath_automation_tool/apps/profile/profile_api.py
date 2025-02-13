@@ -83,35 +83,35 @@ class ProfileAPI:
         Args:
             name (str): Name of the Profile to get.
         """
-        self.logger.debug(f"Requesting Profile/s with name '{name}'")
+        self._logger.debug(f"Requesting Profile/s with name '{name}'")
 
         response = self.vip_connector.rest.get(f"/rest/v2/data/config/pathman/profiles/* where name='{name}'/**")
         data = self._validate_response(response)
 
         if len(data) == 0:
-            self.logger.warning(f"No Profile found with name '{name}'.")
+            self._logger.warning(f"No Profile found with name '{name}'.")
             return None
         elif len(data) == 1:
-            self.logger.debug(f"Profile found with name '{name}'. Returning Profile.")
+            self._logger.debug(f"Profile found with name '{name}'. Returning Profile.")
             return Profile(**data[0])
         elif len(data) > 1:
-            self.logger.warning(f"Multiple Profiles found with name '{name}'. Returning list of Profiles.")
+            self._logger.warning(f"Multiple Profiles found with name '{name}'. Returning list of Profiles.")
             return [Profile(**item) for item in data]
 
     def get_profile_by_id(self, profile_id: str) -> Profile | None:
         """
         Get a VideoIPath Profile by its ID.
         """
-        self.logger.debug(f"Requesting Profile with id '{profile_id}'")
+        self._logger.debug(f"Requesting Profile with id '{profile_id}'")
 
         response = self.vip_connector.rest.get(f"/rest/v2/data/config/pathman/profiles/* where _id='{profile_id}' /**")
         data = self._validate_response(response)
 
         if len(data) == 0:
-            self.logger.warning(f"No Profile found with ID '{profile_id}'.")
+            self._logger.warning(f"No Profile found with ID '{profile_id}'.")
             return None
         elif len(data) == 1:
-            self.logger.debug(f"Profile found with ID '{profile_id}'. Returning Profile.")
+            self._logger.debug(f"Profile found with ID '{profile_id}'. Returning Profile.")
             return Profile(**data[0])
         elif len(data) > 1:
             raise ValueError(f"Multiple Profiles found with ID '{profile_id}'.")
