@@ -50,7 +50,10 @@ RedundancyMode = Literal["Any", "OnlyMain", "OnlySpare"]
 
 
 class UnidirectionalEdge(NGraphElement):
-    """Model for unidirectional Edge."""
+    """
+    Represents the attributes of a unidirectional edge.
+
+    """
 
     active: bool = True
     bandwidth: float = Field(
@@ -69,30 +72,11 @@ class UnidirectionalEdge(NGraphElement):
     tags: List[str] = Field(default=[], description="List of tags.")
     toId: str
     weight: int = Field(default=0, ge=0, description="The edge weight/cost for routing.", title="Fixed weight")
-    weightFactors: WeightFactors
+    weightFactors: WeightFactors = Field(
+        default_factory=lambda: WeightFactors(bandwidth=Bandwidth(weight=0), service=Service(max=100, weight=0))
+    )
     type: Literal["unidirectionalEdge"] = "unidirectionalEdge"
 
-    def is_internal(self) -> bool:
-        """Check if the edge is internal (i.e. connects two vertices of the same device)."""
-        if self.fromId.startswith("device"):
-            from_device_id = self.fromId.split(".")[0]
-        elif self.fromId.startswith("virtual."):
-            from_device_id = f"virtual.{self.fromId.split('.')[1]}"
-
-        if self.toId.startswith("device"):
-            to_device_id = self.toId.split(".")[0]
-        elif self.toId.startswith("virtual."):
-            to_device_id = f"virtual.{self.toId.split('.')[1]}"
-
-        if not from_device_id or not to_device_id:
-            raise ValueError(f"Could not determine device IDs from edge IDs '{self.fromId}' and '{self.toId}'")
-
-        if from_device_id == to_device_id:
-            return True
-        else:
-            return False
-
-    # --- Getters, Setters and Resetters ---
     @property
     def include_formats(self) -> List[str]:
         """Include Formats: List of formats to include in the edge."""
@@ -121,7 +105,12 @@ class UnidirectionalEdge(NGraphElement):
     @conflict_priority.setter
     def conflict_priority(self, value: Literal["high", "low", "normal", "off"]):
         """Conflict Priority (`high`, `low`, `normal`, `off`)."""
-        self.conflictPri = ConfigPriority[value]
+        try:
+            self.conflictPri = ConfigPriority[value]
+        except KeyError:
+            raise ValueError(
+                f"Invalid conflict priority: {value}. Must be one of {list(ConfigPriority.__members__.keys())}"
+            )
 
     @property
     def redundancy_mode(self) -> RedundancyMode:
@@ -190,10 +179,14 @@ class UnidirectionalEdge(NGraphElement):
         """Weight per service: Enables service-based weight calculation. The given number is the weight that each service contributes with.\n
         Expects a tuple (max, weight) or a Service object"""
         if isinstance(value, tuple):
+            if not all(isinstance(i, int) for i in value):
+                raise TypeError("weight_per_service tuple must contain two integers (max, weight)")
             self.weightFactors.service.max = value[0]
             self.weightFactors.service.weight = value[1]
-        else:
+        elif isinstance(value, Service):
             self.weightFactors.service = value
+        else:
+            raise TypeError("weight_per_service must be of type Service or tuple[int, int]")
 
     def disable_weight_per_service(self):
         """Disable weight per service (Set to `Disabled` / internal values: max=100, weight=0)."""
@@ -232,18 +225,30 @@ class UnidirectionalEdge(NGraphElement):
         """Create a new UnidirectionalEdge instance for edge between two given IP Vertices.
 
         Args:
-            preset: The preset to use (e.g. "arista")
-            from_ip_vertex: The source IP Vertex.
-            to_ip_vertex: The destination IP Vertex.
-
+            from_ip_vertex (IpVertex): The source IP Vertex.
+            to_ip_vertex (IpVertex): The destination IP Vertex.
+            description (str): Description of the edge.
+            tags (List[str]): List of tags.
+            include_formats (List[str]): List of formats to include in the edge.
+            exclude_formats (List[str]): List of formats to exclude from the edge.
+            conflict_priority (Literal["high", "low", "normal", "off"]): Conflict Priority.
+            redundancy_mode (RedundancyMode): Redundancy Mode: `Any`, `OnlyMain` or `OnlySpare`.
+            fixed_weight (int): The edge weight/cost for routing.
+            bandwidth_capacity (float): Max allowed bandwidth.
+            services_capacity (int): Max number of simultaneous services.
+            bandwidth_weight_factor (int): Bandwidth weight factor: Enables bandwidth-based weight calculation. The number corresponds to the weight at 100 percent link utilization.
+            weight_per_service (Service | tuple[int, int]): Weight per service: Enables service-based weight calculation. The given number is the weight that each service contributes with.
+            active (bool): Active state of the edge.
         """
-        # Check direction. From Edge must be of vertex type 'Out' and To Edge must be of type 'In':
-        if from_ip_vertex.vertexType != "Out":
-            raise ValueError(f"From edge must be of type 'Out' but is '{from_ip_vertex.vertexType}'")
-        if to_ip_vertex.vertexType != "In":
-            raise ValueError(f"To edge must be of type 'In' but is '{to_ip_vertex.vertexType}'")
 
-        # Generate key and name from vertex instances in schema of Inspect App:
+        if from_ip_vertex.vertexType != "Out":
+            raise ValueError(
+                f"From edge '{from_ip_vertex.id}' must be of type 'Out' but is '{from_ip_vertex.vertexType}'"
+            )
+        if to_ip_vertex.vertexType != "In":
+            raise ValueError(f"To edge '{to_ip_vertex.id}' must be of type 'In' but is '{to_ip_vertex.vertexType}'")
+
+        # Generate nGraph id/key and label in schema of Inspect App from given IP Vertex instances:
         key = f"{from_ip_vertex.id}::{to_ip_vertex.id}"
         label = f"{from_ip_vertex.fDescriptor.label} -\u003e {to_ip_vertex.fDescriptor.label}"
 
@@ -274,3 +279,21 @@ class UnidirectionalEdge(NGraphElement):
             _rev=None,
             _id=key,
         )
+
+    # --- Methods ---
+    def is_internal(self) -> bool:
+        """Check if the edge is internal (i.e. connects two vertices of the same device)
+        by comparing the device IDs of the source and destination vertices.
+
+        Returns:
+            bool: True if the edge is internal, False otherwise.
+        """
+
+        def get_device_id(edge_id: str) -> str:
+            if edge_id.startswith("device"):
+                return edge_id.split(".")[0]
+            elif edge_id.startswith("virtual."):
+                return f"virtual.{edge_id.split('.')[1]}"
+            raise ValueError(f"Could not determine device ID from edge ID '{edge_id}'")
+
+        return get_device_id(self.fromId) == get_device_id(self.toId)
