@@ -1,0 +1,117 @@
+name: Test, Build and Release Python Package
+
+# Note: This is a temporary workflow for the repository in a private state.
+# Before making the repository public, it will be replaced!
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  # 🟢 1️⃣ Test Job
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run tests
+        run: poetry run pytest
+
+  # 🔵 2️⃣ Build Job (Runs in Parallel with Tests)
+  build:
+    runs-on: ubuntu-latest
+    needs: test  # Ensures tests pass before building
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Build package
+        run: poetry build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with: 
+          name: videoipath-automation-tool-${{ github.run_number }}
+          path: dist/*
+
+  # 🔴 3️⃣ Release Job (Runs After Build)
+  release:
+    runs-on: ubuntu-latest
+    needs: build  # Ensures build completes before release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Extract package version
+        id: get_version
+        run: echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+
+      - name: Download built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: videoipath-automation-tool-${{ github.run_number }}
+          path: dist/
+
+      - name: Create or update release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ env.VERSION }}" 
+
+          # Check if tag exists
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG"; then
+            echo "Deleting old tag and release for $TAG"
+            gh release delete "$TAG" --yes || true
+            git push --delete origin "$TAG" || true
+          fi
+
+          # Create new tag from the latest commit
+          git tag "$TAG"
+          git push origin "$TAG"
+
+          # Create new release with the correct source code
+          gh release create "$TAG" dist/* \
+            --title "Release $TAG" \
+            --notes "Automated release for version $TAG" \
+            --latest
