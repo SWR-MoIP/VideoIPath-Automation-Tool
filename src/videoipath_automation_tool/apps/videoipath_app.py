@@ -121,28 +121,69 @@ class VideoIPathApp:
         )
 
         # --- Reset the variables and settings ---
+        server_address = None
+        _vip_server_address = None
+        username = None
+        _vip_username = None
+        password = None
+        _vip_password = None
+        use_https = None
+        verify_ssl_cert = None
+        log_level = None
+        _settings = None
+
         del server_address, _vip_server_address
         del username, _vip_username
         del password, _vip_password
         del use_https
         del verify_ssl_cert
         del log_level
+        del _settings
 
-        # --- Initialize Apps ---
-        self.inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self._logger)
-        self.topology = TopologyApp(vip_connector=self._videoipath_connector, logger=self._logger)
-        self.preferences = PreferencesApp(vip_connector=self._videoipath_connector, logger=self._logger)
-        self.profile = ProfileApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        # --- Initialize App placeholders ---
+        self._inventory = None
+        self._topology = None
+        self._preferences = None
+        self._profile = None
 
-        # --- For Development, map the internal methods to the VideoIPathApp ---
+        self._logger.info("VideoIPath Automation Tool initialized.")
+
+        # --- For Development Environment, load the APIs directly and map them to the VideoIPathApp for easier access ---
         if environment == "DEV":
             self._inventory_api = self.inventory._inventory_api
             self._topology_api = self.topology._topology_api
             self._preferences_api = self.preferences._preferences_api
             self._profile_api = self.profile._profile_api
 
-        self._logger.info("VideoIPath Automation Tool initialized.")
-
     # def demo_method_using_multiple_apps(self):
     #     self._inventory.create_device()                            # (not a real method, just for demonstration)
     #     self._inspect.move_device_relative(100, 100, "device371")
+
+    # --- Getters to enable lazy loading ---
+    @property
+    def inventory(self):
+        if self._inventory is None:
+            self._logger.debug("InventoryApp first called. Initialize InventoryApp.")
+            self._inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        return self._inventory
+
+    @property
+    def topology(self):
+        if self._topology is None:
+            self._logger.debug("TopologyApp first called. Initialize TopologyApp.")
+            self._topology = TopologyApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        return self._topology
+
+    @property
+    def preferences(self):
+        if self._preferences is None:
+            self._logger.debug("PreferencesApp first called. Initialize PreferencesApp.")
+            self._preferences = PreferencesApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        return self._preferences
+
+    @property
+    def profile(self):
+        if self._profile is None:
+            self._logger.debug("ProfileApp first called. Initialize ProfileApp.")
+            self._profile = ProfileApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        return self._profile
