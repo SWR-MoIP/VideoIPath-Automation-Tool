@@ -1,0 +1,31 @@
+name: Release Python Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: videoipath-automation-tool
+          path: dist/
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+
+          gh release create "$TAG" dist/* \
+            --title "Release $TAG" \
+            --notes "Automated release for version $TAG" \
+            --latest
