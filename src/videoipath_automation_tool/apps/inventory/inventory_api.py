@@ -3,7 +3,7 @@ import time
 from typing import List, Optional, Type
 from uuid import uuid4
 
-from pydantic import BaseModel, IPvAnyAddress, model_validator
+from pydantic import IPvAnyAddress
 
 from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
 from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
@@ -11,29 +11,20 @@ from videoipath_automation_tool.apps.inventory.model.inventory_device import Inv
 from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger, validate_device_id_string
 
 
-class InventoryAPI(BaseModel):
-    """
-    Class for VideoIPath inventory API.
-    """
+class InventoryAPI:
+    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+        """
+        Class for VideoIPath inventory API.
+        """
 
-    vip_connector: VideoIPathConnector
-    model_config: dict = {"arbitrary_types_allowed": True}
-    logger: Optional[logging.Logger] = None
+        # --- Setup Logging ---
+        self._logger = logger or create_fallback_logger("videoipath_automation_tool_inventory_api")
+        self.vip_connector = vip_connector
 
-    @model_validator(mode="after")
-    def initialize_connector(self):
-        if self.logger is None:
-            self.logger = logging.getLogger(
-                "videoipath_automation_tool_inventory_api"
-            )  # create fallback logger if no logger is provided
-            self.logger.debug(
-                "No logger for connector provided. Creating fallback logger: 'videoipath_automation_tool_inventory_api'."
-            )
-        self.logger.debug("Inventory API logger initialized.")
-        return self
+        self._logger.debug("Inventory API successfully initialized.")
 
     def get_device_ids(self, address: Optional[IPvAnyAddress | str] = None, label: Optional[str] = None) -> dict:
         """Method to get device id/s from VideoIPath-Inventory filtered by ip_address or label.
@@ -96,13 +87,13 @@ class InventoryAPI(BaseModel):
         """
         if not device_id.startswith("device"):
             raise ValueError("device_id must start with 'device'.")
-        self.logger.debug(f"Retrieving device '{device_id}' from VideoIPath-Inventory.")
+        self._logger.debug(f"Retrieving device '{device_id}' from VideoIPath-Inventory.")
         device = self._get_device_config(device_id)
         if not config_only:
             device.status = self._get_device_status(device_id)
         else:
-            self.logger.debug(f"Skipping status update for device '{device_id}'.")
-        self.logger.debug(f"Device '{device_id}' retrieved from VideoIPath-Inventory.")
+            self._logger.debug(f"Skipping status update for device '{device_id}'.")
+        self._logger.debug(f"Device '{device_id}' retrieved from VideoIPath-Inventory.")
         return device
 
     def refresh_device_status(self, device: InventoryDevice) -> InventoryDevice:
@@ -127,16 +118,16 @@ class InventoryAPI(BaseModel):
         Returns:
             InventoryDevice: Online device object with  backend generated ID
         """
-        self.logger.debug(
+        self._logger.debug(
             f"Adding new device with label '{device.configuration.config.desc.label}' to VideoIPath-Inventory."
         )
 
         tracking_id = str(uuid4())
-        self.logger.debug(f"Tracking ID generated: {tracking_id}")
+        self._logger.debug(f"Tracking ID generated: {tracking_id}")
 
         modified_device = device.model_copy(deep=True)
         modified_device.configuration.meta["uuid"] = tracking_id
-        self.logger.debug(
+        self._logger.debug(
             f"Modified device configuration with tracking ID: {modified_device.configuration.meta['uuid']}"
         )
 
@@ -151,7 +142,7 @@ class InventoryAPI(BaseModel):
         body.add(modified_device)
         # remove driver_id from customSettings
         modified_device.configuration.config.customSettings.__delattr__("driver_id")
-        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
+        self._logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
         response = self.vip_connector.rpc.post("/api/updateDevices", body=body)
 
@@ -168,31 +159,31 @@ class InventoryAPI(BaseModel):
                     if online_device.status:
                         break
                 except ValueError:
-                    self.logger.debug(
+                    self._logger.debug(
                         f"Failed to get device status for device '{online_device.configuration.id}', retrying ({21-retry_cnt}/20) ..."
                     )
                     time.sleep(2)
                     retry_cnt -= 1
             if retry_cnt == 0 and not online_device.status:
                 raise ValueError(f"Failed to get device status for device '{online_device.configuration.id}'.")
-        self.logger.debug(f"Device added successfully with id: {online_device.configuration.id}")
+        self._logger.debug(f"Device added successfully with id: {online_device.configuration.id}")
 
         if clear_uuid_after_add:
             modified_device = online_device.model_copy(deep=True)
             modified_device.configuration.meta.pop("uuid")
-            self.logger.debug("Removed tracking ID from device configuration.")
+            self._logger.debug("Removed tracking ID from device configuration.")
 
             self.update_device(device=modified_device)
             if response.header.status != "OK":
                 raise ValueError(f"Failed to update device in VideoIPath-Inventory. Error: {response}")
 
             online_device = modified_device
-            self.logger.debug("Tracking ID removed successfully from device configuration.")
+            self._logger.debug("Tracking ID removed successfully from device configuration.")
         return online_device
 
     def update_device(self, device: InventoryDevice, config_only: bool = False) -> InventoryDevice:
         """Method to update a device config in VideoIPath-Inventory"""
-        self.logger.debug(f"Updating device with id '{device.configuration.id}' in VideoIPath-Inventory.")
+        self._logger.debug(f"Updating device with id '{device.configuration.id}' in VideoIPath-Inventory.")
         body = InventoryRequestRpc()
 
         # temporary workaround to set driver_id in customSettings
@@ -205,7 +196,7 @@ class InventoryAPI(BaseModel):
         # remove driver_id from customSettings
         device.configuration.config.customSettings.__delattr__("driver_id")
 
-        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
+        self._logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
         response = self.vip_connector.rpc.post("/api/updateDevices", body=body)
 
@@ -213,16 +204,16 @@ class InventoryAPI(BaseModel):
             raise ValueError(f"Failed to update device in VideoIPath-Inventory. Error: {response}")
 
         online_device = self.get_device(device_id=device.configuration.id, config_only=config_only)
-        self.logger.debug(f"Device updated successfully with id: {online_device.device_id}")
+        self._logger.debug(f"Device updated successfully with id: {online_device.device_id}")
         return online_device
 
     def remove_device(self, device_id: str) -> ResponseRPC:
         """Method to remove a device from VideoIPath-Inventory"""
-        self.logger.debug(f"Removing device with id '{device_id}' from VideoIPath-Inventory.")
+        self._logger.debug(f"Removing device with id '{device_id}' from VideoIPath-Inventory.")
         body = InventoryRequestRpc()
         body.remove(device_id)
 
-        self.logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
+        self._logger.debug(f"RPC Request body generated: {body.model_dump(mode='json')}")
 
         response = self.vip_connector.rpc.post("/api/updateDevices", body=body)
 

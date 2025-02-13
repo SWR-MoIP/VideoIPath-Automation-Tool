@@ -162,20 +162,12 @@ class InventoryApp:
             logger (Optional[logging.Logger], optional): Logger instance to use for logging.
         """
         # --- Setup Logging ---
-        if logger is None:
-            self._logger = logging.getLogger(
-                "videoipath_automation_tool_inventory_app"
-            )  # create fallback logger if no logger is provided
-        else:
-            self._logger = logger
+        self._logger = logger or logging.getLogger("videoipath_automation_tool_inventory_app")
 
         # --- Setup Inventory API ---
-        try:
-            self._inventory_api = InventoryAPI(vip_connector=vip_connector, logger=self._logger)
-            self._logger.debug("Inventory API successfully initialized.")
-        except Exception as e:
-            self._logger.error(f"Error initializing Inventory API: {e}")
-            raise ConnectionError("Error initializing Inventory API.")
+        self._inventory_api = InventoryAPI(vip_connector=vip_connector, logger=self._logger)
+
+        self._logger.debug("Inventory APP successfully initialized.")
 
     # Note: For each driver, an overload is defined to show the correct intellisense for the driver.
     @overload

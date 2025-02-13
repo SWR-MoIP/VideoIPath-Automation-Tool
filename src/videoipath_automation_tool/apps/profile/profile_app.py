@@ -4,6 +4,7 @@ from typing import List, Optional
 from videoipath_automation_tool.apps.profile.model.profile_model import Profile, SuperProfile
 from videoipath_automation_tool.apps.profile.profile_api import ProfileAPI
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 
 
 class ProfileApp:
@@ -14,21 +15,15 @@ class ProfileApp:
             vip_connector (VideoIPathConnector): VideoIPathConnector instance to handle the connection to VideoIPath-Server.
             logger (Optional[logging.Logger], optional): Logger instance to use for logging.
         """
+
         # --- Setup Logging ---
-        if logger is None:
-            self.logger = logging.getLogger(
-                "videoipath_automation_tool_profile_app"
-            )  # create fallback logger if no logger is provided
-        else:
-            self.logger = logger
+        self._logger = logger or create_fallback_logger("videoipath_automation_tool_profile_app")
+        self.vip_connector = vip_connector
 
         # --- Setup Profile API ---
-        try:
-            self._profile_api = ProfileAPI(vip_connector=vip_connector, logger=self.logger)
-            self.logger.debug("Profile API successfully initialized.")
-        except Exception as e:
-            self.logger.error(f"Error initializing Profile API: {e}")
-            raise ConnectionError("Error initializing Profile API.")
+        self._profile_api = ProfileAPI(vip_connector=vip_connector, logger=self._logger)
+
+        self._logger.debug("Profile APP successfully initialized.")
 
     def get_profile_names(self) -> List[str] | None:
         """Get all VideoIPath Profile names.

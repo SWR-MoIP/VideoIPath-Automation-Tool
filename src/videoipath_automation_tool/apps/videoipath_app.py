@@ -1,12 +1,8 @@
 import logging
 
-from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
 from videoipath_automation_tool.apps.inventory.inventory_app import InventoryApp
-from videoipath_automation_tool.apps.preferences.preferences_api import PreferencesAPI
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
-from videoipath_automation_tool.apps.profile.profile_api import ProfileAPI
 from videoipath_automation_tool.apps.profile.profile_app import ProfileApp
-from videoipath_automation_tool.apps.topology.topology_api import TopologyAPI
 from videoipath_automation_tool.apps.topology.topology_app import TopologyApp
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.settings import Settings
@@ -133,19 +129,11 @@ class VideoIPathApp:
 
         # --- Development ---
         if environment == "DEV":
-            self.logger.debug("Development environment detected. Initializing API classes for development ...")
-
-            self._inventory_api = InventoryAPI(vip_connector=self._videoipath_connector)
-            self.logger.debug("Inventory API initialized.")
-
-            self._topology_api = TopologyAPI(vip_connector=self._videoipath_connector)
-            self.logger.debug("Topology API initialized.")
-
-            self._preferences_api = PreferencesAPI(vip_connector=self._videoipath_connector)
-            self.logger.debug("Preferences API initialized.")
-
-            self._profile_api = ProfileAPI(vip_connector=self._videoipath_connector)
-            self.logger.debug("Profile API initialized.")
+            self.logger.debug("Development environment configured, map API Methods to VidoIPathApp for easier access.")
+            self.inventory_api = self._inventory._inventory_api
+            self.topology_api = self._topology._topology_api
+            self.preferences_api = self._preferences._preferences_api
+            self.profile_api = self._profile._profile_api
 
         self.logger.info("VideoIPath Automation Tool successfully initialized.")
 
@@ -153,14 +141,10 @@ class VideoIPathApp:
     #     self._inventory.create_device()                            # (not a real method, just for demonstration)
     #     self._inspect.move_device_relative(100, 100, "device371")
 
-    # Getter for Apps to access the functionality from outside the class
+    # --- Getters ---
     @property
     def inventory(self):
         return self._inventory
-
-    # @property
-    # def inspect(self):
-    #     return self._inspect
 
     @property
     def topology(self):
@@ -173,13 +157,3 @@ class VideoIPathApp:
     @property
     def profile(self):
         return self._profile
-
-    # # --- Development ---
-    # if Settings().ENVIRONMENT and Settings().ENVIRONMENT.upper() == "DEV":
-    #     @property
-    #     def inventory_api(self):
-    #         return self._inventory_api
-
-    #     @property
-    #     def topology_api(self):
-    #         return self._topology_api

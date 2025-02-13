@@ -12,7 +12,7 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_un
 from videoipath_automation_tool.apps.topology.model.topology_device import TopologyDevice
 from videoipath_automation_tool.apps.topology.topology_api import TopologyAPI
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger, validate_device_id_string
 
 
 class TopologyApp:
@@ -24,29 +24,18 @@ class TopologyApp:
             logger (Optional[logging.Logger], optional): Logger instance to use for logging.
         """
         # --- Setup Logging ---
-        if logger is None:
-            self._logger = logging.getLogger(
-                "videoipath_automation_tool_inventory_app"
-            )  # create fallback logger if no logger is provided
-            self._logger.debug(
-                "No logger for Topology App provided. Creating fallback logger: 'videoipath_automation_tool_inventory_app'."
-            )
-        else:
-            self._logger = logger
+        self._logger = logger or create_fallback_logger("videoipath_automation_tool_inventory_app")
 
         # --- Setup Topology API ---
-        try:
-            self._topology_api = TopologyAPI(vip_connector=vip_connector, logger=self._logger)
-            self._logger.debug("Topology API successfully initialized.")
-        except Exception as e:
-            self._logger.error(f"Error initializing Topology API: {e}")
-            raise ConnectionError("Error initializing Topology API.")
+        self._topology_api = TopologyAPI(vip_connector=vip_connector, logger=self._logger)
 
         # --- Setup Placement Layer ---
         self.placement = TopologyPlacement(self._topology_api, self._logger)
 
         # --- Setup Experimental Layer ---
         self.experimental = TopologyExperimental(self._topology_api, self._logger)
+
+        self._logger.debug("Topology APP successfully initialized.")
 
     def get_device(self, device_id: str) -> TopologyDevice:
         """Get a topology device by its device id. If the device does not exist, method will try to create the device from the driver.

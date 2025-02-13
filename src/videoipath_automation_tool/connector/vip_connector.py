@@ -56,6 +56,8 @@ class VideoIPathConnector:
             logger=self._logger,
         )
 
+        self._logger.debug("VideoIPath Connectors successfully initialized.")
+
     def refresh_videoipath_version(self):
         """Method to refresh the VideoIPath version attribute."""
         try:

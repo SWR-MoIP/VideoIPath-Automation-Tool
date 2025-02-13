@@ -2,36 +2,26 @@ import logging
 from typing import List, Literal, Optional
 
 from deepdiff.diff import DeepDiff
-from pydantic import BaseModel, model_validator
 
 from videoipath_automation_tool.apps.preferences.model import *
 from videoipath_automation_tool.apps.profile.model.profile_model import Profile, SuperProfile
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 
 
-class ProfileAPI(BaseModel):
-    """
-    Class for VideoIPath Profile API.
+class ProfileAPI:
+    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+        """
+        Class for VideoIPath Profile API.
 
-    """
+        """
+        # --- Setup Logging ---
+        self._logger = logger or create_fallback_logger("videoipath_automation_tool_profile_api")
+        self.vip_connector = vip_connector
 
-    vip_connector: VideoIPathConnector
-    model_config: dict = {"arbitrary_types_allowed": True}
-    logger: Optional[logging.Logger] = None
-
-    @model_validator(mode="after")
-    def initialize_connector(self):
-        if self.logger is None:
-            self.logger = logging.getLogger(
-                "videoipath_automation_tool_profile_api"
-            )  # create fallback logger if no logger is provided
-            self.logger.debug(
-                "No logger for connector provided. Creating fallback logger: 'videoipath_automation_tool_profile_api'."
-            )
-        self.logger.debug("Profile API logger initialized.")
-        return self
+        self._logger.debug("Profile API logger initialized.")
 
     def _generate_profile_action(
         self, add_list: List[SuperProfile | Profile], update_list: List[Profile], remove_list: List[Profile]

@@ -1,8 +1,6 @@
 import logging
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel
-
 from videoipath_automation_tool.apps.topology.model.actions.validate_topology_update import ValidateTopologyUpdateData
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_base_device import BaseDevice
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
@@ -19,18 +17,24 @@ from videoipath_automation_tool.apps.topology.model.topology_device_configuratio
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch, RequestV2Post
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.utils.cross_app_utils import validate_device_id_string
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger, validate_device_id_string
 
 
-class TopologyAPI(BaseModel):
-    """
-    Class for VideoIPath topology API.
-    """
+class TopologyAPI:
+    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+        """
+        Class for VideoIPath topology API.
 
-    model_config: dict = {"arbitrary_types_allowed": True}
-    logger: Optional[logging.Logger] = None
+        Args:
+            vip_connector (VideoIPathConnector): VideoIPathConnector instance to handle the connection to the VideoIPath-Server.
+            logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
+        """
 
-    vip_connector: VideoIPathConnector
+        # --- Setup Logging ---
+        self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_api")
+        self.vip_connector = vip_connector
+
+        self._logger.debug("Topology API successfully initialized.")
 
     # --- Fetching device configuration ---
     def get_device_from_topology(self, device_id: str) -> TopologyDevice:
@@ -90,7 +94,7 @@ class TopologyAPI(BaseModel):
         payload_data = response.data["config"]["network"]["nGraphElements"]["_items"]
         if len(payload_data) > 1:
             #     raise ValueError(f"Multiple nGraphElements with label '{label}' found.")
-            self.logger.warning(f"Multiple nGraphElements with label '{label}' found.")
+            self._logger.warning(f"Multiple nGraphElements with label '{label}' found.")
             return [self._validate_nGraphElement(item) for item in payload_data]
         elif len(payload_data) == 1:
             return self._validate_nGraphElement(payload_data[0])

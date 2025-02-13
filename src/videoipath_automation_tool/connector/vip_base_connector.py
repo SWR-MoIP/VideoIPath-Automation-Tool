@@ -37,7 +37,6 @@ class VideoIPathBaseConnector(ABC):
         self._logger = logger
         self.use_https = use_https
         self.verify_ssl_cert = verify_ssl_cert
-        self._logger.debug(f"Logger initialized: '{self._logger.name}'")
         self._videoipath_version = ""
 
         self.server_address = self._parse_server_address(
@@ -45,7 +44,7 @@ class VideoIPathBaseConnector(ABC):
         )  # Server address has to be set after use_https, because address might change use_https setting
 
         self._validate_and_initialize_connector()
-        self._logger.info(f"{self.__class__.__name__} initialized.")
+        self._logger.debug(f"{self.__class__.__name__} initialized.")
 
     @abstractmethod
     def is_connected(self) -> bool:
