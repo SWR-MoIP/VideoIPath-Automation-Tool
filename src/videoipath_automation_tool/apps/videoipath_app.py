@@ -150,10 +150,6 @@ class VideoIPathApp:
             self._preferences_api = self.preferences._preferences_api
             self._profile_api = self.profile._profile_api
 
-    # def demo_method_using_multiple_apps(self):
-    #     self._inventory.create_device()                            # (not a real method, just for demonstration)
-    #     self._inspect.move_device_relative(100, 100, "device371")
-
     # --- Getters to enable lazy loading ---
     @property
     def inventory(self):
