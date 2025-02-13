@@ -136,10 +136,10 @@ class VideoIPathApp:
 
         # --- For Development, map the internal methods to the VideoIPathApp ---
         if environment == "DEV":
-            self.__inventory_api = self.inventory._inventory_api
-            self.__topology_api = self.topology._topology_api
-            self.__preferences_api = self.preferences._preferences_api
-            self.__profile_api = self.profile._profile_api
+            self._inventory_api = self.inventory._inventory_api
+            self._topology_api = self.topology._topology_api
+            self._preferences_api = self.preferences._preferences_api
+            self._profile_api = self.profile._profile_api
 
         self._logger.info("VideoIPath Automation Tool initialized.")
 
