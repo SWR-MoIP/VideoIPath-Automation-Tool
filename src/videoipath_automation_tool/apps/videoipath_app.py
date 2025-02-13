@@ -70,28 +70,17 @@ class VideoIPathApp:
         # --- Initialize VideoIPath API Connector including check for connection and authentication ---
         self._logger.debug("Initialize VideoIPath API Connector.")
 
-        if server_address is None and _settings.VIPAT_VIDEOIPATH_SERVER_ADDRESS is None:
-            raise ValueError(
-                "No address provided. Please provide an address or set it as an environment variable: 'VIPAT_VIDEOIPATH_SERVER_ADDRESS'."
-            )
         _vip_server_address = (
             server_address if server_address is not None else _settings.VIPAT_VIDEOIPATH_SERVER_ADDRESS
         )
         self._logger.debug(f"Server address: '{_vip_server_address}'")
 
-        if username is None and _settings.VIPAT_VIDEOIPATH_USERNAME is None:
-            raise ValueError(
-                "No username provided. Please provide a username or set it as an environment variable: 'VIPAT_VIDEOIPATH_USERNAME'."
-            )
         _vip_username = username if username is not None else _settings.VIPAT_VIDEOIPATH_USERNAME
         self._logger.debug(f"Username: '{_vip_username}'")
 
-        if password is None and _settings.VIPAT_VIDEOIPATH_PASSWORD is None:
-            raise ValueError(
-                "No password provided. Please provide a password or set it as an environment variable: 'VIPAT_VIDEOIPATH_PASSWORD'."
-            )
         _vip_password = password if password is not None else _settings.VIPAT_VIDEOIPATH_PASSWORD
-        self._logger.debug("Password provided!")
+        if _vip_password:
+            self._logger.debug("Password provided!")
 
         use_https = use_https if use_https is not None else _settings.VIPAT_USE_HTTPS
         self._logger.debug("HTTPS enabled.") if use_https else self._logger.debug("HTTP enabled.")
@@ -103,13 +92,19 @@ class VideoIPathApp:
             )
 
         if _vip_server_address is None:
-            raise ValueError("No server address provided. Please provide a server address.")
+            raise ValueError(
+                "No address provided. Please provide an address or set it as an environment variable: 'VIPAT_VIDEOIPATH_SERVER_ADDRESS'."
+            )
 
         if not _vip_username:
-            raise ValueError("No username provided. Please provide a username.")
+            raise ValueError(
+                "No username provided. Please provide a username or set it as an environment variable: 'VIPAT_VIDEOIPATH_USERNAME'."
+            )
 
         if not _vip_password:
-            raise ValueError("No password provided. Please provide a password.")
+            raise ValueError(
+                "No password provided. Please provide a password or set it as an environment variable: 'VIPAT_VIDEOIPATH_PASSWORD'."
+            )
 
         self._videoipath_connector = VideoIPathConnector(
             server_address=_vip_server_address,
@@ -120,7 +115,7 @@ class VideoIPathApp:
             logger=self._logger,
         )
 
-        # --- Reset the variables and settings ---
+        # --- Reset the variables ---
         server_address = None
         _vip_server_address = None
         username = None
