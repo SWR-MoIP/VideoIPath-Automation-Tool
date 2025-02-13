@@ -34,7 +34,7 @@ Once the repository is public, the package will be available via the public PyPI
 pip3 install "path/to/downloads/videoipath_automation_tool-0.0.1.tar.gz"
 ```
 
-### A Simple Example
+### A Simple Example: Adding a Device to the Inventory
 
 ```python
 # Import the `VideoIPathApp` class from the videoipath_automation_tool package
@@ -43,15 +43,15 @@ from videoipath_automation_tool import VideoIPathApp
 # Initialize the VideoIPathApp
 app = VideoIPathApp(server_address="10.1.100.10", username="api-user", password="VIP2024PWD")
 
-# Create a device object with NMOS driver
+# Create a device object with NMOS Multidevice driver
 staged_device = app.inventory.create_device(driver="com.nevion.NMOS_multidevice-0.1.0")
 
 # Set the device label, description, address, nmos port and disable 'Use indices in IDs' option
-staged_device.label = "Media-Node-1"
-staged_device.description = "Hello World"
-staged_device.address = "10.100.100.1"
-staged_device.custom.port = 8080
-staged_device.custom.indices_in_ids = False
+staged_device.configuration.label = "Media-Node-1"
+staged_device.configuration.description = "Hello World"
+staged_device.configuration.address = "10.100.100.1"
+staged_device.configuration.custom_settings.port = 8080
+staged_device.configuration.custom_settings.indices_in_ids = False
 
 # Add the device to the inventory
 device = app.inventory.add_device(staged_device)
