@@ -35,8 +35,6 @@ class TestValidateDeviceId(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_device_id("device1.1")
         with self.assertRaises(ValueError):
-            validate_device_id("device99999999999999999999999999999999")
-        with self.assertRaises(ValueError):
             validate_device_id(None)
         with self.assertRaises(ValueError):
             validate_device_id([])

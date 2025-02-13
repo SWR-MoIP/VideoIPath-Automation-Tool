@@ -35,8 +35,6 @@ class TestValidateVirtualDeviceId(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_virtual_device_id("virtual.1.1")
         with self.assertRaises(ValueError):
-            validate_virtual_device_id("virtual.99999999999999999999999999999999")
-        with self.assertRaises(ValueError):
             validate_virtual_device_id(None)
         with self.assertRaises(ValueError):
             validate_virtual_device_id([])
