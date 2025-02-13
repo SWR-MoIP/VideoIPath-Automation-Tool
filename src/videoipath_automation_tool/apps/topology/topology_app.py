@@ -249,36 +249,36 @@ class TopologyApp:
 
         if device_1_status == "both" and device_2_status == "both":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_2_vertices["out"], to_ip_vertex=device_1_vertices["in"]
                 )
             )
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_1_vertices["out"], to_ip_vertex=device_2_vertices["in"]
                 )
             )
         elif device_1_status == "both" and device_2_status == "out":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_2_vertices["out"], to_ip_vertex=device_1_vertices["in"]
                 )
             )
         elif device_1_status == "both" and device_2_status == "in":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_1_vertices["out"], to_ip_vertex=device_2_vertices["in"]
                 )
             )
         elif device_1_status == "out" and device_2_status == "both":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_1_vertices["out"], to_ip_vertex=device_2_vertices["in"]
                 )
             )
         elif device_1_status == "in" and device_2_status == "both":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_2_vertices["out"], to_ip_vertex=device_1_vertices["in"]
                 )
             )
@@ -354,36 +354,36 @@ class TopologyExperimental:
 
         if device_1_status == "both" and device_2_status == "both":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_2_vertices["out"], to_ip_vertex=device_1_vertices["in"]
                 )
             )
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_1_vertices["out"], to_ip_vertex=device_2_vertices["in"]
                 )
             )
         elif device_1_status == "both" and device_2_status == "out":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_2_vertices["out"], to_ip_vertex=device_1_vertices["in"]
                 )
             )
         elif device_1_status == "both" and device_2_status == "in":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_1_vertices["out"], to_ip_vertex=device_2_vertices["in"]
                 )
             )
         elif device_1_status == "out" and device_2_status == "both":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_1_vertices["out"], to_ip_vertex=device_2_vertices["in"]
                 )
             )
         elif device_1_status == "in" and device_2_status == "both":
             edges.append(
-                UnidirectionalEdge.create(
+                UnidirectionalEdge.build_edge_from_vertices(
                     preset="arista", from_ip_vertex=device_2_vertices["out"], to_ip_vertex=device_1_vertices["in"]
                 )
             )

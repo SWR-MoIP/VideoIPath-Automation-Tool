@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Literal, Optional
+from typing import List, Literal
 
 from pydantic import BaseModel, Field
 
@@ -71,64 +71,6 @@ class UnidirectionalEdge(NGraphElement):
     weight: int = Field(default=0, ge=0, description="The edge weight/cost for routing.", title="Fixed weight")
     weightFactors: WeightFactors
     type: Literal["unidirectionalEdge"] = "unidirectionalEdge"
-
-    @classmethod
-    def create(
-        cls,
-        preset: Literal["arista"],
-        from_ip_vertex: IpVertex,
-        to_ip_vertex: IpVertex,
-        redundancy_mode: Optional[RedundancyMode] = "Any",
-        bandwidth: Optional[float] = -1.0,
-        weight: Optional[int] = 1,
-    ) -> "UnidirectionalEdge":
-        """Create a new UnidirectionalEdge instance for edge between two given IP Vertices.
-
-        Args:
-            preset: The preset to use (e.g. "arista")
-            from_ip_vertex: The source IP Vertex.
-            to_ip_vertex: The destination IP Vertex.
-            **kwargs: Additional parameters.
-
-        """
-        # check direction -> Always from out to in:
-        if from_ip_vertex.vertexType != "Out":
-            raise ValueError(f"From edge must be of type 'Out' but is '{from_ip_vertex.vertexType}'")
-        if to_ip_vertex.vertexType != "In":
-            raise ValueError(f"To edge must be of type 'In' but is '{to_ip_vertex.vertexType}'")
-
-        # generate key and name from vertices:
-        key = f"{from_ip_vertex.id}::{to_ip_vertex.id}"
-        label = f"{from_ip_vertex.fDescriptor.label} -> {to_ip_vertex.fDescriptor.label}"
-
-        # Merge default values with kwargs:
-        if preset == "arista":
-            preset_data = {
-                "active": True,
-                "bandwidth": bandwidth,
-                "capacity": 65535,
-                "conflictPri": ConfigPriority.off,
-                "descriptor": Descriptor(label="", desc=""),
-                "excludeFormats": [],
-                "fDescriptor": Descriptor(label=label, desc=""),
-                "fromId": from_ip_vertex.id,
-                "includeFormats": [],
-                "redundancyMode": redundancy_mode,
-                "tags": [],
-                "toId": to_ip_vertex.id,
-                "weight": weight,
-                "weightFactors": WeightFactors(bandwidth=Bandwidth(weight=0), service=Service(max=100, weight=0)),
-                "type": "unidirectionalEdge",
-                "_vid": key,
-                "_rev": None,
-                "_id": key,
-            }
-        elif preset == "":
-            pass
-        else:
-            raise ValueError(f"Unknown preset '{preset}'")
-
-        return cls.model_validate(preset_data)
 
     def is_internal(self) -> bool:
         """Check if the edge is internal (i.e. connects two vertices of the same device)."""
@@ -267,3 +209,68 @@ class UnidirectionalEdge(NGraphElement):
     def to_id(self) -> str:
         """The destination vertex ID."""
         return self.toId
+
+    # --- Class Methods ---
+    @classmethod
+    def build_edge_from_vertices(
+        cls,
+        from_ip_vertex: IpVertex,
+        to_ip_vertex: IpVertex,
+        description: str = "",
+        tags: List[str] = [],
+        include_formats: List[str] = [],
+        exclude_formats: List[str] = [],
+        conflict_priority: Literal["high", "low", "normal", "off"] = "off",
+        redundancy_mode: RedundancyMode = "Any",
+        fixed_weight: int = 1,
+        bandwidth_capacity: float = -1.0,
+        services_capacity: int = 65535,
+        bandwidth_weight_factor: int = 0,
+        weight_per_service: Service | tuple[int, int] = Service(max=100, weight=0),
+        active: bool = True,
+    ) -> "UnidirectionalEdge":
+        """Create a new UnidirectionalEdge instance for edge between two given IP Vertices.
+
+        Args:
+            preset: The preset to use (e.g. "arista")
+            from_ip_vertex: The source IP Vertex.
+            to_ip_vertex: The destination IP Vertex.
+
+        """
+        # Check direction. From Edge must be of vertex type 'Out' and To Edge must be of type 'In':
+        if from_ip_vertex.vertexType != "Out":
+            raise ValueError(f"From edge must be of type 'Out' but is '{from_ip_vertex.vertexType}'")
+        if to_ip_vertex.vertexType != "In":
+            raise ValueError(f"To edge must be of type 'In' but is '{to_ip_vertex.vertexType}'")
+
+        # Generate key and name from vertex instances in schema of Inspect App:
+        key = f"{from_ip_vertex.id}::{to_ip_vertex.id}"
+        label = f"{from_ip_vertex.fDescriptor.label} -\u003e {to_ip_vertex.fDescriptor.label}"
+
+        # Convert weight_per_service if it's a tuple
+        if isinstance(weight_per_service, tuple):
+            weight_per_service = Service(max=weight_per_service[0], weight=weight_per_service[1])
+
+        return cls(
+            active=active,
+            bandwidth=bandwidth_capacity,
+            capacity=services_capacity,
+            conflictPri=ConfigPriority[conflict_priority],
+            descriptor=Descriptor(label=label, desc=description),
+            excludeFormats=exclude_formats,
+            fDescriptor=Descriptor(label="", desc=""),
+            fromId=from_ip_vertex.id,
+            includeFormats=include_formats,
+            redundancyMode=redundancy_mode,
+            tags=tags,
+            toId=to_ip_vertex.id,
+            weight=fixed_weight,
+            weightFactors=WeightFactors(
+                bandwidth=Bandwidth(weight=bandwidth_weight_factor),
+                service=weight_per_service,
+            ),
+            type="unidirectionalEdge",
+            _vid=key,
+            _rev=None,
+            _id=key,
+        )
