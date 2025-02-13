@@ -1,5 +1,8 @@
 name: Test Python Package
 
+# Note: This is a temporary workflow for the repository in a private state.
+# Before making the repository public, it will be replaced!
+
 on:
   push:
     branches:
@@ -19,14 +22,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
-          cache: 'poetry'  # ✅ Enables caching for dependencies
+          python-version: '3.11'
 
       - name: Install Poetry
         run: pip install poetry
 
       - name: Install dependencies
-        run: poetry install --no-root  # ✅ Speeds up installation
+        run: poetry install --no-root
 
       - name: Run tests
-        run: poetry run pytest -n auto  # ✅ Enables parallel test execution
+        run: poetry run pytest -n auto  # parallel test execution
