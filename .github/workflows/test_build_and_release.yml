@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 jobs:
-  build_and_release:
+  test_build_and_release:
     runs-on: ubuntu-latest
 
     steps:
