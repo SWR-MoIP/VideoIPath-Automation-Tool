@@ -41,6 +41,8 @@ from videoipath_automation_tool import VideoIPathApp
 # Initialize the VideoIPathApp
 app = VideoIPathApp(server_address="10.1.100.10", username="api-user", password="veryStrongPassword", use_https=True, verify_ssl_cert=False, log_level="DEBUG")```
 
+```
+
 ## Notes 
 
 ### Parameters
