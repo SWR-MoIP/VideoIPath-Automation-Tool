@@ -16,27 +16,27 @@ class PreferencesApp:
         """
         # --- Setup Logging ---
         if logger is None:
-            self.logger = logging.getLogger(
+            self._logger = logging.getLogger(
                 "videoipath_automation_tool_preferences_app"
             )  # create fallback logger if no logger is provided
-            self.logger.debug(
+            self._logger.debug(
                 "No logger for System Preferences App provided. Creating fallback logger: 'videoipath_automation_tool_preferences_app'."
             )
         else:
-            self.logger = logger
+            self._logger = logger
 
         # --- Setup System Preferences API ---
         try:
             self._preferences_api = PreferencesAPI(vip_connector=vip_connector)
-            self.logger.debug("System Preferences API initialized.")
+            self._logger.debug("System Preferences API initialized.")
         except Exception as e:
-            self.logger.error(f"Error initializing System Preferences API: {e}")
+            self._logger.error(f"Error initializing System Preferences API: {e}")
             raise ConnectionError("Error initializing System Preferences API.")
 
         # --- Setup System Configuration ---
         try:
-            self.system_configuration = SystemConfiguration(preferences_api=self._preferences_api, logger=self.logger)
-            self.logger.debug("System Configuration initialized.")
+            self.system_configuration = SystemConfiguration(preferences_api=self._preferences_api, logger=self._logger)
+            self._logger.debug("System Configuration initialized.")
         except Exception as e:
-            self.logger.error(f"Error initializing System Configuration: {e}")
+            self._logger.error(f"Error initializing System Configuration: {e}")
             raise ConnectionError("Error initializing System Configuration.")

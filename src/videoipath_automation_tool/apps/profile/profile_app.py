@@ -111,7 +111,7 @@ class ProfileApp:
             raise ValueError("Profile not found.")
 
         if type(profile) is list:
-            self.logger.info("Multiple Profiles found, removing all Profiles.")
+            self._logger.info("Multiple Profiles found, removing all Profiles.")
             profile_list = profile
         else:
             profile_list = [profile]

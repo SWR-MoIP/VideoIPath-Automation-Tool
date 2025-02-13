@@ -50,7 +50,7 @@ class VideoIPathApp:
 
         logging.basicConfig(level=log_level)
 
-        self.logger = logging.getLogger("videoipath_automation_tool")
+        self._logger = logging.getLogger("videoipath_automation_tool")
 
         # --- Setup Environment ---
         environment = (
@@ -62,10 +62,10 @@ class VideoIPathApp:
         if environment not in ["DEV", "TEST", "PROD"]:
             raise ValueError("Invalid environment provided. Please provide a valid environment: 'DEV', 'TEST', 'PROD'.")
 
-        self.logger.debug(f"Environment set to '{environment}'.")
+        self._logger.debug(f"Environment set to '{environment}'.")
 
         # --- Setup VideoIPath API Connector ---
-        self.logger.debug("Initialize VideoIPath API Connector.")
+        self._logger.debug("Initialize VideoIPath API Connector.")
 
         if server_address is None and Settings().VIPAT_VIDEOIPATH_SERVER_ADDRESS is None:
             raise ValueError(
@@ -74,28 +74,28 @@ class VideoIPathApp:
         vip_server_address = (
             server_address if server_address is not None else Settings().VIPAT_VIDEOIPATH_SERVER_ADDRESS
         )
-        self.logger.debug(f"Server address: '{vip_server_address}'")
+        self._logger.debug(f"Server address: '{vip_server_address}'")
 
         if username is None and Settings().VIPAT_VIDEOIPATH_USERNAME is None:
             raise ValueError(
                 "No username provided. Please provide a username or set it as an environment variable: 'VIPAT_VIDEOIPATH_USERNAME'."
             )
         vip_username = username if username is not None else Settings().VIPAT_VIDEOIPATH_USERNAME
-        self.logger.debug(f"Username: '{vip_username}'")
+        self._logger.debug(f"Username: '{vip_username}'")
 
         if password is None and Settings().VIPAT_VIDEOIPATH_PASSWORD is None:
             raise ValueError(
                 "No password provided. Please provide a password or set it as an environment variable: 'VIPAT_VIDEOIPATH_PASSWORD'."
             )
         vip_password = password if password is not None else Settings().VIPAT_VIDEOIPATH_PASSWORD
-        self.logger.debug("Password provided!")
+        self._logger.debug("Password provided!")
 
         use_https = use_https if use_https is not None else Settings().VIPAT_USE_HTTPS
-        self.logger.debug("HTTPS enabled.") if use_https else self.logger.debug("HTTP enabled.")
+        self._logger.debug("HTTPS enabled.") if use_https else self._logger.debug("HTTP enabled.")
 
         verify_ssl_cert = verify_ssl_cert if verify_ssl_cert is not None else Settings().VIPAT_VERIFY_SSL_CERT
         if use_https:
-            self.logger.debug("Verify SSL certificate enabled.") if verify_ssl_cert else self.logger.debug(
+            self._logger.debug("Verify SSL certificate enabled.") if verify_ssl_cert else self._logger.debug(
                 "Verify SSL certificate disabled."
             )
 
@@ -115,27 +115,24 @@ class VideoIPathApp:
             password=vip_password,
             use_https=use_https,
             verify_ssl_cert=verify_ssl_cert,
-            logger=self.logger,
+            logger=self._logger,
         )
 
         # --- Initialize Apps ---
-        self._inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self.logger)
+        self._inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        self._topology = TopologyApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        self._preferences = PreferencesApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        self._profile = ProfileApp(vip_connector=self._videoipath_connector, logger=self._logger)
 
-        self._topology = TopologyApp(vip_connector=self._videoipath_connector, logger=self.logger)
+        # --- Map API Methods to VideoIPathApp for easier access in Development Environment ---
 
-        self._preferences = PreferencesApp(vip_connector=self._videoipath_connector, logger=self.logger)
-
-        self._profile = ProfileApp(vip_connector=self._videoipath_connector, logger=self.logger)
-
-        # --- Development ---
         if environment == "DEV":
-            self.logger.debug("Development environment configured, map API Methods to VidoIPathApp for easier access.")
             self.inventory_api = self._inventory._inventory_api
             self.topology_api = self._topology._topology_api
             self.preferences_api = self._preferences._preferences_api
             self.profile_api = self._profile._profile_api
 
-        self.logger.info("VideoIPath Automation Tool initialized.")
+        self._logger.info("VideoIPath Automation Tool initialized.")
 
     # def demo_method_using_multiple_apps(self):
     #     self._inventory.create_device()                            # (not a real method, just for demonstration)

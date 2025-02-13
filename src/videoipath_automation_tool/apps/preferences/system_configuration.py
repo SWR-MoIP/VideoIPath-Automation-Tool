@@ -13,14 +13,14 @@ from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 
 class AllocationPools:
     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
-        self.logger = logger
+        self._logger = logger
         self._preferences_api = preferences_api
 
     def get_multicast_ranges(self) -> "MulticastRanges":
         """Get all multicast ranges from the VideoIPath System Preferences."""
         pools_as_list = self._preferences_api.get_multicast_ranges()
         if not pools_as_list:
-            self.logger.warning("No multicast ranges found in the VideoIPath System Preferences.")
+            self._logger.warning("No multicast ranges found in the VideoIPath System Preferences.")
             return MulticastRanges.create(pools=[])
         return MulticastRanges.create(pools=pools_as_list)
 
@@ -127,10 +127,10 @@ class AllocationPools:
 
 class SystemConfiguration:
     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
-        self.logger = logger
+        self._logger = logger
         self._preferences_api = preferences_api
 
         try:
-            self.allocation_pools = AllocationPools(preferences_api=self._preferences_api, logger=self.logger)
+            self.allocation_pools = AllocationPools(preferences_api=self._preferences_api, logger=self._logger)
         except Exception:
             raise ConnectionError("Error initializing Preferences App / System Configuration / Allocation Pools.")
