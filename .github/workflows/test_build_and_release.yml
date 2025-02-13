@@ -1,4 +1,4 @@
-name: Build and Release Python Package
+name: Test, Build and Release Python Package
 
 # Note: This is a temporary workflow for the repository in a private state.
 # Before making the repository public, it will be replaced!
@@ -32,6 +32,9 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
+
+      - name: Run tests
+        run: poetry run pytest
 
       - name: Build package
         run: poetry build
