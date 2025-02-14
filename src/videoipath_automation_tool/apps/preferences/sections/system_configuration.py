@@ -125,12 +125,55 @@ class AllocationPools:
         return self.update_multicast_pool(pools=pools)
 
 
+# --- Prepare for further implementation ---
+
+# class Network:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+# class Ldap:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+# class Northbound:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+# class Security:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+# class Alarm:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+# class CustomizeBackground:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+
 class SystemConfiguration:
     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
         self._logger = logger
         self._preferences_api = preferences_api
 
-        try:
-            self.allocation_pools = AllocationPools(preferences_api=self._preferences_api, logger=self._logger)
-        except Exception:
-            raise ConnectionError("Error initializing Preferences App / System Configuration / Allocation Pools.")
+        # --- Setup Allocation Pools ---
+        self.allocation_pools = AllocationPools(preferences_api=self._preferences_api, logger=self._logger)
+        # self.network = Network(preferences_api=self._preferences_api, logger=self._logger)
+        # self.ldap = Ldap(preferences_api=self._preferences_api, logger=self._logger)
+        # self.northbound = Northbound(preferences_api=self._preferences_api, logger=self._logger)
+        # self.security = Security(preferences_api=self._preferences_api, logger=self._logger)
+        # self.alarm = Alarm(preferences_api=self._preferences_api, logger=self._logger)
+        # self.customize_background = CustomizeBackground(preferences_api=self._preferences_api, logger=self._logger)
