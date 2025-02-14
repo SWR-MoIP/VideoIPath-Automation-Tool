@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     VIPAT_VIDEOIPATH_PASSWORD: Annotated[str | None, Field()] = None
     VIPAT_USE_HTTPS: bool = Field(default=True)
     VIPAT_VERIFY_SSL_CERT: bool = Field(default=True)
-    VIPAT_LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO")
+    VIPAT_LOG_LEVEL: Optional[Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]] = None
 
     class Config:
         env_file = ".env"

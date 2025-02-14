@@ -80,7 +80,7 @@ class TopologyAPI:
             mode (Literal[&quot;user_defined&quot;, &quot;factory&quot;], optional): Search mode. Defaults to "user_defined".
 
         Returns:
-            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]: Vertex object or list of vertex objects.
+            Vertex object or list of vertex objects.
         """
 
         if mode == "user_defined":

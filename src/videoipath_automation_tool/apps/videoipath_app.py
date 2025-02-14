@@ -42,10 +42,16 @@ class VideoIPathApp:
         _settings = Settings()
 
         # --- Setup Logging ---
+        root_logger = logging.getLogger()  # get root logger to set global log level as fallback
+
         log_level = (
             log_level.upper()
             if log_level
-            else (_settings.VIPAT_LOG_LEVEL.upper() if _settings.VIPAT_LOG_LEVEL else "INFO")
+            else (
+                _settings.VIPAT_LOG_LEVEL.upper()
+                if _settings.VIPAT_LOG_LEVEL
+                else logging.getLevelName(root_logger.level)
+            )
         )
 
         if log_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
@@ -53,9 +59,16 @@ class VideoIPathApp:
                 "Invalid log level provided. Please provide a valid log level: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'."
             )
 
-        logging.basicConfig(level=log_level)
-
         self._logger = logging.getLogger("videoipath_automation_tool")
+
+        if not self._logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter("%(levelname)s:%(asctime)s:%(name)s:%(message)s")
+            handler.setFormatter(formatter)
+            self._logger.addHandler(handler)
+            self._logger.propagate = False
+
+        self._logger.setLevel(log_level)
 
         # --- Setup Environment ---
         environment = (
