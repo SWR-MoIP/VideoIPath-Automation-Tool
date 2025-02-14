@@ -17,7 +17,7 @@ VIPAT_VIDEOIPATH_USERNAME=api-user
 VIPAT_VIDEOIPATH_PASSWORD=veryStrongPassword
 VIPAT_USE_HTTPS=true
 VIPAT_VERIFY_SSL_CERT=false
-VIPAT_LOG_LEVEL=DEBUG
+VIPAT_LOG_LEVEL=INFO
 ```
 
 ### Step 2: Code Example
@@ -43,9 +43,10 @@ app = VideoIPathApp(server_address="10.1.100.10", username="api-user", password=
 
 ```
 
-## Notes 
+## Notes
 
 ### Parameters
+
 - `server_address`: The IP address or hostname of the VideoIPath Server
 - `username`: Username for the API User.
 - `password`: Password for the API User.
@@ -64,9 +65,10 @@ app = VideoIPathApp(server_address="10.1.100.10", username="api-user", password=
 | `VIPAT_VIDEOIPATH_PWD` | e.g. `very_strong_passw0rd`                    | Password for the API User.                      |
 | `VIPAT_HTTPS`         | `true`, `false`                                | Optional: Use HTTPS for the connection. Defaults to `false`. |
 | `VIPAT_HTTPS_VERIFY`  | `true`, `false`                                | Optional: Verify the SSL certificate. Defaults to `false`. |
-| `VIPAT_LOG_LEVEL`     | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. Defaults to `info`. |
+| `VIPAT_LOG_LEVEL`     | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. Defaults to `warning`. |
 
 ## Log Levels
+
 - `DEBUG`: Detailed information, typically of interest only when diagnosing problems
 - `INFO`: Confirmation that things are working as expected
 - `WARNING`: An indication that something unexpected happened, or indicative of some problem in the near future (e.g., ‘fallback used’, ‘deprecated method used’). The software is still working as expected, but future versions may not work the same way.
