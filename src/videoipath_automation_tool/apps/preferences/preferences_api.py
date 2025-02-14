@@ -1,6 +1,7 @@
 from typing import List
 
 from videoipath_automation_tool.apps.preferences.model import *
+from videoipath_automation_tool.apps.preferences.model.package_item import PackageItem
 from videoipath_automation_tool.apps.preferences.model.preferences_allocator_pools import MulticastRangeInfoEntry
 from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
@@ -60,3 +61,16 @@ class PreferencesAPI:
         body.data.update = update_dict
 
         return self.vip_connector.rpc.post("/api/updateMulticastRanges", body=body)
+
+    # --- Packages & Certificates ---
+    def get_all_packages(self) -> List[PackageItem]:
+        """
+        Get all packages from the VideoIPath System Preferences / Packages & Certificates.
+        """
+        packages = []
+        response = self.vip_connector.rest.get("/rest/v2/data/status/system/packages/**")
+        if not response.data:
+            raise ValueError("No data returned from VideoIPath API.")
+        for package in response.data["status"]["system"]["packages"]["_items"]:
+            packages.append(PackageItem.model_validate(package))
+        return packages
