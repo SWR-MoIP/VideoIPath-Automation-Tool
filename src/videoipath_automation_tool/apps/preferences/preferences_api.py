@@ -90,7 +90,7 @@ class PreferencesAPI:
         response = self.vip_connector.rest.get("/rest/v2/data/config/system/ip/dnsServers/**")
         if not response.data:
             raise ValueError("No data returned from VideoIPath API.")
-        return response.data["config"]["system"]["ip"]["dnsServers"]["_items"]
+        return response.data["config"]["system"]["ip"]["dnsServers"]
 
     # ----- Allocation Pools
     def get_multicast_ranges(self) -> List[MulticastRangeInfoEntry]:
