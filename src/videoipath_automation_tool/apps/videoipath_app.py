@@ -10,6 +10,10 @@ from videoipath_automation_tool.settings import Settings
 
 
 class VideoIPathApp:
+    """Main class for VideoIPath Automation Tool.
+    VideoIPathApp contains all Apps and methods to interact with the VideoIPath System.
+    """
+
     def __init__(
         self,
         server_address: Optional[str] = None,
@@ -20,9 +24,7 @@ class VideoIPathApp:
         log_level: Optional[str] = None,
         environment: Optional[str] = None,
     ):
-        """Main class for VideoIPath Automation Tool.
-        VideoIPathApp contains all Apps and methods to interact with the VideoIPath System.
-
+        """
         Initialize the VideoIPath Automation Tool, establish connection to the VideoIPath-Server and initialize the Apps for interaction.
         Parameters can be provided directly or read from the environment variables.
 

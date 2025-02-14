@@ -230,7 +230,10 @@ class ProfileAPI:
         Args:
             staged_profile (Profile): Staged Profile.
         """
-        reference_profile = self.get_profile_by_id(staged_profile.id)
+        profile_id = staged_profile.id
+        if not profile_id:
+            raise ValueError("Profile ID not found in Profile object.")
+        reference_profile = self.get_profile_by_id(profile_id)
         if type(reference_profile) is not Profile:
             return None
         return self.analyze_profile_configuration_changes_local(reference_profile, staged_profile)

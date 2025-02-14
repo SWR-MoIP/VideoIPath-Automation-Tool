@@ -1,5 +1,6 @@
 from logging import Logger
 from typing import List, Literal
+
 from videoipath_automation_tool.apps.topology.model.topology_device import TopologyDevice
 from videoipath_automation_tool.apps.topology.topology_api import TopologyAPI
 
@@ -61,9 +62,11 @@ class TopologyPlacement:
 
 
 class TopologyPlacementLine:
+    """Helper class for calculating and applying device positions in a line."""
+
     def __init__(self, topology_api: TopologyAPI, logger: Logger):
-        self.__topology_api = topology_api
-        self.__logger = logger
+        self._topology_api = topology_api
+        self._logger = logger
 
     def calculate_positions(
         self,
@@ -126,14 +129,16 @@ class TopologyPlacementLine:
         device_positions = self.calculate_positions(device_ids, start_position, step, direction)
         for device_id in device_positions:
             x, y = device_positions[device_id]
-            self.__topology_api.set_device_position(device_id=device_id, x=x, y=y)
+            self._topology_api.set_device_position(device_id=device_id, x=x, y=y)
         return device_positions
 
 
 class TopologyPlacementGrid:
+    """Helper class for calculating and applying device positions in a grid."""
+
     def __init__(self, topology_api: TopologyAPI, logger: Logger):
-        self.__topology_api = topology_api
-        self.__logger = logger
+        self._topology_api = topology_api
+        self._logger = logger
 
     def calculate_positions(
         self,
@@ -261,8 +266,8 @@ class TopologyPlacementGrid:
         for device_id in device_positions:
             x, y = device_positions[device_id]
             try:
-                self.__topology_api.set_device_position(device_id=device_id, x=x, y=y)
+                self._topology_api.set_device_position(device_id=device_id, x=x, y=y)
             except ValueError:
-                self.__logger.warning(f"Device '{device_id}' is not found in the topology, skipping.")
+                self._logger.warning(f"Device '{device_id}' is not found in the topology, skipping.")
                 continue
         return device_positions
