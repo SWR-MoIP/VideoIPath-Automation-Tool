@@ -17,7 +17,8 @@ from videoipath_automation_tool.apps.topology.model.topology_device_configuratio
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch, RequestV2Post
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger, validate_device_id_string
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
+from videoipath_automation_tool.validators.device_id import validate_device_id
 from videoipath_automation_tool.validators.device_id_including_virtual import validate_device_id_including_virtual
 
 
@@ -37,7 +38,7 @@ class TopologyAPI:
 
         self._logger.debug("Topology API initialized.")
 
-    # --- Fetching device configuration ---
+    # --- Fetching device and element configuration ---
     def get_device_from_topology(self, device_id: str) -> TopologyDevice:
         """Get a topology device by its device id.
 
@@ -63,8 +64,13 @@ class TopologyAPI:
         device_configuration = self._fetch_device_configuration_from_driver(device_id)
         return TopologyDevice(configuration=device_configuration)
 
-    def get_vertex_by_label(
-        self, label: str, mode: Literal["user_defined", "factory"] = "user_defined"
+    def get_element_by_label(
+        self,
+        label: str,
+        mode: Literal["user_defined", "factory"] = "user_defined",
+        filter_type: Literal[
+            "all", "base_device", "codec_vertex", "generic_vertex", "ip_vertex", "unidirectional_edge"
+        ] = "all",
     ) -> (
         BaseDevice
         | CodecVertex
@@ -73,50 +79,45 @@ class TopologyAPI:
         | UnidirectionalEdge
         | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]
     ):
-        """Get a vertex by its label.
+        """Get an element by its label.
 
         Args:
-            label (str): Label of the vertex.
+            label (str): Label of the element.
             mode (Literal[&quot;user_defined&quot;, &quot;factory&quot;], optional): Search mode. Defaults to "user_defined".
+            filter_type (Literal[&quot;all&quot;, &quot;base_device&quot;, &quot;codec_vertex&quot;, &quot;generic_vertex&quot;, &quot;ip_vertex&quot;, &quot;unidirectional_edge&quot;], optional): Filter type. Defaults to "all".
 
         Returns:
-            Vertex object or list of vertex objects.
+            nGraph element object or list of objects.
         """
+        filter_string = ""
+        if filter_type == "base_device":
+            filter_string = "and type='baseDevice'"
+        elif filter_type == "codec_vertex":
+            filter_string = "and type='codecVertex'"
+        elif filter_type == "generic_vertex":
+            filter_string = "and type='genericVertex'"
+        elif filter_type == "ip_vertex":
+            filter_string = "and type='ipVertex'"
+        elif filter_type == "unidirectional_edge":
+            filter_string = "and type='unidirectionalEdge'"
+        elif filter_type != "all":
+            raise ValueError(f"Unknown filter_type: {filter_type}")
 
         if mode == "user_defined":
-            path = f"/rest/v2/data/config/network/nGraphElements/* where descriptor.label='{label.replace('/', '%2F')}' /**"
+            path = f"/rest/v2/data/config/network/nGraphElements/* where descriptor.label='{label.replace('/', '%2F')}' {filter_string} /**"
         elif mode == "factory":
-            path = f"/rest/v2/data/config/network/nGraphElements/* where fDescriptor.label='{label.replace('/', '%2F')}' /**"
-
+            path = f"/rest/v2/data/config/network/nGraphElements/* where fDescriptor.label='{label.replace('/', '%2F')}' {filter_string} /**"
+        print(path)
         response = self.vip_connector.rest.get(path)
 
-        if response.data is None:
-            raise ValueError(f"nGraphElement with label {label} not found.")
         payload_data = response.data["config"]["network"]["nGraphElements"]["_items"]
         if len(payload_data) > 1:
-            #     raise ValueError(f"Multiple nGraphElements with label '{label}' found.")
             self._logger.warning(f"Multiple nGraphElements with label '{label}' found.")
             return [self._validate_nGraphElement(item) for item in payload_data]
         elif len(payload_data) == 1:
             return self._validate_nGraphElement(payload_data[0])
         else:
             raise ValueError(f"nGraphElement with label '{label}' not found.")
-
-    def update_single_nGraphElement(
-        self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge
-    ):
-        """Update a single nGraphElement.
-
-        Args:
-            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): nGraphElement object.
-
-        Returns:
-            RequestRestV2: RequestRestV2 object.
-        """
-        body = self._generate_nGraphElements_patch_payload(
-            add_elements=[], update_elements=[element], remove_elements=[]
-        )
-        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
     def _fetch_device_configuration_from_topology(self, device_id: str) -> TopologyDeviceConfiguration:
         """Get a topology device by its device id.
@@ -431,10 +432,64 @@ class TopologyAPI:
             return False
 
     # --- Check sync status of a device ---
+    def get_all_device_sync_status(self):
+        """Get the synchronization status of all devices in the topology.
+
+        Returns:
+            dict: Dictionary with the sync status of all devices. Format: {device_id: sync_status}
+            Possible sync_status values: `InSync`, `Missing`, `NoContact`, `NoDriver`, `Changed`, `Virtual`
+
+        Raises:
+            ValueError: If no nGraphSyncStatus data is found.
+        """
+        sync_status_response = self.vip_connector.rest.get("/rest/v2/data/status/network/nGraphSyncStatus/**")
+
+        sync_status = sync_status_response.data["status"]["network"]["nGraphSyncStatus"]["_items"]
+        if len(sync_status) == 0:
+            raise ValueError("No nGraphSyncStatus data found.")
+
+        def is_valid(device_id):
+            try:
+                validate_device_id(device_id)
+                return True
+            except ValueError:
+                return False
+
+        return {
+            item["_id"]: item["_value"]
+            for item in sync_status
+            if isinstance(item, dict) and "_id" in item and is_valid(item["_id"])
+        }
+
+    def get_device_sync_status(self, device_id: str) -> str:
+        """Get the sync status of a base device.
+
+        Args:
+            device_id (str): Device Id (e.g. "device1")
+
+        Returns:
+            str: Sync status of the base device. Possible values: `InSync`, `Missing`, `NoContact`, `NoDriver`, `Changed`, `Virtual`
+
+        Raises:
+            ValueError: If no nGraphSyncStatus data is found.
+        """
+        device_id = validate_device_id(device_id)
+        sync_status_response = self.vip_connector.rest.get(
+            f"/rest/v2/data/status/network/nGraphSyncStatus/* where _id='{device_id}' /**"
+        )
+
+        sync_status = sync_status_response.data["status"]["network"]["nGraphSyncStatus"]["_items"]
+        if len(sync_status) == 0:
+            raise ValueError("No nGraphSyncStatus data found.")
+        if len(sync_status) > 1:
+            self._logger.warning(f"Multiple nGraphSyncStatus data found for device {device_id}.")
+
+        return sync_status[0]["_value"]
+
     # def check_sync_status
     # ...
 
-    # --- Compare devices, apply changes ---
+    # --- Compare devices ---
     def analyze_device_configuration_changes_local(
         self, reference_device: TopologyDevice, staged_device: TopologyDevice
     ) -> "TopologyDeviceComparison":
@@ -463,28 +518,7 @@ class TopologyAPI:
         reference_device = self.get_device_from_topology(staged_device.configuration.base_device.id)
         return TopologyDeviceComparison.analyze_topology_devices(reference_device, staged_device)
 
-    def add_device_initially(self, device: TopologyDevice):
-        """Add a device to the topology.
-
-        Args:
-            device (TopologyDevice): TopologyDevice object.
-
-        Returns:
-            RequestRestV2: RequestRestV2 object.
-        """
-        add_list = (
-            [device.configuration.base_device]
-            + device.configuration.codec_vertices
-            + device.configuration.generic_vertices
-            + device.configuration.ip_vertices
-            + device.configuration.internal_edges
-            + device.configuration.external_edges
-        )
-        body = self._generate_nGraphElements_patch_payload(
-            add_elements=add_list, update_elements=[], remove_elements=[]
-        )
-        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
-
+    # --- Validate and apply changes ---
     def validate_topology_update(self, device_difference: TopologyDeviceComparison):
         """Validate change operation in the topology.
 
@@ -538,6 +572,93 @@ class TopologyAPI:
         else:
             return None
 
+    def add_device_initially(self, device: TopologyDevice):
+        """Add a device to the topology.
+
+        Args:
+            device (TopologyDevice): TopologyDevice object.
+
+        Returns:
+            RequestRestV2: RequestRestV2 object.
+        """
+        add_list = (
+            [device.configuration.base_device]
+            + device.configuration.codec_vertices
+            + device.configuration.generic_vertices
+            + device.configuration.ip_vertices
+            + device.configuration.internal_edges
+            + device.configuration.external_edges
+        )
+        body = self._generate_nGraphElements_patch_payload(
+            add_elements=add_list, update_elements=[], remove_elements=[]
+        )
+        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
+
+    def remove_device(self, device: TopologyDevice):
+        """Remove a device from the topology.
+
+        Args:
+            device (TopologyDevice): TopologyDevice object.
+
+        Returns:
+            RequestRestV2: RequestRestV2 object.
+        """
+        remove_list = (
+            [device.configuration.base_device]
+            + device.configuration.codec_vertices
+            + device.configuration.generic_vertices
+            + device.configuration.ip_vertices
+            + device.configuration.internal_edges
+            + device.configuration.external_edges
+        )
+        body = self._generate_nGraphElements_patch_payload(
+            add_elements=[], update_elements=[], remove_elements=remove_list
+        )
+        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
+
+    def add_element(self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge):
+        """Add a single nGraphElement.
+
+        Args:
+            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): nGraphElement object.
+
+        Returns:
+            RequestRestV2: RequestRestV2 object.
+        """
+        body = self._generate_nGraphElements_patch_payload(
+            add_elements=[element], update_elements=[], remove_elements=[]
+        )
+        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
+
+    def update_element(self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge):
+        """Update a single nGraphElement.
+
+        Args:
+            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): nGraphElement object.
+
+        Returns:
+            RequestRestV2: RequestRestV2 object.
+        """
+        body = self._generate_nGraphElements_patch_payload(
+            add_elements=[], update_elements=[element], remove_elements=[]
+        )
+        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
+
+    def remove_element(self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge):
+        """Remove a single nGraphElement.
+
+        Args:
+            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): nGraphElement object.
+
+        Returns:
+            RequestRestV2: RequestRestV2 object.
+        """
+        body = self._generate_nGraphElements_patch_payload(
+            add_elements=[], update_elements=[], remove_elements=[element]
+        )
+        return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
+
+    # --- Utility functions ---
     def get_next_virtual_device_id(self):
         """Check the highest present virtual device id and return the next one."""
         response = self.vip_connector.rest.get(
@@ -680,8 +801,7 @@ class TopologyAPI:
         Returns:
             RequestRestV2: RequestRestV2 object
         """
-        if not validate_device_id_string(device_id, include_virtual=True):
-            raise ValueError("Invalid device_id. device_id must start with 'device' or 'virtual'.")
+        device_id = validate_device_id_including_virtual(device_id)
 
         base_device = self._fetch_nGraphElement_by_key(device_id)
         if not isinstance(base_device, BaseDevice):

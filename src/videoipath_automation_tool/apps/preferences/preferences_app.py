@@ -43,5 +43,5 @@ class PreferencesApp:
         self.packages_and_certificates = PackagesAndCertificates(
             preferences_api=self._preferences_api, logger=self.logger
         )
-        # self.apps = Apps(preferences_api=self._preferences_api, logger=self.logger)
         # self.license = License(preferences_api=self._preferences_api, logger=self.logger)
+        # self.apps = Apps(preferences_api=self._preferences_api, logger=self.logger)
