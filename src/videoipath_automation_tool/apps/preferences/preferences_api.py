@@ -17,8 +17,8 @@ class PreferencesAPI:
     def __init__(self, vip_connector: VideoIPathConnector):
         self.vip_connector = vip_connector
 
-    # --- System Configuration ---
-    # ----- Network
+    # --------------------------- System Configuration ---------------------------
+    # --- Network ---
     def get_hostname(self) -> str:
         """
         Get the hostname of the VideoIPath System.
@@ -90,7 +90,7 @@ class PreferencesAPI:
             raise ValueError("No data returned from VideoIPath API.")
         return response.data["config"]["system"]["ip"]["dnsServers"]
 
-    # ----- Allocation Pools
+    # --- Allocation Pools ---
     def get_multicast_ranges(self) -> List[MulticastRangeInfoEntry]:
         """
         Get all multicast pools from the VideoIPath System Preferences.
@@ -135,7 +135,7 @@ class PreferencesAPI:
 
         return self.vip_connector.rpc.post("/api/updateMulticastRanges", body=body)
 
-    # --- Packages & Certificates ---
+    # --------------------------- Packages & Certificates ---------------------------
     def get_all_packages(self) -> List[PackageItem]:
         """
         Get all packages from the VideoIPath System Preferences / Packages & Certificates.
