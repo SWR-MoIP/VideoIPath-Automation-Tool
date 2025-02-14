@@ -49,8 +49,13 @@ class PreferencesAPI:
         if not response.data:
             raise ValueError("No data returned from VideoIPath API.")
         interfaces = []
-        for interface in response.data["config"]["system"]["ip"]["interfaces"]["_items"]:
-            interfaces.append(InterfaceItem(name=interface["name"], **interface))
+        interface_names = response.data["config"]["system"]["ip"]["interfaces"].keys()
+
+        for interface in interface_names:
+            data = response.data["config"]["system"]["ip"]["interfaces"][interface]
+            interfaces.append(InterfaceItem(name=interface, **data))
+            data = None
+
         return interfaces
 
     def get_interface_by_name(self, name: str) -> InterfaceItem:
@@ -65,6 +70,9 @@ class PreferencesAPI:
         Raises:
             ValueError: If no data is returned from the VideoIPath API.
         """
+        response = self.vip_connector.rest.get("/rest/v2/data/config/system/ip/interfaces/*")
+        if name not in response.data["config"]["system"]["ip"]["interfaces"]:
+            raise ValueError(f"Interface with name '{name}' not found in VideoIPath System Preferences.")
         response = self.vip_connector.rest.get(f"/rest/v2/data/config/system/ip/interfaces/{name}/**")
         if not response.data:
             raise ValueError("No data returned from VideoIPath API.")

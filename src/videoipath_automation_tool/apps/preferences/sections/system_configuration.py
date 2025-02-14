@@ -172,6 +172,17 @@ class Network:
         """
         return self._preferences_api.get_interface_by_name(name=name)
 
+    def get_dns_servers(self) -> list[str]:
+        """Get all DNS servers from the VideoIPath System Preferences.
+
+        Returns:
+            List[str]: List of DNS servers.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        return self._preferences_api.get_all_dns_servers()
+
 
 # class Ldap:
 #     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
