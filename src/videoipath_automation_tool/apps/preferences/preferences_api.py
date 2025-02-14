@@ -12,8 +12,6 @@ from videoipath_automation_tool.connector.vip_connector import VideoIPathConnect
 class PreferencesAPI:
     """
     Class for VideoIPath System Preferences API.
-    By now, only the Multicast Pools are supported.
-
     """
 
     def __init__(self, vip_connector: VideoIPathConnector):
