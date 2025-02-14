@@ -12,6 +12,86 @@ from videoipath_automation_tool.apps.preferences.preferences_api import Preferen
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 
 
+class Network:
+    def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+        self._logger = logger
+        self._preferences_api = preferences_api
+
+    def get_hostname(self) -> str:
+        """
+        Get the hostname of the VideoIPath System.
+
+        Returns:
+            str: Hostname of the VideoIPath System.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        return self._preferences_api.get_hostname()
+
+    def get_all_interfaces(self) -> list[InterfaceItem]:
+        """
+        Get all interfaces from the VideoIPath System Preferences.
+
+        Returns:
+            List[InterfaceItem]: List of Interface objects.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        return self._preferences_api.get_all_interfaces()
+
+    def get_interface_by_name(self, name: str) -> InterfaceItem:
+        """Get an interface by name from the VideoIPath System Preferences.
+
+        Args:
+            name (str): Name of the interface to get.
+
+        Returns:
+            InterfaceItem: Interface object.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        return self._preferences_api.get_interface_by_name(name=name)
+
+    def get_dns_servers(self) -> list[str]:
+        """Get all DNS servers from the VideoIPath System Preferences.
+
+        Returns:
+            List[str]: List of DNS servers.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        return self._preferences_api.get_all_dns_servers()
+
+
+# class Ldap:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+# class Northbound:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+# class Security:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+# class Alarm:
+#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+#         self._logger = logger
+#         self._preferences_api = preferences_api
+#     # TODO
+
+
 class AllocationPools:
     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
         self._logger = logger
@@ -125,88 +205,6 @@ class AllocationPools:
         # Add the new pool(s)
         return self.update_multicast_pool(pools=pools)
 
-
-# --- Prepare for further implementation ---
-
-
-class Network:
-    def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
-        self._logger = logger
-        self._preferences_api = preferences_api
-
-    def get_hostname(self) -> str:
-        """
-        Get the hostname of the VideoIPath System.
-
-        Returns:
-            str: Hostname of the VideoIPath System.
-
-        Raises:
-            ValueError: If no data is returned from the VideoIPath API.
-        """
-        return self._preferences_api.get_hostname()
-
-    def get_all_interfaces(self) -> list[InterfaceItem]:
-        """
-        Get all interfaces from the VideoIPath System Preferences.
-
-        Returns:
-            List[InterfaceItem]: List of Interface objects.
-
-        Raises:
-            ValueError: If no data is returned from the VideoIPath API.
-        """
-        return self._preferences_api.get_all_interfaces()
-
-    def get_interface_by_name(self, name: str) -> InterfaceItem:
-        """Get an interface by name from the VideoIPath System Preferences.
-
-        Args:
-            name (str): Name of the interface to get.
-
-        Returns:
-            InterfaceItem: Interface object.
-
-        Raises:
-            ValueError: If no data is returned from the VideoIPath API.
-        """
-        return self._preferences_api.get_interface_by_name(name=name)
-
-    def get_dns_servers(self) -> list[str]:
-        """Get all DNS servers from the VideoIPath System Preferences.
-
-        Returns:
-            List[str]: List of DNS servers.
-
-        Raises:
-            ValueError: If no data is returned from the VideoIPath API.
-        """
-        return self._preferences_api.get_all_dns_servers()
-
-
-# class Ldap:
-#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
-#         self._logger = logger
-#         self._preferences_api = preferences_api
-#     # TODO
-
-# class Northbound:
-#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
-#         self._logger = logger
-#         self._preferences_api = preferences_api
-#     # TODO
-
-# class Security:
-#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
-#         self._logger = logger
-#         self._preferences_api = preferences_api
-#     # TODO
-
-# class Alarm:
-#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
-#         self._logger = logger
-#         self._preferences_api = preferences_api
-#     # TODO
 
 # class CustomizeBackground:
 #     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
