@@ -18,6 +18,7 @@ from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger, validate_device_id_string
+from videoipath_automation_tool.validators.device_id_including_virtual import validate_device_id_including_virtual
 
 
 class TopologyAPI:
@@ -504,10 +505,8 @@ class TopologyAPI:
         body = self._generate_validateTopologyUpdate_post_payload(added_list, remove_list)
         return self.vip_connector.rest.post("/rest/v2/actions/status/pathman/validateTopologyUpdate", body)
 
-    def apply_device_configuration_changes(
-        self, device_difference: TopologyDeviceComparison, validate_only: bool = False
-    ) -> ResponseV2Patch | None:
-        """Automatically synchronize a device with the topology.
+    def apply_device_configuration_changes(self, device_difference: TopologyDeviceComparison) -> ResponseV2Patch | None:
+        """Sync the calculated changes to the topology.
 
         Args:
             device_difference (TopologyCompareDevices): TopologyCompareDevices object.
@@ -531,7 +530,7 @@ class TopologyAPI:
             update_list.append(self._apply_reference_revision_to_element(element, device_difference.reference_device))
 
         body = self._generate_nGraphElements_patch_payload(
-            add_elements=add_list, update_elements=update_list, remove_elements=remove_list, validate_only=validate_only
+            add_elements=add_list, update_elements=update_list, remove_elements=remove_list
         )
 
         if len(body.actions) > 0:
@@ -540,7 +539,7 @@ class TopologyAPI:
             return None
 
     def get_next_virtual_device_id(self):
-        """Get the next virtual device id."""
+        """Check the highest present virtual device id and return the next one."""
         response = self.vip_connector.rest.get(
             "/rest/v2/data/config/network/nGraphElements/* where isVirtual=true and type='baseDevice' /id"
         )
@@ -567,6 +566,10 @@ class TopologyAPI:
             BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge: Updated element.
         """
         reference_element = reference_device.configuration.get_nGraphElement_by_id(element.id)
+        if not reference_element:
+            raise ValueError(f"Reference element with id {element.id} not found.")
+        if not reference_element.rev:
+            raise ValueError(f"Reference element with id {element.id} has no revision.")
         element.rev = reference_element.rev
         return element
 
@@ -578,6 +581,7 @@ class TopologyAPI:
         Returns:
             dict[str, dict[str, float]]: A dictionary where each key is a device ID
             and each value is a dictionary containing 'x' and 'y' coordinates.
+
         Raises:
             ValueError: If the response from the server is invalid or incomplete.
         """
@@ -595,31 +599,65 @@ class TopologyAPI:
         }
         return positions
 
-    def get_device_position(self, device_id: str) -> tuple[int, int]:
-        """Get the position of a device in the topology.
+    def get_device_position(self, device_id: str) -> tuple[float, float]:
+        """
+        Get the position (x, y) of a device in the Inspect Topology.
 
         Args:
-            device_id (str): Device Id (e.g. "device1")
+            device_id (str): Device ID (e.g., "device1").
 
         Returns:
-            tuple[int, int]: Tuple containing the x and y position of the device.
+            tuple[int, int]: The (x, y) position of the device.
+
+        Raises:
+            ValueError: If the device_id is invalid or the device position is not found.
         """
+
+        validate_device_id_including_virtual(device_id)
+
         data = self.vip_connector.rest.get(
             f"/rest/v2/data/config/network/nGraphElements/* where _id='{device_id}' /maps/0/x,y"
-        )
-        return data.data["config"]["network"]["nGraphElements"]["_items"][0]["maps"][0]["x"], data.data["config"][
-            "network"
-        ]["nGraphElements"]["_items"][0]["maps"][0]["y"]
+        ).data
 
-    def _validate_coordinate_format(self, coordinate: float):
-        if type(coordinate) is float:
-            test_value = int(coordinate)
-            if float(test_value) == coordinate:
-                return coordinate
-            else:
-                return float(test_value)
-        else:
-            raise ValueError
+        elements = data["config"]["network"]["nGraphElements"].get("_items", [])
+
+        if not elements:
+            raise ValueError(f"Device with id {device_id} not found.")
+
+        maps = elements[0].get("maps", [])
+
+        if len(maps) == 0:
+            raise ValueError(f"Device position for device with id {device_id} could not be found.")
+
+        try:
+            x = float(maps[0]["x"])
+            y = float(maps[0]["y"])
+        except (KeyError, TypeError, ValueError):
+            raise ValueError(f"Invalid or missing coordinates for device {device_id}.")
+
+        return x, y
+
+    def _convert_coordinate_to_float(self, coordinate: float | int) -> float:
+        """
+        Converts a coordinate to a float with `.0`, truncating any decimal places.
+
+        This ensures compatibility with the Inspect Topology, which uses integer-based coordinates,
+        while the API expects float data types.
+
+        Args:
+            coordinate (float | int): The coordinate value to be converted.
+
+        Returns:
+            float: The truncated coordinate as a float with `.0`.
+
+        Raises:
+            TypeError: If the input is not an int or float.
+        """
+
+        if isinstance(coordinate, (int, float)):
+            return float(int(coordinate))
+
+        raise TypeError(f"Invalid type for coordinate: {type(coordinate).__name__}. Expected int or float.")
 
     def set_device_position(
         self,
@@ -652,20 +690,16 @@ class TopologyAPI:
         if not base_device:
             raise ValueError(f"Device with id {device_id} not found.")
 
-        if type(x) is int:
-            x = float(x)
-        if type(y) is int:
-            y = float(y)
-
         if inspect_app_format:
-            x = self._validate_coordinate_format(x)
-            y = self._validate_coordinate_format(y)
+            x = self._convert_coordinate_to_float(x)
+            y = self._convert_coordinate_to_float(y)
+
         if mode == "relative":
-            base_device.maps[0].x += x
-            base_device.maps[0].y += y
+            base_device.maps[0].x += float(x)
+            base_device.maps[0].y += float(y)
         elif mode == "absolute":
-            base_device.maps[0].x = x
-            base_device.maps[0].y = y
+            base_device.maps[0].x = float(x)
+            base_device.maps[0].y = float(y)
         else:
             raise ValueError("Mode must be 'absolute' or 'relative'")
 
@@ -679,24 +713,52 @@ class TopologyAPI:
     # --- Building the RequestRestV2Patch object ---
     def _generate_nGraphElements_patch_payload(
         self,
-        add_elements: List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge],
-        update_elements: List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge],
-        remove_elements: List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge],
-        validate_only: bool = False,
+        add_elements: Optional[
+            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]
+        ],
+        update_elements: Optional[
+            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]
+        ],
+        remove_elements: Optional[
+            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]
+        ],
     ) -> "RequestV2Patch":
+        """Generate a RequestRestV2Patch object for updating nGraphElements configuration.
+
+        Args:
+            add_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]]): List of elements which should be added.
+            update_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]]): List of elements which should be updated.
+            remove_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]]): List of elements which should be removed.
+
+        Returns:
+            RequestRestV2: RequestRestV2 object.
+
+        """
         body = RequestV2Patch()
 
-        for element in add_elements:
-            body.add(element)
+        if add_elements:
+            for element in add_elements:
+                body.add(element)
 
-        for element in update_elements:
-            body.update(element)
+        if update_elements:
+            for element in update_elements:
+                body.update(element)
 
-        for element in remove_elements:
-            body.remove(element)
+        if remove_elements:
+            for element in remove_elements:
+                body.remove(element)
+
         return body
 
     def _merge_nGraphElement_payloads(self, payloads: List[RequestV2Patch]) -> "RequestV2Patch":
+        """Merge multiple RequestV2Patch payloads into one RequestV2Patch payload.
+
+        Args:
+            payloads (List[RequestV2Patch]): List of RequestV2Patch payloads.
+
+        Returns:
+            RequestV2Patch: Merged RequestV2Patch payload.
+        """
         body = RequestV2Patch()
         for payload in payloads:
             for action in payload.actions:
