@@ -3,6 +3,7 @@ from typing import Optional
 
 from pydantic import IPvAnyAddress
 
+from videoipath_automation_tool.apps.preferences.model.interface_item import InterfaceItem
 from videoipath_automation_tool.apps.preferences.model.preferences_allocator_pools import (
     MulticastRangeInfoEntry,
     MulticastRanges,
@@ -127,11 +128,50 @@ class AllocationPools:
 
 # --- Prepare for further implementation ---
 
-# class Network:
-#     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
-#         self._logger = logger
-#         self._preferences_api = preferences_api
-#     # TODO
+
+class Network:
+    def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
+        self._logger = logger
+        self._preferences_api = preferences_api
+
+    def get_hostname(self) -> str:
+        """
+        Get the hostname of the VideoIPath System.
+
+        Returns:
+            str: Hostname of the VideoIPath System.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        return self._preferences_api.get_hostname()
+
+    def get_all_interfaces(self) -> list[InterfaceItem]:
+        """
+        Get all interfaces from the VideoIPath System Preferences.
+
+        Returns:
+            List[InterfaceItem]: List of Interface objects.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        return self._preferences_api.get_all_interfaces()
+
+    def get_interface_by_name(self, name: str) -> InterfaceItem:
+        """Get an interface by name from the VideoIPath System Preferences.
+
+        Args:
+            name (str): Name of the interface to get.
+
+        Returns:
+            InterfaceItem: Interface object.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        return self._preferences_api.get_interface_by_name(name=name)
+
 
 # class Ldap:
 #     def __init__(self, preferences_api: PreferencesAPI, logger: logging.Logger):
@@ -171,7 +211,7 @@ class SystemConfiguration:
 
         # --- Setup Allocation Pools ---
         self.allocation_pools = AllocationPools(preferences_api=self._preferences_api, logger=self._logger)
-        # self.network = Network(preferences_api=self._preferences_api, logger=self._logger)
+        self.network = Network(preferences_api=self._preferences_api, logger=self._logger)
         # self.ldap = Ldap(preferences_api=self._preferences_api, logger=self._logger)
         # self.northbound = Northbound(preferences_api=self._preferences_api, logger=self._logger)
         # self.security = Security(preferences_api=self._preferences_api, logger=self._logger)

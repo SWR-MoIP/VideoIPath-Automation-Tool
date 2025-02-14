@@ -1,6 +1,7 @@
 from typing import List
 
 from videoipath_automation_tool.apps.preferences.model import *
+from videoipath_automation_tool.apps.preferences.model.interface_item import InterfaceItem
 from videoipath_automation_tool.apps.preferences.model.package_item import PackageItem
 from videoipath_automation_tool.apps.preferences.model.preferences_allocator_pools import MulticastRangeInfoEntry
 from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
@@ -18,6 +19,72 @@ class PreferencesAPI:
     def __init__(self, vip_connector: VideoIPathConnector):
         self.vip_connector = vip_connector
 
+    # --- System Configuration ---
+    # ----- Network
+    def get_hostname(self) -> str:
+        """
+        Get the hostname of the VideoIPath System.
+
+        Returns:
+            str: Hostname of the VideoIPath System.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        response = self.vip_connector.rest.get("/rest/v2/data/config/system/ip/hostname")
+        return response.data["config"]["system"]["ip"]["hostname"]
+
+    def get_all_interfaces(self) -> list[InterfaceItem]:
+        """
+        Get all interfaces from the VideoIPath System Preferences.
+
+        Returns:
+            List[InterfaceItem]: List of Interface objects.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+
+        response = self.vip_connector.rest.get("/rest/v2/data/config/system/ip/interfaces/**")
+        if not response.data:
+            raise ValueError("No data returned from VideoIPath API.")
+        interfaces = []
+        for interface in response.data["config"]["system"]["ip"]["interfaces"]["_items"]:
+            interfaces.append(InterfaceItem(name=interface["name"], **interface))
+        return interfaces
+
+    def get_interface_by_name(self, name: str) -> InterfaceItem:
+        """Get an interface by name from the VideoIPath System Preferences.
+
+        Args:
+            name (str): Name of the interface to get.
+
+        Returns:
+            InterfaceItem: Interface object.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        response = self.vip_connector.rest.get(f"/rest/v2/data/config/system/ip/interfaces/{name}/**")
+        if not response.data:
+            raise ValueError("No data returned from VideoIPath API.")
+        return InterfaceItem(name=name, **response.data["config"]["system"]["ip"]["interfaces"][name])
+
+    def get_all_dns_servers(self) -> List[str]:
+        """Get all DNS servers from the VideoIPath System Preferences.
+
+        Returns:
+            List[str]: List of DNS servers.
+
+        Raises:
+            ValueError: If no data is returned from the VideoIPath API.
+        """
+        response = self.vip_connector.rest.get("/rest/v2/data/config/system/ip/dnsServers/**")
+        if not response.data:
+            raise ValueError("No data returned from VideoIPath API.")
+        return response.data["config"]["system"]["ip"]["dnsServers"]["_items"]
+
+    # ----- Allocation Pools
     def get_multicast_ranges(self) -> List[MulticastRangeInfoEntry]:
         """
         Get all multicast pools from the VideoIPath System Preferences.
