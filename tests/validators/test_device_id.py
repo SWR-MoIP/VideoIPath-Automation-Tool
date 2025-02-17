@@ -1,54 +1,36 @@
-import unittest
+import pytest
 
 from videoipath_automation_tool.validators.device_id import validate_device_id
 
 
-class TestValidateDeviceId(unittest.TestCase):
-    def test_valid_device_id(self):
-        self.assertEqual(validate_device_id("device0"), "device0")
-        self.assertEqual(validate_device_id("device1"), "device1")
-        self.assertEqual(validate_device_id("device123"), "device123")
-        self.assertEqual(validate_device_id("device1000"), "device1000")
-        self.assertEqual(validate_device_id("device123456789"), "device123456789")
+class TestValidateDeviceId:
+    @pytest.mark.parametrize("device_id", ["device0", "device1", "device123", "device1000", "device123456789"])
+    def test_valid_device_id(self, device_id: str):
+        assert validate_device_id(device_id) == device_id
 
-    def test_invalid_device_id(self):
-        with self.assertRaises(ValueError):
-            validate_device_id("device")
-        with self.assertRaises(ValueError):
-            validate_device_id("devicea")
-        with self.assertRaises(ValueError):
-            validate_device_id("device1a")
-        with self.assertRaises(ValueError):
-            validate_device_id("device-1")
-        with self.assertRaises(ValueError):
-            validate_device_id("device00")
-        with self.assertRaises(ValueError):
-            validate_device_id("device01")
-        with self.assertRaises(ValueError):
-            validate_device_id("device 1")
-        with self.assertRaises(ValueError):
-            validate_device_id("device1 ")
-        with self.assertRaises(ValueError):
-            validate_device_id("device 1 ")
-        with self.assertRaises(ValueError):
-            validate_device_id(" device1")
-        with self.assertRaises(ValueError):
-            validate_device_id("device1.1")
-        with self.assertRaises(ValueError):
-            validate_device_id(None)
-        with self.assertRaises(ValueError):
-            validate_device_id([])
-        with self.assertRaises(ValueError):
-            validate_device_id({})
-        with self.assertRaises(ValueError):
-            validate_device_id("Device1")
-        with self.assertRaises(ValueError):
-            validate_device_id(0)
-        with self.assertRaises(ValueError):
-            validate_device_id(1)
-        with self.assertRaises(ValueError):
-            validate_device_id("")
-
-
-if __name__ == "__main__":
-    unittest.main()
+    @pytest.mark.parametrize(
+        "device_id",
+        [
+            "device",
+            "devicea",
+            "device1a",
+            "device-1",
+            "device00",
+            "device01",
+            "device 1",
+            "device1 ",
+            "device 1 ",
+            " device1",
+            "device1.1",
+            None,
+            [],
+            {},
+            "Device1",
+            0,
+            1,
+            "",
+        ],
+    )
+    def test_invalid_device_id(self, device_id: str):
+        with pytest.raises(ValueError):
+            validate_device_id(device_id)
