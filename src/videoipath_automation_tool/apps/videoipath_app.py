@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from videoipath_automation_tool.apps.inventory.inventory_app import InventoryApp
+from videoipath_automation_tool.apps.inventory import InventoryApp
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
 from videoipath_automation_tool.apps.profile.profile_app import ProfileApp
 from videoipath_automation_tool.apps.topology.topology_app import TopologyApp
