@@ -1,0 +1,19 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+dist/
+
+# Tests
+.coverage
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# others
+__intern/
+*.egg-info/
+.DS_Store
+.python-version

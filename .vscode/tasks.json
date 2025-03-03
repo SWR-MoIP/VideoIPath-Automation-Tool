@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Generate Overloads",
+      "problemMatcher": [],
+      "dependsOn": [
+        "Generate Overloads without Formatting",
+        "Format",
+      ],
+      "isBackground": true,
+      "promptOnClose": false,
+      "dependsOrder": "sequence",
+    },
+    {
+      "label": "Generate Overloads without Formatting",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/src/generate_overloads.py"
+      ],
+      "hide": true
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": "ruff",
+      "args": [
+        "format",
+        "."
+      ]
+    }
+  ]
+}
