@@ -1,39 +1,176 @@
 # Topology App
 
-## 1. Basic Usage
+## 1. Introduction
 
-### 1.1. Retrieve the configuration of a device in the Topology
+The Topology App focuses on configuring devices, defining their capabilities, and establishing links between them. For all these purposes, instances of "Topology Device" are used.
 
-Analogous to the Inventory-App, the Topology-App provides a method to retrieve the configuration of an existing device. If the device does not exist in the topology, but is available for synchronization, it will be generated from driver.
+A **Topology Device** represents a network entity within the topology, containing configuration details. It is composed of multiple elements, each serving a specific role:  
+
+- **Base Device (`BaseDevice`)**: Stores fundamental properties such as labels, descriptions, and appearance settings.  
+- **Vertices**:  
+  - **Generic Vertices (`GenericVertex`)**: Primarily represent switching cores.  
+  - **IP Vertices (`IpVertex`)**: Represent network interfaces.  
+  - **Codec Vertices (`CodecVertex`)**: Represent media-specific inputs and outputs.  
+- **Edges**:  
+  - **Internal Edges**: Connect vertices within the same device.  
+  - **External Edges**: Link the device to other devices in the topology.  
+
+All device properties are stored within the `configuration` attribute of a **Topology Device**.  
+While the **Base Device** exists as a single instance and can be accessed directly, all **Vertices** and **Edges** are stored in lists within `configuration`, categorized by their type.
+The following examples illustrate how to retrieve, modify and update specific properties of a **Topology Device**.
+
+## 2. Basic Usage
+
+### 2.1. Retrieving the Configuration of a Device in the Topology
+
+The configuration of a device that has already been added to the topology or is ready for synchronization can be retrieved using its unique device ID.
 
 ```python
-device_topology = app.topology.get_device(device_id="device10")
-print(device_topology.configuration.factory_label)
+device = app.topology.get_device(device_id="device10")
+print(device.configuration.factory_label)
 # > BORDERLEAF-26B [10.0.1.26][Arista Networks EOS]
 ```
 
-### 1.2. Update a Device in the Topology
+Alternatively, a device can be identified by determining its device ID based on its label.  
 
-You can update the configuration of a device in the topology. If the device does not exist, it will be added to the topology.
+Similar to the Inventory app, multiple `label_search_mode` options are available, with `canonical_label` set as the default.  
+In this mode, devices that have not yet been added but are ready for synchronization are matched using the factory label.  
+For devices already configured in the topology, the displayed label is used—either the user-defined label, if set, or otherwise the factory label.  
 
 ```python
-device_topology.configuration.label = "New Label"
-device_topology.configuration.position_x = 100
-device_topology.configuration.position_y = 200
-device_topology.configuration.icon_size = "large"
-device_topology.configuration.icon_type = "ipSwitchRouter"
+device_id = app.topology.find_device_id_by_label("BORDERLEAF-26B [10.0.1.26][Arista Networks EOS]", label_search_mode="canonical_label")
 
-updated_device = app.topology.update_device(device_topology)
+if device_id is None:
+    raise ValueError("Device not found")
+if isinstance(device_id, list):
+    raise ValueError(f"Multiple devices found: {device_id}")
+
+
+print(device_id)
+# > device10
+```
+
+### 2.2. Updating a Device in the Topology
+
+The configuration of a device in the topology can be updated. If the device does not exist, it is automatically added to the topology.
+
+```python
+device.configuration.label = "New Label"
+device.configuration.position_x = 100
+device.configuration.position_y = 200
+device.configuration.icon_size = "large"
+device.configuration.icon_type = "ipSwitchRouter"
+
+updated_device = app.topology.update_device(device)
 print(updated_device.configuration.label)
 # > New Label
 ```
 
-### 1.3. Remove a Device from the Topology
+### 2.3. Remove a Device from the Topology
 
-You can remove a device from the topology by its device ID.
+A device can be removed from the topology using its device ID.
 
 ```python
 last_config = app.topology.remove_device_by_id(device_id="device10")
 ```
 
-### 1.4
+### 3. Accessing Vertices and Edges
+
+It is possible to either iterate through all vertices/edges of a category, which is often useful for bulk operations, or access individual vertices/edges directly by their ID or label.
+
+### 3.1 Iterate through all Edges/Vertices of a Category
+
+```python
+
+device = app.topology.get_device(device_id="device80")
+
+codec_vertices = device.configuration.codec_vertices
+
+for codec_vertex in codec_vertices:
+    print(codec_vertex.factory_label)
+    # > SDI Out 1.1A [SDI Out 1.1A]
+    #   SDI Out 1.1B [SDI Out 1.1B]
+    #   SDI Out 1.2A [SDI Out 1.2A]
+    #   SDI Out 1.2B [SDI Out 1.2B]
+    #   Video-IP In 1.1
+    #   Video-IP In 1.2
+    #   ...
+```
+
+### 3.2 Access a Edge/Vertex by its ID
+
+```python
+vertice_video_ip_in_1_1 = device.configuration.get_nGraphElement_by_id("device80.1.3000000")
+
+if vertice_video_ip_in_1_1 is None:
+    raise Exception("Vertex not found")
+
+print(vertice_video_ip_in_1_1.factory_label)
+# > Video-IP In 1.1
+```
+
+### 3.3 Access a Vertex by its Label
+
+```python
+vertice_video_ip_in_1_1 = device.configuration.get_vertex_by_label("Video-IP In 1.1", label_type="factory")
+
+if vertice_video_ip_in_1_1 is None:
+    raise Exception("Vertex not found")
+
+print(vertice_video_ip_in_1_1.id)
+# > device80.1.3000000
+```
+
+### 3.2. Examples
+
+#### 3.2.1. Configure Codec Vertices based on information from factory labels
+
+```python
+device = app.topology.get_device(device_id="device80")
+
+codec_vertices = device.configuration.codec_vertices
+
+for vertex in codec_vertices:
+    if vertex.factory_label.startswith("Video-IP In"):
+        direction = "RX"
+        codec_format = "Video"
+    elif vertex.factory_label.startswith("Video-IP Out"):
+        direction = "TX"
+        codec_format = "Video"
+    elif vertex.factory_label.startswith("Audio-IP In"):
+        direction = "RX"
+        codec_format = "Audio"
+    elif vertex.factory_label.startswith("Audio-IP Out"):
+        direction = "TX"
+        codec_format = "Audio"
+    else:
+        continue
+
+    # Generic Settings
+    vertex.use_as_endpoint = True
+    vertex.sips_mode = "SIPSAuto"
+    vertex.sdp_support = True
+
+    if codec_format == "Video":
+        vertex.tags = ["V_1080i25", "V_1080p50", "V_2160p50"]
+    elif codec_format == "Audio":
+        vertex.tags = ["A_2CH_LR", "A_6CH_5.1", "A_8CH_RAW"]
+
+    # TX Settings
+    if direction == "TX":
+        vertex.main_destination_address_pool = "MAIN_POOL"
+        vertex.spare_destination_address_pool = "SPARE_POOL"
+
+    print(
+        f"Vertex with id '{vertex.id}‘ and label '{vertex.factory_label}' configured for {codec_format} ({direction}). Tags: {', '.join(vertex.tags)}"
+    )
+    # > Vertex with id 'device80.1.3000000‘ and label 'Video-IP In 1.1' configured for Video (RX). Tags: V_1080i25, V_1080p50, V_2160p50
+    #   Vertex with id 'device80.1.3000001‘ and label 'Video-IP In 1.2' configured for Video (RX). Tags: V_1080i25, V_1080p50, V_2160p50
+    #   ...
+    
+app.topology.update_device(device=device)
+```
+
+(To be continued...)
+
+```

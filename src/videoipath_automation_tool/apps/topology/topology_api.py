@@ -891,7 +891,16 @@ class TopologyAPI:
     def get_device_id_by_canonical_label(
         self, label: str, include_from_drivers: bool = True
     ) -> Optional[str | List[str]]:
-        """Method to get a device id by canonical label from VideoIPath-Topology
+        """Searches for devices whose canonical label matches the given label in the VideoIPath topology.
+
+        The search is performed across all devices, and for each device, the following rules apply:
+        1. If the device has a user-defined label (`descriptor.label`) that matches the provided label,
+        it is included in the results.
+        2. If no user-defined label is set but the factory label (`fDescriptor.label`) matches the
+        provided label, the device is included.
+        3. If the device is not present in the topology but exists in `nGraphFromDrivers`, it is
+        included only if its factory label matches the provided label and `include_from_drivers`
+        is set to True.
 
         Args:
             label (str): Canonical label
