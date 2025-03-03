@@ -35,3 +35,5 @@ You can remove a device from the topology by its device ID.
 ```python
 last_config = app.topology.remove_device_by_id(device_id="device10")
 ```
+
+### 1.4
