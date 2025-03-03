@@ -121,7 +121,7 @@ print(vertice_video_ip_in_1_1.id)
 # > device80.1.3000000
 ```
 
-### 3.2. Examples
+### 3.2. Example: Configure existing Edges/Vertices
 
 #### 3.2.1. Configure Codec Vertices based on information from factory labels
 
@@ -171,6 +171,51 @@ for vertex in codec_vertices:
 app.topology.update_device(device=device)
 ```
 
-(To be continued...)
+(to be continued)
 
+---
+
+## 3.3. Createing external Edges between devices
+
+The following example demonstrates how to connect the Virtuoso to a switch pair.
+
+```python
+virtuoso_device_id = "device80"
+spine_red_device_id = "device0"
+spine_blue_device_id = "device1"
+
+# Edges / Slot 1
+edges_red_slot_1 = app.topology.create_edges(
+    device_1_id=virtuoso_device_id,
+    device_1_vertex_factory_label="Ethernet 1.3",
+    device_2_id=spine_red_device_id,
+    device_2_vertex_factory_label="Ethernet29",
+    bandwidth=10000,
+    bandwidth_factor=0.9,
+    redundancy_mode="OnlyMain",
+)
+edges_blue_slot_1 = app.topology.create_edges(
+    device_1_id=virtuoso_device_id,
+    device_1_vertex_factory_label="Ethernet 1.4",
+    device_2_id=spine_blue_device_id,
+    device_2_vertex_factory_label="Ethernet29",
+    bandwidth=10000,
+    bandwidth_factor=0.9,
+    redundancy_mode="OnlySpare",
+)
+# ... Slot 2, Slot 3, ...
+
+
+virtuoso_topology = app.topology.get_device(device_id=virtuoso_device_id)
+
+# Remove all existing external edges and add the new ones
+virtuoso_topology.configuration.external_edges = []
+virtuoso_topology.configuration.external_edges.extend(edges_red_slot_1)
+virtuoso_topology.configuration.external_edges.extend(edges_blue_slot_1)
+# ... Slot 2, Slot 3, ...
+
+# Update the device in the topology
+app.topology.update_device(device=virtuoso_topology)
 ```
+
+## The documentation is currently being expanded. Upcoming sections will include details on device positioning, virtual device management, and device comparison, as well as synchronization status and various helper functions
