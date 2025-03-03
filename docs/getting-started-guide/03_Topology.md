@@ -173,11 +173,11 @@ for vertex in codec_vertices:
 app.topology.update_device(device=device)
 ```
 
-(to be continued)
+(Additional examples will be added soon)
 
 ---
 
-### 3.3. Createing external Edges between devices
+### 3.3. Creating external Edges between devices
 
 The following example demonstrates how to connect the Virtuoso to a switch pair.
 
