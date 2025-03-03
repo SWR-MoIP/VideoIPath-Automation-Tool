@@ -25,7 +25,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.NMOS-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -40,7 +40,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.NMOS_multidevice-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -55,7 +55,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.abb_dpa_upscale_st-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -70,7 +70,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.adva_fsp150-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -85,7 +85,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.adva_fsp150_xg400_series-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -100,7 +100,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.agama_analyzer-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -115,7 +115,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.altum_xavic_decoder-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -130,7 +130,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.altum_xavic_encoder-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -145,7 +145,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.amagi_cloudport-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -160,7 +160,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.amethyst3-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -175,7 +175,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.anubis-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -190,7 +190,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.appeartv_x_platform-0.2.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -205,7 +205,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.appeartv_x_platform_static-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -220,7 +220,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.archwave_unet-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -235,7 +235,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.arista-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -250,7 +250,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.ateme_cm4101-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -265,7 +265,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.ateme_cm5000-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -280,7 +280,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.ateme_dr5000-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -295,7 +295,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.ateme_dr8400-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -310,7 +310,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.avnpxh12-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -325,7 +325,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.aws_media-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -340,7 +340,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cisco_7600_series-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -355,7 +355,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cisco_asr-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -370,7 +370,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cisco_catalyst_3850-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -385,7 +385,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cisco_me-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -400,7 +400,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cisco_nexus-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -415,7 +415,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cisco_nexus_nbm-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -430,7 +430,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp330-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -445,7 +445,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp4400-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -460,7 +460,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp505-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -475,7 +475,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp511-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -490,7 +490,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp515-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -505,7 +505,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp524-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -520,7 +520,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp525-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -535,7 +535,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp540-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -550,7 +550,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cp560-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -565,7 +565,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.demo-tns-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -580,7 +580,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.device_up_driver-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -595,7 +595,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.dhd_series52-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -610,7 +610,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.dse892-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -625,7 +625,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.dyvi-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -640,7 +640,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.electra-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -655,7 +655,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.embrionix_sfp-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -670,7 +670,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.emerge_enterprise-0.0.1"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -685,7 +685,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.emerge_openflow-0.0.1"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -700,7 +700,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.ericsson_avp2000-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -715,7 +715,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.ericsson_ce-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -730,7 +730,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.ericsson_rx8200-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -745,7 +745,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_500fc-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -760,7 +760,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_570fc-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -775,7 +775,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_570itxe_hw_p60_udc-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -790,7 +790,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_570j2k_x19_12e-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -805,7 +805,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_570j2k_x19_6e6d-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -820,7 +820,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_570j2k_x19_u9d-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -835,7 +835,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_570j2k_x19_u9e-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -850,7 +850,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_5782dec-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -865,7 +865,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_5782enc-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -880,7 +880,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_7800fc-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -895,7 +895,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_7880ipg8_10ge2-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -910,7 +910,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_7882dec-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -925,7 +925,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.evertz_7882enc-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -940,7 +940,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.flexAI-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -955,7 +955,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.generic_emberplus-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -970,7 +970,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.generic_snmp-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -985,7 +985,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.gigacaster2-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1000,7 +1000,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.gredos-02.22.01"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1015,7 +1015,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.gv_kahuna-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1030,7 +1030,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.haivision-0.0.1"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1045,7 +1045,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.huawei_cloudengine-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1060,7 +1060,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.huawei_netengine-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1075,7 +1075,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.iothink-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1090,7 +1090,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.iqoyalink_ic-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1105,7 +1105,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.iqoyalink_le-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1120,7 +1120,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.juniper_ex-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1135,7 +1135,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.laguna-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1150,7 +1150,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.lawo_ravenna-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1165,7 +1165,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.liebert_nx-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1180,7 +1180,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.maxiva-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1195,7 +1195,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.maxiva_uaxop4p6e-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1210,7 +1210,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.maxiva_uaxt30uc-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1225,7 +1225,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.md8000-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1240,7 +1240,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.mediakind_ce1-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1255,7 +1255,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.mediakind_rx1-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1270,7 +1270,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.mock-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1285,7 +1285,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.montone42-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1300,7 +1300,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.multicon-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1315,7 +1315,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.mwedge-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1330,7 +1330,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.nec_dtl_30-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1345,7 +1345,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.nec_dtu_70d-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1360,7 +1360,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.nec_dtu_l10-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1375,7 +1375,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.net_vision-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1390,7 +1390,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.nodectrl-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1405,7 +1405,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.nokia7210-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1420,7 +1420,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.nokia7705-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1435,7 +1435,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.nso-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1450,7 +1450,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.nx4600-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1465,7 +1465,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.openflow-0.0.1"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1480,7 +1480,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.powercore-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1495,7 +1495,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.prismon-1.0.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1510,7 +1510,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.r3lay-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1525,7 +1525,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.selenio_13p-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1540,7 +1540,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.sencore_dmg-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1555,7 +1555,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.snell_probelrouter-0.0.1"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1570,7 +1570,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.sony_nxlk-ip50y-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1585,7 +1585,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.sony_nxlk-ip51y-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1600,7 +1600,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.starfish_splicer-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1615,7 +1615,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.sublime-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1630,7 +1630,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tag_mcm9000-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1645,7 +1645,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tally-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1660,7 +1660,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.thomson_mxs-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1675,7 +1675,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.thomson_vibe-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1690,7 +1690,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tns4200-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1705,7 +1705,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tns460-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1720,7 +1720,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tns541-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1735,7 +1735,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tns544-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1750,7 +1750,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tns546-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1765,7 +1765,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tns547-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1780,7 +1780,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tvg420-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1795,7 +1795,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tvg425-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1810,7 +1810,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tvg430-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1825,7 +1825,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tvg450-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1840,7 +1840,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tvg480-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1855,7 +1855,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.tx9-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1870,7 +1870,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.txedge-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1885,7 +1885,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.v__matrix-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1900,7 +1900,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.v__matrix_smv-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1915,7 +1915,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.ventura-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1930,7 +1930,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.virtuoso-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1945,7 +1945,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.virtuoso_fa-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1960,7 +1960,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.virtuoso_mi-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1975,7 +1975,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.virtuoso_re-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -1990,7 +1990,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.vizrt_vizengine-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -2005,7 +2005,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.nevion.zman-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -2020,7 +2020,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.sony.MLS-X1-1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -2035,7 +2035,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.sony.Panel-1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -2050,7 +2050,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.sony.SC1-1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -2065,7 +2065,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.sony.cna2-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -2080,7 +2080,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.sony.generic_external_control-1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -2095,7 +2095,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.sony.nsbus_generic_router-1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
@@ -2110,7 +2110,7 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
-        custom_settings_type: Optional[DriverLiteral] = None,
+        custom_settings_type: Optional[Literal["com.sony.rcp3500-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
