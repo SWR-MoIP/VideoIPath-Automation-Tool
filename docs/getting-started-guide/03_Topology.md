@@ -17,7 +17,7 @@ A **Topology Device** represents a network entity within the topology, containin
 
 All device properties are stored within the `configuration` attribute of a **Topology Device**.  
 While the **Base Device** exists as a single instance and can be accessed directly, all **Vertices** and **Edges** are stored in lists within `configuration`, categorized by their type.
-The following examples illustrate how to retrieve, modify and update specific properties of a **Topology Device**.
+The following examples illustrate how to retrieve, modify and update **Topology Devices** as well as their **Vertices** and **Edges**.
 
 ## 2. Basic Usage
 
@@ -66,12 +66,14 @@ print(updated_device.configuration.label)
 # > New Label
 ```
 
+The method evaluates which nGraphElements have changed compared to the server state and updates only those elements. Additionally, by default, it checks whether any services are affected. This behavior can be bypassed by setting `ignore_affected_services` to `True`.
+
 ### 2.3. Remove a Device from the Topology
 
 A device can be removed from the topology using its device ID.
 
 ```python
-last_config = app.topology.remove_device_by_id(device_id="device10")
+app.topology.remove_device_by_id(device_id="device10")
 ```
 
 ### 3. Accessing Vertices and Edges
