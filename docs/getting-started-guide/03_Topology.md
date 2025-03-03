@@ -76,7 +76,7 @@ A device can be removed from the topology using its device ID.
 app.topology.remove_device_by_id(device_id="device10")
 ```
 
-### 3. Accessing Vertices and Edges
+## 3. Accessing Vertices and Edges
 
 It is possible to either iterate through all vertices/edges of a category, which is often useful for bulk operations, or access individual vertices/edges directly by their ID or label.
 
