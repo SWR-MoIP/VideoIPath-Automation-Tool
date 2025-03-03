@@ -177,7 +177,7 @@ app.topology.update_device(device=device)
 
 ---
 
-## 3.3. Createing external Edges between devices
+### 3.3. Createing external Edges between devices
 
 The following example demonstrates how to connect the Virtuoso to a switch pair.
 
