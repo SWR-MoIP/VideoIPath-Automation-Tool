@@ -76,11 +76,11 @@ print(app.get_server_version())
 | Variable        | Values                                          | Description                                      |
 |-----------------|-------------------------------------------------|--------------------------------------------------|
 | `VIPAT_ENVIRONMENT`   | `DEV`, `TEST`, `PROD`                          | Optional: Define the environment. Defaults to `PROD`. |
-| `VIPAT_VIDEOIPATH_IP` | e.g. IP `10.200.10.21` or hostname `vip.company.com` | IP address or hostname of the VideoIPath server. |
-| `VIPAT_VIDEOIPATH_USER` | e.g. `api_user`                               | Username for the API User.                      |
-| `VIPAT_VIDEOIPATH_PWD` | e.g. `very_strong_passw0rd`                    | Password for the API User.                      |
-| `VIPAT_HTTPS`         | `true`, `false`                                | Optional: Use HTTPS for the connection. Defaults to `true`. |
-| `VIPAT_HTTPS_VERIFY`  | `true`, `false`                                | Optional: Verify the SSL certificate. Defaults to `true`. |
+| `VIPAT_VIDEOIPATH_SERVER_ADDRESS` | e.g. IP `10.200.10.21` or hostname `vip.company.com` | IP address or hostname of the VideoIPath server. |
+| `VIPAT_VIDEOIPATH_USERNAME` | e.g. `api_user`                               | Username for the API User.                      |
+| `VIPAT_VIDEOIPATH_PASSWORD` | e.g. `very_strong_passw0rd`                    | Password for the API User.                      |
+| `VIPAT_USE_HTTPS`         | `true`, `false`                                | Optional: Use HTTPS for the connection. Defaults to `true`. |
+| `VIPAT_VERIFY_SSL_CERT`  | `true`, `false`                                | Optional: Verify the SSL certificate. Defaults to `true`. |
 | `VIPAT_LOG_LEVEL`     | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. |
 
 ## Log Levels
