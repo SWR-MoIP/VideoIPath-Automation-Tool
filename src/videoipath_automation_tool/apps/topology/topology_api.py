@@ -432,12 +432,12 @@ class TopologyAPI:
         """Check if a device exists in the topology.
 
         Args:
-            device_id (str): Device Id (e.g. "device1")
+            device_id (str): Device Id (e.g. "device1" or "virtual.0")
 
         Returns:
             bool: True if the device exists, False otherwise.
         """
-        device_id = validate_device_id(device_id)
+        device_id = validate_device_id_including_virtual(device_id)
 
         data = self.vip_connector.rest.get(f"/rest/v2/data/config/network/nGraphElements/* where _id='{device_id}' /*")
 
