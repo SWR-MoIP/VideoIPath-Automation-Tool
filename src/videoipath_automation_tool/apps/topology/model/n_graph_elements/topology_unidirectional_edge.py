@@ -127,6 +127,11 @@ class UnidirectionalEdge(NGraphElement):
         """Fixed weight: The edge weight/cost for routing."""
         return self.weight
 
+    @fixed_weight.setter
+    def fixed_weight(self, value: int):
+        """Fixed weight: The edge weight/cost for routing."""
+        self.weight = value
+
     @property
     def bandwidth_capacity(self) -> float:
         """Bandwidth capacity: Max allowed bandwidth."""

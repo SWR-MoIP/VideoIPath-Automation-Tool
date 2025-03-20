@@ -365,6 +365,7 @@ class TopologyApp:
         bandwidth: Optional[int] = None,
         bandwidth_factor: Optional[float] = None,
         redundancy_mode: Optional[str] = None,
+        fixed_weight: Optional[int] = None,
     ) -> list[UnidirectionalEdge]:
         """
         This method automatically determines the correct edge configuration based on the vertex configuration of the devices.
@@ -376,7 +377,8 @@ class TopologyApp:
             device_2_vertex_factory_label (str): Vertex factory label of the second device. Note: Do not specify 'in' or 'out' (e.g., use 'Ethernet1' instead of 'Ethernet1 (in)').
             bandwidth (Optional[int], optional): Bandwidth of the edge. Defaults to None.
             bandwidth_factor (Optional[float], optional): Factor to reduce the bandwidth for reserve capacity (e.g., 0.9 for 90%). Defaults to None.
-                    redundancy_mode (Optional[str], optional): Specifies the redundancy mode of the edge. Possible values: 'OnlyMain', 'OnlySpare', 'Any'. Defaults to None.
+            redundancy_mode (Optional[str], optional): Specifies the redundancy mode of the edge. Possible values: 'OnlyMain', 'OnlySpare', 'Any'. Defaults to None.
+            fixed_weight (Optional[int], optional): Fixed weight of the edge. Defaults to None.
 
         Returns:
             list[UnidirectionalEdge]: A list of unidirectional edges representing the connection between the devices.
@@ -389,6 +391,7 @@ class TopologyApp:
             bandwidth=bandwidth,
             bandwidth_factor=bandwidth_factor,
             redundancy_mode=redundancy_mode,
+            fixed_weight=fixed_weight,
         )
 
 
@@ -471,6 +474,7 @@ class TopologyExperimental:
         bandwidth: Optional[int] = None,
         bandwidth_factor: Optional[float] = None,
         redundancy_mode: Optional[str] = None,
+        fixed_weight: Optional[int] = None,
     ) -> list[UnidirectionalEdge]:
         """
         The method will automatically determine the correct edge configuration based on the vertex configuration of the devices.
@@ -561,6 +565,10 @@ class TopologyExperimental:
                     edge.redundancyMode = redundancy_mode
             else:
                 raise ValueError("Invalid redundancy mode, must be 'OnlyMain', 'OnlySpare' or 'Any'.")
+
+        if fixed_weight:
+            for edge in edges:
+                edge.fixed_weight = fixed_weight
 
         for edge in edges:
             self._logger.info(f"Edge created: {edge.label}")
