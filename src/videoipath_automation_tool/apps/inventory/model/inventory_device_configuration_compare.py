@@ -71,6 +71,27 @@ class InventoryDeviceComparison(BaseModel):
 
         return config_diff_copy
 
+    @staticmethod
+    def get_value_by_path(dict_data: dict, path: str):
+        """
+        Function to access nested values in a dictionary using a string path.
+        The path is separated by '[' and ']', e.g., "['meta']['abc']" without 'root'.
+
+        Args:
+            dict_data (dict): The dictionary to access the value from.
+            path (str): The path to the value. e.g., "root['meta']['abc']"
+        """
+        # Remove the 'root' prefix
+        path = path.removeprefix("root")
+
+        # Convert the string path into a list of keys
+        path_parts = path_parts = path.replace("']['", "/")[2:-2].split("/")
+
+        # Iterate through the path to extract the value
+        for part in path_parts:
+            dict_data = dict_data[part]
+        return dict_data
+
     @classmethod
     def analyze_inventory_devices(
         cls, reference_device: InventoryDevice, staged_device: InventoryDevice, ignore_authentification: bool = True
@@ -156,7 +177,9 @@ class InventoryDeviceComparison(BaseModel):
                     data_element = {
                         "type": "dictionary_item_added",
                         "path": dictionary_item_added,
-                        "value": element_differences["dictionary_item_added"][dictionary_item_added],
+                        "new_value": InventoryDeviceComparison.get_value_by_path(
+                            element_differences.t2, dictionary_item_added
+                        ),
                     }
                     diff_object.added.append(data_element)
 
@@ -165,7 +188,9 @@ class InventoryDeviceComparison(BaseModel):
                     data_element = {
                         "type": "dictionary_item_removed",
                         "path": dictionary_item_removed,
-                        "value": element_differences["dictionary_item_removed"][dictionary_item_removed],
+                        "old_value": InventoryDeviceComparison.get_value_by_path(
+                            element_differences.t1, dictionary_item_removed
+                        ),
                     }
                     diff_object.removed.append(data_element)
 

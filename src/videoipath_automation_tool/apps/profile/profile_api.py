@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 from typing import List, Literal, Optional
 
 from deepdiff.diff import DeepDiff
@@ -274,3 +275,64 @@ class ProfileAPI:
         if type(reference_profile) is not Profile:
             return None
         return self.analyze_profile_configuration_changes_local(reference_profile, staged_profile)
+
+    def get_services_using_profile(self, profile_id: str) -> Optional[List[str] | str]:
+        """
+        Get a list of all Services using a Profile.
+
+        Args:
+            profile_id (str): ID of the Profile.
+
+        Returns:
+            Optional[List[str] | str]: List of Service IDs if successful, None otherwise.
+        """
+        response = self.vip_connector.rest.get(
+            "/rest/v2/data/status/conman/services/*/connection/profileIds,generic/**"
+        )
+        service_ids = []
+        for service in response.data["status"]["conman"]["services"]["_items"]:
+            if profile_id in service["connection"]["profileIds"] and service["connection"]["generic"]["state"] == 1:
+                service_ids.append(service["_id"])
+
+        if len(service_ids) == 0:
+            return None
+        if len(service_ids) == 1:
+            return service_ids[0]
+        else:
+            return service_ids
+
+    def get_usage_count(self, profile_id: str, mode: Literal["build_in", "enhanced"] = "build_in") -> int:
+        """
+        Get the number of Services using a Profile.
+
+        Args:
+            profile_id (str): ID of the Profile.
+            mode (Literal["build_in", "enhanced"], optional): The mode for calculating the usage count.
+                - "build_in" (default): Uses built-in GUI data to retrieve the usage count.
+                - "enhanced": Uses the API for a more accurate count based on service data.
+
+        Returns:
+            int: Number of Services using the Profile.
+
+        Raises:
+            ValueError: If the usage count is not found in the response data or an invalid mode is provided.
+        """
+        if mode == "build_in":
+            escaped_profile_id = urllib.parse.quote(profile_id)
+            response = self.vip_connector.rest.get(
+                f"/rest/v2/data/status/pathman/profiles/* where _id='{escaped_profile_id}'/usageCount"
+            )
+            if response.data:
+                return response.data["status"]["pathman"]["profiles"]["_items"][0]["usageCount"]
+            else:
+                raise ValueError("Usage count not found in response data.")
+        elif mode == "enhanced":
+            service_ids = self.get_services_using_profile(profile_id)
+            if not service_ids:
+                return 0
+            if type(service_ids) is list:
+                return len(service_ids)
+            else:
+                return 1
+        else:
+            raise ValueError("Invalid mode provided. Please provide 'build_in' or 'enhanced'.")

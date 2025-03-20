@@ -80,7 +80,7 @@ class InventoryAPI:
                         break
                 except ValueError:
                     self._logger.debug(
-                        f"Failed to get device status for device '{online_device.configuration.id}', retrying ({21-retry_cnt}/20) ..."
+                        f"Failed to get device status for device '{online_device.configuration.id}', retrying ({21-retry_cnt}/{status_fetch_retry}) ..."
                     )
                     time.sleep(status_fetch_delay)
                     retry_cnt -= 1
@@ -179,7 +179,7 @@ class InventoryAPI:
                         break
                 except ValueError:
                     self._logger.debug(
-                        f"Failed to get device status for device '{online_device.configuration.id}', retrying ({21-retry_cnt}/20) ..."
+                        f"Failed to get device status for device '{online_device.configuration.id}', retrying ({21-retry_cnt}/{status_fetch_retry}) ..."
                     )
                     time.sleep(status_fetch_delay)
                     retry_cnt -= 1
