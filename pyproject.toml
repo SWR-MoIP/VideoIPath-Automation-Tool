@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "videoipath-automation-tool"
-version = "0.1.1"
+version = "0.1.2"
 description = "A Python package for automating VideoIPath configuration workflows."
 authors = ["Paul Winterstein <paul.winterstein@swr.de>"]
-maintainers = ["Josia Hildebrandt <manuel_josia.hildebrandt@swr.de>"]
+maintainers = ["SWR Media-over-IP Team <moip@swr.de>", "Josia Hildebrandt <manuel_josia.hildebrandt@swr.de>"]
 readme = "README.md"
 packages = [{ include = "videoipath_automation_tool", from = "src" }]
 
