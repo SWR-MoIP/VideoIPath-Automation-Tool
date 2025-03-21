@@ -153,7 +153,7 @@ class ProfileApp:
         if type(profile_to_remove) is List[Profile]:
             self._logger.info("Multiple Profiles found, removing all Profiles.")
 
-        profile_list.extend(profile_to_remove)
+        profile_list.append(profile_to_remove)
 
         if profile_list == [] or profile_list == [None]:
             raise ValueError("No Profiles found to remove.")
