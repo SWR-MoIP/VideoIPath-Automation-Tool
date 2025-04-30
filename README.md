@@ -101,6 +101,10 @@ Your feedback and contributions are highly appreciated! There are several ways t
 
 Thank you for your support and contributions!
 
+## Disclaimer
+
+_"VideoIPath Automation Tool"_ is an independent software tool that can be used with the [VideoIPath](https://nevion.com/videoipath) media orchestration platform. However, it is not a product or service offered by Nevion, and Nevion is not responsible for its functionality, performance, support, or any unforeseen consequences arising from its use. Nevion's VideoIPath platform is used to manage critical media infrastructure, and special care is advised concerning the use of external tools such as this.
+
 ## License
 
 [Affero General Public License v3.0](LICENSE)
