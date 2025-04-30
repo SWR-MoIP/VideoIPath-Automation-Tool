@@ -74,42 +74,51 @@ jobs:
 
   # 🔴 3️⃣ Release Job (Uses Prebuilt Package)
   release:
-    name: Release
+    name: Release / Publish to PyPI
     runs-on: ubuntu-latest
     needs:
       - test
       - build
     env:
-      VERSION: ${{ needs.build.outputs.version }} # Retrieve the version from build job output
+      VERSION: ${{ needs.build.outputs.version }}
+      PYPI_USERNAME: "__token__"
+      PYPI_PASSWORD: "${{ secrets.PYPI_API_TOKEN }}"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download built artifacts
-        uses: actions/download-artifact@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          name: videoipath-automation-tool-${{ env.VERSION }}
-          path: dist/
+          python-version: "3.13"
 
-      - name: Create or update release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Configure Poetry and Set Version
         run: |
-          TAG="v${{ env.VERSION }}" 
+          git fetch --tags
 
-          # Check if tag exists
-          if git ls-remote --tags origin | grep -q "refs/tags/$TAG"; then
-            echo "Deleting old tag and release for $TAG"
-            gh release delete "$TAG" --yes || true
-            git push --delete origin "$TAG" || true
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION=$(poetry version --short)
+            echo "Stable version for release: $VERSION"
+          elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            VERSION="$(poetry version --short).dev+$SHORT_SHA"
+            echo "Development version (main): $VERSION"
+            poetry version "$VERSION"
+          else
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            VERSION="$(poetry version --short).dev+$SHORT_SHA"
+            echo "Development version (branch): $VERSION"
+            poetry version "$VERSION"
           fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-          # Create new tag from the latest commit
-          git tag "$TAG"
-          git push origin "$TAG"
+      - name: Build the package
+        run: poetry build
 
-          # Create new release with the built package
-          gh release create "$TAG" dist/* \
-            --title "Release $TAG" \
-            --notes "Automated release for version $TAG" \
-            --latest
+      - name: Publish to PyPI
+        run: |
+          poetry config pypi-token.pypi "${PYPI_API_TOKEN}"
+          poetry publish --build
