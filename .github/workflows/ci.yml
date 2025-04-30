@@ -70,12 +70,12 @@ jobs:
             echo "Stable version for release: $VERSION"
           elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
             SHORT_SHA=$(git rev-parse --short HEAD)
-            VERSION="$(poetry version --short).dev+$SHORT_SHA"
+            VERSION="$(poetry version --short).dev$SHORT_SHA"
             echo "Development version (main): $VERSION"
             poetry version "$VERSION"
           else
             SHORT_SHA=$(git rev-parse --short HEAD)
-            VERSION="$(poetry version --short).dev+$SHORT_SHA"
+            VERSION="$(poetry version --short).dev$SHORT_SHA"
             echo "Development version (branch): $VERSION"
             poetry version "$VERSION"
           fi
