@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="./docs/images/logo-lightmode.svg#gh-light-mode-only" width="400" />
-  <img src="./docs/images/logo-darkmode.svg#gh-dark-mode-only" width="400" />
+  <img src="https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/tree/main/docs/images/logo-lightmode.svg#gh-light-mode-only" width="400" />
+  <img src="https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/tree/main/docs/images/logo-darkmode.svg#gh-dark-mode-only" width="400" />
 </div>
 
 <p align="center">A <a href="https://www.python.org" target="_blank" rel="noopener noreferrer">Python</a> package for automating <a href="https://nevion.com/videoipath" target="_blank" rel="noopener noreferrer">VideoIPath</a> configuration workflows.</p>
@@ -34,14 +34,12 @@ The provided methods and data models ensure easy handling, robust validation, co
 
 ### Installation
 
-Since the repository is currently private, the package must be downloaded manually as a build artifact from the [GitHub Releases section](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/releases).
-
-Once the repository is public, the package will be available via the public PyPI registry for easy installation.
+The package is available via the [Python Package Index (PyPI)](https://pypi.org/project/videoipath-automation-tool/) and can be installed directly using `pip`.
 
 #### Install the package using pip
 
 ```bash
-pip3 install "path/to/downloads/videoipath_automation_tool-0.1.2.tar.gz"
+pip3 install videoipath-automation-tool
 ```
 
 ### A Simple Example: Adding a Device to the Inventory
@@ -90,7 +88,7 @@ Your feedback and contributions are highly appreciated! There are several ways t
 </p>
 
 <p>
-  ✅ <strong>[After release] Contribute via pull requests:</strong> If you want to implement a fix or a new feature yourself, feel free to fork the repository and submit a pull request.  
+  ✅ <strong>Contribute via pull requests:</strong> If you want to implement a fix or a new feature yourself, feel free to fork the repository and submit a pull request.  
   ➝ <a href="https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/fork">Fork the Repository</a>
 </p>
 
@@ -103,7 +101,7 @@ Thank you for your support and contributions!
 
 ## Disclaimer
 
-_"VideoIPath Automation Tool"_ is an independent software tool that can be used with the [VideoIPath](https://nevion.com/videoipath) media orchestration platform. However, it is not a product or service offered by Nevion, and Nevion is not responsible for its functionality, performance, support, or any unforeseen consequences arising from its use. Nevion's VideoIPath platform is used to manage critical media infrastructure, and special care is advised concerning the use of external tools such as this.
+VideoIPath Automation Tool is an independent software tool that can be used with the [VideoIPath](https://nevion.com/videoipath) media orchestration platform. However, it is not a product or service offered by Nevion, and Nevion is not responsible for its functionality, performance, support, or any unforeseen consequences arising from its use. Nevion's VideoIPath platform is used to manage critical media infrastructure, and special care is advised concerning the use of external tools such as this.
 
 ## License
 
