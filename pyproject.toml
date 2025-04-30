@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "videoipath-automation-tool"
-version = "0.1.5"
+version = "0.1.6"
 description = "A Python package for automating VideoIPath configuration workflows."
 authors = ["Paul Winterstein <paul.winterstein@swr.de>"]
 maintainers = ["SWR Media-over-IP Team <moip@swr.de>", "Josia Hildebrandt <manuel_josia.hildebrandt@swr.de>"]
