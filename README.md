@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/SWR-MoIP/VideoIPath-Automation-Tool/refs/heads/main/docs/images/logo-darkmode.svg#gh-light-mode-only" width="400" />
+  <img src="https://raw.githubusercontent.com/SWR-MoIP/VideoIPath-Automation-Tool/refs/heads/main/docs/images/logo-lightmode.svg#gh-light-mode-only" width="400" />
   <img src="https://raw.githubusercontent.com/SWR-MoIP/VideoIPath-Automation-Tool/refs/heads/main/docs/images/logo-darkmode.svg#gh-dark-mode-only" width="400" />
 </div>
 
