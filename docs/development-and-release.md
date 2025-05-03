@@ -22,7 +22,7 @@ For stable/official versions, the common semver pattern is used:
 For development versions, there are multiple options - since this package doesn't have a complex testing and verification process for release,
 a simple format is used:
 
-`<Major>.<Minor>.<Patch>.dev+<short commit SHA>`
+`<Major>.<Minor>.<Patch>.dev<GitHub Action Run ID>`
 
 Pip won't treat those versions as stable, they can only be installed by specifying the exact version or using the `--pre` flag.
 
@@ -71,7 +71,7 @@ flowchart TD
     subgraph run-mr-pipeline["Run Merge-Request Pipeline"]
         mr-tests["Run Tests [Pipeline]"]
         mr-build["Build the Package [Pipeline]"]
-        publish-dev-version["Publish Dev Version, e.g. 1.3.6.dev+d882293d [Pipeline]"]
+        publish-dev-version["Publish Dev Version, e.g. 1.3.6.dev256 [Pipeline]"]
 
         mr-tests --> mr-build
         mr-build --> publish-dev-version
