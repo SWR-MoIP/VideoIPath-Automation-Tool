@@ -5,6 +5,8 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 from typing_extensions import deprecated
 
+from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
+from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_base_device import BaseDevice
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_generic_vertex import GenericVertex
@@ -166,6 +168,78 @@ class TopologyDeviceConfiguration(BaseModel):
         self.base_device.siteId = value
 
     # --- Methods ---
+    def get_vertices_by_module_label(
+        self,
+        module_label: str,
+        inventory_device_status: InventoryDevice | DeviceStatus,
+        vertex_type: Literal["all", "codec_vertex", "ip_vertex", "generic_vertex"] = "all",
+    ):
+        """Get all vertices by module label.
+        Optionally, the search can be filtered by vertex type.
+
+        Args:
+            module_label (str): The module label to search for (e.g. `Slot 3`).
+            inventory_device_status (InventoryDevice | DeviceStatus): The inventory device status object.
+
+        Returns:
+            List[BaseDevice | GenericVertex | IpVertex | CodecVertex | UnidirectionalEdge]: A list of matching nGraphElements.
+        """
+
+        if vertex_type == "all":
+            combined_vertex_list = chain(
+                self.generic_vertices,
+                self.ip_vertices,
+                self.codec_vertices,
+            )  # Note: Base Device and Edges are not included in this search
+        elif vertex_type == "codec_vertex":
+            combined_vertex_list = self.codec_vertices
+        elif vertex_type == "ip_vertex":
+            combined_vertex_list = self.ip_vertices
+        elif vertex_type == "generic_vertex":
+            combined_vertex_list = self.generic_vertices
+        else:
+            raise ValueError(
+                f"Invalid vertex type: {vertex_type}. Valid options are 'all', 'codec_vertex', 'ip_vertex', or 'generic_vertex'."
+            )
+
+        if isinstance(inventory_device_status, InventoryDevice):
+            device_status = inventory_device_status
+        else:
+            device_status = inventory_device_status
+
+        if not device_status:
+            raise ValueError("Device status is not available.")
+
+        # Check if the device ID matches the topology device ID
+        if device_status.id != self.base_device.id:
+            raise ValueError(
+                f"Device ID mismatch: Inventory device ID '{device_status.id}' does not match topology device ID '{self.base_device.id}'."
+            )
+
+        module = device_status.get_module_by_label(module_label)
+
+        if not module:
+            raise ValueError(f"Module with label '{module_label}' not found in device status.")
+
+        # Build the list of element IDs to search for
+        # <device_id>.<module_id>.<port_id>
+        # e.g. 'device66.4.6200000'
+
+        element_id_list = []
+        device_id = device_status.id
+        module_id = module.id
+        for port in module.ports:
+            port_id = port.id
+            element_id = f"{device_id}.{module_id}.{port_id}"
+            element_id_list.append(element_id)
+
+        vertex_list = []
+        for element in combined_vertex_list:
+            if element.id in element_id_list:
+                vertex_list.append(element)
+
+        return vertex_list
+
     def get_nGraphElement_by_id(
         self, element_id: str
     ) -> Optional[BaseDevice | GenericVertex | IpVertex | CodecVertex | UnidirectionalEdge]:

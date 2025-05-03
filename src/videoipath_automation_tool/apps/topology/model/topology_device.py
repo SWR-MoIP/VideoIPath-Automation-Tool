@@ -180,7 +180,7 @@ class TopologyDevice(BaseModel):
             "_vid": module_id,
             "descriptor": {"label": "", "desc": ""},
             "fDescriptor": {
-                "label": f"Virtual Device {device_number+1} Virtual Switching Core {module_number}",
+                "label": f"Virtual Device {device_number + 1} Virtual Switching Core {module_number}",
                 "desc": "",
             },
             "deviceId": f"{device_id}",
@@ -248,7 +248,7 @@ class TopologyDevice(BaseModel):
             "descriptor": {"label": "", "desc": ""},
             "fDescriptor": {
                 "label": f"Vertex {vertex_number}",
-                "desc": f"Virtual Device {device_number+1} Vertex {vertex_number}",
+                "desc": f"Virtual Device {device_number + 1} Vertex {vertex_number}",
             },
             "deviceId": f"{device_id}",
             "gpid": {
@@ -305,7 +305,7 @@ class TopologyDevice(BaseModel):
                 "descriptor": {"label": "", "desc": ""},
                 "excludeFormats": [],
                 "fDescriptor": {
-                    "label": f"Vertex {vertex_number} -> Virtual Device {device_number+1} Virtual Switching Core {module_number}",
+                    "label": f"Vertex {vertex_number} -> Virtual Device {device_number + 1} Virtual Switching Core {module_number}",
                     "desc": "",
                 },
                 "fromId": f"{vertex_id}",
@@ -332,7 +332,7 @@ class TopologyDevice(BaseModel):
                 "descriptor": {"label": "", "desc": ""},
                 "excludeFormats": [],
                 "fDescriptor": {
-                    "label": f"Virtual Device {device_number+1} Virtual Switching Core {module_number} -> Vertex {vertex_number}",
+                    "label": f"Virtual Device {device_number + 1} Virtual Switching Core {module_number} -> Vertex {vertex_number}",
                     "desc": "",
                 },
                 "fromId": f"{module_id}",
@@ -390,7 +390,7 @@ class TopologyDevice(BaseModel):
             "descriptor": {"label": "", "desc": ""},
             "fDescriptor": {
                 "label": f"Vertex {vertex_number}",
-                "desc": f"Virtual Device {device_number+1} Vertex {vertex_number}",
+                "desc": f"Virtual Device {device_number + 1} Vertex {vertex_number}",
             },
             "deviceId": f"{device_id}",
             "gpid": {
@@ -436,7 +436,7 @@ class TopologyDevice(BaseModel):
                 "descriptor": {"label": "", "desc": ""},
                 "excludeFormats": [],
                 "fDescriptor": {
-                    "label": f"Vertex {vertex_number} -> Virtual Device {device_number+1} Virtual Switching Core {module_number}",
+                    "label": f"Vertex {vertex_number} -> Virtual Device {device_number + 1} Virtual Switching Core {module_number}",
                     "desc": "",
                 },
                 "fromId": f"{vertex_id}",
@@ -463,7 +463,7 @@ class TopologyDevice(BaseModel):
                 "descriptor": {"label": "", "desc": ""},
                 "excludeFormats": [],
                 "fDescriptor": {
-                    "label": f"Virtual Device {device_number+1} Virtual Switching Core {module_number} -> Vertex {vertex_number}",
+                    "label": f"Virtual Device {device_number + 1} Virtual Switching Core {module_number} -> Vertex {vertex_number}",
                     "desc": "",
                 },
                 "fromId": f"{module_id}",
@@ -521,7 +521,7 @@ class TopologyDevice(BaseModel):
             "descriptor": {"label": "", "desc": ""},
             "fDescriptor": {
                 "label": f"Vertex {vertex_number}",
-                "desc": f"Virtual Device {device_number+1} Vertex {vertex_number}",
+                "desc": f"Virtual Device {device_number + 1} Vertex {vertex_number}",
             },
             "deviceId": f"{device_id}",
             "gpid": {
@@ -556,7 +556,7 @@ class TopologyDevice(BaseModel):
                 "descriptor": {"label": "", "desc": ""},
                 "excludeFormats": [],
                 "fDescriptor": {
-                    "label": f"Vertex {vertex_number} -> Virtual Device {device_number+1} Virtual Switching Core {module_number}",
+                    "label": f"Vertex {vertex_number} -> Virtual Device {device_number + 1} Virtual Switching Core {module_number}",
                     "desc": "",
                 },
                 "fromId": f"{vertex_id}",
@@ -583,7 +583,7 @@ class TopologyDevice(BaseModel):
                 "descriptor": {"label": "", "desc": ""},
                 "excludeFormats": [],
                 "fDescriptor": {
-                    "label": f"Virtual Device {device_number+1} Virtual Switching Core {module_number} -> Vertex {vertex_number}",
+                    "label": f"Virtual Device {device_number + 1} Virtual Switching Core {module_number} -> Vertex {vertex_number}",
                     "desc": "",
                 },
                 "fromId": f"{module_id}",
