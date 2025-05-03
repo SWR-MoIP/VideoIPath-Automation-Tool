@@ -29,7 +29,7 @@ The provided methods and data models ensure easy handling, robust validation, co
 ### Prerequisites
 
 - Access to a VideoIPath Server (version 2023.4.2 or higher, LTS versions recommended)
-- A user account with API access credentials
+- Username and Password for a user account with API access
 - Python 3.11 or higher
 
 ### Installation
@@ -39,7 +39,7 @@ The package is available via the [Python Package Index (PyPI)](https://pypi.org/
 #### Install the package using pip
 
 ```bash
-pip3 install videoipath-automation-tool
+pip install videoipath-automation-tool
 ```
 
 ### A Simple Example: Adding a Device to the Inventory
@@ -49,7 +49,7 @@ pip3 install videoipath-automation-tool
 from videoipath_automation_tool import VideoIPathApp
 
 # Initialize the VideoIPathApp
-app = VideoIPathApp(server_address="10.1.100.10", username="api-user", password="veryStrongPassword")
+app = VideoIPathApp(server_address="10.1.100.10", username="api-user", password="veryStrongPassword", use_https=False, verify_ssl_cert=False)
 
 # Create a device object with NMOS Multidevice driver
 staged_device = app.inventory.create_device(driver="com.nevion.NMOS_multidevice-0.1.0")
