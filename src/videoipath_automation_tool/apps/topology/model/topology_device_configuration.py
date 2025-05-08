@@ -222,8 +222,8 @@ class TopologyDeviceConfiguration(BaseModel):
             raise ValueError(f"Module with label '{module_label}' not found in device status.")
 
         # Build the list of element IDs to search for
-        # <device_id>.<module_id>.<port_id>
-        # e.g. 'device66.4.6200000'
+        # <device_id>.<module_id>.<port_id> .in/out (optional)
+        # e.g. 'device66.4.6200000' /
 
         element_id_list = []
         device_id = device_status.id
@@ -232,6 +232,9 @@ class TopologyDeviceConfiguration(BaseModel):
             port_id = port.id
             element_id = f"{device_id}.{module_id}.{port_id}"
             element_id_list.append(element_id)
+            # Vertices could contain .in or .out as suffixes
+            element_id_list.append(f"{element_id}.in")
+            element_id_list.append(f"{element_id}.out")
 
         vertex_list = []
         for element in combined_vertex_list:
