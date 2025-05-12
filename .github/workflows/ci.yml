@@ -58,7 +58,7 @@ jobs:
         run: pip install poetry
 
       - name: Install dependencies
-        run: poetry install --no-dev
+        run: poetry install --without test,dev
 
       - name: Clean dist folder
         run: rm -rf dist/
