@@ -58,7 +58,13 @@ class InventoryAPI:
         if not device_id.startswith("device"):
             raise ValueError("device_id must start with 'device'.")
         self._logger.debug(f"Retrieving device '{device_id}' from VideoIPath-Inventory.")
+        if custom_settings_type:
+            self._logger.debug(
+                f"Using custom settings type '{custom_settings_type.__name__}' for device '{device_id}'."
+            )
+
         online_device = self._fetch_device_config(device_id)
+
         if not config_only:
             if not isinstance(status_fetch_retry, int):
                 self._logger.warning("status_fetch_retry must be an integer. Using default value of 20.")
@@ -80,7 +86,7 @@ class InventoryAPI:
                         break
                 except ValueError:
                     self._logger.debug(
-                        f"Failed to get device status for device '{online_device.configuration.id}', retrying ({21-retry_cnt}/{status_fetch_retry}) ..."
+                        f"Failed to get device status for device '{online_device.configuration.id}', retrying ({21 - retry_cnt}/{status_fetch_retry}) ..."
                     )
                     time.sleep(status_fetch_delay)
                     retry_cnt -= 1
@@ -90,6 +96,7 @@ class InventoryAPI:
                 )
         else:
             self._logger.debug(f"Skipping status update for device '{device_id}'.")
+
         self._logger.debug(f"Device '{device_id}' retrieved from VideoIPath-Inventory.")
         return online_device
 
@@ -120,11 +127,11 @@ class InventoryAPI:
         if device.configuration.id != "":
             raise ValueError(
                 "Device ID must be empty when adding a new device! "
-                "Set 'id' to an empty string 'InventoryDevice.remove_device_id()' or use 'inventory_api.update_device()' for existing devices."
+                "Set 'id' to an empty string 'InventoryDevice.remove_device_id()' or use 'inventory_api.update_device()' if an existing device should be updated."
             )
 
         self._logger.debug(
-            f"Adding new device with label '{device.configuration.config.desc.label}' to VideoIPath-Inventory."
+            f"Adding new device with label '{device.configuration.config.desc.label}' and address '{device.configuration.config.cinfo.address}' to VideoIPath-Inventory."
         )
 
         tracking_id = str(uuid4())
@@ -158,50 +165,39 @@ class InventoryAPI:
 
         online_device = self._fetch_device_config_by_uuid(uuid=tracking_id)
 
-        if not config_only:
-            if not isinstance(status_fetch_retry, int):
-                self._logger.warning("status_fetch_retry must be an integer. Using default value of 20.")
-                status_fetch_retry = 20
-            if not isinstance(status_fetch_delay, int):
-                self._logger.warning("status_check_delay must be an integer. Using default value of 2.")
-                status_fetch_delay = 2
-            if status_fetch_retry < 1:
-                self._logger.warning("status_fetch_retry must be greater than 0. Using default value of 20.")
-                status_fetch_retry = 20
-            if status_fetch_delay < 1:
-                self._logger.warning("status_check_delay must be greater than 0. Using default value of 2.")
-                status_fetch_delay = 2
-            retry_cnt = status_fetch_retry
-            while retry_cnt > 0:
-                try:
-                    online_device.status = self._fetch_device_status(online_device.configuration.id)
-                    if online_device.status:
-                        break
-                except ValueError:
-                    self._logger.debug(
-                        f"Failed to get device status for device '{online_device.configuration.id}', retrying ({21-retry_cnt}/{status_fetch_retry}) ..."
-                    )
-                    time.sleep(status_fetch_delay)
-                    retry_cnt -= 1
-            if retry_cnt == 0 and not online_device.status:
-                self._logger.warning(
-                    f"Failed to get device status for device '{online_device.configuration.id}'. Retry limit reached. Returning device without status."
-                )
-        self._logger.debug(f"Device added successfully with id: {online_device.configuration.id}")
+        self._logger.debug(
+            f"Device with id '{online_device.configuration.id}' added successfully to VideoIPath-Inventory."
+        )
 
-        if clear_uuid_after_add:
+        if not clear_uuid_after_add:
+            self._logger.debug("Skip removing tracking ID ('uuid' meta field) from device configuration.")
+        else:
             modified_device = online_device.model_copy(deep=True)
             modified_device.configuration.meta.pop("uuid")
             self._logger.debug(
                 "Remove tracking ID ('uuid' meta field) from device configuration and update device in VideoIPath-Inventory."
             )
-
-            self.update_device(device=modified_device)
-            if response.header.status != "OK":
-                raise ValueError(f"Failed to update device in VideoIPath-Inventory. Error: {response}")
-
-            online_device = modified_device
+            online_device = self.update_device(
+                device=modified_device, config_only=True
+            )  # Use config_only=True to avoid status fetch and speed up the process
             self._logger.debug("Tracking ID removed successfully from device configuration.")
+
+        if config_only:
+            self._logger.debug("Skip fetching device status after adding.")
+        else:
+            self._logger.warning(
+                "Fetching device status is enabled and may take up to 30 seconds for devices, which are not accessible for VideoIPath-Server (e.g. offline devices). "
+                "To speed up the process for those devices, `add_device(..., config_only=True)` can be used and the status retrieval can be omitted."
+            )
+            online_device = self.get_device(
+                device_id=online_device.configuration.id,
+                config_only=config_only,
+                status_fetch_delay=status_fetch_delay,
+                status_fetch_retry=status_fetch_retry,
+            )
+
+            self._logger.debug(f"Device added successfully with id: {online_device.configuration.id}")
+
         return online_device
 
     def update_device(

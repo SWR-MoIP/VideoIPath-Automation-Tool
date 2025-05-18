@@ -88,12 +88,14 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
                 )
 
         online_device = self._inventory_api.add_device(device, config_only=config_only)
-        self._logger.info(f"Device '{online_device.label}' added to Inventory with id '{online_device.device_id}'.")
+        self._logger.info(
+            f"Device '{online_device.label}' added successfully to Inventory with id '{online_device.device_id}'."
+        )
 
         return online_device
 
     def update_device(
-        self, device: InventoryDevice[CustomSettingsType], compare_config: bool = True
+        self, device: InventoryDevice[CustomSettingsType], compare_config: bool = True, config_only: bool = False
     ) -> InventoryDevice[CustomSettingsType]:
         """
         Method to update a devices configuration in VideoIPath-Inventory.
@@ -102,6 +104,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         Args:
             device (InventoryDevice): Device to update in Inventory.
             compare_config (bool, optional): Compare the configuration of the device with the existing device configuration in Inventory, to prevent unnecessary updates. Defaults to True.
+            config_only (bool, optional): Update device with configuration only. Defaults to False.
 
         Raises:
             ValueError: If no device_id is given in device configuration (in InventoryDevice instance).
@@ -130,7 +133,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
             if filtered_diffs.added or filtered_diffs.changed or filtered_diffs.removed:
                 debug_message = self._hide_passwords_in_diffs(filtered_diffs.model_dump(mode="json"))
                 self._logger.info(
-                    f"Device configuration changed. Updating device in Inventory. " f"Changes: {debug_message}"
+                    f"Device configuration changed. Updating device in Inventory. Changes: {debug_message}"
                 )
             else:
                 self._logger.info("Device configuration did not change. No update necessary.")
@@ -138,7 +141,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         else:
             self._logger.info("Updating device in Inventory without comparing configuration.")
 
-        online_device = self._inventory_api.update_device(device)
+        online_device = self._inventory_api.update_device(device, config_only=config_only)
         self._logger.info(f"Device '{online_device.label}' updated in Inventory with id '{online_device.device_id}'.")
         return online_device
 
