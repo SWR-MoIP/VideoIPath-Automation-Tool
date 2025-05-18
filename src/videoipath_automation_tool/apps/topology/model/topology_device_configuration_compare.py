@@ -13,6 +13,19 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_un
 from videoipath_automation_tool.apps.topology.model.topology_device import TopologyDevice
 
 
+def is_revision_path(path: str) -> bool:
+    """
+    Returns True if the given DeepDiff path refers to the 'rev' attribute directly under root.
+    Examples that return True:
+    - "root['rev']"
+    - "root.rev"
+    """
+    path = path.strip()
+    if path.startswith("root"):
+        path = path[4:].strip()
+    return path in (".rev", "['rev']", '["rev"]')
+
+
 class NGraphElementConfigurationDiff(BaseModel):
     """Class which contains the configuration differences on attribute level between two nGraphElements."""
 
@@ -22,30 +35,15 @@ class NGraphElementConfigurationDiff(BaseModel):
 
     def get_changed_ignore_rev(self) -> list:
         """Method to get the changed values of the nGraphElement, ignoring the revision."""
-        changed_list = []
-        if len(self.changed) > 0:
-            for change in self.changed:
-                if change["path"] != "root.rev":
-                    changed_list.append(change)
-        return changed_list
+        return [change for change in self.changed if not is_revision_path(change["path"])]
 
     def get_removed_ignore_rev(self) -> list:
         """Method to get the removed values of the nGraphElement, ignoring the revision."""
-        removed_list = []
-        if len(self.removed) > 0:
-            for remove in self.removed:
-                if remove["path"] != "root.rev":
-                    removed_list.append(remove)
-        return removed_list
+        return [remove for remove in self.removed if not is_revision_path(remove["path"])]
 
     def get_added_ignore_rev(self) -> list:
         """Method to get the added values of the nGraphElement, ignoring the revision."""
-        added_list = []
-        if len(self.added) > 0:
-            for add in self.added:
-                if add["path"] != "root.rev":
-                    added_list.append(add)
-        return added_list
+        return [add for add in self.added if not is_revision_path(add["path"])]
 
 
 class NGraphElementDiff(BaseModel):
