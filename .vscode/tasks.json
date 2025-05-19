@@ -16,8 +16,10 @@
     {
       "label": "Generate Overloads",
       "type": "shell",
-      "command": "python",
+      "command": "poetry",
       "args": [
+        "run",
+        "python",
         "${workspaceFolder}/src/scripts/generate_overloads.py"
       ],
       "hide": true
@@ -25,8 +27,10 @@
     {
       "label": "Format",
       "type": "shell",
-      "command": "ruff",
+      "command": "poetry",
       "args": [
+        "run",
+        "ruff",
         "format",
         "."
       ]
@@ -34,8 +38,10 @@
     {
       "label": "Generate Driver Models",
       "type": "shell",
-      "command": "python",
+      "command": "poetry",
       "args": [
+        "run",
+        "python",
         "${workspaceFolder}/src/scripts/generate_driver_models.py",
         "${input:driversSchemaFile}",
         "${input:driverModelFile}"
