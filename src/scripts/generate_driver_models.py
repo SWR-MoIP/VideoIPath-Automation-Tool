@@ -1,6 +1,21 @@
+import argparse
 import json
 
 from videoipath_automation_tool.utils.pydantic_model_builder import PydanticModelBuilder, PydanticModelField
+
+parser = argparse.ArgumentParser(description="Generate Pydantic models from driver schema")
+parser.add_argument(
+    "schema_file",
+    nargs="?",
+    default="src/videoipath_automation_tool/apps/inventory/model/driver_schema/2024.3.3.json",
+    help="Path to the driver schema JSON file",
+)
+parser.add_argument(
+    "output_file",
+    nargs="?",
+    default="src/videoipath_automation_tool/apps/inventory/model/drivers_generated.py",  # TODO: change to drivers.py when we are sure the generation is correct
+    help="Path where the generated Python file will be saved",
+)
 
 
 def _generate_driver_model(driver_schema: dict) -> str:
@@ -97,12 +112,8 @@ def _get_attribute_type(field: dict) -> tuple[str, list[tuple[str | int | float,
 
 
 if __name__ == "__main__":
-    schema_file_path = "src/videoipath_automation_tool/apps/inventory/model/driver_schema/2024.3.3.json"
-    output_file_path = (
-        "src/videoipath_automation_tool/apps/inventory/model/drivers_generated.py"  # TODO: make this a parameter
-    )
-
-    schema = json.load(open(schema_file_path))
+    args = parser.parse_args()
+    schema = json.load(open(args.schema_file))
 
     drivers = schema["data"]["status"]["system"]["drivers"]["_items"]
     driver_models = "\n\n".join([_generate_driver_model(driver) for driver in drivers])
@@ -141,6 +152,6 @@ CustomSettingsType = TypeVar("CustomSettingsType", bound=CustomSettings)
 """
     print("Drivers generated successfully!")
 
-    with open(output_file_path, "w") as f:
+    with open(args.output_file, "w") as f:
         f.write(code)
-        print(f"Updated {output_file_path}")
+        print(f"Updated {args.output_file}")
