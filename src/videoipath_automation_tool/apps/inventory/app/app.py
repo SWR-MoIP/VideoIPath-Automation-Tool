@@ -9,7 +9,7 @@ from videoipath_automation_tool.apps.inventory.app.create_device_from_discovered
 )
 from videoipath_automation_tool.apps.inventory.app.get_device import InventoryGetDeviceMixin
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
-from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettings, CustomSettingsType
+from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettings, CustomSettingsType, DriverLiteral
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration_compare import (
     InventoryDeviceComparison,
@@ -228,6 +228,16 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
             return self._inventory_api.get_device_id_by_user_defined_label(label)
         else:
             raise ValueError(f"Invalid label_search_mode: {label_search_mode}")
+
+    def list_device_ids_by_driver(self, driver: DriverLiteral) -> List[str]:
+        """Method to list all device ids by driver id.
+
+        Args:
+            driver (DriverLiteral): Driver to filter devices by (e.g. `com.nevion.arista-0.1.0`).
+        Returns:
+            List[str]: List of device ids.
+        """
+        return self._inventory_api.fetch_device_ids_by_driver(driver=driver)
 
     def enable_device(self, device_id: str) -> InventoryDevice[CustomSettings]:
         """Method to enable a device in VideoIPath-Inventory.
