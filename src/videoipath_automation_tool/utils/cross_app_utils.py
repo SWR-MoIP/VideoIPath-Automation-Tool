@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 
 from typing_extensions import deprecated
@@ -17,6 +18,11 @@ def create_fallback_logger(name: str) -> logging.Logger:
 # --- Generate UUID4 ---
 def generate_uuid_4():
     return str(uuid.uuid4())
+
+
+# --- Natural Sort Device ID list ---
+def extract_natural_sort_key(s: str):
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r"(\d+)", s)]
 
 
 # --- Deprecated Functions for Device ID Validation ---
