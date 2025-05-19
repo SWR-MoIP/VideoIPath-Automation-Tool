@@ -7,6 +7,10 @@ def load_pydantic_model_builder():
     spec = importlib.util.spec_from_file_location(
         "pydantic_model_builder", "src/videoipath_automation_tool/utils/pydantic_model_builder.py"
     )
+
+    if spec is None or spec.loader is None:
+        raise ValueError("Failed to load pydantic_model_builder module")
+
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
