@@ -26,7 +26,7 @@ class InventoryRequestRpc(RequestRPC):
             validate_device_id(device.configuration.id)
         except ValueError as e:
             raise ValueError(
-                "To update a device, a valid 'device_id' must be set in the device configuration. " f"Error: {e}"
+                f"To update a device, a valid 'device_id' must be set in the device configuration. Error: {e}"
             )
         return super().update(device.configuration.id, device.configuration)
 
