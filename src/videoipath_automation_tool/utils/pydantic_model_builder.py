@@ -65,16 +65,16 @@ class PydanticModelField(BaseModel):
         docstring = ""
 
         if self.label:
-            docstring += f"\t{self.label}\\n\n"
+            docstring += f"{self.label}\\n\n"
 
         if self.description and self.description != self.label:
-            parsed_description = self.description.replace("\n", "\\n\n\t")
-            docstring += f"\t{parsed_description}\n"
+            parsed_description = self.description.replace("\n", "\\n\n")
+            docstring += f"{parsed_description}\\n\n"
 
         if self.literal_options:
-            docstring += "\tPossible values:"
+            docstring += "Possible values:"
             for value, label, is_default in self.literal_options:
-                docstring += f"\\n\n\t\t`{value}`: {label}{' (default)' if is_default else ''}"
+                docstring += f"\\n\n\t`{value}`: {label}{' (default)' if is_default else ''}"
             docstring += "\n"
 
         return f'\t"""\n{docstring}\t"""\n' if docstring else ""

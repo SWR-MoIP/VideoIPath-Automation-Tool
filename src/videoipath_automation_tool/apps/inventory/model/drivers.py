@@ -19,46 +19,46 @@ class CustomSettings_com_nevion_NMOS_0_1_0(DriverCustomSettings):
 
     always_enable_rtp: bool = Field(default=False, alias="com.nevion.NMOS.always_enable_rtp")
     """
-	Always enable RTP\n
-	The "rtp_enabled" field in "transport_params" will always be set to true
+Always enable RTP\n
+The "rtp_enabled" field in "transport_params" will always be set to true\n
 	"""
 
     disable_rx_sdp: bool = Field(default=False, alias="com.nevion.NMOS.disable_rx_sdp")
     """
-	Disable Rx SDP\n
-	Configure this unit's receivers with regular transport parameters only
+Disable Rx SDP\n
+Configure this unit's receivers with regular transport parameters only\n
 	"""
 
     disable_rx_sdp_with_null: bool = Field(default=True, alias="com.nevion.NMOS.disable_rx_sdp_with_null")
     """
-	Disable Rx SDP with null\n
-	Configures how RX SDPs are disabled. If unchecked, an empty string is used
+Disable Rx SDP with null\n
+Configures how RX SDPs are disabled. If unchecked, an empty string is used\n
 	"""
 
     enable_bulk_config: bool = Field(default=False, alias="com.nevion.NMOS.enable_bulk_config")
     """
-	Enable bulk config\n
-	Configure this unit using bulk API
+Enable bulk config\n
+Configure this unit using bulk API\n
 	"""
 
     enable_experimental_alarm: bool = Field(default=False, alias="com.nevion.NMOS.enable_experimental_alarm")
     """
-	Enable experimental alarms using IS-07\n
-	Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled
+Enable experimental alarms using IS-07\n
+Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
     experimental_alarm_port: Optional[int] = Field(
         default=0, ge=0, le=65535, alias="com.nevion.NMOS.experimental_alarm_port"
     )
     """
-	Experimental alarm port\n
-	HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead
+Experimental alarm port\n
+HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
 	"""
 
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.NMOS.port")
     """
-	Port\n
-	The HTTP port used to reach the Node directly
+Port\n
+The HTTP port used to reach the Node directly\n
 	"""
 
 
@@ -67,54 +67,54 @@ class CustomSettings_com_nevion_NMOS_multidevice_0_1_0(DriverCustomSettings):
 
     always_enable_rtp: bool = Field(default=False, alias="com.nevion.NMOS_multidevice.always_enable_rtp")
     """
-	Always enable RTP\n
-	The "rtp_enabled" field in "transport_params" will always be set to true
+Always enable RTP\n
+The "rtp_enabled" field in "transport_params" will always be set to true\n
 	"""
 
     disable_rx_sdp: bool = Field(default=False, alias="com.nevion.NMOS_multidevice.disable_rx_sdp")
     """
-	Disable Rx SDP\n
-	Configure this unit's receivers with regular transport parameters only
+Disable Rx SDP\n
+Configure this unit's receivers with regular transport parameters only\n
 	"""
 
     disable_rx_sdp_with_null: bool = Field(default=True, alias="com.nevion.NMOS_multidevice.disable_rx_sdp_with_null")
     """
-	Disable Rx SDP with null\n
-	Configures how RX SDPs are disabled. If unchecked, an empty string is used
+Disable Rx SDP with null\n
+Configures how RX SDPs are disabled. If unchecked, an empty string is used\n
 	"""
 
     enable_bulk_config: bool = Field(default=False, alias="com.nevion.NMOS_multidevice.enable_bulk_config")
     """
-	Enable bulk config\n
-	Configure this unit using bulk API
+Enable bulk config\n
+Configure this unit using bulk API\n
 	"""
 
     enable_experimental_alarm: bool = Field(
         default=False, alias="com.nevion.NMOS_multidevice.enable_experimental_alarm"
     )
     """
-	Enable experimental alarms using IS-07\n
-	Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled
+Enable experimental alarms using IS-07\n
+Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
     experimental_alarm_port: Optional[int] = Field(
         default=0, ge=0, le=65535, alias="com.nevion.NMOS_multidevice.experimental_alarm_port"
     )
     """
-	Experimental alarm port\n
-	HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead
+Experimental alarm port\n
+HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
 	"""
 
     indices_in_ids: bool = Field(default=True, alias="com.nevion.NMOS_multidevice.indices_in_ids")
     """
-	Use indices in IDs\n
-	Enable if device reports static streams to get sortable ids
+Use indices in IDs\n
+Enable if device reports static streams to get sortable ids\n
 	"""
 
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.NMOS_multidevice.port")
     """
-	Port\n
-	The HTTP port used to reach the Node directly
+Port\n
+The HTTP port used to reach the Node directly\n
 	"""
 
 
@@ -147,7 +147,7 @@ class CustomSettings_com_nevion_amagi_cloudport_0_1_0(DriverCustomSettings):
 
     port: int = Field(default=4999, ge=0, le=65535, alias="com.nevion.amagi_cloudport.port")
     """
-	Port\n
+Port\n
 	"""
 
 
@@ -164,8 +164,8 @@ class CustomSettings_com_nevion_appeartv_x_platform_0_2_0(DriverCustomSettings):
 
     lan_wan_mapping: str = Field(default="", alias="com.nevion.appeartv_x_platform.lan_wan_mapping")
     """
-	LAN-WAN mapping\n
-	LAN/WAN module association map
+LAN-WAN mapping\n
+LAN/WAN module association map\n
 	"""
 
 
@@ -180,12 +180,12 @@ class CustomSettings_com_nevion_archwave_unet_0_1_0(DriverCustomSettings):
         default="Stereo", alias="com.nevion.archwave_unet.channel_mode"
     )
     """
-	Stream consumer channel mode\n
-	In Stereo mode the driver will only report one stream consumer (output) to the topology. The driver will automatically configure the second stream consumer based on the received SDP to the former consumer stream\n
-	In Dual Mono mode both stream consumers will be reported to the topology and handled as individual streams
-	Possible values:\n
-		`Dual Mono`: Dual Mono\n
-		`Stereo`: Stereo (default)
+Stream consumer channel mode\n
+In Stereo mode the driver will only report one stream consumer (output) to the topology. The driver will automatically configure the second stream consumer based on the received SDP to the former consumer stream\n
+In Dual Mono mode both stream consumers will be reported to the topology and handled as individual streams\n
+Possible values:\n
+	`Dual Mono`: Dual Mono\n
+	`Stereo`: Stereo (default)
 	"""
 
 
@@ -194,27 +194,27 @@ class CustomSettings_com_nevion_arista_0_1_0(DriverCustomSettings):
 
     enable_cache: bool = Field(default=True, alias="com.nevion.arista.enable_cache")
     """
-	Enable config related cache\n
+Enable config related cache\n
 	"""
 
     multicast_route_ignore: str = Field(default="", alias="com.nevion.arista.multicast_route_ignore")
     """
-	Multicast routes ignore list, comma separated\n
+Multicast routes ignore list, comma separated\n
 	"""
 
     use_multi_vrf: bool = Field(default=False, alias="com.nevion.arista.use_multi_vrf")
     """
-	Enable multi-VRF functionality\n
+Enable multi-VRF functionality\n
 	"""
 
     use_tls: bool = Field(default=True, alias="com.nevion.arista.use_tls")
     """
-	Use TLS (no certificate checks)\n
+Use TLS (no certificate checks)\n
 	"""
 
     use_twice_nat: bool = Field(default=False, alias="com.nevion.arista.use_twice_nat")
     """
-	Enable twice NAT functionality\n
+Enable twice NAT functionality\n
 	"""
 
 
@@ -239,28 +239,28 @@ class CustomSettings_com_nevion_avnpxh12_0_1_0(DriverCustomSettings):
 
     keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
     """
-	Send keep-alives\n
-	If selected, keep-alives will be used to determine reachability
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
 	"""
 
     port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
     """
-	Port\n
+Port\n
 	"""
 
     queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
     """
-	Request queueing\n
+Request queueing\n
 	"""
 
     suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
     """
-	Suppress illegal update warnings\n
+Suppress illegal update warnings\n
 	"""
 
     trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
     """
-	Tracing (logging intensive)\n
+Tracing (logging intensive)\n
 	"""
 
 
@@ -269,14 +269,14 @@ class CustomSettings_com_nevion_aws_media_0_1_0(DriverCustomSettings):
 
     n_flows: int = Field(default=10, ge=0, le=1000, alias="com.nevion.aws_media.n_flows")
     """
-	Max #Flows\n
-	Number of MediaConnect flows
+Max #Flows\n
+Number of MediaConnect flows\n
 	"""
 
     n_outputs_per_fow: int = Field(default=2, ge=0, le=50, alias="com.nevion.aws_media.n_outputs_per_fow")
     """
-	Max #Outputs/Flow\n
-	Number of outputs per MediaConnect flow
+Max #Outputs/Flow\n
+Number of outputs per MediaConnect flow\n
 	"""
 
 
@@ -293,8 +293,8 @@ class CustomSettings_com_nevion_cisco_catalyst_3850_0_1_0(DriverCustomSettings):
 
     sample_flows_interval: int = Field(default=0, ge=0, le=3600, alias="com.nevion.api.sample_flows_interval")
     """
-	Flow stats interval [s]\n
-	Interval at which to poll flow stats. 0 to disable.
+Flow stats interval [s]\n
+Interval at which to poll flow stats. 0 to disable.\n
 	"""
 
 
@@ -307,28 +307,28 @@ class CustomSettings_com_nevion_cisco_nexus_0_1_0(DriverCustomSettings):
 
     controlled_vrfs: str = Field(default="", alias="com.nevion.nexus.controlled_vrfs")
     """
-	Controlled VRFs\n
-	Comma-separated lists of VRFs to control. Empty list = all VRFs.
+Controlled VRFs\n
+Comma-separated lists of VRFs to control. Empty list = all VRFs.\n
 	"""
 
     full_vrf_control: bool = Field(default=False, alias="com.nevion.nexus.full_vrf_control")
     """
-	Full VRF Control\n
-	True = configure RPF for all/specified VRFs. False = only configure RPF for known source IP adresses.
+Full VRF Control\n
+True = configure RPF for all/specified VRFs. False = only configure RPF for known source IP adresses.\n
 	"""
 
     layer2_netmask_mode: bool = Field(default=False, alias="com.nevion.nexus.layer2_netmask_mode")
     """
-	Use /31 mroute netmask for layer 2\n
-	Use /31 mroute source address netmask for layer 2 mroutes, i.e. when source address and next-hop are identical.
+Use /31 mroute netmask for layer 2\n
+Use /31 mroute source address netmask for layer 2 mroutes, i.e. when source address and next-hop are identical.\n
 	"""
 
     periodic_netconf_restart: int = Field(
         default=0, ge=0, le=2147483647, alias="com.nevion.nexus.periodic_netconf_restart"
     )
     """
-	Restart netconf every (s)\n
-	Interval in seconds for periodic netconf connection restart. If 0, no restart is performed.
+Restart netconf every (s)\n
+Interval in seconds for periodic netconf connection restart. If 0, no restart is performed.\n
 	"""
 
 
@@ -337,13 +337,13 @@ class CustomSettings_com_nevion_cisco_nexus_nbm_0_1_0(DriverCustomSettings):
 
     sample_flows_interval: int = Field(default=0, ge=0, le=3600, alias="com.nevion.api.sample_flows_interval")
     """
-	Flow stats interval [s]\n
-	Interval at which to poll flow stats. 0 to disable.
+Flow stats interval [s]\n
+Interval at which to poll flow stats. 0 to disable.\n
 	"""
 
     use_nat: bool = Field(default=False, alias="com.nevion.cisco_nexus_nbm.use_nat")
     """
-	Enable NAT functionality\n
+Enable NAT functionality\n
 	"""
 
 
@@ -356,7 +356,7 @@ class CustomSettings_com_nevion_cp4400_0_1_0(DriverCustomSettings):
 
     reuse_ts_element: bool = Field(default=False, alias="com.nevion.null.reuse_ts_element")
     """
-	Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
+Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
 	"""
 
 
@@ -397,14 +397,14 @@ class CustomSettings_com_nevion_device_up_driver_0_1_0(DriverCustomSettings):
 
     retries: int = Field(default=1, ge=1, le=20, alias="com.nevion.device_up_driver.retries")
     """
-	Number of retries\n
-	The number of times the device will check reachability.
+Number of retries\n
+The number of times the device will check reachability.\n
 	"""
 
     timeout: int = Field(default=5, ge=0, le=20, alias="com.nevion.device_up_driver.timeout")
     """
-	Timeout [s]\n
-	Timeout in seconds. Upon reaching the timeout, the cache is considered stale and will be invalidated.
+Timeout [s]\n
+Timeout in seconds. Upon reaching the timeout, the cache is considered stale and will be invalidated.\n
 	"""
 
 
@@ -413,28 +413,28 @@ class CustomSettings_com_nevion_dhd_series52_0_1_0(DriverCustomSettings):
 
     keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
     """
-	Send keep-alives\n
-	If selected, keep-alives will be used to determine reachability
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
 	"""
 
     port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
     """
-	Port\n
+Port\n
 	"""
 
     queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
     """
-	Request queueing\n
+Request queueing\n
 	"""
 
     suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
     """
-	Suppress illegal update warnings\n
+Suppress illegal update warnings\n
 	"""
 
     trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
     """
-	Tracing (logging intensive)\n
+Tracing (logging intensive)\n
 	"""
 
 
@@ -463,58 +463,58 @@ class CustomSettings_com_nevion_emerge_openflow_0_0_1(DriverCustomSettings):
 
     sample_flows_interval: int = Field(default=0, ge=0, le=3600, alias="com.nevion.api.sample_flows_interval")
     """
-	Flow stats interval [s]\n
-	Interval at which to poll flow stats. 0 to disable.
+Flow stats interval [s]\n
+Interval at which to poll flow stats. 0 to disable.\n
 	"""
 
     ipv4address: str = Field(default="", alias="com.nevion.emerge_openflow.ipv4address")
     """
-	IPv4 address\n
-	Required when using DPID as main address instead of IPv4 (cluster)
+IPv4 address\n
+Required when using DPID as main address instead of IPv4 (cluster)\n
 	"""
 
     openflow_allow_groups: bool = Field(default=True, alias="com.nevion.openflow_allow_groups")
     """
-	Allow groups\n
-	Allow use of group actions in flows
+Allow groups\n
+Allow use of group actions in flows\n
 	"""
 
     openflow_flow_priority: int = Field(default=60000, ge=2, le=65535, alias="com.nevion.openflow_flow_priority")
     """
-	Flow Priority\n
-	Flow priority used by videoipath
+Flow Priority\n
+Flow priority used by videoipath\n
 	"""
 
     openflow_interface_shutdown_alarms: bool = Field(
         default=False, alias="com.nevion.openflow_interface_shutdown_alarms"
     )
     """
-	Interface shutdown alarms\n
-	Allow service correlated alarms when admin shuts down an interface
+Interface shutdown alarms\n
+Allow service correlated alarms when admin shuts down an interface\n
 	"""
 
     openflow_max_buckets: int = Field(default=65535, ge=2, le=65535, alias="com.nevion.openflow_max_buckets")
     """
-	Max buckets\n
-	Max number of buckets in an openflow group
+Max buckets\n
+Max number of buckets in an openflow group\n
 	"""
 
     openflow_max_groups: int = Field(default=65535, ge=1, le=65535, alias="com.nevion.openflow_max_groups")
     """
-	Max groups\n
-	Max number of groups on the switch
+Max groups\n
+Max number of groups on the switch\n
 	"""
 
     openflow_max_meters: int = Field(default=65535, ge=2, le=65535, alias="com.nevion.openflow_max_meters")
     """
-	Max meters\n
-	Max number of meters on the switch
+Max meters\n
+Max number of meters on the switch\n
 	"""
 
     openflow_table_id: int = Field(default=0, ge=0, le=255, alias="com.nevion.openflow_table_id")
     """
-	Table ID\n
-	Table ID to use for videoipath flows
+Table ID\n
+Table ID to use for videoipath flows\n
 	"""
 
 
@@ -523,8 +523,8 @@ class CustomSettings_com_nevion_ericsson_avp2000_0_1_0(DriverCustomSettings):
 
     use_alarm_map: bool = Field(default=True, alias="com.nevion.ericsson.use_alarm_map")
     """
-	Map alarms\n
-	If enabled, only relevant alerts will be raised.
+Map alarms\n
+If enabled, only relevant alerts will be raised.\n
 	"""
 
 
@@ -533,8 +533,8 @@ class CustomSettings_com_nevion_ericsson_ce_0_1_0(DriverCustomSettings):
 
     use_alarm_map: bool = Field(default=True, alias="com.nevion.ericsson.use_alarm_map")
     """
-	Map alarms\n
-	If enabled, only relevant alerts will be raised.
+Map alarms\n
+If enabled, only relevant alerts will be raised.\n
 	"""
 
 
@@ -543,8 +543,8 @@ class CustomSettings_com_nevion_ericsson_rx8200_0_1_0(DriverCustomSettings):
 
     use_alarm_map: bool = Field(default=True, alias="com.nevion.ericsson.use_alarm_map")
     """
-	Map alarms\n
-	If enabled, only relevant alerts will be raised.
+Map alarms\n
+If enabled, only relevant alerts will be raised.\n
 	"""
 
 
@@ -581,14 +581,14 @@ class CustomSettings_com_nevion_evertz_5782dec_0_1_0(DriverCustomSettings):
 
     enable_frame_controller: bool = Field(default=False, alias="com.nevion.evertz.enable_frame_controller")
     """
-	Enable Frame Controller\n
-	Control card through Frame Controller
+Enable Frame Controller\n
+Control card through Frame Controller\n
 	"""
 
     frame_controller_slot: int = Field(default=1, ge=1, le=15, alias="com.nevion.evertz.frame_controller_slot")
     """
-	Frame Controller Slot\n
-	Defines which slot will be used for communication
+Frame Controller Slot\n
+Defines which slot will be used for communication\n
 	"""
 
 
@@ -597,14 +597,14 @@ class CustomSettings_com_nevion_evertz_5782enc_0_1_0(DriverCustomSettings):
 
     enable_frame_controller: bool = Field(default=False, alias="com.nevion.evertz.enable_frame_controller")
     """
-	Enable Frame Controller\n
-	Control card through Frame Controller
+Enable Frame Controller\n
+Control card through Frame Controller\n
 	"""
 
     frame_controller_slot: int = Field(default=1, ge=1, le=15, alias="com.nevion.evertz.frame_controller_slot")
     """
-	Frame Controller Slot\n
-	Defines which slot will be used for communication
+Frame Controller Slot\n
+Defines which slot will be used for communication\n
 	"""
 
 
@@ -621,14 +621,14 @@ class CustomSettings_com_nevion_evertz_7882dec_0_1_0(DriverCustomSettings):
 
     enable_frame_controller: bool = Field(default=False, alias="com.nevion.evertz.enable_frame_controller")
     """
-	Enable Frame Controller\n
-	Control card through Frame Controller
+Enable Frame Controller\n
+Control card through Frame Controller\n
 	"""
 
     frame_controller_slot: int = Field(default=1, ge=1, le=15, alias="com.nevion.evertz.frame_controller_slot")
     """
-	Frame Controller Slot\n
-	Defines which slot will be used for communication
+Frame Controller Slot\n
+Defines which slot will be used for communication\n
 	"""
 
 
@@ -637,14 +637,14 @@ class CustomSettings_com_nevion_evertz_7882enc_0_1_0(DriverCustomSettings):
 
     enable_frame_controller: bool = Field(default=False, alias="com.nevion.evertz.enable_frame_controller")
     """
-	Enable Frame Controller\n
-	Control card through Frame Controller
+Enable Frame Controller\n
+Control card through Frame Controller\n
 	"""
 
     frame_controller_slot: int = Field(default=1, ge=1, le=15, alias="com.nevion.evertz.frame_controller_slot")
     """
-	Frame Controller Slot\n
-	Defines which slot will be used for communication
+Frame Controller Slot\n
+Defines which slot will be used for communication\n
 	"""
 
 
@@ -653,28 +653,28 @@ class CustomSettings_com_nevion_flexAI_0_1_0(DriverCustomSettings):
 
     keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
     """
-	Send keep-alives\n
-	If selected, keep-alives will be used to determine reachability
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
 	"""
 
     port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
     """
-	Port\n
+Port\n
 	"""
 
     queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
     """
-	Request queueing\n
+Request queueing\n
 	"""
 
     suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
     """
-	Suppress illegal update warnings\n
+Suppress illegal update warnings\n
 	"""
 
     trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
     """
-	Tracing (logging intensive)\n
+Tracing (logging intensive)\n
 	"""
 
 
@@ -699,7 +699,7 @@ class CustomSettings_com_nevion_gv_kahuna_0_1_0(DriverCustomSettings):
 
     port: int = Field(default=2022, ge=0, le=65535, alias="com.nevion.gv_kahuna.port")
     """
-	Port\n
+Port\n
 	"""
 
 
@@ -740,39 +740,39 @@ class CustomSettings_com_nevion_lawo_ravenna_0_1_0(DriverCustomSettings):
 
     keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
     """
-	Send keep-alives\n
-	If selected, keep-alives will be used to determine reachability
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
 	"""
 
     port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
     """
-	Port\n
+Port\n
 	"""
 
     queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
     """
-	Request queueing\n
+Request queueing\n
 	"""
 
     request_separation: int = Field(default=0, ge=0, le=250, alias="com.nevion.emberplus.request_separation")
     """
-	Request Separation [ms]\n
-	Set to zero to disable.
+Request Separation [ms]\n
+Set to zero to disable.\n
 	"""
 
     suppress_illegal: bool = Field(default=True, alias="com.nevion.emberplus.suppress_illegal")
     """
-	Suppress illegal update warnings\n
+Suppress illegal update warnings\n
 	"""
 
     trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
     """
-	Tracing (logging intensive)\n
+Tracing (logging intensive)\n
 	"""
 
     ctrl_local_addr: bool = Field(default=False, alias="com.nevion.lawo_ravenna.ctrl_local_addr")
     """
-	Control Local Addresses\n
+Control Local Addresses\n
 	"""
 
 
@@ -801,17 +801,17 @@ class CustomSettings_com_nevion_md8000_0_1_0(DriverCustomSettings):
 
     mac_table_cache_timeout: int = Field(default=10, ge=0, le=300, alias="com.nevion.md8000.mac_table_cache_timeout")
     """
-	MAC table cache timeout\n
-	Timeout in seconds. Upon reaching the timeout, the cache is considered stale and will be invalidated
+MAC table cache timeout\n
+Timeout in seconds. Upon reaching the timeout, the cache is considered stale and will be invalidated\n
 	"""
 
     report_alerts: Literal["no", "yes"] = Field(default="yes", alias="com.nevion.md8000.report_alerts")
     """
-	Report alerts\n
-	Toggles whether or not the driver reports alerts
-	Possible values:\n
-		`no`: No\n
-		`yes`: Yes (default)
+Report alerts\n
+Toggles whether or not the driver reports alerts\n
+Possible values:\n
+	`no`: No\n
+	`yes`: Yes (default)
 	"""
 
 
@@ -828,124 +828,124 @@ class CustomSettings_com_nevion_mock_0_1_0(DriverCustomSettings):
 
     sample_flows_interval: int = Field(default=0, ge=0, le=3600, alias="com.nevion.api.sample_flows_interval")
     """
-	Flow stats interval [s]\n
-	Interval at which to poll flow stats. 0 to disable.
+Flow stats interval [s]\n
+Interval at which to poll flow stats. 0 to disable.\n
 	"""
 
     always_compute_rx_sdp: bool = Field(default=False, alias="com.nevion.mock.always_compute_rx_sdp")
     """
-	Always compute Rx SDP\n
-	If enabled, VIP will generate a SDP for a receiver even if the sender does not publish a SDP itself
+Always compute Rx SDP\n
+If enabled, VIP will generate a SDP for a receiver even if the sender does not publish a SDP itself\n
 	"""
 
     bulk: bool = Field(default=True, alias="com.nevion.mock.bulk")
     """
-	Bulk config\n
+Bulk config\n
 	"""
 
     delay: int = Field(default=0, ge=0, le=10000, alias="com.nevion.mock.delay")
     """
-	Delay\n
+Delay\n
 	"""
 
     matrix_type: Literal["N:N", "1:N", "1:1"] = Field(default="1:N", alias="com.nevion.mock.matrix_type")
     """
-	Matrix Type\n
-	Possible values:\n
-		`N:N`: N:N\n
-		`1:N`: 1:N (default)\n
-		`1:1`: 1:1
+Matrix Type\n
+Possible values:\n
+	`N:N`: N:N\n
+	`1:N`: 1:N (default)\n
+	`1:1`: 1:1
 	"""
 
     nmetrics: int = Field(default=0, alias="com.nevion.mock.nmetrics")
     """
-	Number of ports for metrics (nPorts * 12)\n
-	Number of metrics per device
+Number of ports for metrics (nPorts * 12)\n
+Number of metrics per device\n
 	"""
 
     num_codec_modules: int = Field(default=2, ge=0, le=10, alias="com.nevion.mock.num_codec_modules")
     """
-	#Codecs\n
-	Number of codec modules
+#Codecs\n
+Number of codec modules\n
 	"""
 
     num_dynamic_resource_modules: int = Field(
         default=0, ge=0, le=10, alias="com.nevion.mock.num_dynamic_resource_modules"
     )
     """
-	#DynamicResourceMods\n
-	Number of dynamic resource modules
+#DynamicResourceMods\n
+Number of dynamic resource modules\n
 	"""
 
     num_gpis: int = Field(default=0, ge=0, le=10000, alias="com.nevion.mock.num_gpis")
     """
-	#GPIs\n
-	Number of GPIs. Automatically flips every 2.
+#GPIs\n
+Number of GPIs. Automatically flips every 2.\n
 	"""
 
     num_gpos: int = Field(default=0, ge=0, le=10000, alias="com.nevion.mock.num_gpos")
     """
-	#GPOs\n
-	Number of GPOs
+#GPOs\n
+Number of GPOs\n
 	"""
 
     num_resource_modules: int = Field(default=0, ge=0, le=10, alias="com.nevion.mock.num_resource_modules")
     """
-	#ResourceMods\n
-	Number of resource modules
+#ResourceMods\n
+Number of resource modules\n
 	"""
 
     num_router_modules: int = Field(default=0, ge=0, le=10, alias="com.nevion.mock.num_router_modules")
     """
-	#VRouters\n
-	Number of router modules
+#VRouters\n
+Number of router modules\n
 	"""
 
     num_router_ports: int = Field(default=32, ge=0, le=10000, alias="com.nevion.mock.num_router_ports")
     """
-	#VRouterPorts\n
-	Number of in/out ports per router module
+#VRouterPorts\n
+Number of in/out ports per router module\n
 	"""
 
     num_switch_modules: int = Field(default=0, ge=0, le=10, alias="com.nevion.mock.num_switch_modules")
     """
-	#Switches\n
-	Number of switch modules
+#Switches\n
+Number of switch modules\n
 	"""
 
     persist: bool = Field(default=True, alias="com.nevion.mock.persist")
     """
-	Persist data\n
-	If enabled configs, source ips etc. will be persisted to disk
+Persist data\n
+If enabled configs, source ips etc. will be persisted to disk\n
 	"""
 
     populate_router_matrix: bool = Field(default=False, alias="com.nevion.mock.populate_router_matrix")
     """
-	Populate router matrix\n
-	Populate default router matrix crosspoints
+Populate router matrix\n
+Populate default router matrix crosspoints\n
 	"""
 
     ptpClockType: int = Field(default=0, alias="com.nevion.mock.ptpClockType")
     """
-	PTP clock type\n
-	0: Ordinary, 1: Transparent, 2: Boundary, 3: Grandmaster
+PTP clock type\n
+0: Ordinary, 1: Transparent, 2: Boundary, 3: Grandmaster\n
 	"""
 
     tally_ids: str = Field(default="", alias="com.nevion.mock.tally_ids")
     """
-	Tally ids\n
-	Comma separated list of tally ids
+Tally ids\n
+Comma separated list of tally ids\n
 	"""
 
     tally_master: str = Field(default="", alias="com.nevion.mock.tally_master")
     """
-	Tally Master data\n
-	Comma separated list of 'domain/group/color' triples
+Tally Master data\n
+Comma separated list of 'domain/group/color' triples\n
 	"""
 
     matrixId: str = Field(default="", alias="matrixId")
     """
-	Custom matrix ID\n
+Custom matrix ID\n
 	"""
 
 
@@ -972,14 +972,14 @@ class CustomSettings_com_nevion_ndi_0_1_0(DriverCustomSettings):
         default=10, ge=0, le=65535, alias="com.nevion.ndi.num_virtual_routing_instances"
     )
     """
-	Virtual Routing instances\n
-	The number of Virtual Routing instances (destinations) to create
+Virtual Routing instances\n
+The number of Virtual Routing instances (destinations) to create\n
 	"""
 
     port: int = Field(default=8765, ge=0, le=65535, alias="com.nevion.ndi.port")
     """
-	Port\n
-	Port used to connect to the NDI router
+Port\n
+Port used to connect to the NDI router\n
 	"""
 
 
@@ -1004,28 +1004,28 @@ class CustomSettings_com_nevion_nodectrl_0_1_0(DriverCustomSettings):
 
     keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
     """
-	Send keep-alives\n
-	If selected, keep-alives will be used to determine reachability
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
 	"""
 
     port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
     """
-	Port\n
+Port\n
 	"""
 
     queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
     """
-	Request queueing\n
+Request queueing\n
 	"""
 
     suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
     """
-	Suppress illegal update warnings\n
+Suppress illegal update warnings\n
 	"""
 
     trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
     """
-	Tracing (logging intensive)\n
+Tracing (logging intensive)\n
 	"""
 
 
@@ -1046,7 +1046,7 @@ class CustomSettings_com_nevion_nx4600_0_1_0(DriverCustomSettings):
 
     reuse_ts_element: bool = Field(default=False, alias="com.nevion.null.reuse_ts_element")
     """
-	Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
+Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
 	"""
 
 
@@ -1055,12 +1055,12 @@ class CustomSettings_com_nevion_nxl_me80_1_0_0(DriverCustomSettings):
 
     wan1_port_start_number: int = Field(default=0, ge=0, le=65520, alias="com.nevion.nxl_me80.wan1_port_start_number")
     """
-	WAN 1 Port start number\n
+WAN 1 Port start number\n
 	"""
 
     wan2_port_start_number: int = Field(default=0, ge=0, le=65520, alias="com.nevion.nxl_me80.wan2_port_start_number")
     """
-	WAN 2 Port start number\n
+WAN 2 Port start number\n
 	"""
 
 
@@ -1069,52 +1069,52 @@ class CustomSettings_com_nevion_openflow_0_0_1(DriverCustomSettings):
 
     sample_flows_interval: int = Field(default=0, ge=0, le=3600, alias="com.nevion.api.sample_flows_interval")
     """
-	Flow stats interval [s]\n
-	Interval at which to poll flow stats. 0 to disable.
+Flow stats interval [s]\n
+Interval at which to poll flow stats. 0 to disable.\n
 	"""
 
     openflow_allow_groups: bool = Field(default=True, alias="com.nevion.openflow_allow_groups")
     """
-	Allow groups\n
-	Allow use of group actions in flows
+Allow groups\n
+Allow use of group actions in flows\n
 	"""
 
     openflow_flow_priority: int = Field(default=60000, ge=2, le=65535, alias="com.nevion.openflow_flow_priority")
     """
-	Flow Priority\n
-	Flow priority used by videoipath
+Flow Priority\n
+Flow priority used by videoipath\n
 	"""
 
     openflow_interface_shutdown_alarms: bool = Field(
         default=False, alias="com.nevion.openflow_interface_shutdown_alarms"
     )
     """
-	Interface shutdown alarms\n
-	Allow service correlated alarms when admin shuts down an interface
+Interface shutdown alarms\n
+Allow service correlated alarms when admin shuts down an interface\n
 	"""
 
     openflow_max_buckets: int = Field(default=65535, ge=2, le=65535, alias="com.nevion.openflow_max_buckets")
     """
-	Max buckets\n
-	Max number of buckets in an openflow group
+Max buckets\n
+Max number of buckets in an openflow group\n
 	"""
 
     openflow_max_groups: int = Field(default=65535, ge=1, le=65535, alias="com.nevion.openflow_max_groups")
     """
-	Max groups\n
-	Max number of groups on the switch
+Max groups\n
+Max number of groups on the switch\n
 	"""
 
     openflow_max_meters: int = Field(default=65535, ge=2, le=65535, alias="com.nevion.openflow_max_meters")
     """
-	Max meters\n
-	Max number of meters on the switch
+Max meters\n
+Max number of meters on the switch\n
 	"""
 
     openflow_table_id: int = Field(default=0, ge=0, le=255, alias="com.nevion.openflow_table_id")
     """
-	Table ID\n
-	Table ID to use for videoipath flows
+Table ID\n
+Table ID to use for videoipath flows\n
 	"""
 
 
@@ -1123,7 +1123,7 @@ class CustomSettings_com_nevion_powercore_0_1_0(DriverCustomSettings):
 
     stream_alerts: bool = Field(default=False, alias="com.nevion.powercore.stream_alerts")
     """
-	Enable Output(RX) flag notifications\n
+Enable Output(RX) flag notifications\n
 	"""
 
 
@@ -1136,7 +1136,7 @@ class CustomSettings_com_nevion_r3lay_0_1_0(DriverCustomSettings):
 
     port: int = Field(default=9998, ge=0, le=65535, alias="com.nevion.r3lay.port")
     """
-	Port\n
+Port\n
 	"""
 
 
@@ -1145,34 +1145,34 @@ class CustomSettings_com_nevion_selenio_13p_0_1_0(DriverCustomSettings):
 
     assume_success_after: int = Field(default=0, alias="com.nevion.selenio_13p.assume_success_after")
     """
-	Assume successful response after [ms]\n
-	Assume a configuration was successfully applied after time given in milliseconds, only use if slow response time from Selenio is a problem. Use with care.
+Assume successful response after [ms]\n
+Assume a configuration was successfully applied after time given in milliseconds, only use if slow response time from Selenio is a problem. Use with care.\n
 	"""
 
     cache_alarm_config_timeout: int = Field(
         default=1800, ge=0, le=252635728, alias="com.nevion.selenio_13p.cache_alarm_config_timeout"
     )
     """
-	Alarm config cache timeout [s]\n
-	Alarm config cache timeout in seconds. The alarm config is used to fetch severity level for each alarm
+Alarm config cache timeout [s]\n
+Alarm config cache timeout in seconds. The alarm config is used to fetch severity level for each alarm\n
 	"""
 
     cache_timeout: int = Field(default=60, ge=0, le=600, alias="com.nevion.selenio_13p.cache_timeout")
     """
-	Cache timeout [s]\n
-	Driver cache timeout in seconds
+Cache timeout [s]\n
+Driver cache timeout in seconds\n
 	"""
 
     manager_ip: str = Field(default="", alias="com.nevion.selenio_13p.manager_ip")
     """
-	Manager Address\n
-	Network address of the manager controlling this element
+Manager Address\n
+Network address of the manager controlling this element\n
 	"""
 
     nmos_port: int = Field(default=8100, ge=1, le=65535, alias="com.nevion.selenio_13p.nmos_port")
     """
-	Port\n
-	The HTTP port used to reach the Node directly
+Port\n
+The HTTP port used to reach the Node directly\n
 	"""
 
 
@@ -1181,8 +1181,8 @@ class CustomSettings_com_nevion_sencore_dmg_0_1_0(DriverCustomSettings):
 
     lan_wan_mapping: str = Field(default="", alias="com.nevion.sencore_dmg.lan_wan_mapping")
     """
-	LAN-WAN mapping\n
-	LAN/WAN module association map
+LAN-WAN mapping\n
+LAN/WAN module association map\n
 	"""
 
 
@@ -1195,52 +1195,52 @@ class CustomSettings_com_nevion_sony_nxlk_ip50y_0_1_0(DriverCustomSettings):
 
     deviceId: str = Field(default="", alias="com.nevion.ndcp.deviceId")
     """
-	NDCP device id\n
-	Device id usually auto-populated by device discovery
+NDCP device id\n
+Device id usually auto-populated by device discovery\n
 	"""
 
     always_enable_rtp: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip50y.always_enable_rtp")
     """
-	Always enable RTP\n
-	The "rtp_enabled" field in "transport_params" will always be set to true
+Always enable RTP\n
+The "rtp_enabled" field in "transport_params" will always be set to true\n
 	"""
 
     disable_rx_sdp: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip50y.disable_rx_sdp")
     """
-	Disable Rx SDP\n
-	Configure this unit's receivers with regular transport parameters only
+Disable Rx SDP\n
+Configure this unit's receivers with regular transport parameters only\n
 	"""
 
     disable_rx_sdp_with_null: bool = Field(default=True, alias="com.nevion.sony_nxlk-ip50y.disable_rx_sdp_with_null")
     """
-	Disable Rx SDP with null\n
-	Configures how RX SDPs are disabled. If unchecked, an empty string is used
+Disable Rx SDP with null\n
+Configures how RX SDPs are disabled. If unchecked, an empty string is used\n
 	"""
 
     enable_bulk_config: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip50y.enable_bulk_config")
     """
-	Enable bulk config\n
-	Configure this unit using bulk API
+Enable bulk config\n
+Configure this unit using bulk API\n
 	"""
 
     enable_experimental_alarm: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip50y.enable_experimental_alarm")
     """
-	Enable experimental alarms using IS-07\n
-	Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled
+Enable experimental alarms using IS-07\n
+Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
     experimental_alarm_port: Optional[int] = Field(
         default=0, ge=0, le=65535, alias="com.nevion.sony_nxlk-ip50y.experimental_alarm_port"
     )
     """
-	Experimental alarm port\n
-	HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead
+Experimental alarm port\n
+HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
 	"""
 
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.sony_nxlk-ip50y.port")
     """
-	Port\n
-	The HTTP port used to reach the Node directly
+Port\n
+The HTTP port used to reach the Node directly\n
 	"""
 
 
@@ -1249,52 +1249,52 @@ class CustomSettings_com_nevion_sony_nxlk_ip51y_0_1_0(DriverCustomSettings):
 
     deviceId: str = Field(default="", alias="com.nevion.ndcp.deviceId")
     """
-	NDCP device id\n
-	Device id usually auto-populated by device discovery
+NDCP device id\n
+Device id usually auto-populated by device discovery\n
 	"""
 
     always_enable_rtp: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip51y.always_enable_rtp")
     """
-	Always enable RTP\n
-	The "rtp_enabled" field in "transport_params" will always be set to true
+Always enable RTP\n
+The "rtp_enabled" field in "transport_params" will always be set to true\n
 	"""
 
     disable_rx_sdp: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip51y.disable_rx_sdp")
     """
-	Disable Rx SDP\n
-	Configure this unit's receivers with regular transport parameters only
+Disable Rx SDP\n
+Configure this unit's receivers with regular transport parameters only\n
 	"""
 
     disable_rx_sdp_with_null: bool = Field(default=True, alias="com.nevion.sony_nxlk-ip51y.disable_rx_sdp_with_null")
     """
-	Disable Rx SDP with null\n
-	Configures how RX SDPs are disabled. If unchecked, an empty string is used
+Disable Rx SDP with null\n
+Configures how RX SDPs are disabled. If unchecked, an empty string is used\n
 	"""
 
     enable_bulk_config: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip51y.enable_bulk_config")
     """
-	Enable bulk config\n
-	Configure this unit using bulk API
+Enable bulk config\n
+Configure this unit using bulk API\n
 	"""
 
     enable_experimental_alarm: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip51y.enable_experimental_alarm")
     """
-	Enable experimental alarms using IS-07\n
-	Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled
+Enable experimental alarms using IS-07\n
+Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
     experimental_alarm_port: Optional[int] = Field(
         default=0, ge=0, le=65535, alias="com.nevion.sony_nxlk-ip51y.experimental_alarm_port"
     )
     """
-	Experimental alarm port\n
-	HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead
+Experimental alarm port\n
+HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
 	"""
 
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.sony_nxlk-ip51y.port")
     """
-	Port\n
-	The HTTP port used to reach the Node directly
+Port\n
+The HTTP port used to reach the Node directly\n
 	"""
 
 
@@ -1303,8 +1303,8 @@ class CustomSettings_com_nevion_spg9000_0_1_0(DriverCustomSettings):
 
     x_api_key: str = Field(default="apikey", alias="com.nevion.spg9000.x_api_key")
     """
-	x-api-key\n
-	x-api-key (configurable in SPG9000's System tab)
+x-api-key\n
+x-api-key (configurable in SPG9000's System tab)\n
 	"""
 
 
@@ -1313,8 +1313,8 @@ class CustomSettings_com_nevion_starfish_splicer_0_1_0(DriverCustomSettings):
 
     api_port: int = Field(default=8080, ge=1, le=65535, alias="com.nevion.starfish_splicer.api_port")
     """
-	API Port\n
-	The HTTP port used to reach the API of the device directly
+API Port\n
+The HTTP port used to reach the API of the device directly\n
 	"""
 
 
@@ -1327,14 +1327,14 @@ class CustomSettings_com_nevion_tag_mcm9000_0_1_0(DriverCustomSettings):
 
     enable_bulk_config: bool = Field(default=False, alias="com.nevion.tag_mcm9000.enable_bulk_config")
     """
-	Enable bulk config\n
-	Configure this unit using bulk API
+Enable bulk config\n
+Configure this unit using bulk API\n
 	"""
 
     enable_legacy_uuid_api: bool = Field(default=False, alias="com.nevion.tag_mcm9000.enable_legacy_uuid_api")
     """
-	Enable 4.1 API (legacy UUIDs)\n
-	Uses legacy uppercase UUIDs in API to match previously synced topologies
+Enable 4.1 API (legacy UUIDs)\n
+Uses legacy uppercase UUIDs in API to match previously synced topologies\n
 	"""
 
 
@@ -1343,8 +1343,8 @@ class CustomSettings_com_nevion_tag_mcs_0_1_0(DriverCustomSettings):
 
     enable_bulk_config: bool = Field(default=True, alias="com.nevion.tag_mcs.enable_bulk_config")
     """
-	Enable bulk config\n
-	Configure this unit using bulk API
+Enable bulk config\n
+Configure this unit using bulk API\n
 	"""
 
 
@@ -1353,34 +1353,34 @@ class CustomSettings_com_nevion_tally_0_1_0(DriverCustomSettings):
 
     primary_port: int = Field(default=8900, ge=1, le=65535, alias="com.nevion.tally.primary_port")
     """
-	Primary Port\n
+Primary Port\n
 	"""
 
     screen_id: int = Field(default=0, ge=0, le=65535, alias="com.nevion.tally.screen_id")
     """
-	Static Screen ID\n
-	Screen ID
+Static Screen ID\n
+Screen ID\n
 	"""
 
     secondary_port: int = Field(default=8900, ge=1, le=65535, alias="com.nevion.tally.secondary_port")
     """
-	Secondary Port\n
+Secondary Port\n
 	"""
 
     tally_brightness: Literal[3, 2, 1, 0] = Field(default=3, alias="com.nevion.tally.tally_brightness")
     """
-	Static Tally Brightness\n
-	Tally Brightness
-	Possible values:\n
-		`3`: Full (default)\n
-		`2`: Half\n
-		`1`: 1/7th\n
-		`0`: Zero
+Static Tally Brightness\n
+Tally Brightness\n
+Possible values:\n
+	`3`: Full (default)\n
+	`2`: Half\n
+	`1`: 1/7th\n
+	`0`: Zero
 	"""
 
     x_number_of_umd: int = Field(default=32, ge=1, le=256, alias="com.nevion.tally.x_number_of_umd")
     """
-	Number of UMDs\n
+Number of UMDs\n
 	"""
 
 
@@ -1397,7 +1397,7 @@ class CustomSettings_com_nevion_tns4200_0_1_0(DriverCustomSettings):
 
     reuse_ts_element: bool = Field(default=False, alias="com.nevion.null.reuse_ts_element")
     """
-	Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
+Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
 	"""
 
 
@@ -1444,19 +1444,19 @@ class CustomSettings_com_nevion_tvg480_0_1_0(DriverCustomSettings):
         default="full_control", alias="com.nevion.tvg480.control_mode"
     )
     """
-	Control Mode\n
-	Which control mode has Videoipath over the device.
-	Possible values:\n
-		`full_control`: Full control (default)\n
-		`partial_control_with_config_restore`: Partial control with config restore
+Control Mode\n
+Which control mode has Videoipath over the device.\n
+Possible values:\n
+	`full_control`: Full control (default)\n
+	`partial_control_with_config_restore`: Partial control with config restore
 	"""
 
     partial_control_config_slot: int = Field(
         default=0, ge=0, le=7, alias="com.nevion.tvg480.partial_control_config_slot"
     )
     """
-	Partial control config slot\n
-	Config slot to use when partial control with config restore is used.
+Partial control config slot\n
+Config slot to use when partial control with config restore is used.\n
 	"""
 
 
@@ -1469,8 +1469,8 @@ class CustomSettings_com_nevion_txdarwin_dynamic_0_1_0(DriverCustomSettings):
 
     port: int = Field(default=9000, ge=1, le=65535, alias="com.nevion.txdarwin_dynamic.port")
     """
-	GraphQL port\n
-	The HTTP port used to reach the GraphQL API
+GraphQL port\n
+The HTTP port used to reach the GraphQL API\n
 	"""
 
 
@@ -1479,8 +1479,8 @@ class CustomSettings_com_nevion_txdarwin_static_0_1_0(DriverCustomSettings):
 
     port: int = Field(default=9000, ge=1, le=65535, alias="com.nevion.txdarwin_static.port")
     """
-	GraphQL port\n
-	The HTTP port used to reach the GraphQL API
+GraphQL port\n
+The HTTP port used to reach the GraphQL API\n
 	"""
 
 
@@ -1489,8 +1489,8 @@ class CustomSettings_com_nevion_txedge_0_1_0(DriverCustomSettings):
 
     selected_edge: str = Field(default="", alias="com.nevion.txedge.selected_edge")
     """
-	Choose tx edge\n
-	Write down the name of the edge you want to use
+Choose tx edge\n
+Write down the name of the edge you want to use\n
 	"""
 
 
@@ -1511,7 +1511,7 @@ class CustomSettings_com_nevion_virtuoso_0_1_0(DriverCustomSettings):
 
     reuse_ts_element: bool = Field(default=False, alias="com.nevion.null.reuse_ts_element")
     """
-	Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
+Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
 	"""
 
 
@@ -1520,8 +1520,8 @@ class CustomSettings_com_nevion_virtuoso_fa_0_1_0(DriverCustomSettings):
 
     enable_hibernation: bool = Field(default=False, alias="com.nevion.virtuoso_fa.enable_hibernation")
     """
-	Enable hibernation & wake up(supported for v.3.2.14 and above)\n
-	Automatically put modules not involved in any connection into hibernation. Automatically wake up hibernating modules when setting up a connection involving them.
+Enable hibernation & wake up(supported for v.3.2.14 and above)\n
+Automatically put modules not involved in any connection into hibernation. Automatically wake up hibernating modules when setting up a connection involving them.\n
 	"""
 
 
@@ -1530,32 +1530,32 @@ class CustomSettings_com_nevion_virtuoso_mi_0_1_0(DriverCustomSettings):
 
     AdvancedReachabilityCheck: bool = Field(default=True, alias="com.nevion.virtuoso_mi.AdvancedReachabilityCheck")
     """
-	Enable advanced communication check\n
-	Use a more thorough communication check, this will report an IP address as down if all HBR cards have a status of 'Booting' 
+Enable advanced communication check\n
+Use a more thorough communication check, this will report an IP address as down if all HBR cards have a status of 'Booting' \n
 	"""
 
     enable_bulk_config: bool = Field(default=False, alias="com.nevion.virtuoso_mi.enable_bulk_config")
     """
-	Enable bulk config\n
-	Configure this unit's audio elements using bulk API
+Enable bulk config\n
+Configure this unit's audio elements using bulk API\n
 	"""
 
     enable_hibernation: bool = Field(default=False, alias="com.nevion.virtuoso_mi.enable_hibernation")
     """
-	Enable hibernation & wake up(supported for v.1.8.8 and above)\n
-	Automatically put modules not involved in any connection into hibernation. Automatically wake up hibernating modules when setting up a connection involving them.
+Enable hibernation & wake up(supported for v.1.8.8 and above)\n
+Automatically put modules not involved in any connection into hibernation. Automatically wake up hibernating modules when setting up a connection involving them.\n
 	"""
 
     linear_uplink_support: bool = Field(default=False, alias="com.nevion.virtuoso_mi.linear_uplink_support")
     """
-	Support uplink routing for Linear cards\n
-	Support backplane routing to Uplink cards for Linear cards
+Support uplink routing for Linear cards\n
+Support backplane routing to Uplink cards for Linear cards\n
 	"""
 
     madi_uplink_support: bool = Field(default=False, alias="com.nevion.virtuoso_mi.madi_uplink_support")
     """
-	Support uplink routing for MADI cards\n
-	Support backplane routing to Uplink cards for MADI cards
+Support uplink routing for MADI cards\n
+Support backplane routing to Uplink cards for MADI cards\n
 	"""
 
 
@@ -1564,26 +1564,26 @@ class CustomSettings_com_nevion_virtuoso_re_0_1_0(DriverCustomSettings):
 
     AdvancedReachabilityCheck: bool = Field(default=True, alias="com.nevion.virtuoso_re.AdvancedReachabilityCheck")
     """
-	Enable advanced communication check\n
-	Use a more thorough communication check, this will report an IP address as down if all HBR cards have a status of 'Booting' 
+Enable advanced communication check\n
+Use a more thorough communication check, this will report an IP address as down if all HBR cards have a status of 'Booting' \n
 	"""
 
     enable_bulk_config: bool = Field(default=False, alias="com.nevion.virtuoso_re.enable_bulk_config")
     """
-	Enable bulk config\n
-	Configure this unit's audio elements using bulk API
+Enable bulk config\n
+Configure this unit's audio elements using bulk API\n
 	"""
 
     linear_uplink_support: bool = Field(default=False, alias="com.nevion.virtuoso_re.linear_uplink_support")
     """
-	Support uplink routing for Linear cards\n
-	Support backplane routing to Uplink cards for Linear cards
+Support uplink routing for Linear cards\n
+Support backplane routing to Uplink cards for Linear cards\n
 	"""
 
     madi_uplink_support: bool = Field(default=False, alias="com.nevion.virtuoso_re.madi_uplink_support")
     """
-	Support uplink routing for MADI cards\n
-	Support backplane routing to Uplink cards for MADI cards
+Support uplink routing for MADI cards\n
+Support backplane routing to Uplink cards for MADI cards\n
 	"""
 
 
@@ -1592,7 +1592,7 @@ class CustomSettings_com_nevion_vizrt_vizengine_0_1_0(DriverCustomSettings):
 
     port: int = Field(default=6100, ge=0, le=65535, alias="com.nevion.vizrt_vizengine.port")
     """
-	Port\n
+Port\n
 	"""
 
 
@@ -1605,32 +1605,32 @@ class CustomSettings_com_sony_MLS_X1_1_0(DriverCustomSettings):
 
     deviceId: str = Field(default="", alias="com.nevion.nsbus.deviceId")
     """
-	NS-BUS Device ID\n
-	Device ID for primary management address usually auto-populated by device discovery
+NS-BUS Device ID\n
+Device ID for primary management address usually auto-populated by device discovery\n
 	"""
 
     force_tcp: bool = Field(default=False, alias="com.nevion.nsbus.router.force_tcp")
     """
-	NS-BUS Router Matrix Protocol: Force TCP\n
-	Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.
+NS-BUS Router Matrix Protocol: Force TCP\n
+Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.\n
 	"""
 
     tallyType: Literal["NOT_USE_TALLY", "TALLY_MASTER_DEVICE", "TALLY_DISPLAY_DEVICE", "MASTER_AND_DISPLAY_DEVICE"] = (
         Field(default="NOT_USE_TALLY", alias="com.nevion.nsbus.tallyType")
     )
     """
-	NS-BUS Tally Type\n
-	Tally type usually auto-populated by device discovery
-	Possible values:\n
-		`NOT_USE_TALLY`: No Tally (default)\n
-		`TALLY_MASTER_DEVICE`: Tally Master Device\n
-		`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
-		`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+NS-BUS Tally Type\n
+Tally type usually auto-populated by device discovery\n
+Possible values:\n
+	`NOT_USE_TALLY`: No Tally (default)\n
+	`TALLY_MASTER_DEVICE`: Tally Master Device\n
+	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
+	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
     matrixId: str = Field(default="", alias="matrixId")
     """
-	Custom matrix ID\n
+Custom matrix ID\n
 	"""
 
 
@@ -1639,32 +1639,32 @@ class CustomSettings_com_sony_Panel_1_0(DriverCustomSettings):
 
     force_tcp: bool = Field(default=False, alias="com.nevion.nsbus.config.force_tcp")
     """
-	NS-BUS Configuration Protocol: Force TCP\n
-	Don't use TLS, useful for debugging.
+NS-BUS Configuration Protocol: Force TCP\n
+Don't use TLS, useful for debugging.\n
 	"""
 
     deviceId: str = Field(default="", alias="com.nevion.nsbus.deviceId")
     """
-	NS-BUS Device ID\n
-	Device ID for primary management address usually auto-populated by device discovery
+NS-BUS Device ID\n
+Device ID for primary management address usually auto-populated by device discovery\n
 	"""
 
     tallyType: Literal["NOT_USE_TALLY", "TALLY_MASTER_DEVICE", "TALLY_DISPLAY_DEVICE", "MASTER_AND_DISPLAY_DEVICE"] = (
         Field(default="NOT_USE_TALLY", alias="com.nevion.nsbus.tallyType")
     )
     """
-	NS-BUS Tally Type\n
-	Tally type usually auto-populated by device discovery
-	Possible values:\n
-		`NOT_USE_TALLY`: No Tally (default)\n
-		`TALLY_MASTER_DEVICE`: Tally Master Device\n
-		`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
-		`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+NS-BUS Tally Type\n
+Tally type usually auto-populated by device discovery\n
+Possible values:\n
+	`NOT_USE_TALLY`: No Tally (default)\n
+	`TALLY_MASTER_DEVICE`: Tally Master Device\n
+	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
+	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
     matrixId: str = Field(default="", alias="matrixId")
     """
-	Custom matrix ID\n
+Custom matrix ID\n
 	"""
 
 
@@ -1673,32 +1673,32 @@ class CustomSettings_com_sony_SC1_1_0(DriverCustomSettings):
 
     deviceId: str = Field(default="", alias="com.nevion.nsbus.deviceId")
     """
-	NS-BUS Device ID\n
-	Device ID for primary management address usually auto-populated by device discovery
+NS-BUS Device ID\n
+Device ID for primary management address usually auto-populated by device discovery\n
 	"""
 
     force_tcp: bool = Field(default=False, alias="com.nevion.nsbus.router.force_tcp")
     """
-	NS-BUS Router Matrix Protocol: Force TCP\n
-	Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.
+NS-BUS Router Matrix Protocol: Force TCP\n
+Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.\n
 	"""
 
     tallyType: Literal["NOT_USE_TALLY", "TALLY_MASTER_DEVICE", "TALLY_DISPLAY_DEVICE", "MASTER_AND_DISPLAY_DEVICE"] = (
         Field(default="NOT_USE_TALLY", alias="com.nevion.nsbus.tallyType")
     )
     """
-	NS-BUS Tally Type\n
-	Tally type usually auto-populated by device discovery
-	Possible values:\n
-		`NOT_USE_TALLY`: No Tally (default)\n
-		`TALLY_MASTER_DEVICE`: Tally Master Device\n
-		`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
-		`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+NS-BUS Tally Type\n
+Tally type usually auto-populated by device discovery\n
+Possible values:\n
+	`NOT_USE_TALLY`: No Tally (default)\n
+	`TALLY_MASTER_DEVICE`: Tally Master Device\n
+	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
+	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
     matrixId: str = Field(default="", alias="matrixId")
     """
-	Custom matrix ID\n
+Custom matrix ID\n
 	"""
 
 
@@ -1707,32 +1707,32 @@ class CustomSettings_com_sony_XVS_G1_1_0(DriverCustomSettings):
 
     deviceId: str = Field(default="", alias="com.nevion.nsbus.deviceId")
     """
-	NS-BUS Device ID\n
-	Device ID for primary management address usually auto-populated by device discovery
+NS-BUS Device ID\n
+Device ID for primary management address usually auto-populated by device discovery\n
 	"""
 
     force_tcp: bool = Field(default=False, alias="com.nevion.nsbus.router.force_tcp")
     """
-	NS-BUS Router Matrix Protocol: Force TCP\n
-	Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.
+NS-BUS Router Matrix Protocol: Force TCP\n
+Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.\n
 	"""
 
     tallyType: Literal["NOT_USE_TALLY", "TALLY_MASTER_DEVICE", "TALLY_DISPLAY_DEVICE", "MASTER_AND_DISPLAY_DEVICE"] = (
         Field(default="NOT_USE_TALLY", alias="com.nevion.nsbus.tallyType")
     )
     """
-	NS-BUS Tally Type\n
-	Tally type usually auto-populated by device discovery
-	Possible values:\n
-		`NOT_USE_TALLY`: No Tally (default)\n
-		`TALLY_MASTER_DEVICE`: Tally Master Device\n
-		`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
-		`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+NS-BUS Tally Type\n
+Tally type usually auto-populated by device discovery\n
+Possible values:\n
+	`NOT_USE_TALLY`: No Tally (default)\n
+	`TALLY_MASTER_DEVICE`: Tally Master Device\n
+	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
+	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
     matrixId: str = Field(default="", alias="matrixId")
     """
-	Custom matrix ID\n
+Custom matrix ID\n
 	"""
 
 
@@ -1741,13 +1741,13 @@ class CustomSettings_com_sony_cna2_0_1_0(DriverCustomSettings):
 
     host_port: int = Field(default=80, alias="com.sony.cna2.host_port")
     """
-	Port\n
+Port\n
 	"""
 
     webhook_url: str = Field(default="", alias="com.sony.cna2.webhook_url")
     """
-	Webhook URL\n
-	Typically http://[VIP address]/api
+Webhook URL\n
+Typically http://[VIP address]/api\n
 	"""
 
 
@@ -1756,26 +1756,26 @@ class CustomSettings_com_sony_generic_external_control_1_0(DriverCustomSettings)
 
     deviceId: str = Field(default="", alias="com.nevion.nsbus.deviceId")
     """
-	NS-BUS Device ID\n
-	Device ID for primary management address usually auto-populated by device discovery
+NS-BUS Device ID\n
+Device ID for primary management address usually auto-populated by device discovery\n
 	"""
 
     tallyType: Literal["NOT_USE_TALLY", "TALLY_MASTER_DEVICE", "TALLY_DISPLAY_DEVICE", "MASTER_AND_DISPLAY_DEVICE"] = (
         Field(default="NOT_USE_TALLY", alias="com.nevion.nsbus.tallyType")
     )
     """
-	NS-BUS Tally Type\n
-	Tally type usually auto-populated by device discovery
-	Possible values:\n
-		`NOT_USE_TALLY`: No Tally (default)\n
-		`TALLY_MASTER_DEVICE`: Tally Master Device\n
-		`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
-		`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+NS-BUS Tally Type\n
+Tally type usually auto-populated by device discovery\n
+Possible values:\n
+	`NOT_USE_TALLY`: No Tally (default)\n
+	`TALLY_MASTER_DEVICE`: Tally Master Device\n
+	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
+	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
     matrixId: str = Field(default="", alias="matrixId")
     """
-	Custom matrix ID\n
+Custom matrix ID\n
 	"""
 
 
@@ -1784,32 +1784,32 @@ class CustomSettings_com_sony_nsbus_generic_router_1_0(DriverCustomSettings):
 
     deviceId: str = Field(default="", alias="com.nevion.nsbus.deviceId")
     """
-	NS-BUS Device ID\n
-	Device ID for primary management address usually auto-populated by device discovery
+NS-BUS Device ID\n
+Device ID for primary management address usually auto-populated by device discovery\n
 	"""
 
     force_tcp: bool = Field(default=False, alias="com.nevion.nsbus.router.force_tcp")
     """
-	NS-BUS Router Matrix Protocol: Force TCP\n
-	Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.
+NS-BUS Router Matrix Protocol: Force TCP\n
+Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.\n
 	"""
 
     tallyType: Literal["NOT_USE_TALLY", "TALLY_MASTER_DEVICE", "TALLY_DISPLAY_DEVICE", "MASTER_AND_DISPLAY_DEVICE"] = (
         Field(default="NOT_USE_TALLY", alias="com.nevion.nsbus.tallyType")
     )
     """
-	NS-BUS Tally Type\n
-	Tally type usually auto-populated by device discovery
-	Possible values:\n
-		`NOT_USE_TALLY`: No Tally (default)\n
-		`TALLY_MASTER_DEVICE`: Tally Master Device\n
-		`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
-		`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+NS-BUS Tally Type\n
+Tally type usually auto-populated by device discovery\n
+Possible values:\n
+	`NOT_USE_TALLY`: No Tally (default)\n
+	`TALLY_MASTER_DEVICE`: Tally Master Device\n
+	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
+	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
     matrixId: str = Field(default="", alias="matrixId")
     """
-	Custom matrix ID\n
+Custom matrix ID\n
 	"""
 
 
@@ -1818,28 +1818,28 @@ class CustomSettings_com_sony_rcp3500_0_1_0(DriverCustomSettings):
 
     keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
     """
-	Send keep-alives\n
-	If selected, keep-alives will be used to determine reachability
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
 	"""
 
     port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
     """
-	Port\n
+Port\n
 	"""
 
     queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
     """
-	Request queueing\n
+Request queueing\n
 	"""
 
     suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
     """
-	Suppress illegal update warnings\n
+Suppress illegal update warnings\n
 	"""
 
     trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
     """
-	Tracing (logging intensive)\n
+Tracing (logging intensive)\n
 	"""
 
 
