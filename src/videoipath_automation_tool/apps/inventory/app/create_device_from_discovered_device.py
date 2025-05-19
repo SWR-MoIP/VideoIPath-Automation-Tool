@@ -963,7 +963,7 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
 
         if suggested_config_index >= count_of_suggested_configs or suggested_config_index < 0:
             raise ValueError(
-                f"suggested_config_index is out of range. {f'Please provide a index between 0 and {count_of_suggested_configs - 1}' if (count_of_suggested_configs-1) > 0 else 'Please provide 0 as index.'}"
+                f"suggested_config_index is out of range. {f'Please provide a index between 0 and {count_of_suggested_configs - 1}' if (count_of_suggested_configs - 1) > 0 else 'Please provide 0 as index.'}"
             )
 
         suggested_config = discovered_device.suggestedConfigs[suggested_config_index]
