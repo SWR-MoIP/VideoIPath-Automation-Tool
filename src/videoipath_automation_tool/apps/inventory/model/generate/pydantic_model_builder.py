@@ -33,22 +33,33 @@ class PydanticModelField(BaseModel):
     label: str | None = None
     description: str | None = None
     is_optional: bool = False
+    min_value: int | float | None = None
+    max_value: int | float | None = None
+    literal_options: list[tuple[str | int | float, str, bool]] | None = None
 
     def __str__(self) -> str:
         return f"{self._render_attribute()}{self._render_docstring()}"
 
     def _render_attribute(self) -> str:
         name_and_type = f"{self.name}: {self._parse_type()}"
+        params = []
+
+        if self.default is not None:
+            params.append(f"default={self._render_default_value()}")
+
+        if self.min_value is not None:
+            params.append(f"ge={self.min_value}")
+
+        if self.max_value is not None:
+            params.append(f"le={self.max_value}")
 
         if self.alias:
-            params = [f'alias="{self.alias}"']
+            params.append(f'alias="{self.alias}"')
 
-            if self.default:
-                params.append(f"default={self._render_default_value()}")
+        if len(params) == 1 and self.default is not None:
+            return f"\t{name_and_type} = {self._render_default_value()}\n"
 
-            return f"\t{name_and_type} = Field({', '.join(params)})\n"
-
-        return f"\t{name_and_type} = {self._render_default_value()}\n"
+        return f"\t{name_and_type} = Field({', '.join(params)})\n"
 
     def _render_docstring(self) -> str:
         docstring = ""
@@ -56,16 +67,24 @@ class PydanticModelField(BaseModel):
         if self.label:
             docstring += f"\t{self.label}\\n\n"
 
-        if self.description:
+        if self.description and self.description != self.label:
             docstring += f"\t{self.description}\n"
+
+        if self.literal_options:
+            docstring += "\tPossible values:"
+            for value, label, is_default in self.literal_options:
+                docstring += f"\\n\n\t\t`{value}`: {label}{' (default)' if is_default else ''}"
+            docstring += "\n"
 
         return f'\t"""\n{docstring}\t"""\n' if docstring else ""
 
     def _render_default_value(self) -> str:
         if self.default is None:
             return ""
+
         if type(self.default) is str:
             return f'"{self.default}"'
+
         return str(self.default)
 
     def _parse_type(self) -> str:

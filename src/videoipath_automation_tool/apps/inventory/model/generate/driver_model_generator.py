@@ -64,18 +64,26 @@ CustomSettingsType = TypeVar("CustomSettingsType", bound=CustomSettings)
             )
         )
 
-        for field_id, field in driver_schema["customSettings"]["_schema"]["values"].items():
-            builder.add_field(
-                PydanticModelField(
-                    name=field_id.split(".")[-1],
-                    type=field["_schema"]["type"],
-                    default=field["_schema"]["default"],
-                    alias=field_id,
-                    label=field["_schema"]["descriptor"]["label"],
-                    description=field["_schema"]["descriptor"]["desc"],
-                    is_optional=field["_schema"]["isNullable"],
+        if "values" in driver_schema["customSettings"]["_schema"]:
+            for field_id, field in driver_schema["customSettings"]["_schema"]["values"].items():
+                default = field["_schema"]["default"]
+                min_value, max_value = self._get_attribute_range(field)
+                type_, literal_options = self._get_attribute_type(field)
+
+                builder.add_field(
+                    PydanticModelField(
+                        name=field_id.split(".")[-1],
+                        type=type_,
+                        default=default,
+                        alias=field_id,
+                        label=field["_schema"]["descriptor"]["label"],
+                        description=field["_schema"]["descriptor"]["desc"],
+                        is_optional=field["_schema"]["isNullable"],
+                        min_value=min_value,
+                        max_value=max_value,
+                        literal_options=literal_options,
+                    )
                 )
-            )
 
         return builder.build()
 
@@ -96,3 +104,35 @@ CustomSettingsType = TypeVar("CustomSettingsType", bound=CustomSettings)
 
     def _get_custom_settings_class_name(self, driver_id: str) -> str:
         return f"CustomSettings_{driver_id.replace('.', '_').replace('-', '_')}"
+
+    def _get_attribute_range(self, field: dict) -> tuple[int | None, int | None]:
+        if "ranges" not in field["_schema"] or len(field["_schema"]["ranges"]) == 0:
+            return None, None
+
+        min_value = field["_schema"]["default"]
+        max_value = field["_schema"]["default"]
+
+        for range in field["_schema"]["ranges"]:
+            range_start, range_end, _step = range
+
+            min_value = min(min_value, range_start)
+            max_value = max(max_value, range_end)
+
+        return min_value, max_value
+
+    def _get_attribute_type(self, field: dict) -> tuple[str, list[tuple[str | int | float, str, bool]] | None]:
+        if "options" in field["_schema"] and len(field["_schema"]["options"]) > 0:
+
+            def format_value(value: str | int | float) -> str:
+                if isinstance(value, str):
+                    return f'"{value}"'
+                return str(value)
+
+            return (
+                "Literal[" + ", ".join([format_value(option["value"]) for option in field["_schema"]["options"]]) + "]",
+                [
+                    (option["value"], option["descriptor"]["label"], option["value"] == field["_schema"]["default"])
+                    for option in field["_schema"]["options"]
+                ],
+            )
+        return field["_schema"]["type"], None

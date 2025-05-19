@@ -1,0 +1,2338 @@
+{
+    "data": {
+        "status": {
+            "system": {
+                "drivers": {
+                    "_items": [
+                        {
+                            "_id": "com.nevion.NMOS-0.1.0",
+                            "_vid": "com.nevion.NMOS-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "NMOS"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for NMOS Nodes",
+                                        "label": "NMOS"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.NMOS.always_enable_rtp": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "The \"rtp_enabled\" field in \"transport_params\" will always be set to true",
+                                                    "label": "Always enable RTP"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS.disable_rx_sdp": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Configure this unit's receivers with regular transport parameters only",
+                                                    "label": "Disable Rx SDP"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS.disable_rx_sdp_with_null": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "Configures how RX SDPs are disabled. If unchecked, an empty string is used",
+                                                    "label": "Disable Rx SDP with null"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS.enable_bulk_config": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Configure this unit using bulk API",
+                                                    "label": "Enable bulk config"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS.enable_experimental_alarm": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled",
+                                                    "label": "Enable experimental alarms using IS-07"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS.experimental_alarm_port": {
+                                            "_schema": {
+                                                "default": 0,
+                                                "descriptor": {
+                                                    "desc": "HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead",
+                                                    "label": "Experimental alarm port"
+                                                },
+                                                "isNullable": true,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        1,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.NMOS.port": {
+                                            "_schema": {
+                                                "default": 80,
+                                                "descriptor": {
+                                                    "desc": "The HTTP port used to reach the Node directly",
+                                                    "label": "Port"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        1,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "A driver for NMOS capable devices tailored for single devices",
+                            "deviceType": "nmos",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "none",
+                            "ipAddress": null,
+                            "label": "NMOS (Single-device)",
+                            "modules": [],
+                            "name": "NMOS",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [
+                                {
+                                    "name": "NMOS",
+                                    "swBuildTime": null,
+                                    "swVersion": null
+                                }
+                            ],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "com.nevion.mgmt.driver.sdk.api.StatusLike",
+                                "com.nevion.mgmt.driver.sdk.api.PortLike",
+                                "com.nevion.mgmt.driver.sdk.api.CoreLike",
+                                "com.nevion.mgmt.driver.sdk.api.DeviceLike"
+                            ],
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.NMOS_multidevice-0.1.0",
+                            "_vid": "com.nevion.NMOS_multidevice-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "NMOS_multidevice"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for NMOS Multidevice Nodes",
+                                        "label": "NMOS Multidevice"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.NMOS_multidevice.always_enable_rtp": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "The \"rtp_enabled\" field in \"transport_params\" will always be set to true",
+                                                    "label": "Always enable RTP"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS_multidevice.disable_rx_sdp": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Configure this unit's receivers with regular transport parameters only",
+                                                    "label": "Disable Rx SDP"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS_multidevice.disable_rx_sdp_with_null": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "Configures how RX SDPs are disabled. If unchecked, an empty string is used",
+                                                    "label": "Disable Rx SDP with null"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS_multidevice.enable_bulk_config": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Configure this unit using bulk API",
+                                                    "label": "Enable bulk config"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS_multidevice.enable_experimental_alarm": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled",
+                                                    "label": "Enable experimental alarms using IS-07"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS_multidevice.experimental_alarm_port": {
+                                            "_schema": {
+                                                "default": 0,
+                                                "descriptor": {
+                                                    "desc": "HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead",
+                                                    "label": "Experimental alarm port"
+                                                },
+                                                "isNullable": true,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        1,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.NMOS_multidevice.indices_in_ids": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "Enable if device reports static streams to get sortable ids",
+                                                    "label": "Use indices in IDs"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.NMOS_multidevice.port": {
+                                            "_schema": {
+                                                "default": 80,
+                                                "descriptor": {
+                                                    "desc": "The HTTP port used to reach the Node directly",
+                                                    "label": "Port"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        1,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "A driver for NMOS capable devices tailored for single devices",
+                            "deviceType": "nmos",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "none",
+                            "ipAddress": null,
+                            "label": "NMOS (Multi-device)",
+                            "modules": [],
+                            "name": "NMOS_multidevice",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [
+                                {
+                                    "name": "NMOS",
+                                    "swBuildTime": null,
+                                    "swVersion": null
+                                }
+                            ],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "com.nevion.mgmt.driver.sdk.api.StatusLike",
+                                "com.nevion.mgmt.driver.sdk.api.PortLike",
+                                "com.nevion.mgmt.driver.sdk.api.CoreLike",
+                                "com.nevion.mgmt.driver.sdk.api.DeviceLike"
+                            ],
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.arista-0.1.0",
+                            "_vid": "com.nevion.arista-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Global ACL rules for Arista, used unless specific is specified.",
+                                    "name": "arista_static_acl_global"
+                                },
+                                {
+                                    "description": "Specific ACL rules for Arista, overrides global if defined.",
+                                    "name": "arista_static_acl_specific"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for Arista",
+                                        "label": "Arista"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.arista.enable_cache": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Enable config related cache"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.arista.multicast_route_ignore": {
+                                            "_schema": {
+                                                "default": "",
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Multicast routes ignore list, comma separated"
+                                                },
+                                                "encoding": "UTF-8",
+                                                "isNullable": false,
+                                                "lengthRanges": [],
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "com.nevion.arista.use_multi_vrf": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Enable multi-VRF functionality"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.arista.use_tls": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Use TLS (no certificate checks)"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.arista.use_twice_nat": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Enable twice NAT functionality"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "Driver for Arista Switch series",
+                            "deviceType": "switch",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "ipSwitchRouter",
+                            "ipAddress": null,
+                            "label": "Arista Switch Series",
+                            "modules": [],
+                            "name": "arista",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0",
+                                "1.3.6.1.2.1.1.1.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "PortLike",
+                                "DeviceLike",
+                                "StatusLike",
+                                "CoreLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.dhd_series52-0.1.0",
+                            "_vid": "com.nevion.dhd_series52-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "dhd_series52"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for dhd_series52",
+                                        "label": "dhd_series52"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.emberplus.keepalives": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "If selected, keep-alives will be used to determine reachability",
+                                                    "label": "Send keep-alives"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.port": {
+                                            "_schema": {
+                                                "default": 9000,
+                                                "descriptor": {
+                                                    "desc": "Port",
+                                                    "label": "Port"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.emberplus.queue": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Request queueing"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.suppress_illegal": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Suppress illegal update warnings"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.trace": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Tracing (logging intensive)"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "Driver for DHD.audio",
+                            "deviceType": "driver",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "none",
+                            "ipAddress": null,
+                            "label": "DBD Series 52",
+                            "modules": [],
+                            "name": "dhd_series52",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "ParameterControlLike",
+                                "DeviceLike",
+                                "PortLike",
+                                "CoreLike",
+                                "StatusLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.lawo_ravenna-0.1.0",
+                            "_vid": "com.nevion.lawo_ravenna-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "lawo_ravenna"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for lawo_ravenna",
+                                        "label": "lawo_ravenna"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.emberplus.keepalives": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "If selected, keep-alives will be used to determine reachability",
+                                                    "label": "Send keep-alives"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.port": {
+                                            "_schema": {
+                                                "default": 9000,
+                                                "descriptor": {
+                                                    "desc": "Port",
+                                                    "label": "Port"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.emberplus.queue": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Request queueing"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.request_separation": {
+                                            "_schema": {
+                                                "default": 0,
+                                                "descriptor": {
+                                                    "desc": "Set to zero to disable.",
+                                                    "label": "Request Separation [ms]"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        250,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.emberplus.suppress_illegal": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Suppress illegal update warnings"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.trace": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Tracing (logging intensive)"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.lawo_ravenna.ctrl_local_addr": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Control Local Addresses"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "",
+                            "deviceType": "driver",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "none",
+                            "ipAddress": null,
+                            "label": "Lawo Ravenna",
+                            "modules": [],
+                            "name": "lawo_ravenna",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "ParameterControlLike",
+                                "DeviceLike",
+                                "PortLike",
+                                "CoreLike",
+                                "StatusLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.nodectrl-0.1.0",
+                            "_vid": "com.nevion.nodectrl-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "nodectrl"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for nodectrl",
+                                        "label": "nodectrl"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.emberplus.keepalives": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "If selected, keep-alives will be used to determine reachability",
+                                                    "label": "Send keep-alives"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.port": {
+                                            "_schema": {
+                                                "default": 9000,
+                                                "descriptor": {
+                                                    "desc": "Port",
+                                                    "label": "Port"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.emberplus.queue": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Request queueing"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.suppress_illegal": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Suppress illegal update warnings"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.emberplus.trace": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Tracing (logging intensive)"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "A driver for devices using NodeCtrl standard of Ember+ API",
+                            "deviceType": "driver",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "none",
+                            "ipAddress": null,
+                            "label": "NodeCtrl",
+                            "modules": [],
+                            "name": "nodectrl",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "ParameterControlLike",
+                                "PortLike",
+                                "DeviceLike",
+                                "CoreLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.openflow-0.0.1",
+                            "_vid": "com.nevion.openflow-0.0.1",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "openflow"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for Openflow drivers",
+                                        "label": "Openflow"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.api.sample_flows_interval": {
+                                            "_schema": {
+                                                "default": 0,
+                                                "descriptor": {
+                                                    "desc": "Interval at which to poll flow stats. 0 to disable.",
+                                                    "label": "Flow stats interval [s]"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        0,
+                                                        1
+                                                    ],
+                                                    [
+                                                        2,
+                                                        3600,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.openflow_allow_groups": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "Allow use of group actions in flows",
+                                                    "label": "Allow groups"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.openflow_flow_priority": {
+                                            "_schema": {
+                                                "default": 60000,
+                                                "descriptor": {
+                                                    "desc": "Flow priority used by videoipath",
+                                                    "label": "Flow Priority"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        2,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.openflow_interface_shutdown_alarms": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Allow service correlated alarms when admin shuts down an interface",
+                                                    "label": "Interface shutdown alarms"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.openflow_max_buckets": {
+                                            "_schema": {
+                                                "default": 65535,
+                                                "descriptor": {
+                                                    "desc": "Max number of buckets in an openflow group",
+                                                    "label": "Max buckets"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        2,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.openflow_max_groups": {
+                                            "_schema": {
+                                                "default": 65535,
+                                                "descriptor": {
+                                                    "desc": "Max number of groups on the switch",
+                                                    "label": "Max groups"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        1,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.openflow_max_meters": {
+                                            "_schema": {
+                                                "default": 65535,
+                                                "descriptor": {
+                                                    "desc": "Max number of meters on the switch",
+                                                    "label": "Max meters"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        2,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.openflow_table_id": {
+                                            "_schema": {
+                                                "default": 0,
+                                                "descriptor": {
+                                                    "desc": "Table ID to use for videoipath flows",
+                                                    "label": "Table ID"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        255,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "A generic driver for Openflow devices (via an Openflow controller)",
+                            "deviceType": "switch",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "ipSwitchRouter",
+                            "ipAddress": null,
+                            "label": "Openflow",
+                            "modules": [],
+                            "name": "openflow",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [
+                                {
+                                    "name": "Openflow",
+                                    "swBuildTime": null,
+                                    "swVersion": null
+                                }
+                            ],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "ParameterControlLike",
+                                "DeviceLike",
+                                "PortLike",
+                                "CoreLike",
+                                "StatusLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.0.1"
+                        },
+                        {
+                            "_id": "com.nevion.powercore-0.1.0",
+                            "_vid": "com.nevion.powercore-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "powercore"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom settings field for PowerCore driver",
+                                        "label": "PowerCore"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.powercore.stream_alerts": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Enable Output(RX) flag notifications"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "",
+                            "deviceType": "driver",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "none",
+                            "ipAddress": null,
+                            "label": "Lawo PowerCore",
+                            "modules": [],
+                            "name": "powercore",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "ParameterControlLike",
+                                "DeviceLike",
+                                "PortLike",
+                                "CoreLike",
+                                "StatusLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.r3lay-0.1.0",
+                            "_vid": "com.nevion.r3lay-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "r3lay"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for Lawo R3lay",
+                                        "label": "Lawo R3lay"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.r3lay.port": {
+                                            "_schema": {
+                                                "default": 9998,
+                                                "descriptor": {
+                                                    "desc": "Port",
+                                                    "label": "Port"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "",
+                            "deviceType": "driver",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "none",
+                            "ipAddress": null,
+                            "label": "Lawo R3LAY",
+                            "modules": [],
+                            "name": "r3lay",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "ParameterControlLike",
+                                "DeviceLike",
+                                "PortLike",
+                                "TestLike",
+                                "CoreLike",
+                                "StatusLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.selenio_13p-0.1.0",
+                            "_vid": "com.nevion.selenio_13p-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "selenio_13p"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for Selenio drivers",
+                                        "label": "Selenio"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.selenio_13p.assume_success_after": {
+                                            "_schema": {
+                                                "default": 0,
+                                                "descriptor": {
+                                                    "desc": "Assume a configuration was successfully applied after time given in milliseconds, only use if slow response time from Selenio is a problem. Use with care.",
+                                                    "label": "Assume successful response after [ms]"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.selenio_13p.cache_alarm_config_timeout": {
+                                            "_schema": {
+                                                "default": 1800,
+                                                "descriptor": {
+                                                    "desc": "Alarm config cache timeout in seconds. The alarm config is used to fetch severity level for each alarm",
+                                                    "label": "Alarm config cache timeout [s]"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        252635728,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.selenio_13p.cache_timeout": {
+                                            "_schema": {
+                                                "default": 60,
+                                                "descriptor": {
+                                                    "desc": "Driver cache timeout in seconds",
+                                                    "label": "Cache timeout [s]"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        0,
+                                                        600,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        },
+                                        "com.nevion.selenio_13p.manager_ip": {
+                                            "_schema": {
+                                                "default": "",
+                                                "descriptor": {
+                                                    "desc": "Network address of the manager controlling this element",
+                                                    "label": "Manager Address"
+                                                },
+                                                "encoding": "UTF-8",
+                                                "isNullable": false,
+                                                "lengthRanges": [],
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "com.nevion.selenio_13p.nmos_port": {
+                                            "_schema": {
+                                                "default": 8100,
+                                                "descriptor": {
+                                                    "desc": "The HTTP port used to reach the Node directly",
+                                                    "label": "Port"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "ranges": [
+                                                    [
+                                                        1,
+                                                        65535,
+                                                        1
+                                                    ]
+                                                ],
+                                                "status": "Current",
+                                                "type": "number",
+                                                "units": ""
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "Driver for a Selenio Network Processor",
+                            "deviceType": "driver",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "gateway",
+                            "ipAddress": null,
+                            "label": "Imagine SNP",
+                            "modules": [],
+                            "name": "selenio_13p",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "PortLike",
+                                "DeviceLike",
+                                "StatusLike",
+                                "CoreLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.nevion.virtuoso_mi-0.1.0",
+                            "_vid": "com.nevion.virtuoso_mi-0.1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "virtuoso_mi"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [
+                                "AUD-AES3",
+                                "TICO-UHD-E1D1",
+                                "TICO-UHD-E2",
+                                "TICO-UHD-D2",
+                                "TICO-UHD-E2-12G",
+                                "TICO-UHD-D2-IP-25G",
+                                "TICO-UHD-E2-IP-25G",
+                                "SDI-IP-2022",
+                                "SDI-IP-2110",
+                                "SDI-IP-H25",
+                                "MADI",
+                                "AUD-PROC-MADI-IP",
+                                "XS-ENC",
+                                "XS-DEC",
+                                "TXS-HD-E3",
+                                "TXS-HD-D3",
+                                "IPME-RTP",
+                                "JPEG2000-ENC",
+                                "JPEG2000-DEC",
+                                "JXS-D3",
+                                "JXS-E3",
+                                "JXS-TS-E4",
+                                "JXS-TS-D4",
+                                "JXS-D4-H25",
+                                "JXS-E4-H25",
+                                "J2K-HD-E2D2",
+                                "J2K-HD-D4",
+                                "J2K-HD-E4",
+                                "UPLINK-10G",
+                                "UPLINK-25G",
+                                "VID-PROC-UHD-12G"
+                            ],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom Data Fields for Nevion Virtuoso MI",
+                                        "label": "Nevion Virtuoso MI"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.virtuoso_mi.AdvancedReachabilityCheck": {
+                                            "_schema": {
+                                                "default": true,
+                                                "descriptor": {
+                                                    "desc": "Use a more thorough communication check, this will report an IP address as down if all HBR cards have a status of 'Booting' ",
+                                                    "label": "Enable advanced communication check"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.virtuoso_mi.enable_bulk_config": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Configure this unit's audio elements using bulk API",
+                                                    "label": "Enable bulk config"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.virtuoso_mi.enable_hibernation": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Automatically put modules not involved in any connection into hibernation. Automatically wake up hibernating modules when setting up a connection involving them.",
+                                                    "label": "Enable hibernation & wake up(supported for v.1.8.8 and above)"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.virtuoso_mi.linear_uplink_support": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Support backplane routing to Uplink cards for Linear cards",
+                                                    "label": "Support uplink routing for Linear cards"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.virtuoso_mi.madi_uplink_support": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Support backplane routing to Uplink cards for MADI cards",
+                                                    "label": "Support uplink routing for MADI cards"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "Driver for Virtuoso MI device",
+                            "deviceType": "driver",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "device",
+                            "ipAddress": null,
+                            "label": "Nevion Virtuoso MI",
+                            "modules": [],
+                            "name": "virtuoso_mi",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.nevion",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": "1.3.6.1.4.1.8768.10.40",
+                            "status": "",
+                            "supportedApis": [
+                                "DeviceLike",
+                                "DynamicLike",
+                                "PortLike",
+                                "CoreLike",
+                                "StatusLike",
+                                "MatrixControlLike",
+                                "ParameterControlLike",
+                                "MaintenanceLike",
+                                "NetworkServiceLike"
+                            ],
+                            "supportsExternal": true,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {
+                                "AUD-AES3": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "AUD-PROC-MADI-IP": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "IPME-RTP": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "J2K-HD-D4": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "J2K-HD-E2D2": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "J2K-HD-E4": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "JPEG2000-DEC": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "JPEG2000-ENC": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "JXS-D3": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "JXS-D4-H25": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "JXS-E3": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "JXS-E4-H25": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "JXS-TS-D4": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "JXS-TS-E4": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "MADI": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "SDI-IP-2022": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "SDI-IP-2110": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "SDI-IP-H25": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "TICO-UHD-D2": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "TICO-UHD-D2-IP-25G": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "TICO-UHD-E1D1": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "TICO-UHD-E2": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "TICO-UHD-E2-12G": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "TICO-UHD-E2-IP-25G": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "TXS-HD-D3": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "TXS-HD-E3": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "UPLINK-10G": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "UPLINK-25G": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "VID-PROC-UHD-12G": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "Virtuoso-MI": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "XS-DEC": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                },
+                                "XS-ENC": {
+                                    "availableBanks": [],
+                                    "rebootOption": 0
+                                }
+                            },
+                            "version": "0.1.0"
+                        },
+                        {
+                            "_id": "com.sony.MLS-X1-1.0",
+                            "_vid": "com.sony.MLS-X1-1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "MLS-X1"
+                                }
+                            ],
+                            "configurableDevice": false,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for NS-BUS MLS-X1 driver",
+                                        "label": "MLS-X1"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.nsbus.deviceId": {
+                                            "_schema": {
+                                                "default": "",
+                                                "descriptor": {
+                                                    "desc": "Device ID for primary management address usually auto-populated by device discovery",
+                                                    "label": "NS-BUS Device ID"
+                                                },
+                                                "encoding": "UTF-8",
+                                                "isNullable": false,
+                                                "lengthRanges": [],
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "com.nevion.nsbus.router.force_tcp": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.",
+                                                    "label": "NS-BUS Router Matrix Protocol: Force TCP"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.nsbus.tallyType": {
+                                            "_schema": {
+                                                "default": "NOT_USE_TALLY",
+                                                "descriptor": {
+                                                    "desc": "Tally type usually auto-populated by device discovery",
+                                                    "label": "NS-BUS Tally Type"
+                                                },
+                                                "encoding": "UTF-8",
+                                                "isNullable": false,
+                                                "lengthRanges": [],
+                                                "options": [
+                                                    {
+                                                        "descriptor": {
+                                                            "desc": "",
+                                                            "label": "No Tally"
+                                                        },
+                                                        "value": "NOT_USE_TALLY"
+                                                    },
+                                                    {
+                                                        "descriptor": {
+                                                            "desc": "",
+                                                            "label": "Tally Master Device"
+                                                        },
+                                                        "value": "TALLY_MASTER_DEVICE"
+                                                    },
+                                                    {
+                                                        "descriptor": {
+                                                            "desc": "",
+                                                            "label": "Tally Display Device"
+                                                        },
+                                                        "value": "TALLY_DISPLAY_DEVICE"
+                                                    },
+                                                    {
+                                                        "descriptor": {
+                                                            "desc": "",
+                                                            "label": "Tally Master and Display Device"
+                                                        },
+                                                        "value": "MASTER_AND_DISPLAY_DEVICE"
+                                                    }
+                                                ],
+                                                "status": "Current",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "matrixId": {
+                                            "_schema": {
+                                                "default": "",
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Custom matrix ID"
+                                                },
+                                                "encoding": "UTF-8",
+                                                "isNullable": false,
+                                                "lengthRanges": [],
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "Driver for NS-BUS MLS-X1 Device",
+                            "deviceType": "driver",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "device",
+                            "ipAddress": null,
+                            "label": "MLS-X1",
+                            "modules": [],
+                            "name": "MLS-X1",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.sony",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "DeviceLike",
+                                "CoreLike",
+                                "MatrixControlLike"
+                            ],
+                            "supportsExternal": false,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "1.0"
+                        },
+                        {
+                            "_id": "com.sony.Panel-1.0",
+                            "_vid": "com.sony.Panel-1.0",
+                            "attachments": [
+                                {
+                                    "description": "Default",
+                                    "name": "Panel"
+                                }
+                            ],
+                            "configurableDevice": true,
+                            "configurableModule": [],
+                            "configurablePort": {},
+                            "customSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "Custom setting fields for NS-BUS Panel drivers",
+                                        "label": "NS-BUS Panel"
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map",
+                                    "values": {
+                                        "com.nevion.nsbus.config.force_tcp": {
+                                            "_schema": {
+                                                "default": false,
+                                                "descriptor": {
+                                                    "desc": "Don't use TLS, useful for debugging.",
+                                                    "label": "NS-BUS Configuration Protocol: Force TCP"
+                                                },
+                                                "isNullable": false,
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "bool"
+                                            }
+                                        },
+                                        "com.nevion.nsbus.deviceId": {
+                                            "_schema": {
+                                                "default": "",
+                                                "descriptor": {
+                                                    "desc": "Device ID for primary management address usually auto-populated by device discovery",
+                                                    "label": "NS-BUS Device ID"
+                                                },
+                                                "encoding": "UTF-8",
+                                                "isNullable": false,
+                                                "lengthRanges": [],
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "com.nevion.nsbus.tallyType": {
+                                            "_schema": {
+                                                "default": "NOT_USE_TALLY",
+                                                "descriptor": {
+                                                    "desc": "Tally type usually auto-populated by device discovery",
+                                                    "label": "NS-BUS Tally Type"
+                                                },
+                                                "encoding": "UTF-8",
+                                                "isNullable": false,
+                                                "lengthRanges": [],
+                                                "options": [
+                                                    {
+                                                        "descriptor": {
+                                                            "desc": "",
+                                                            "label": "No Tally"
+                                                        },
+                                                        "value": "NOT_USE_TALLY"
+                                                    },
+                                                    {
+                                                        "descriptor": {
+                                                            "desc": "",
+                                                            "label": "Tally Master Device"
+                                                        },
+                                                        "value": "TALLY_MASTER_DEVICE"
+                                                    },
+                                                    {
+                                                        "descriptor": {
+                                                            "desc": "",
+                                                            "label": "Tally Display Device"
+                                                        },
+                                                        "value": "TALLY_DISPLAY_DEVICE"
+                                                    },
+                                                    {
+                                                        "descriptor": {
+                                                            "desc": "",
+                                                            "label": "Tally Master and Display Device"
+                                                        },
+                                                        "value": "MASTER_AND_DISPLAY_DEVICE"
+                                                    }
+                                                ],
+                                                "status": "Current",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "matrixId": {
+                                            "_schema": {
+                                                "default": "",
+                                                "descriptor": {
+                                                    "desc": "",
+                                                    "label": "Custom matrix ID"
+                                                },
+                                                "encoding": "UTF-8",
+                                                "isNullable": false,
+                                                "lengthRanges": [],
+                                                "options": [],
+                                                "status": "Current",
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "customSettingsSeed": {},
+                            "description": "Driver for NS-BUS Panel Driver",
+                            "deviceType": "panel",
+                            "discoveredBy": null,
+                            "exists": "No",
+                            "iconType": "device",
+                            "ipAddress": null,
+                            "label": "NS-BUS Panel",
+                            "modules": [],
+                            "name": "Panel",
+                            "operationalModeSettings": {
+                                "_schema": {
+                                    "default": {},
+                                    "descriptor": {
+                                        "desc": "",
+                                        "label": ""
+                                    },
+                                    "isNullable": false,
+                                    "options": [],
+                                    "status": "Current",
+                                    "type": "map"
+                                }
+                            },
+                            "organization": "com.sony",
+                            "products": [],
+                            "protocolId": null,
+                            "protocols": {
+                                "gnmi": 6030,
+                                "http": 80,
+                                "https": 443,
+                                "snmp": 161,
+                                "ssh": 22,
+                                "telnet": 23,
+                                "ws": 80,
+                                "wss": 443,
+                                "xap": 80,
+                                "xap21": 80
+                            },
+                            "snmpDiscoveryOIDs": [
+                                "1.3.6.1.2.1.1.2.0"
+                            ],
+                            "snmpSysObjectIdValue": null,
+                            "status": "",
+                            "supportedApis": [
+                                "DynamicLike",
+                                "MaintenanceLike",
+                                "DeviceLike",
+                                "CoreLike"
+                            ],
+                            "supportsExternal": false,
+                            "uniqueMetricDefs": [],
+                            "updateableDevice": false,
+                            "updateableModule": {},
+                            "version": "1.0"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
