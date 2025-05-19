@@ -18,7 +18,7 @@ from videoipath_automation_tool.apps.inventory.model.inventory_discovered_device
 from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
+from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger, extract_natural_sort_key
 from videoipath_automation_tool.validators.device_id import validate_device_id
 
 
@@ -372,16 +372,27 @@ class InventoryAPI:
         return [device["_id"] for device in response.data["config"]["devman"]["devices"]["_items"]]
 
     def fetch_device_ids_by_driver(self, driver: DriverLiteral) -> List[str]:
-        """Method to fetch all device ids by driver id from VideoIPath-Inventory"""
+        """Fetch all device IDs by driver ID from VideoIPath-Inventory with natural sorting."""
         driver_organization, driver_name, driver_version = extract_driver_info_from_id(driver_id=driver)
+
         escaped_driver_organization = urllib.parse.quote(driver_organization, safe="")
         escaped_driver_name = urllib.parse.quote(driver_name, safe="")
         escaped_driver_version = urllib.parse.quote(driver_version, safe="")
-        url_path = f"/rest/v2/data/config/devman/devices/* where (config.driver.name='{escaped_driver_name}' and config.driver.version='{escaped_driver_version}' and config.driver.organization='{escaped_driver_organization}') /**"
+
+        url_path = (
+            f"/rest/v2/data/config/devman/devices/* "
+            f"where (config.driver.name='{escaped_driver_name}' "
+            f"and config.driver.version='{escaped_driver_version}' "
+            f"and config.driver.organization='{escaped_driver_organization}') /**"
+        )
+
         response = self.vip_connector.rest.get(url_path)
+
         if not response.data:
             raise ValueError("Response data is empty.")
-        return [device["_id"] for device in response.data["config"]["devman"]["devices"]["_items"]]
+
+        device_ids = [device["_id"] for device in response.data["config"]["devman"]["devices"]["_items"]]
+        return sorted(device_ids, key=extract_natural_sort_key)
 
     # --- Bulk Device Label Fetching Methods ---
     def fetch_devices_factory_labels_as_dict(self) -> dict[str, str]:
