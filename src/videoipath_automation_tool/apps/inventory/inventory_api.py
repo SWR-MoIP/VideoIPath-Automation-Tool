@@ -7,9 +7,12 @@ from uuid import uuid4
 from pydantic import IPvAnyAddress
 from typing_extensions import deprecated
 
-from videoipath_automation_tool.apps.inventory.inventory_utils import construct_driver_id_from_info
+from videoipath_automation_tool.apps.inventory.inventory_utils import (
+    construct_driver_id_from_info,
+    extract_driver_info_from_id,
+)
 from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
-from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
+from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType, DriverLiteral
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_discovered_device import DiscoveredInventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
@@ -363,6 +366,18 @@ class InventoryAPI:
 
     def fetch_device_ids_list(self) -> List[str]:
         url_path = "/rest/v2/data/config/devman/devices/*"
+        response = self.vip_connector.rest.get(url_path)
+        if not response.data:
+            raise ValueError("Response data is empty.")
+        return [device["_id"] for device in response.data["config"]["devman"]["devices"]["_items"]]
+
+    def fetch_device_ids_by_driver(self, driver: DriverLiteral) -> List[str]:
+        """Method to fetch all device ids by driver id from VideoIPath-Inventory"""
+        driver_organization, driver_name, driver_version = extract_driver_info_from_id(driver_id=driver)
+        escaped_driver_organization = urllib.parse.quote(driver_organization, safe="")
+        escaped_driver_name = urllib.parse.quote(driver_name, safe="")
+        escaped_driver_version = urllib.parse.quote(driver_version, safe="")
+        url_path = f"/rest/v2/data/config/devman/devices/* where (config.driver.name='{escaped_driver_name}' and config.driver.version='{escaped_driver_version}' and config.driver.organization='{escaped_driver_organization}') /**"
         response = self.vip_connector.rest.get(url_path)
         if not response.data:
             raise ValueError("Response data is empty.")
