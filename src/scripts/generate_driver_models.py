@@ -1,7 +1,16 @@
 import argparse
+import importlib.util
 import json
 
-from videoipath_automation_tool.utils.pydantic_model_builder import PydanticModelBuilder, PydanticModelField
+
+def load_pydantic_model_builder():
+    spec = importlib.util.spec_from_file_location(
+        "pydantic_model_builder", "src/videoipath_automation_tool/utils/pydantic_model_builder.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 
 parser = argparse.ArgumentParser(description="Generate Pydantic models from driver schema")
 parser.add_argument(
@@ -19,8 +28,11 @@ parser.add_argument(
 
 
 def _generate_driver_model(driver_schema: dict) -> str:
-    driver_id = driver_schema["_id"]
+    pmb_module = load_pydantic_model_builder()
+    PydanticModelBuilder = pmb_module.PydanticModelBuilder
+    PydanticModelField = pmb_module.PydanticModelField
 
+    driver_id = driver_schema["_id"]
     builder = PydanticModelBuilder(
         name=_get_custom_settings_class_name(driver_id), parent_classes=["DriverCustomSettings"]
     )
@@ -125,7 +137,7 @@ from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - src/videoipath_automation_tool/apps/inventory/model/driver_schema/2024.1.4.json.json is used as reference to define the custom settings model!
+# - {args.schema_file} is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!

@@ -1,7 +1,18 @@
+import importlib.util
 import re
 from typing import Callable
 
-from videoipath_automation_tool.apps.inventory.model.drivers import DRIVER_ID_TO_CUSTOM_SETTINGS
+
+def load_driver_settings():
+    spec = importlib.util.spec_from_file_location(
+        "drivers_module", "src/videoipath_automation_tool/apps/inventory/model/drivers.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return getattr(module, "DRIVER_ID_TO_CUSTOM_SETTINGS", {})
+
+
+DRIVER_ID_TO_CUSTOM_SETTINGS = load_driver_settings()
 
 
 def generate_create_device_overloads() -> str:
