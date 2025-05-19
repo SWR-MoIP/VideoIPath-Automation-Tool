@@ -396,6 +396,11 @@ class InventoryCreateDeviceMixin:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.lvb440-1.0.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_lvb440_1_0_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.maxiva-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_maxiva_0_1_0]: ...
 
@@ -431,6 +436,11 @@ class InventoryCreateDeviceMixin:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.mock_cloud-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_mock_cloud_0_1_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.montone42-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_montone42_0_1_0]: ...
 
@@ -443,6 +453,11 @@ class InventoryCreateDeviceMixin:
     def create_device(
         self, driver: Literal["com.nevion.mwedge-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_mwedge_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.ndi-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_ndi_0_1_0]: ...
 
     @overload
     def create_device(
@@ -491,6 +506,11 @@ class InventoryCreateDeviceMixin:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.nxl_me80-1.0.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_nxl_me80_1_0_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.openflow-0.0.1"]
     ) -> InventoryDevice[CustomSettings_com_nevion_openflow_0_0_1]: ...
 
@@ -536,6 +556,11 @@ class InventoryCreateDeviceMixin:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.spg9000-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_spg9000_0_1_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.starfish_splicer-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_starfish_splicer_0_1_0]: ...
 
@@ -548,6 +573,11 @@ class InventoryCreateDeviceMixin:
     def create_device(
         self, driver: Literal["com.nevion.tag_mcm9000-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_tag_mcm9000_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.tag_mcs-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_tag_mcs_0_1_0]: ...
 
     @overload
     def create_device(
@@ -626,6 +656,16 @@ class InventoryCreateDeviceMixin:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.txdarwin_dynamic-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_txdarwin_dynamic_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.txdarwin_static-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_txdarwin_static_0_1_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.txedge-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_txedge_0_1_0]: ...
 
@@ -688,6 +728,11 @@ class InventoryCreateDeviceMixin:
     def create_device(
         self, driver: Literal["com.sony.SC1-1.0"]
     ) -> InventoryDevice[CustomSettings_com_sony_SC1_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.sony.XVS-G1-1.0"]
+    ) -> InventoryDevice[CustomSettings_com_sony_XVS_G1_1_0]: ...
 
     @overload
     def create_device(

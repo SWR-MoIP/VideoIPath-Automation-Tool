@@ -547,6 +547,11 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
 
     @overload
     def create_device_from_discovered_device(
+        self, discovered_device_id: str, driver: Literal["com.nevion.lvb440-1.0.0"], suggested_config_index: int = 0
+    ) -> InventoryDevice[CustomSettings_com_nevion_lvb440_1_0_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
         self, discovered_device_id: str, driver: Literal["com.nevion.maxiva-0.1.0"], suggested_config_index: int = 0
     ) -> InventoryDevice[CustomSettings_com_nevion_maxiva_0_1_0]: ...
 
@@ -594,6 +599,11 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
 
     @overload
     def create_device_from_discovered_device(
+        self, discovered_device_id: str, driver: Literal["com.nevion.mock_cloud-0.1.0"], suggested_config_index: int = 0
+    ) -> InventoryDevice[CustomSettings_com_nevion_mock_cloud_0_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
         self, discovered_device_id: str, driver: Literal["com.nevion.montone42-0.1.0"], suggested_config_index: int = 0
     ) -> InventoryDevice[CustomSettings_com_nevion_montone42_0_1_0]: ...
 
@@ -606,6 +616,11 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
     def create_device_from_discovered_device(
         self, discovered_device_id: str, driver: Literal["com.nevion.mwedge-0.1.0"], suggested_config_index: int = 0
     ) -> InventoryDevice[CustomSettings_com_nevion_mwedge_0_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
+        self, discovered_device_id: str, driver: Literal["com.nevion.ndi-0.1.0"], suggested_config_index: int = 0
+    ) -> InventoryDevice[CustomSettings_com_nevion_ndi_0_1_0]: ...
 
     @overload
     def create_device_from_discovered_device(
@@ -657,6 +672,11 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
     def create_device_from_discovered_device(
         self, discovered_device_id: str, driver: Literal["com.nevion.nx4600-0.1.0"], suggested_config_index: int = 0
     ) -> InventoryDevice[CustomSettings_com_nevion_nx4600_0_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
+        self, discovered_device_id: str, driver: Literal["com.nevion.nxl_me80-1.0.0"], suggested_config_index: int = 0
+    ) -> InventoryDevice[CustomSettings_com_nevion_nxl_me80_1_0_0]: ...
 
     @overload
     def create_device_from_discovered_device(
@@ -720,6 +740,11 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
 
     @overload
     def create_device_from_discovered_device(
+        self, discovered_device_id: str, driver: Literal["com.nevion.spg9000-0.1.0"], suggested_config_index: int = 0
+    ) -> InventoryDevice[CustomSettings_com_nevion_spg9000_0_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
         self,
         discovered_device_id: str,
         driver: Literal["com.nevion.starfish_splicer-0.1.0"],
@@ -738,6 +763,11 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
         driver: Literal["com.nevion.tag_mcm9000-0.1.0"],
         suggested_config_index: int = 0,
     ) -> InventoryDevice[CustomSettings_com_nevion_tag_mcm9000_0_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
+        self, discovered_device_id: str, driver: Literal["com.nevion.tag_mcs-0.1.0"], suggested_config_index: int = 0
+    ) -> InventoryDevice[CustomSettings_com_nevion_tag_mcs_0_1_0]: ...
 
     @overload
     def create_device_from_discovered_device(
@@ -822,6 +852,22 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
 
     @overload
     def create_device_from_discovered_device(
+        self,
+        discovered_device_id: str,
+        driver: Literal["com.nevion.txdarwin_dynamic-0.1.0"],
+        suggested_config_index: int = 0,
+    ) -> InventoryDevice[CustomSettings_com_nevion_txdarwin_dynamic_0_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
+        self,
+        discovered_device_id: str,
+        driver: Literal["com.nevion.txdarwin_static-0.1.0"],
+        suggested_config_index: int = 0,
+    ) -> InventoryDevice[CustomSettings_com_nevion_txdarwin_static_0_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
         self, discovered_device_id: str, driver: Literal["com.nevion.txedge-0.1.0"], suggested_config_index: int = 0
     ) -> InventoryDevice[CustomSettings_com_nevion_txedge_0_1_0]: ...
 
@@ -902,6 +948,11 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
 
     @overload
     def create_device_from_discovered_device(
+        self, discovered_device_id: str, driver: Literal["com.sony.XVS-G1-1.0"], suggested_config_index: int = 0
+    ) -> InventoryDevice[CustomSettings_com_sony_XVS_G1_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
         self, discovered_device_id: str, driver: Literal["com.sony.cna2-0.1.0"], suggested_config_index: int = 0
     ) -> InventoryDevice[CustomSettings_com_sony_cna2_0_1_0]: ...
 
@@ -963,7 +1014,7 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
 
         if suggested_config_index >= count_of_suggested_configs or suggested_config_index < 0:
             raise ValueError(
-                f"suggested_config_index is out of range. {f'Please provide a index between 0 and {count_of_suggested_configs - 1}' if (count_of_suggested_configs-1) > 0 else 'Please provide 0 as index.'}"
+                f"suggested_config_index is out of range. {f'Please provide a index between 0 and {count_of_suggested_configs - 1}' if (count_of_suggested_configs - 1) > 0 else 'Please provide 0 as index.'}"
             )
 
         suggested_config = discovered_device.suggestedConfigs[suggested_config_index]

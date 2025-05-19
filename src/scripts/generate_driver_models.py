@@ -13,7 +13,7 @@ parser.add_argument(
 parser.add_argument(
     "output_file",
     nargs="?",
-    default="src/videoipath_automation_tool/apps/inventory/model/drivers_generated.py",  # TODO: change to drivers.py when we are sure the generation is correct
+    default="src/videoipath_automation_tool/apps/inventory/model/drivers.py",
     help="Path where the generated Python file will be saved",
 )
 
@@ -118,8 +118,7 @@ if __name__ == "__main__":
     drivers = schema["data"]["status"]["system"]["drivers"]["_items"]
     driver_models = "\n\n".join([_generate_driver_model(driver) for driver in drivers])
 
-    code = f"""
-from abc import ABC
+    code = f"""from abc import ABC
 from typing import Dict, Literal, Type, TypeVar, Union, Optional
 
 from pydantic import BaseModel, Field

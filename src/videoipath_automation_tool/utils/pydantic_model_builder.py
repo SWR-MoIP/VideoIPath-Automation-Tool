@@ -68,7 +68,8 @@ class PydanticModelField(BaseModel):
             docstring += f"\t{self.label}\\n\n"
 
         if self.description and self.description != self.label:
-            docstring += f"\t{self.description}\n"
+            parsed_description = self.description.replace("\n", "\\n\n\t")
+            docstring += f"\t{parsed_description}\n"
 
         if self.literal_options:
             docstring += "\tPossible values:"
