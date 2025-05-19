@@ -106,4 +106,4 @@ VideoIPath Automation Tool is an independent software tool that can be used with
 
 ## License
 
-[Affero General Public License v3.0](LICENSE)
+[Affero General Public License v3.0](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/LICENSE)
