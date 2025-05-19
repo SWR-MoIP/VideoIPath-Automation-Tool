@@ -116,6 +116,11 @@ class InventoryCreateDeviceMixin:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.blade_runner-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_blade_runner_0_1_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.cisco_7600_series-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_cisco_7600_series_0_1_0]: ...
 
@@ -136,6 +141,11 @@ class InventoryCreateDeviceMixin:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.cisco_ncs540-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_cisco_ncs540_0_1_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.cisco_nexus-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_cisco_nexus_0_1_0]: ...
 
@@ -143,6 +153,11 @@ class InventoryCreateDeviceMixin:
     def create_device(
         self, driver: Literal["com.nevion.cisco_nexus_nbm-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_cisco_nexus_nbm_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.comprimato-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_comprimato_0_1_0]: ...
 
     @overload
     def create_device(
@@ -526,6 +541,11 @@ class InventoryCreateDeviceMixin:
 
     @overload
     def create_device(
+        self, driver: Literal["com.nevion.probel_sw_p_08-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_probel_sw_p_08_0_1_0]: ...
+
+    @overload
+    def create_device(
         self, driver: Literal["com.nevion.r3lay-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_r3lay_0_1_0]: ...
 
@@ -583,6 +603,11 @@ class InventoryCreateDeviceMixin:
     def create_device(
         self, driver: Literal["com.nevion.tally-0.1.0"]
     ) -> InventoryDevice[CustomSettings_com_nevion_tally_0_1_0]: ...
+
+    @overload
+    def create_device(
+        self, driver: Literal["com.nevion.telestream_surveyor-0.1.0"]
+    ) -> InventoryDevice[CustomSettings_com_nevion_telestream_surveyor_0_1_0]: ...
 
     @overload
     def create_device(

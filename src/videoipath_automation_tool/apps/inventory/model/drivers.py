@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - src/videoipath_automation_tool/apps/inventory/model/driver_schema/2024.3.3.json is used as reference to define the custom settings model!
+# - src/videoipath_automation_tool/apps/inventory/model/driver_schema/2024.4.12.json is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
@@ -53,6 +53,12 @@ Enables experimental alarms over websockets using IS-07 on certain Vizrt devices
     """
 Experimental alarm port\n
 HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
+	"""
+
+    is05_api_version: bool = Field(default=False, alias="com.nevion.NMOS.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
 	"""
 
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.NMOS.port")
@@ -111,6 +117,12 @@ Use indices in IDs\n
 Enable if device reports static streams to get sortable ids\n
 	"""
 
+    is05_api_version: bool = Field(default=False, alias="com.nevion.NMOS_multidevice.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
+	"""
+
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.NMOS_multidevice.port")
     """
 Port\n
@@ -162,6 +174,12 @@ class CustomSettings_com_nevion_anubis_0_1_0(DriverCustomSettings):
 class CustomSettings_com_nevion_appeartv_x_platform_0_2_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.appeartv_x_platform-0.2.0"] = "com.nevion.appeartv_x_platform-0.2.0"
 
+    coder_ip_mapping: str = Field(default="", alias="com.nevion.appeartv_x_platform.coder_ip_mapping")
+    """
+Coder-IP mapping\n
+Coder module - IP module association map\n
+	"""
+
     lan_wan_mapping: str = Field(default="", alias="com.nevion.appeartv_x_platform.lan_wan_mapping")
     """
 LAN-WAN mapping\n
@@ -171,6 +189,14 @@ LAN/WAN module association map\n
 
 class CustomSettings_com_nevion_appeartv_x_platform_static_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.appeartv_x_platform_static-0.1.0"] = "com.nevion.appeartv_x_platform_static-0.1.0"
+
+    implicit_interface_selection: bool = Field(
+        default=False, alias="com.nevion.appeartv_x_platform_static.implicit_interface_selection"
+    )
+    """
+Implicit Interface Selection\n
+Select vlan subinterfaces based on vlan in port configuration.\n
+	"""
 
 
 class CustomSettings_com_nevion_archwave_unet_0_1_0(DriverCustomSettings):
@@ -280,6 +306,10 @@ Number of outputs per MediaConnect flow\n
 	"""
 
 
+class CustomSettings_com_nevion_blade_runner_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.blade_runner-0.1.0"] = "com.nevion.blade_runner-0.1.0"
+
+
 class CustomSettings_com_nevion_cisco_7600_series_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.cisco_7600_series-0.1.0"] = "com.nevion.cisco_7600_series-0.1.0"
 
@@ -300,6 +330,10 @@ Interval at which to poll flow stats. 0 to disable.\n
 
 class CustomSettings_com_nevion_cisco_me_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.cisco_me-0.1.0"] = "com.nevion.cisco_me-0.1.0"
+
+
+class CustomSettings_com_nevion_cisco_ncs540_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.cisco_ncs540-0.1.0"] = "com.nevion.cisco_ncs540-0.1.0"
 
 
 class CustomSettings_com_nevion_cisco_nexus_0_1_0(DriverCustomSettings):
@@ -345,6 +379,10 @@ Interval at which to poll flow stats. 0 to disable.\n
     """
 Enable NAT functionality\n
 	"""
+
+
+class CustomSettings_com_nevion_comprimato_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.comprimato-0.1.0"] = "com.nevion.comprimato-0.1.0"
 
 
 class CustomSettings_com_nevion_cp330_0_1_0(DriverCustomSettings):
@@ -681,6 +719,32 @@ Tracing (logging intensive)\n
 class CustomSettings_com_nevion_generic_emberplus_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.generic_emberplus-0.1.0"] = "com.nevion.generic_emberplus-0.1.0"
 
+    keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
+    """
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
+	"""
+
+    port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
+    """
+Port\n
+	"""
+
+    queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
+    """
+Request queueing\n
+	"""
+
+    suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
+    """
+Suppress illegal update warnings\n
+	"""
+
+    trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
+    """
+Tracing (logging intensive)\n
+	"""
+
 
 class CustomSettings_com_nevion_generic_snmp_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.generic_snmp-0.1.0"] = "com.nevion.generic_snmp-0.1.0"
@@ -836,6 +900,12 @@ Interval at which to poll flow stats. 0 to disable.\n
     """
 Always compute Rx SDP\n
 If enabled, VIP will generate a SDP for a receiver even if the sender does not publish a SDP itself\n
+	"""
+
+    always_different: bool = Field(default=True, alias="com.nevion.mock.always_different")
+    """
+Skip config apply checks\n
+Skip config apply checks (always different)\n
 	"""
 
     bulk: bool = Field(default=True, alias="com.nevion.mock.bulk")
@@ -1121,6 +1191,32 @@ Table ID to use for videoipath flows\n
 class CustomSettings_com_nevion_powercore_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.powercore-0.1.0"] = "com.nevion.powercore-0.1.0"
 
+    keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
+    """
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
+	"""
+
+    port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
+    """
+Port\n
+	"""
+
+    queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
+    """
+Request queueing\n
+	"""
+
+    suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
+    """
+Suppress illegal update warnings\n
+	"""
+
+    trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
+    """
+Tracing (logging intensive)\n
+	"""
+
     stream_alerts: bool = Field(default=False, alias="com.nevion.powercore.stream_alerts")
     """
 Enable Output(RX) flag notifications\n
@@ -1129,6 +1225,59 @@ Enable Output(RX) flag notifications\n
 
 class CustomSettings_com_nevion_prismon_1_0_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.prismon-1.0.0"] = "com.nevion.prismon-1.0.0"
+
+
+class CustomSettings_com_nevion_probel_sw_p_08_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.probel_sw_p_08-0.1.0"] = "com.nevion.probel_sw_p_08-0.1.0"
+
+    disconnect_source_address: int = Field(
+        default=1023, ge=0, le=1023, alias="com.nevion.probel_sw_p_08.disconnect_source_address"
+    )
+    """
+Disconnect Source Address\n
+Must match disconnect source address in custom matrix\n
+	"""
+
+    matrix_module_index: int = Field(default=0, ge=0, le=16, alias="com.nevion.probel_sw_p_08.matrix_module_index")
+    """
+Matrix Level\n
+This must be one higher than level in custom matrix\n
+	"""
+
+    name_length: int = Field(default=32, ge=0, le=32, alias="com.nevion.probel_sw_p_08.name_length")
+    """
+Length of labels\n
+Must be in range [0,2,4,8,16,32]\n
+	"""
+
+    num_router_levels: int = Field(default=0, ge=0, le=16, alias="com.nevion.probel_sw_p_08.num_router_levels")
+    """
+SWP08 Level\n
+Support up to 16\n
+	"""
+
+    num_router_modules: int = Field(default=1, ge=0, le=15, alias="com.nevion.probel_sw_p_08.num_router_modules")
+    """
+Number of matrices\n
+The number of matrices\n
+	"""
+
+    num_router_ports: int = Field(default=32, ge=0, le=1023, alias="com.nevion.probel_sw_p_08.num_router_ports")
+    """
+Number of router ports\n
+This must be the same number of ports as on the device\n
+	"""
+
+    park_port: int = Field(default=0, ge=0, le=1023, alias="com.nevion.probel_sw_p_08.park_port")
+    """
+Custom park port\n
+Must match park port in topology\n
+	"""
+
+    port: int = Field(default=8910, ge=0, le=65535, alias="com.nevion.probel_sw_p_08.port")
+    """
+Port\n
+	"""
 
 
 class CustomSettings_com_nevion_r3lay_0_1_0(DriverCustomSettings):
@@ -1178,6 +1327,12 @@ The HTTP port used to reach the Node directly\n
 
 class CustomSettings_com_nevion_sencore_dmg_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.sencore_dmg-0.1.0"] = "com.nevion.sencore_dmg-0.1.0"
+
+    coder_ip_mapping: str = Field(default="", alias="com.nevion.sencore_dmg.coder_ip_mapping")
+    """
+Coder-IP mapping\n
+Coder module - IP module association map\n
+	"""
 
     lan_wan_mapping: str = Field(default="", alias="com.nevion.sencore_dmg.lan_wan_mapping")
     """
@@ -1237,6 +1392,12 @@ Experimental alarm port\n
 HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
 	"""
 
+    is05_api_version: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip50y.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
+	"""
+
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.sony_nxlk-ip50y.port")
     """
 Port\n
@@ -1289,6 +1450,12 @@ Enables experimental alarms over websockets using IS-07 on certain Vizrt devices
     """
 Experimental alarm port\n
 HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
+	"""
+
+    is05_api_version: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip51y.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
 	"""
 
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.sony_nxlk-ip51y.port")
@@ -1382,6 +1549,10 @@ Possible values:\n
     """
 Number of UMDs\n
 	"""
+
+
+class CustomSettings_com_nevion_telestream_surveyor_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.telestream_surveyor-0.1.0"] = "com.nevion.telestream_surveyor-0.1.0"
 
 
 class CustomSettings_com_nevion_thomson_mxs_0_1_0(DriverCustomSettings):
@@ -1739,9 +1910,19 @@ Custom matrix ID\n
 class CustomSettings_com_sony_cna2_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.sony.cna2-0.1.0"] = "com.sony.cna2-0.1.0"
 
-    host_port: int = Field(default=80, alias="com.sony.cna2.host_port")
+    domain_number: int = Field(default=0, alias="com.sony.cna2.domain_number")
     """
-Port\n
+Domain Number\n
+	"""
+
+    matrix_type: str = Field(default="1:1", alias="com.sony.cna2.matrix_type")
+    """
+MatrixType\n
+	"""
+
+    total_cameras: int = Field(default=96, ge=1, le=96, alias="com.sony.cna2.total_cameras")
+    """
+Total Number of System Cameras\n
 	"""
 
     webhook_url: str = Field(default="", alias="com.sony.cna2.webhook_url")
@@ -1865,12 +2046,15 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.ateme_dr8400-0.1.0": CustomSettings_com_nevion_ateme_dr8400_0_1_0,
     "com.nevion.avnpxh12-0.1.0": CustomSettings_com_nevion_avnpxh12_0_1_0,
     "com.nevion.aws_media-0.1.0": CustomSettings_com_nevion_aws_media_0_1_0,
+    "com.nevion.blade_runner-0.1.0": CustomSettings_com_nevion_blade_runner_0_1_0,
     "com.nevion.cisco_7600_series-0.1.0": CustomSettings_com_nevion_cisco_7600_series_0_1_0,
     "com.nevion.cisco_asr-0.1.0": CustomSettings_com_nevion_cisco_asr_0_1_0,
     "com.nevion.cisco_catalyst_3850-0.1.0": CustomSettings_com_nevion_cisco_catalyst_3850_0_1_0,
     "com.nevion.cisco_me-0.1.0": CustomSettings_com_nevion_cisco_me_0_1_0,
+    "com.nevion.cisco_ncs540-0.1.0": CustomSettings_com_nevion_cisco_ncs540_0_1_0,
     "com.nevion.cisco_nexus-0.1.0": CustomSettings_com_nevion_cisco_nexus_0_1_0,
     "com.nevion.cisco_nexus_nbm-0.1.0": CustomSettings_com_nevion_cisco_nexus_nbm_0_1_0,
+    "com.nevion.comprimato-0.1.0": CustomSettings_com_nevion_comprimato_0_1_0,
     "com.nevion.cp330-0.1.0": CustomSettings_com_nevion_cp330_0_1_0,
     "com.nevion.cp4400-0.1.0": CustomSettings_com_nevion_cp4400_0_1_0,
     "com.nevion.cp505-0.1.0": CustomSettings_com_nevion_cp505_0_1_0,
@@ -1947,6 +2131,7 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.openflow-0.0.1": CustomSettings_com_nevion_openflow_0_0_1,
     "com.nevion.powercore-0.1.0": CustomSettings_com_nevion_powercore_0_1_0,
     "com.nevion.prismon-1.0.0": CustomSettings_com_nevion_prismon_1_0_0,
+    "com.nevion.probel_sw_p_08-0.1.0": CustomSettings_com_nevion_probel_sw_p_08_0_1_0,
     "com.nevion.r3lay-0.1.0": CustomSettings_com_nevion_r3lay_0_1_0,
     "com.nevion.selenio_13p-0.1.0": CustomSettings_com_nevion_selenio_13p_0_1_0,
     "com.nevion.sencore_dmg-0.1.0": CustomSettings_com_nevion_sencore_dmg_0_1_0,
@@ -1959,6 +2144,7 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.tag_mcm9000-0.1.0": CustomSettings_com_nevion_tag_mcm9000_0_1_0,
     "com.nevion.tag_mcs-0.1.0": CustomSettings_com_nevion_tag_mcs_0_1_0,
     "com.nevion.tally-0.1.0": CustomSettings_com_nevion_tally_0_1_0,
+    "com.nevion.telestream_surveyor-0.1.0": CustomSettings_com_nevion_telestream_surveyor_0_1_0,
     "com.nevion.thomson_mxs-0.1.0": CustomSettings_com_nevion_thomson_mxs_0_1_0,
     "com.nevion.thomson_vibe-0.1.0": CustomSettings_com_nevion_thomson_vibe_0_1_0,
     "com.nevion.tns4200-0.1.0": CustomSettings_com_nevion_tns4200_0_1_0,
@@ -2017,12 +2203,15 @@ DriverLiteral = Literal[
     "com.nevion.ateme_dr8400-0.1.0",
     "com.nevion.avnpxh12-0.1.0",
     "com.nevion.aws_media-0.1.0",
+    "com.nevion.blade_runner-0.1.0",
     "com.nevion.cisco_7600_series-0.1.0",
     "com.nevion.cisco_asr-0.1.0",
     "com.nevion.cisco_catalyst_3850-0.1.0",
     "com.nevion.cisco_me-0.1.0",
+    "com.nevion.cisco_ncs540-0.1.0",
     "com.nevion.cisco_nexus-0.1.0",
     "com.nevion.cisco_nexus_nbm-0.1.0",
+    "com.nevion.comprimato-0.1.0",
     "com.nevion.cp330-0.1.0",
     "com.nevion.cp4400-0.1.0",
     "com.nevion.cp505-0.1.0",
@@ -2099,6 +2288,7 @@ DriverLiteral = Literal[
     "com.nevion.openflow-0.0.1",
     "com.nevion.powercore-0.1.0",
     "com.nevion.prismon-1.0.0",
+    "com.nevion.probel_sw_p_08-0.1.0",
     "com.nevion.r3lay-0.1.0",
     "com.nevion.selenio_13p-0.1.0",
     "com.nevion.sencore_dmg-0.1.0",
@@ -2111,6 +2301,7 @@ DriverLiteral = Literal[
     "com.nevion.tag_mcm9000-0.1.0",
     "com.nevion.tag_mcs-0.1.0",
     "com.nevion.tally-0.1.0",
+    "com.nevion.telestream_surveyor-0.1.0",
     "com.nevion.thomson_mxs-0.1.0",
     "com.nevion.thomson_vibe-0.1.0",
     "com.nevion.tns4200-0.1.0",
@@ -2172,12 +2363,15 @@ CustomSettings = Union[
     CustomSettings_com_nevion_ateme_dr8400_0_1_0,
     CustomSettings_com_nevion_avnpxh12_0_1_0,
     CustomSettings_com_nevion_aws_media_0_1_0,
+    CustomSettings_com_nevion_blade_runner_0_1_0,
     CustomSettings_com_nevion_cisco_7600_series_0_1_0,
     CustomSettings_com_nevion_cisco_asr_0_1_0,
     CustomSettings_com_nevion_cisco_catalyst_3850_0_1_0,
     CustomSettings_com_nevion_cisco_me_0_1_0,
+    CustomSettings_com_nevion_cisco_ncs540_0_1_0,
     CustomSettings_com_nevion_cisco_nexus_0_1_0,
     CustomSettings_com_nevion_cisco_nexus_nbm_0_1_0,
+    CustomSettings_com_nevion_comprimato_0_1_0,
     CustomSettings_com_nevion_cp330_0_1_0,
     CustomSettings_com_nevion_cp4400_0_1_0,
     CustomSettings_com_nevion_cp505_0_1_0,
@@ -2254,6 +2448,7 @@ CustomSettings = Union[
     CustomSettings_com_nevion_openflow_0_0_1,
     CustomSettings_com_nevion_powercore_0_1_0,
     CustomSettings_com_nevion_prismon_1_0_0,
+    CustomSettings_com_nevion_probel_sw_p_08_0_1_0,
     CustomSettings_com_nevion_r3lay_0_1_0,
     CustomSettings_com_nevion_selenio_13p_0_1_0,
     CustomSettings_com_nevion_sencore_dmg_0_1_0,
@@ -2266,6 +2461,7 @@ CustomSettings = Union[
     CustomSettings_com_nevion_tag_mcm9000_0_1_0,
     CustomSettings_com_nevion_tag_mcs_0_1_0,
     CustomSettings_com_nevion_tally_0_1_0,
+    CustomSettings_com_nevion_telestream_surveyor_0_1_0,
     CustomSettings_com_nevion_thomson_mxs_0_1_0,
     CustomSettings_com_nevion_thomson_vibe_0_1_0,
     CustomSettings_com_nevion_tns4200_0_1_0,

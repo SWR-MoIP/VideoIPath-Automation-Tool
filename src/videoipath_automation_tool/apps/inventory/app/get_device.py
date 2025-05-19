@@ -340,6 +340,21 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
+        custom_settings_type: Optional[Literal["com.nevion.blade_runner-0.1.0"]] = None,
+        config_only: bool = False,
+        label_search_mode: Literal[
+            "canonical_label", "factory_label_only", "user_defined_label_only"
+        ] = "canonical_label",
+        status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
+        status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
+    ) -> InventoryDevice[CustomSettings_com_nevion_blade_runner_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
         custom_settings_type: Optional[Literal["com.nevion.cisco_7600_series-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
@@ -400,6 +415,21 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
+        custom_settings_type: Optional[Literal["com.nevion.cisco_ncs540-0.1.0"]] = None,
+        config_only: bool = False,
+        label_search_mode: Literal[
+            "canonical_label", "factory_label_only", "user_defined_label_only"
+        ] = "canonical_label",
+        status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
+        status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
+    ) -> InventoryDevice[CustomSettings_com_nevion_cisco_ncs540_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
         custom_settings_type: Optional[Literal["com.nevion.cisco_nexus-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
@@ -423,6 +453,21 @@ class InventoryGetDeviceMixin:
         status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
         status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
     ) -> InventoryDevice[CustomSettings_com_nevion_cisco_nexus_nbm_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        custom_settings_type: Optional[Literal["com.nevion.comprimato-0.1.0"]] = None,
+        config_only: bool = False,
+        label_search_mode: Literal[
+            "canonical_label", "factory_label_only", "user_defined_label_only"
+        ] = "canonical_label",
+        status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
+        status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
+    ) -> InventoryDevice[CustomSettings_com_nevion_comprimato_0_1_0]: ...
 
     @overload
     def get_device(
@@ -1570,6 +1615,21 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
+        custom_settings_type: Optional[Literal["com.nevion.probel_sw_p_08-0.1.0"]] = None,
+        config_only: bool = False,
+        label_search_mode: Literal[
+            "canonical_label", "factory_label_only", "user_defined_label_only"
+        ] = "canonical_label",
+        status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
+        status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
+    ) -> InventoryDevice[CustomSettings_com_nevion_probel_sw_p_08_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
         custom_settings_type: Optional[Literal["com.nevion.r3lay-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[
@@ -1743,6 +1803,21 @@ class InventoryGetDeviceMixin:
         status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
         status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
     ) -> InventoryDevice[CustomSettings_com_nevion_tally_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
+        custom_settings_type: Optional[Literal["com.nevion.telestream_surveyor-0.1.0"]] = None,
+        config_only: bool = False,
+        label_search_mode: Literal[
+            "canonical_label", "factory_label_only", "user_defined_label_only"
+        ] = "canonical_label",
+        status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
+        status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
+    ) -> InventoryDevice[CustomSettings_com_nevion_telestream_surveyor_0_1_0]: ...
 
     @overload
     def get_device(
