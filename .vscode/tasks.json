@@ -2,10 +2,11 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Generate Overloads",
+      "label": "Generate Data Model",
       "problemMatcher": [],
       "dependsOn": [
-        "Generate Overloads without Formatting",
+        "Generate Driver Models",
+        "Generate Overloads",
         "Format",
       ],
       "isBackground": true,
@@ -13,22 +14,57 @@
       "dependsOrder": "sequence",
     },
     {
-      "label": "Generate Overloads without Formatting",
+      "label": "Generate Overloads",
       "type": "shell",
-      "command": "python",
+      "command": "poetry",
       "args": [
-        "${workspaceFolder}/src/generate_overloads.py"
+        "run",
+        "python",
+        "${workspaceFolder}/src/scripts/generate_overloads.py"
       ],
       "hide": true
     },
     {
       "label": "Format",
       "type": "shell",
-      "command": "ruff",
+      "command": "poetry",
       "args": [
+        "run",
+        "ruff",
         "format",
         "."
       ]
+    },
+    {
+      "label": "Generate Driver Models",
+      "type": "shell",
+      "command": "poetry",
+      "args": [
+        "run",
+        "python",
+        "${workspaceFolder}/src/scripts/generate_driver_models.py",
+        "${input:driversSchemaFile}",
+        "${input:driverModelFile}"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "driversSchemaFile",
+      "type": "promptString",
+      "description": "Path to drivers schema JSON file (optional, use latest version as default)",
+      "default": ""
+    },
+    {
+      "id": "driverModelFile",
+      "type": "promptString",
+      "description": "Path to driver models Python file (optional)",
+      "default": ""
     }
   ]
 }
