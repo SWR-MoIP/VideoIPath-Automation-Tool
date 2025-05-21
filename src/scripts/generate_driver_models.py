@@ -2,6 +2,9 @@ import argparse
 import importlib.util
 import json
 
+DEFAULT_SCHEMA_FILE = "src/videoipath_automation_tool/apps/inventory/model/driver_schema/2024.3.3.json"
+DEFAULT_OUTPUT_FILE = "src/videoipath_automation_tool/apps/inventory/model/drivers.py"
+
 
 def load_pydantic_model_builder():
     spec = importlib.util.spec_from_file_location(
@@ -20,13 +23,13 @@ parser = argparse.ArgumentParser(description="Generate Pydantic models from driv
 parser.add_argument(
     "schema_file",
     nargs="?",
-    default="src/videoipath_automation_tool/apps/inventory/model/driver_schema/2024.3.3.json",
+    default=None,
     help="Path to the driver schema JSON file",
 )
 parser.add_argument(
     "output_file",
     nargs="?",
-    default="src/videoipath_automation_tool/apps/inventory/model/drivers.py",
+    default=None,
     help="Path where the generated Python file will be saved",
 )
 
@@ -127,9 +130,11 @@ def _get_attribute_type(field: dict) -> tuple[str, list[tuple[str | int | float,
     return field["_schema"]["type"], None
 
 
-if __name__ == "__main__":
-    args = parser.parse_args()
-    schema = json.load(open(args.schema_file))
+def main(
+    schema_file: str = DEFAULT_SCHEMA_FILE,
+    output_file: str = DEFAULT_OUTPUT_FILE,
+):
+    schema = json.load(open(schema_file))
 
     drivers = schema["data"]["status"]["system"]["drivers"]["_items"]
     driver_models = "\n\n".join([_generate_driver_model(driver) for driver in drivers])
@@ -141,7 +146,7 @@ from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - {args.schema_file} is used as reference to define the custom settings model!
+# - {schema_file} is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
@@ -167,6 +172,11 @@ CustomSettingsType = TypeVar("CustomSettingsType", bound=CustomSettings)
 """
     print("Drivers generated successfully!")
 
-    with open(args.output_file, "w") as f:
+    with open(output_file, "w") as f:
         f.write(code)
-        print(f"Updated {args.output_file}")
+        print(f"Updated {output_file}")
+
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    main(args.schema_file, args.output_file)

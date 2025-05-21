@@ -70,7 +70,7 @@ def generate_overloads(method: str, generate_overloads: Callable) -> None:
     print(f"Updated overloads in {FILE_PATH} ✅")
 
 
-if __name__ == "__main__":
+def main():
     overloaded_methods = {
         "create_device": generate_create_device_overloads,
         "create_device_from_discovered_device": generate_create_device_from_discovered_device_overloads,
@@ -78,3 +78,7 @@ if __name__ == "__main__":
     }
     for method, generator in overloaded_methods.items():
         generate_overloads(method, generator)
+
+
+if __name__ == "__main__":
+    main()
