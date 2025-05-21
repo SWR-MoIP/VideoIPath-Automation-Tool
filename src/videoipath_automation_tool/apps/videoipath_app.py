@@ -1,15 +1,31 @@
 import logging
-from typing import Literal, Optional
+from typing import Generic, Literal, Optional, TypeVar, cast
 
-from videoipath_automation_tool.apps.inventory import InventoryApp
+from videoipath_automation_tool.apps.inventory import (
+    InventoryApp2023_4_2,
+    InventoryApp2023_4_35,
+    InventoryApp2024_1_4,
+    InventoryApp2024_3_3,
+    InventoryApp2024_4_12,
+)
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
 from videoipath_automation_tool.apps.profile.profile_app import ProfileApp
 from videoipath_automation_tool.apps.topology.topology_app import TopologyApp
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.settings import Settings
 
+VideoIPathVersion = Literal["2023.4.2", "2023.4.35", "2024.1.4", "2024.3.3", "2024.4.12"]
+InventoryAppVersion = TypeVar(
+    "InventoryAppVersion",
+    InventoryApp2023_4_2,
+    InventoryApp2023_4_35,
+    InventoryApp2024_1_4,
+    InventoryApp2024_3_3,
+    InventoryApp2024_4_12,
+)
 
-class VideoIPathApp:
+
+class GenericVideoIPathApp(Generic[InventoryAppVersion]):
     """Main class for VideoIPath Automation Tool.
     VideoIPathApp contains all Apps and methods to interact with the VideoIPath System.
     """
@@ -23,6 +39,7 @@ class VideoIPathApp:
         verify_ssl_cert: Optional[bool] = None,
         log_level: Optional[Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]] = None,
         environment: Optional[str] = None,
+        version: Optional[VideoIPathVersion] = None,
     ):
         """
         Initialize the VideoIPath Automation Tool, establish connection to the VideoIPath-Server and initialize the Apps for interaction.
@@ -36,6 +53,7 @@ class VideoIPathApp:
             verify_ssl_cert (bool, optional): Set to `True` if the SSL certificate should be verified. [ENV: VIPAT_VERIFY_SSL_CERT]
             log_level (str, optional): The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. [ENV: VIPAT_LOG_LEVEL]
             environment (str, optional): Define the environment: `DEV`, `TEST`, `PROD`. [ENV: VIPAT_ENVIRONMENT]
+            version (str, optional): The VideoIPath version to use. Defaults to "latest". [ENV: VIPAT_VERSION]
         """
 
         # --- Load environment variables ---
@@ -165,13 +183,28 @@ class VideoIPathApp:
             self._preferences_api = self.preferences._preferences_api
             self._profile_api = self.profile._profile_api
 
+        self._version = version
+
     # --- Getters to enable lazy loading ---
     @property
-    def inventory(self):
+    def inventory(self) -> InventoryAppVersion:
         if self._inventory is None:
             self._logger.debug("InventoryApp first called. Initialize InventoryApp.")
-            self._inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self._logger)
-        return self._inventory
+            if self._version == "2023.4.2":
+                self._inventory = InventoryApp2023_4_2(vip_connector=self._videoipath_connector, logger=self._logger)
+            elif self._version == "2023.4.35":
+                self._inventory = InventoryApp2023_4_35(vip_connector=self._videoipath_connector, logger=self._logger)
+            elif self._version == "2024.1.4":
+                self._inventory = InventoryApp2024_1_4(vip_connector=self._videoipath_connector, logger=self._logger)
+            elif self._version == "2024.3.3":
+                self._inventory = InventoryApp2024_3_3(vip_connector=self._videoipath_connector, logger=self._logger)
+            elif self._version == "2024.4.12":
+                self._inventory = InventoryApp2024_4_12(vip_connector=self._videoipath_connector, logger=self._logger)
+            else:
+                raise ValueError(
+                    f"Invalid version provided: '{self._version}'. Please provide a valid version: '2023.4.2', '2023.4.35', '2024.1.4', '2024.3.3', '2024.4.12'."
+                )
+        return cast(InventoryAppVersion, self._inventory)
 
     @property
     def topology(self):

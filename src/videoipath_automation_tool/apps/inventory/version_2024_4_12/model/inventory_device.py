@@ -7,9 +7,9 @@ from videoipath_automation_tool.apps.inventory.inventory_utils import (
     construct_driver_id_from_info,
     extract_driver_info_from_id,
 )
-from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
-from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
-from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration import (
+from videoipath_automation_tool.apps.inventory.version_2024_4_12.model.device_status import DeviceStatus
+from videoipath_automation_tool.apps.inventory.version_2024_4_12.model.drivers import CustomSettingsType
+from videoipath_automation_tool.apps.inventory.version_2024_4_12.model.inventory_device_configuration import (
     Auth,
     DeviceConfiguration,
     DriverInfos,

@@ -1,1 +1,3 @@
-from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp  # noqa: F401
+from videoipath_automation_tool.apps.factory import VideoIPathApp
+
+__all__ = ["VideoIPathApp"]

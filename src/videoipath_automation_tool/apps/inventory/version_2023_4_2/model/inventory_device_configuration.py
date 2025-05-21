@@ -3,7 +3,7 @@ from typing import Annotated, Generic
 from pydantic import BaseModel, Field
 from typing_extensions import deprecated
 
-from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
+from videoipath_automation_tool.apps.inventory.version_2023_4_2.model.drivers import CustomSettingsType
 
 
 class CinfoOverridesSNMP(BaseModel, validate_assignment=True):

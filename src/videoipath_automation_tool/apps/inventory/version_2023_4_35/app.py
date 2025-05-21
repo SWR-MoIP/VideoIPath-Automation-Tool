@@ -3,23 +3,31 @@ from typing import List, Literal, Optional
 
 from typing_extensions import deprecated
 
-from videoipath_automation_tool.apps.inventory.app.create_device import InventoryCreateDeviceMixin
-from videoipath_automation_tool.apps.inventory.app.create_device_from_discovered_device import (
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.create_device import InventoryCreateDeviceMixin
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.create_device_from_discovered_device import (
     InventoryCreateDeviceFromDiscoveredDeviceMixin,
 )
-from videoipath_automation_tool.apps.inventory.app.get_device import InventoryGetDeviceMixin
-from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
-from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettings, CustomSettingsType, DriverLiteral
-from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
-from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration_compare import (
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.get_device import InventoryGetDeviceMixin
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.inventory_api import InventoryAPI
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.model.drivers import (
+    CustomSettings,
+    CustomSettingsType,
+    DriverLiteral,
+)
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.model.inventory_device import InventoryDevice
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.model.inventory_device_configuration_compare import (
     InventoryDeviceComparison,
 )
-from videoipath_automation_tool.apps.inventory.model.inventory_discovered_device import DiscoveredInventoryDevice
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.model.inventory_discovered_device import (
+    DiscoveredInventoryDevice,
+)
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.validators.device_id import validate_device_id
 
 
 class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscoveredDeviceMixin, InventoryGetDeviceMixin):
+    version: Literal["2023.4.35"] = "2023.4.35"
+
     def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
         """Inventory App contains functionality to interact with VideoIPath-Inventory.
 

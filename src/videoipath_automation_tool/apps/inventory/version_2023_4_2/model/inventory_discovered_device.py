@@ -2,8 +2,8 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettings
-from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration import Config
+from videoipath_automation_tool.apps.inventory.version_2023_4_2.model.drivers import CustomSettings
+from videoipath_automation_tool.apps.inventory.version_2023_4_2.model.inventory_device_configuration import Config
 
 
 class DiscoveredInventoryDevice(BaseModel):

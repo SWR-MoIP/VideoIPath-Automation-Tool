@@ -7,15 +7,17 @@ from uuid import uuid4
 from pydantic import IPvAnyAddress
 from typing_extensions import deprecated
 
-from videoipath_automation_tool.apps.inventory.inventory_utils import (
+from videoipath_automation_tool.apps.inventory.version_2024_3_3.inventory_utils import (
     construct_driver_id_from_info,
     extract_driver_info_from_id,
 )
-from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
-from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType, DriverLiteral
-from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
-from videoipath_automation_tool.apps.inventory.model.inventory_discovered_device import DiscoveredInventoryDevice
-from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
+from videoipath_automation_tool.apps.inventory.version_2024_3_3.model.device_status import DeviceStatus
+from videoipath_automation_tool.apps.inventory.version_2024_3_3.model.drivers import CustomSettingsType, DriverLiteral
+from videoipath_automation_tool.apps.inventory.version_2024_3_3.model.inventory_device import InventoryDevice
+from videoipath_automation_tool.apps.inventory.version_2024_3_3.model.inventory_discovered_device import (
+    DiscoveredInventoryDevice,
+)
+from videoipath_automation_tool.apps.inventory.version_2024_3_3.model.inventory_request_rpc import InventoryRequestRpc
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger, extract_natural_sort_key
@@ -772,5 +774,7 @@ class InventoryAPI:
         for status_device in status_data.data["status"]["devman"]["devices"]["_items"]:
             if status_device["_id"] in device_dict and "canonicalLabel" in status_device:
                 device_dict[status_device["_id"]]["canonicalLabel"] = status_device["canonicalLabel"]
+
+        return device_dict
 
         return device_dict

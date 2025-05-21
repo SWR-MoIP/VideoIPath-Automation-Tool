@@ -1,7 +1,7 @@
 from deepdiff.diff import DeepDiff
 from pydantic import BaseModel, Field
 
-from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
+from videoipath_automation_tool.apps.inventory.version_2024_1_4.model.inventory_device import InventoryDevice
 
 
 class InventoryDeviceConfigurationDiff(BaseModel):

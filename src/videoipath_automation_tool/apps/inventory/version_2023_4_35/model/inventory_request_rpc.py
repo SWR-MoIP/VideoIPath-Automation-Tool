@@ -1,4 +1,4 @@
-from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
+from videoipath_automation_tool.apps.inventory.version_2023_4_35.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
 from videoipath_automation_tool.validators.device_id import validate_device_id
 
