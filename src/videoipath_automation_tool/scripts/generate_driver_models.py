@@ -4,7 +4,8 @@ import os
 
 from videoipath_automation_tool.utils.script_utils import ROOT_DIR, load_module
 
-DEFAULT_SCHEMA_FILE = os.path.join(ROOT_DIR, "apps", "inventory", "model", "driver_schema", "2024.3.3.json")
+DEFAULT_VERSION = "2024.4.12"
+DEFAULT_SCHEMA_FILE = os.path.join(ROOT_DIR, "apps", "inventory", "model", "driver_schema", f"{DEFAULT_VERSION}.json")
 DEFAULT_OUTPUT_FILE = os.path.join(ROOT_DIR, "apps", "inventory", "model", "drivers.py")
 
 parser = argparse.ArgumentParser(description="Generate Pydantic models from driver schema")
@@ -134,7 +135,7 @@ from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - {schema_file} is used as reference to define the custom settings model!
+# - Schema {schema_file.split("/")[-1]} is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!

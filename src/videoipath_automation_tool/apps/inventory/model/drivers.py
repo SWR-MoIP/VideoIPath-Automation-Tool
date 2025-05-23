@@ -1,11 +1,11 @@
 from abc import ABC
-from typing import Dict, Literal, Type, TypeVar, Union, Optional
+from typing import Dict, Literal, Optional, Type, TypeVar, Union
 
 from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - src/videoipath_automation_tool/apps/inventory/model/driver_schema/2024.1.4.json is used as reference to define the custom settings model!
+# - Schema 2024.4.12.json is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
