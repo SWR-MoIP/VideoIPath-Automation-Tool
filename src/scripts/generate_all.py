@@ -20,11 +20,11 @@ def load_module(module_name: str, file_path: str) -> ModuleType:
 
 
 generate_driver_models_mod = load_module("generate_driver_models", "src/scripts/generate_driver_models.py")
-generate_overloads_mod = load_module("generate_overloads", "src/scripts/generate_overloads.py")
+
 
 list_available_schema_versions = generate_driver_models_mod.list_available_schema_versions
 generate_driver_models = generate_driver_models_mod.main
-generate_overloads = generate_overloads_mod.main
+
 
 current_file = Path(__file__).resolve()
 ROOT_DIR = current_file.parent.parent / "videoipath_automation_tool"
@@ -45,6 +45,10 @@ def main():
         exit(1)
 
     generate_driver_models(schema_file)
+
+    # Note: Module should be loaded after generate_driver_models to ensure it imports the correct version of the drivers module
+    generate_overloads_mod = load_module("generate_overloads", "src/scripts/generate_overloads.py")
+    generate_overloads = generate_overloads_mod.main
     generate_overloads()
 
 
