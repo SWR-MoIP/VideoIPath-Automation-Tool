@@ -34,7 +34,7 @@ Documentation = "https://github.com/SWR-MoIP/VideoIPath-Automation-Tool#document
 packages = [{ include = "videoipath_automation_tool", from = "src" }]
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.11.10"
+ruff = "^0.11.11"
 pre-commit = "^4.0.1"
 
 [tool.poetry.group.test.dependencies]
