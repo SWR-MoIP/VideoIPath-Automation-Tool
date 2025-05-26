@@ -23,6 +23,14 @@ parser.add_argument(
 )
 
 
+def list_available_schema_versions() -> list[str]:
+    schema_dir = os.path.join(ROOT_DIR, "apps", "inventory", "model", "driver_schema")
+    return sorted(
+        [f.split(".json")[0] for f in os.listdir(schema_dir) if f.endswith(".json")],
+        key=lambda x: tuple(map(int, x.split("."))),
+    )
+
+
 def _generate_driver_model(driver_schema: dict) -> str:
     pmb_module = load_module("pydantic_model_builder", os.path.join(ROOT_DIR, "utils", "pydantic_model_builder.py"))
     PydanticModelBuilder = pmb_module.PydanticModelBuilder
@@ -140,6 +148,8 @@ from pydantic import BaseModel, Field
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
 
+SELECTED_SCHEMA_VERSION = "{schema_file.split("/")[-1].split(".json")[0]}"
+AVAILABLE_SCHEMA_VERSIONS = {list_available_schema_versions()}
 
 class DriverCustomSettings(ABC, BaseModel, validate_assignment=True): ...
 

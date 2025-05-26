@@ -1,6 +1,7 @@
 import argparse
 import os
 
+from videoipath_automation_tool.scripts.generate_driver_models import list_available_schema_versions
 from videoipath_automation_tool.scripts.generate_driver_models import main as generate_driver_models
 from videoipath_automation_tool.scripts.generate_overloads import main as generate_overloads
 from videoipath_automation_tool.utils.script_utils import ROOT_DIR
@@ -15,8 +16,9 @@ def main():
 
     if not os.path.exists(schema_file):
         print(
-            f"VideoIPath version {args.version} is currently not supported. Please create an issue on https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/issues to request support for this version."
+            f"VideoIPath version {args.version} is currently not supported. Please create an issue on https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/issues to request support for this version or use one of the following versions:"
         )
+        print("\n".join(list_available_schema_versions()))
         exit(1)
 
     generate_driver_models(schema_file)
