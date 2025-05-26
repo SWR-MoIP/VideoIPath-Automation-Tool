@@ -1,22 +1,14 @@
-import importlib.util
+import os
 import re
 from typing import Callable
 
+from videoipath_automation_tool.utils.script_utils import ROOT_DIR, load_module
 
-def load_driver_settings():
-    spec = importlib.util.spec_from_file_location(
-        "drivers_module", "src/videoipath_automation_tool/apps/inventory/model/drivers.py"
-    )
-
-    if spec is None or spec.loader is None:
-        raise ValueError("Failed to load drivers module")
-
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return getattr(module, "DRIVER_ID_TO_CUSTOM_SETTINGS", {})
-
-
-DRIVER_ID_TO_CUSTOM_SETTINGS = load_driver_settings()
+DRIVERS_MODULE = load_module(
+    "drivers_module",
+    os.path.join(ROOT_DIR, "apps", "inventory", "model", "drivers.py"),
+)
+DRIVER_ID_TO_CUSTOM_SETTINGS = DRIVERS_MODULE.DRIVER_ID_TO_CUSTOM_SETTINGS
 
 
 def generate_create_device_overloads() -> str:
@@ -44,7 +36,7 @@ def generate_get_device_overloads() -> str:
 
 
 def generate_overloads(method: str, generate_overloads: Callable) -> None:
-    FILE_PATH = f"src/videoipath_automation_tool/apps/inventory/app/{method}.py"
+    FILE_PATH = os.path.join(ROOT_DIR, "apps", "inventory", "app", f"{method}.py")
 
     with open(FILE_PATH, "r") as f:
         content = f.read()
@@ -70,7 +62,7 @@ def generate_overloads(method: str, generate_overloads: Callable) -> None:
     print(f"Updated overloads in {FILE_PATH} ✅")
 
 
-if __name__ == "__main__":
+def main():
     overloaded_methods = {
         "create_device": generate_create_device_overloads,
         "create_device_from_discovered_device": generate_create_device_from_discovered_device_overloads,
@@ -78,3 +70,7 @@ if __name__ == "__main__":
     }
     for method, generator in overloaded_methods.items():
         generate_overloads(method, generator)
+
+
+if __name__ == "__main__":
+    main()

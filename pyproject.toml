@@ -6,21 +6,26 @@ license = { text = "AGPL-3.0-only" }
 license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [
-    { name = "Paul Winterstein", email = "paul.winterstein@swr.de" },
-]
+authors = [{ name = "Paul Winterstein", email = "paul.winterstein@swr.de" }]
 maintainers = [
     { name = "SWR Media-over-IP Team", email = "moip@swr.de" },
     { name = "Josia Hildebrandt", email = "manuel_josia.hildebrandt@swr.de" },
 ]
-keywords = ["videoipath", "automation", "nevion", "media-over-ip", "st2110", "orchestration"]
+keywords = [
+    "videoipath",
+    "automation",
+    "nevion",
+    "media-over-ip",
+    "st2110",
+    "orchestration",
+]
 dependencies = [
     "requests (>=2.31.0,<3.0.0)",
     "pydantic (>=2.6.4,<3.0.0)",
     "pydantic-extra-types (>=2.6.0,<3.0.0)",
     "pydantic-settings (>=2.2.1,<3.0.0)",
     "urllib3 (>=2.2.3,<3.0.0)",
-    "deepdiff (>=8.1.1,<9.0.0)"
+    "deepdiff (>=8.1.1,<9.0.0)",
 ]
 
 [project.urls]
@@ -51,6 +56,8 @@ env_files = ["tests/.env.test"]
 [virtualenvs]
 in-project = true
 
+[project.scripts]
+set-videoipath-version = "videoipath_automation_tool.scripts.generate_all:main"
 
 [tool.ruff]
 include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]
