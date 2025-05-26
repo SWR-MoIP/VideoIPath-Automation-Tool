@@ -21,7 +21,7 @@ def load_module(module_name: str, file_path: str) -> ModuleType:
 
 
 current_file = Path(__file__).resolve()
-ROOT_DIR = current_file.parent.parent
+ROOT_DIR = current_file.parent.parent / "videoipath_automation_tool"
 
 
 DRIVERS_MODULE = load_module(
