@@ -1,8 +1,28 @@
 import argparse
+import importlib.util
 import json
 import os
+from pathlib import Path
+from types import ModuleType
 
-from videoipath_automation_tool.utils.script_utils import ROOT_DIR, load_module
+
+def load_module(module_name: str, file_path: str) -> ModuleType:
+    spec = importlib.util.spec_from_file_location(
+        module_name,
+        file_path,
+    )
+
+    if spec is None or spec.loader is None:
+        raise ValueError("Failed to load drivers module")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+current_file = Path(__file__).resolve()
+ROOT_DIR = current_file.parent.parent
+
 
 DEFAULT_VERSION = "2024.4.12"
 DEFAULT_SCHEMA_FILE = os.path.join(ROOT_DIR, "apps", "inventory", "model", "driver_schema", f"{DEFAULT_VERSION}.json")

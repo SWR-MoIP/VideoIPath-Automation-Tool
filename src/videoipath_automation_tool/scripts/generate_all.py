@@ -1,10 +1,37 @@
 import argparse
+import importlib.util
 import os
+from pathlib import Path
+from types import ModuleType
 
-from videoipath_automation_tool.scripts.generate_driver_models import list_available_schema_versions
-from videoipath_automation_tool.scripts.generate_driver_models import main as generate_driver_models
-from videoipath_automation_tool.scripts.generate_overloads import main as generate_overloads
-from videoipath_automation_tool.utils.script_utils import ROOT_DIR
+
+def load_module(module_name: str, file_path: str) -> ModuleType:
+    spec = importlib.util.spec_from_file_location(
+        module_name,
+        file_path,
+    )
+
+    if spec is None or spec.loader is None:
+        raise ValueError("Failed to load drivers module")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+generate_driver_models_mod = load_module(
+    "generate_driver_models", "src/videoipath_automation_tool/scripts/generate_driver_models.py"
+)
+generate_overloads_mod = load_module(
+    "generate_overloads", "src/videoipath_automation_tool/scripts/generate_overloads.py"
+)
+
+list_available_schema_versions = generate_driver_models_mod.list_available_schema_versions
+generate_driver_models = generate_driver_models_mod.main
+generate_overloads = generate_overloads_mod.main
+
+current_file = Path(__file__).resolve()
+ROOT_DIR = current_file.parent.parent
 
 parser = argparse.ArgumentParser(description="Generate all version-specific code for a given VideoIPath version")
 parser.add_argument("version", help="Version of VideoIPath to use", default="2024.4.12", nargs="?")
