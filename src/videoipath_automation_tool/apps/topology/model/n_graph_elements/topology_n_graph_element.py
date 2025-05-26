@@ -14,7 +14,7 @@ class Gpid(BaseModel, validate_assignment=True):
 
 
 class MapsElement(BaseModel, validate_assignment=True):
-    cType: Literal["Topology"] = "Topology"
+    cType: Literal["Topology", "Geo"] = "Topology"
     id: str = ""
     name: str = ""
     visible: bool = True
