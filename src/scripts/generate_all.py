@@ -16,7 +16,9 @@ def main():
         print(
             f"VideoIPath version {args.version} is currently not supported. Please create an issue on https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/issues to request support for this version or use one of the following versions:"
         )
-        print("\n".join(list_available_schema_versions()))
+        versions = list_available_schema_versions()
+        for version in versions:
+            print(f"- {version}")
         exit(1)
 
     generate_driver_models(schema_file)
