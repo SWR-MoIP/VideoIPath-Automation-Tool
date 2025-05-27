@@ -1,8 +1,8 @@
 import argparse
 import os
 
-from scripts.generate_driver_models import main as generate_driver_models
-from scripts.version_utils import ROOT_DIR, list_available_schema_versions, load_module
+from vipat_cli_scripts.generate_driver_models import main as generate_driver_models
+from vipat_cli_scripts.version_utils import ROOT_DIR, list_available_schema_versions, load_module
 
 parser = argparse.ArgumentParser(description="Generate all version-specific code for a given VideoIPath version")
 parser.add_argument("version", help="Version of VideoIPath to use", default="2024.4.12", nargs="?")
@@ -24,7 +24,7 @@ def main():
     generate_driver_models(schema_file)
 
     # Note: Module should be loaded after generate_driver_models to ensure it imports the correct version of the drivers module
-    generate_overloads_mod = load_module("generate_overloads", "src/scripts/generate_overloads.py")
+    generate_overloads_mod = load_module("generate_overloads", "src/vipat_cli_scripts/generate_overloads.py")
     generate_overloads = generate_overloads_mod.main
     generate_overloads()
 

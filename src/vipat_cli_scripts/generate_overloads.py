@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Callable
 
-from scripts.version_utils import load_module
+from vipat_cli_scripts.version_utils import load_module
 
 current_file = Path(__file__).resolve()
 ROOT_DIR = current_file.parent.parent / "videoipath_automation_tool"

@@ -37,7 +37,7 @@ Documentation = "https://github.com/SWR-MoIP/VideoIPath-Automation-Tool#document
 
 [tool.poetry]
 packages = [{ include = "videoipath_automation_tool", from = "src" },
-  { include = "scripts", from = "src" },]
+  { include = "vipat_cli_scripts", from = "src" },]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.11"
@@ -58,9 +58,9 @@ env_files = ["tests/.env.test"]
 in-project = true
 
 [project.scripts]
-set-videoipath-version = "scripts.generate_all:main"
-get-videoipath-version = "scripts.version_utils:get_videoipath_version"
-list-videoipath-versions = "scripts.version_utils:list_videoipath_versions"
+set-videoipath-version = "vipat_cli_scripts.generate_all:main"
+get-videoipath-version = "vipat_cli_scripts.version_utils:get_videoipath_version"
+list-videoipath-versions = "vipat_cli_scripts.version_utils:list_videoipath_versions"
 
 [tool.ruff]
 include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]

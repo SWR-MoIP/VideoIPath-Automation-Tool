@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 
-from scripts.version_utils import ROOT_DIR, list_available_schema_versions, load_module
+from vipat_cli_scripts.version_utils import ROOT_DIR, list_available_schema_versions, load_module
 
 DEFAULT_VERSION = "2024.4.12"
 DEFAULT_SCHEMA_FILE = os.path.join(ROOT_DIR, "apps", "inventory", "model", "driver_schema", f"{DEFAULT_VERSION}.json")

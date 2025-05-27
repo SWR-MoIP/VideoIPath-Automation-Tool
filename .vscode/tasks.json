@@ -20,7 +20,7 @@
       "args": [
         "run",
         "python",
-        "${workspaceFolder}/src/scripts/generate_overloads.py"
+        "${workspaceFolder}/src/vipat_cli_scripts/generate_overloads.py"
       ],
       "hide": true
     },
@@ -42,7 +42,7 @@
       "args": [
         "run",
         "python",
-        "${workspaceFolder}/src/scripts/generate_driver_models.py",
+        "${workspaceFolder}/src/vipat_cli_scripts/generate_driver_models.py",
         "${input:driversSchemaFile}",
         "${input:driverModelFile}"
       ],
