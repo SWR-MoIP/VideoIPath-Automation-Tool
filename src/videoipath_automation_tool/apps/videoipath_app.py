@@ -2,6 +2,7 @@ import logging
 from typing import Literal, Optional
 
 from videoipath_automation_tool.apps.inventory import InventoryApp
+from videoipath_automation_tool.apps.inventory.model.drivers import AVAILABLE_SCHEMA_VERSIONS, SELECTED_SCHEMA_VERSION
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
 from videoipath_automation_tool.apps.profile.profile_app import ProfileApp
 from videoipath_automation_tool.apps.topology.topology_app import TopologyApp
@@ -36,6 +37,7 @@ class VideoIPathApp:
             verify_ssl_cert (bool, optional): Set to `True` if the SSL certificate should be verified. [ENV: VIPAT_VERIFY_SSL_CERT]
             log_level (str, optional): The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. [ENV: VIPAT_LOG_LEVEL]
             environment (str, optional): Define the environment: `DEV`, `TEST`, `PROD`. [ENV: VIPAT_ENVIRONMENT]
+            advanced_driver_schema_check (bool, optional): Enable advanced driver schema check, which contains comparison of the driver schema with the fetched driver schema from the VideoIPath Server. Defaults to `False`.
         """
 
         # --- Load environment variables ---
@@ -150,6 +152,9 @@ class VideoIPathApp:
         del log_level
         del _settings
 
+        # --- Check Driver Schema Version ---
+        self._basic_version_check()
+
         # --- Initialize App placeholders ---
         self._inventory = None
         self._topology = None
@@ -195,6 +200,57 @@ class VideoIPathApp:
         return self._profile
 
     # --- Basic Methods ---
+    def _determine_fallback_driver_schema_version(self) -> Optional[str]:
+        """
+        Determine the fallback driver schema version based on the VideoIPath Server version.
+
+        Returns:
+            Optional[str]: The fallback driver schema version or None if no fallback is needed.
+        """
+        server_version = self.get_server_version()
+        self._logger.debug(f"VideoIPath Server version: {server_version}")
+
+        if server_version in AVAILABLE_SCHEMA_VERSIONS:
+            return None  # No fallback needed, the server version is supported.
+
+        fallback_version = (
+            AVAILABLE_SCHEMA_VERSIONS[-1]
+            if server_version > AVAILABLE_SCHEMA_VERSIONS[-1]
+            else AVAILABLE_SCHEMA_VERSIONS[0]
+        )
+        return fallback_version
+
+    def _basic_version_check(self):
+        """Log compatibility status between the VideoIPath Server version and the selected driver schema version."""
+        server_version = self.get_server_version()
+        if server_version == SELECTED_SCHEMA_VERSION:
+            self._logger.debug(
+                f"VideoIPath Server version matches the driver schema version: {SELECTED_SCHEMA_VERSION}."
+            )
+            return
+
+        if server_version in AVAILABLE_SCHEMA_VERSIONS:
+            self._logger.warning(
+                f"VideoIPath Server version '{server_version}' is supported but does not match the driver schema version '{SELECTED_SCHEMA_VERSION}'. Please run `set-videoipath-version {server_version}` to set the correct schema version.",
+            )
+            return
+
+        self._logger.warning(
+            f"VideoIPath Server version '{server_version}' is not natively supported. "
+            f"A fallback driver schema version may be used, or support for this version can be requested. "
+            f"To request support, open an issue at: https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/issues"
+        )
+        fallback_version = self._determine_fallback_driver_schema_version()
+        if fallback_version:
+            if fallback_version == SELECTED_SCHEMA_VERSION:
+                self._logger.warning(
+                    f"The selected driver schema '{SELECTED_SCHEMA_VERSION}' already matches the determined fallback version."
+                )
+            else:
+                self._logger.warning(
+                    f"Fallback driver schema version determined: {fallback_version}. To apply it, run `set-videoipath-version {fallback_version}`."
+                )
+
     def get_server_version(self) -> str:
         """Get the VideoIPath Server version.
 

@@ -1,28 +1,8 @@
 import argparse
-import importlib.util
 import json
 import os
-from pathlib import Path
-from types import ModuleType
 
-
-def load_module(module_name: str, file_path: str) -> ModuleType:
-    spec = importlib.util.spec_from_file_location(
-        module_name,
-        file_path,
-    )
-
-    if spec is None or spec.loader is None:
-        raise ValueError("Failed to load drivers module")
-
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-current_file = Path(__file__).resolve()
-ROOT_DIR = current_file.parent.parent / "videoipath_automation_tool"
-
+from scripts.version_utils import ROOT_DIR, list_available_schema_versions, load_module
 
 DEFAULT_VERSION = "2024.4.12"
 DEFAULT_SCHEMA_FILE = os.path.join(ROOT_DIR, "apps", "inventory", "model", "driver_schema", f"{DEFAULT_VERSION}.json")
@@ -41,14 +21,6 @@ parser.add_argument(
     default=DEFAULT_OUTPUT_FILE,
     help="Path where the generated Python file will be saved",
 )
-
-
-def list_available_schema_versions() -> list[str]:
-    schema_dir = os.path.join(ROOT_DIR, "apps", "inventory", "model", "driver_schema")
-    return sorted(
-        [f.split(".json")[0] for f in os.listdir(schema_dir) if f.endswith(".json")],
-        key=lambda x: tuple(map(int, x.split("."))),
-    )
 
 
 def _generate_driver_model(driver_schema: dict) -> str:

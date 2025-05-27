@@ -10,8 +10,14 @@ The `VideoIPathApp` class provides all necessary methods to interact with the Vi
 
 Before establishing a connection to the VideoIPath Server, ensure that the following requirements are met:
 
-- **User Authorization**: The user account must be authorized using the `VideoIPath` authentication method.
-- **Permissions**: For a straightforward setup, enable both `API` and `Administrator` options for the user account (User Info). This ensures that the user has all necessary permissions to interact with the VideoIPath Server.
+### User Account Settings (User Info)
+
+- **User Authorization**:<br>The user account must be authorized using the `VideoIPath` authentication method.
+- **Permissions**:<br>For a straightforward setup, enable both `API` and `Administrator` options for the user account (User Info). This ensures that the user has all necessary permissions to interact with the VideoIPath Server.
+
+### Driver Versioning
+
+To ensure IntelliSense support and runtime validation of custom settings, the VideoIPath Server should be running a compatible version of the driver schema. By default, the package uses the latest Long-Term Support (LTS) version, which is currently **2024.1.4**. If you need to use a different version, refer to the [Driver Versioning Guide](../driver-versioning.md).
 
 ## Example 1: Establishing a Connection to the VideoIPath Server via Environment Variables
 

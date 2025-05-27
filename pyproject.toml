@@ -59,6 +59,8 @@ in-project = true
 
 [project.scripts]
 set-videoipath-version = "scripts.generate_all:main"
+get-videoipath-version = "scripts.version_utils:get_videoipath_version"
+list-videoipath-versions = "scripts.version_utils:list_videoipath_versions"
 
 [tool.ruff]
 include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]
