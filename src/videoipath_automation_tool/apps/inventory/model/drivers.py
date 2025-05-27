@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
 
 SELECTED_SCHEMA_VERSION = "2024.1.4"
-AVAILABLE_SCHEMA_VERSIONS = ["2023.4.2", "2023.4.35", "2024.1.4", "2024.3.3", "2024.4.12"]
+AVAILABLE_SCHEMA_VERSIONS = ["2023.4.2", "2023.4.35", "2023.4.37", "2024.1.4", "2024.3.3", "2024.4.12"]
 
 
 class DriverCustomSettings(ABC, BaseModel, validate_assignment=True): ...
