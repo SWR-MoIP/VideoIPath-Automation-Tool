@@ -42,7 +42,7 @@ class VideoIPathApp:
             verify_ssl_cert (bool, optional): Set to `True` if the SSL certificate should be verified. [ENV: VIPAT_VERIFY_SSL_CERT]
             log_level (str, optional): The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. [ENV: VIPAT_LOG_LEVEL]
             environment (str, optional): Define the environment: `DEV`, `TEST`, `PROD`. [ENV: VIPAT_ENVIRONMENT]
-            advanced_driver_schema_check (bool, optional): Enable advanced driver schema check, which contains comparison of the driver schema (custom fields) with the fetched driver schema from the VideoIPath Server. Defaults to `True`.
+            advanced_driver_schema_check (bool, optional): Enable advanced driver schema check, which contains comparison of the driver schema (custom fields) with the fetched driver schema from the VideoIPath Server. [ENV: VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK]
         """
 
         # --- Load environment variables ---
@@ -95,11 +95,6 @@ class VideoIPathApp:
             if advanced_driver_schema_check is not None
             else _settings.VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK
         )
-
-        if advanced_driver_schema_check:
-            self._logger.debug("Advanced driver schema check enabled.")
-        else:
-            self._logger.debug("Advanced driver schema check disabled. Only basic version check will be performed.")
 
         # --- Initialize VideoIPath API Connector including check for connection and authentication ---
         self._logger.debug("Initialize VideoIPath API Connector.")
@@ -170,7 +165,13 @@ class VideoIPathApp:
         del _settings
 
         # --- Check Driver Schema Version ---
+        self._logger.debug(
+            "Advanced driver schema check enabled."
+            if advanced_driver_schema_check
+            else "Advanced driver schema check disabled. Only basic version check will be performed."
+        )
         self._basic_version_check()
+
         if advanced_driver_schema_check:
             self._advanced_driver_schema_check()
 
@@ -301,12 +302,12 @@ class VideoIPathApp:
         if comparison_result:
             if DriverSchemaComparator.missmatch_in_driver_schema(comparison_result=comparison_result):
                 self._logger.warning(
-                    "Advanced driver schema check found mismatches between the local and server driver schemas:"
+                    "Advanced driver schema check found mismatches between the server and local driver schemas:"
                     f"{comparison_result}"
                 )
             else:
                 self._logger.debug(
-                    "Advanced driver schema check found no mismatches between the local and server driver schemas."
+                    "Advanced driver schema check found no mismatches between the server and local driver schemas."
                 )
 
     def get_server_version(self) -> str:

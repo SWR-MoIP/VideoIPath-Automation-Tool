@@ -33,6 +33,7 @@ VIPAT_VIDEOIPATH_PASSWORD=veryStrongPassword
 VIPAT_USE_HTTPS=true
 VIPAT_VERIFY_SSL_CERT=false
 VIPAT_LOG_LEVEL=INFO
+VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK=true
 ```
 
 ### Step 2: Code Example
@@ -76,6 +77,7 @@ print(app.get_server_version())
 - `verify_ssl_cert`: Set to `True` if the SSL certificate should be verified.
 - `log_level`: The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. If not set as a parameter or environment variable, it falls back to the root logger's level (default is set to `WARNING`).
 - `environment`: The environment of the VideoIPath Server, possible values are `DEV`, `TEST`, and `PROD` (for future use)
+- `advanced_driver_schema_check`: If set to `True`, the local driver schema is checked against the server's driver schema (custom settings fields).
 
 ### Environment Variables
 
@@ -88,6 +90,7 @@ print(app.get_server_version())
 | `VIPAT_USE_HTTPS`         | `true`, `false`                                | Optional: Use HTTPS for the connection. Defaults to `true`. |
 | `VIPAT_VERIFY_SSL_CERT`  | `true`, `false`                                | Optional: Verify the SSL certificate. Defaults to `true`. |
 | `VIPAT_LOG_LEVEL`     | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. |
+| `VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK` | `true`, `false` | Optional: Enable advanced driver schema checks. Defaults to `true`. |
 
 ## Log Levels
 
