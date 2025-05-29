@@ -1,30 +1,33 @@
 import argparse
 import json
-import os
+from pathlib import Path
 
 from vipat_cli_scripts.version_utils import ROOT_DIR, list_available_schema_versions, load_module
 
 DEFAULT_VERSION = "2024.4.12"
-DEFAULT_SCHEMA_FILE = os.path.join(ROOT_DIR, "apps", "inventory", "model", "driver_schema", f"{DEFAULT_VERSION}.json")
-DEFAULT_OUTPUT_FILE = os.path.join(ROOT_DIR, "apps", "inventory", "model", "drivers.py")
+DEFAULT_SCHEMA_FILE = Path(ROOT_DIR) / "apps" / "inventory" / "model" / "driver_schema" / f"{DEFAULT_VERSION}.json"
+DEFAULT_OUTPUT_FILE = Path(ROOT_DIR) / "apps" / "inventory" / "model" / "drivers.py"
+
 
 parser = argparse.ArgumentParser(description="Generate Pydantic models from driver schema")
 parser.add_argument(
     "schema_file",
     nargs="?",
+    type=Path,
     default=DEFAULT_SCHEMA_FILE,
     help="Path to the driver schema JSON file",
 )
 parser.add_argument(
     "output_file",
     nargs="?",
+    type=Path,
     default=DEFAULT_OUTPUT_FILE,
     help="Path where the generated Python file will be saved",
 )
 
 
 def _generate_driver_model(driver_schema: dict) -> str:
-    pmb_module = load_module("pydantic_model_builder", os.path.join(ROOT_DIR, "utils", "pydantic_model_builder.py"))
+    pmb_module = load_module("pydantic_model_builder", Path(ROOT_DIR) / "utils" / "pydantic_model_builder.py")
     PydanticModelBuilder = pmb_module.PydanticModelBuilder
     PydanticModelField = pmb_module.PydanticModelField
 
@@ -119,11 +122,9 @@ def _get_attribute_type(field: dict) -> tuple[str, list[tuple[str | int | float,
     return field["_schema"]["type"], None
 
 
-def main(
-    schema_file: str = DEFAULT_SCHEMA_FILE,
-    output_file: str = DEFAULT_OUTPUT_FILE,
-):
-    schema = json.load(open(schema_file))
+def main(schema_file: Path = DEFAULT_SCHEMA_FILE, output_file: Path = DEFAULT_OUTPUT_FILE):
+    with open(schema_file, "r", encoding="utf-8") as f:
+        schema = json.load(f)
 
     drivers = schema["data"]["status"]["system"]["drivers"]["_items"]
     driver_models = "\n\n".join([_generate_driver_model(driver) for driver in drivers])
@@ -135,12 +136,12 @@ from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - Schema {schema_file.split("/")[-1]} is used as reference to define the custom settings model!
+# - Schema {Path(schema_file).name} is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
 
-SELECTED_SCHEMA_VERSION = "{schema_file.split("/")[-1].split(".json")[0]}"
+SELECTED_SCHEMA_VERSION = "{Path(schema_file).stem}"
 AVAILABLE_SCHEMA_VERSIONS = {list_available_schema_versions()}
 
 class DriverCustomSettings(ABC, BaseModel, validate_assignment=True): ...
@@ -163,7 +164,7 @@ CustomSettingsType = TypeVar("CustomSettingsType", bound=CustomSettings)
 """
     print("Drivers generated successfully!")
 
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write(code)
         print(f"Updated {output_file}")
 
