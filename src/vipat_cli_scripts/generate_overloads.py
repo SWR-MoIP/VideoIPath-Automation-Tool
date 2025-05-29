@@ -1,13 +1,10 @@
-import os
 import re
 from typing import Callable
 
-from videoipath_automation_tool.utils.script_utils import ROOT_DIR, load_module
+from vipat_cli_scripts.version_utils import ROOT_DIR, load_module
 
-DRIVERS_MODULE = load_module(
-    "drivers_module",
-    os.path.join(ROOT_DIR, "apps", "inventory", "model", "drivers.py"),
-)
+drivers_path = ROOT_DIR / "apps" / "inventory" / "model" / "drivers.py"
+DRIVERS_MODULE = load_module("drivers_module", drivers_path)
 DRIVER_ID_TO_CUSTOM_SETTINGS = DRIVERS_MODULE.DRIVER_ID_TO_CUSTOM_SETTINGS
 
 
@@ -36,10 +33,13 @@ def generate_get_device_overloads() -> str:
 
 
 def generate_overloads(method: str, generate_overloads: Callable) -> None:
-    FILE_PATH = os.path.join(ROOT_DIR, "apps", "inventory", "app", f"{method}.py")
+    file_path = ROOT_DIR / "apps" / "inventory" / "app" / f"{method}.py"
 
-    with open(FILE_PATH, "r") as f:
-        content = f.read()
+    if not file_path.exists():
+        print(f"File not found: {file_path} ❌")
+        return
+
+    content = file_path.read_text()
 
     overload_pattern = re.compile(
         r"# --------------------------------\n    #  Start Auto-Generated Overloads\n    # --------------------------------\n(.*?)# ------------------------------\n    #  End Auto-Generated Overloads\n    # ------------------------------",
@@ -47,10 +47,10 @@ def generate_overloads(method: str, generate_overloads: Callable) -> None:
     )
 
     if not re.findall(overload_pattern, content):
-        print(f"No overload section found in {FILE_PATH} ❌")
+        print(f"No overload section found in {file_path} ❌")
         return
 
-    with open(FILE_PATH, "w") as f:
+    with open(file_path, "w") as f:
         f.write(
             re.sub(
                 overload_pattern,
@@ -59,7 +59,7 @@ def generate_overloads(method: str, generate_overloads: Callable) -> None:
             )
         )
 
-    print(f"Updated overloads in {FILE_PATH} ✅")
+    print(f"Updated overloads in {file_path} ✅")
 
 
 def main():

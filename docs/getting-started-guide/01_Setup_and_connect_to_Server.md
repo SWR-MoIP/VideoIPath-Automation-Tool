@@ -10,8 +10,14 @@ The `VideoIPathApp` class provides all necessary methods to interact with the Vi
 
 Before establishing a connection to the VideoIPath Server, ensure that the following requirements are met:
 
-- **User Authorization**: The user account must be authorized using the `VideoIPath` authentication method.
-- **Permissions**: For a straightforward setup, enable both `API` and `Administrator` options for the user account (User Info). This ensures that the user has all necessary permissions to interact with the VideoIPath Server.
+### User Account Settings (User Info)
+
+- **User Authorization**:<br>The user account must be authorized using the `VideoIPath` authentication method.
+- **Permissions**:<br>For a straightforward setup, enable both `API` and `Administrator` options for the user account (User Info). This ensures that the user has all necessary permissions to interact with the VideoIPath Server.
+
+### Driver Versioning
+
+To ensure IntelliSense support and runtime validation of custom settings, the VideoIPath Server should be running a compatible version of the driver schema. By default, the package uses the latest Long-Term Support (LTS) version, which is currently **2024.4.12**. If you need to use a different version, refer to the [Driver Versioning Guide](../driver-versioning.md).
 
 ## Example 1: Establishing a Connection to the VideoIPath Server via Environment Variables
 
@@ -27,6 +33,7 @@ VIPAT_VIDEOIPATH_PASSWORD=veryStrongPassword
 VIPAT_USE_HTTPS=true
 VIPAT_VERIFY_SSL_CERT=false
 VIPAT_LOG_LEVEL=INFO
+VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK=true
 ```
 
 ### Step 2: Code Example
@@ -70,6 +77,7 @@ print(app.get_server_version())
 - `verify_ssl_cert`: Set to `True` if the SSL certificate should be verified.
 - `log_level`: The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. If not set as a parameter or environment variable, it falls back to the root logger's level (default is set to `WARNING`).
 - `environment`: The environment of the VideoIPath Server, possible values are `DEV`, `TEST`, and `PROD` (for future use)
+- `advanced_driver_schema_check`: If set to `True`, the local driver schema is checked against the server's driver schema (custom settings fields).
 
 ### Environment Variables
 
@@ -82,6 +90,7 @@ print(app.get_server_version())
 | `VIPAT_USE_HTTPS`         | `true`, `false`                                | Optional: Use HTTPS for the connection. Defaults to `true`. |
 | `VIPAT_VERIFY_SSL_CERT`  | `true`, `false`                                | Optional: Verify the SSL certificate. Defaults to `true`. |
 | `VIPAT_LOG_LEVEL`     | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. |
+| `VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK` | `true`, `false` | Optional: Enable advanced driver schema checks. Defaults to `true`. |
 
 ## Log Levels
 

@@ -68,6 +68,20 @@ class VideoIPathConnector:
             error_message = f"Error while fetching VideoIPath version: {error}"
             raise Exception(error_message)
 
+    def fetch_driver_schema_from_server(self) -> list[dict]:
+        """
+        Fetches the driver schema from the VideoIPath server.
+
+        Returns:
+            list[dict]: A list of driver schema entries.
+        """
+        try:
+            response = self.rest.get("/rest/v2/data/status/system/drivers/**")
+            return response.data["status"]["system"]["drivers"]["_items"]
+        except Exception as error:
+            error_message = f"Error while fetching driver schema from server: {error}"
+            raise Exception(error_message)
+
     # --- Getter and Setter ---
 
     @property

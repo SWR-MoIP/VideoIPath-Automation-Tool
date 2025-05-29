@@ -10,6 +10,9 @@ from pydantic import BaseModel, Field
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
 
+SELECTED_SCHEMA_VERSION = "2024.4.12"
+AVAILABLE_SCHEMA_VERSIONS = ["2023.4.2", "2023.4.35", "2023.4.37", "2024.1.4", "2024.3.3", "2024.4.12"]
+
 
 class DriverCustomSettings(ABC, BaseModel, validate_assignment=True): ...
 
@@ -53,6 +56,12 @@ Enables experimental alarms over websockets using IS-07 on certain Vizrt devices
     """
 Experimental alarm port\n
 HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
+	"""
+
+    is05_api_version: bool = Field(default=False, alias="com.nevion.NMOS.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
 	"""
 
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.NMOS.port")
@@ -111,6 +120,12 @@ Use indices in IDs\n
 Enable if device reports static streams to get sortable ids\n
 	"""
 
+    is05_api_version: bool = Field(default=False, alias="com.nevion.NMOS_multidevice.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
+	"""
+
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.NMOS_multidevice.port")
     """
 Port\n
@@ -162,6 +177,12 @@ class CustomSettings_com_nevion_anubis_0_1_0(DriverCustomSettings):
 class CustomSettings_com_nevion_appeartv_x_platform_0_2_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.appeartv_x_platform-0.2.0"] = "com.nevion.appeartv_x_platform-0.2.0"
 
+    coder_ip_mapping: str = Field(default="", alias="com.nevion.appeartv_x_platform.coder_ip_mapping")
+    """
+Coder-IP mapping\n
+Coder module - IP module association map\n
+	"""
+
     lan_wan_mapping: str = Field(default="", alias="com.nevion.appeartv_x_platform.lan_wan_mapping")
     """
 LAN-WAN mapping\n
@@ -171,6 +192,14 @@ LAN/WAN module association map\n
 
 class CustomSettings_com_nevion_appeartv_x_platform_static_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.appeartv_x_platform_static-0.1.0"] = "com.nevion.appeartv_x_platform_static-0.1.0"
+
+    implicit_interface_selection: bool = Field(
+        default=False, alias="com.nevion.appeartv_x_platform_static.implicit_interface_selection"
+    )
+    """
+Implicit Interface Selection\n
+Select vlan subinterfaces based on vlan in port configuration.\n
+	"""
 
 
 class CustomSettings_com_nevion_archwave_unet_0_1_0(DriverCustomSettings):
@@ -280,6 +309,10 @@ Number of outputs per MediaConnect flow\n
 	"""
 
 
+class CustomSettings_com_nevion_blade_runner_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.blade_runner-0.1.0"] = "com.nevion.blade_runner-0.1.0"
+
+
 class CustomSettings_com_nevion_cisco_7600_series_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.cisco_7600_series-0.1.0"] = "com.nevion.cisco_7600_series-0.1.0"
 
@@ -302,8 +335,24 @@ class CustomSettings_com_nevion_cisco_me_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.cisco_me-0.1.0"] = "com.nevion.cisco_me-0.1.0"
 
 
+class CustomSettings_com_nevion_cisco_ncs540_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.cisco_ncs540-0.1.0"] = "com.nevion.cisco_ncs540-0.1.0"
+
+
 class CustomSettings_com_nevion_cisco_nexus_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.cisco_nexus-0.1.0"] = "com.nevion.cisco_nexus-0.1.0"
+
+    controlled_vrfs: str = Field(default="", alias="com.nevion.nexus.controlled_vrfs")
+    """
+Controlled VRFs\n
+Comma-separated lists of VRFs to control. Empty list = all VRFs.\n
+	"""
+
+    full_vrf_control: bool = Field(default=False, alias="com.nevion.nexus.full_vrf_control")
+    """
+Full VRF Control\n
+True = configure RPF for all/specified VRFs. False = only configure RPF for known source IP adresses.\n
+	"""
 
     layer2_netmask_mode: bool = Field(default=False, alias="com.nevion.nexus.layer2_netmask_mode")
     """
@@ -333,6 +382,10 @@ Interval at which to poll flow stats. 0 to disable.\n
     """
 Enable NAT functionality\n
 	"""
+
+
+class CustomSettings_com_nevion_comprimato_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.comprimato-0.1.0"] = "com.nevion.comprimato-0.1.0"
 
 
 class CustomSettings_com_nevion_cp330_0_1_0(DriverCustomSettings):
@@ -669,6 +722,32 @@ Tracing (logging intensive)\n
 class CustomSettings_com_nevion_generic_emberplus_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.generic_emberplus-0.1.0"] = "com.nevion.generic_emberplus-0.1.0"
 
+    keepalives: bool = Field(default=True, alias="com.nevion.emberplus.keepalives")
+    """
+Send keep-alives\n
+If selected, keep-alives will be used to determine reachability\n
+	"""
+
+    port: int = Field(default=9000, ge=0, le=65535, alias="com.nevion.emberplus.port")
+    """
+Port\n
+	"""
+
+    queue: bool = Field(default=True, alias="com.nevion.emberplus.queue")
+    """
+Request queueing\n
+	"""
+
+    suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
+    """
+Suppress illegal update warnings\n
+	"""
+
+    trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
+    """
+Tracing (logging intensive)\n
+	"""
+
 
 class CustomSettings_com_nevion_generic_snmp_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.generic_snmp-0.1.0"] = "com.nevion.generic_snmp-0.1.0"
@@ -768,6 +847,10 @@ class CustomSettings_com_nevion_liebert_nx_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.liebert_nx-0.1.0"] = "com.nevion.liebert_nx-0.1.0"
 
 
+class CustomSettings_com_nevion_lvb440_1_0_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.lvb440-1.0.0"] = "com.nevion.lvb440-1.0.0"
+
+
 class CustomSettings_com_nevion_maxiva_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.maxiva-0.1.0"] = "com.nevion.maxiva-0.1.0"
 
@@ -816,6 +899,18 @@ Flow stats interval [s]\n
 Interval at which to poll flow stats. 0 to disable.\n
 	"""
 
+    always_compute_rx_sdp: bool = Field(default=False, alias="com.nevion.mock.always_compute_rx_sdp")
+    """
+Always compute Rx SDP\n
+If enabled, VIP will generate a SDP for a receiver even if the sender does not publish a SDP itself\n
+	"""
+
+    always_different: bool = Field(default=True, alias="com.nevion.mock.always_different")
+    """
+Skip config apply checks\n
+Skip config apply checks (always different)\n
+	"""
+
     bulk: bool = Field(default=True, alias="com.nevion.mock.bulk")
     """
 Bulk config\n
@@ -824,6 +919,15 @@ Bulk config\n
     delay: int = Field(default=0, ge=0, le=10000, alias="com.nevion.mock.delay")
     """
 Delay\n
+	"""
+
+    matrix_type: Literal["N:N", "1:N", "1:1"] = Field(default="1:N", alias="com.nevion.mock.matrix_type")
+    """
+Matrix Type\n
+Possible values:\n
+	`N:N`: N:N\n
+	`1:N`: 1:N (default)\n
+	`1:1`: 1:1
 	"""
 
     nmetrics: int = Field(default=0, alias="com.nevion.mock.nmetrics")
@@ -836,6 +940,14 @@ Number of metrics per device\n
     """
 #Codecs\n
 Number of codec modules\n
+	"""
+
+    num_dynamic_resource_modules: int = Field(
+        default=0, ge=0, le=10, alias="com.nevion.mock.num_dynamic_resource_modules"
+    )
+    """
+#DynamicResourceMods\n
+Number of dynamic resource modules\n
 	"""
 
     num_gpis: int = Field(default=0, ge=0, le=10000, alias="com.nevion.mock.num_gpis")
@@ -886,6 +998,12 @@ Populate router matrix\n
 Populate default router matrix crosspoints\n
 	"""
 
+    ptpClockType: int = Field(default=0, alias="com.nevion.mock.ptpClockType")
+    """
+PTP clock type\n
+0: Ordinary, 1: Transparent, 2: Boundary, 3: Grandmaster\n
+	"""
+
     tally_ids: str = Field(default="", alias="com.nevion.mock.tally_ids")
     """
 Tally ids\n
@@ -898,6 +1016,15 @@ Tally Master data\n
 Comma separated list of 'domain/group/color' triples\n
 	"""
 
+    matrixId: str = Field(default="", alias="matrixId")
+    """
+Custom matrix ID\n
+	"""
+
+
+class CustomSettings_com_nevion_mock_cloud_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.mock_cloud-0.1.0"] = "com.nevion.mock_cloud-0.1.0"
+
 
 class CustomSettings_com_nevion_montone42_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.montone42-0.1.0"] = "com.nevion.montone42-0.1.0"
@@ -909,6 +1036,24 @@ class CustomSettings_com_nevion_multicon_0_1_0(DriverCustomSettings):
 
 class CustomSettings_com_nevion_mwedge_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.mwedge-0.1.0"] = "com.nevion.mwedge-0.1.0"
+
+
+class CustomSettings_com_nevion_ndi_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.ndi-0.1.0"] = "com.nevion.ndi-0.1.0"
+
+    num_virtual_routing_instances: int = Field(
+        default=10, ge=0, le=65535, alias="com.nevion.ndi.num_virtual_routing_instances"
+    )
+    """
+Virtual Routing instances\n
+The number of Virtual Routing instances (destinations) to create\n
+	"""
+
+    port: int = Field(default=8765, ge=0, le=65535, alias="com.nevion.ndi.port")
+    """
+Port\n
+Port used to connect to the NDI router\n
+	"""
 
 
 class CustomSettings_com_nevion_nec_dtl_30_0_1_0(DriverCustomSettings):
@@ -975,6 +1120,20 @@ class CustomSettings_com_nevion_nx4600_0_1_0(DriverCustomSettings):
     reuse_ts_element: bool = Field(default=False, alias="com.nevion.null.reuse_ts_element")
     """
 Enable to activate logic to join existing TS input element for ASI outputs when setting up multicast with identical settings\n
+	"""
+
+
+class CustomSettings_com_nevion_nxl_me80_1_0_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.nxl_me80-1.0.0"] = "com.nevion.nxl_me80-1.0.0"
+
+    wan1_port_start_number: int = Field(default=0, ge=0, le=65520, alias="com.nevion.nxl_me80.wan1_port_start_number")
+    """
+WAN 1 Port start number\n
+	"""
+
+    wan2_port_start_number: int = Field(default=0, ge=0, le=65520, alias="com.nevion.nxl_me80.wan2_port_start_number")
+    """
+WAN 2 Port start number\n
 	"""
 
 
@@ -1061,9 +1220,67 @@ Suppress illegal update warnings\n
 Tracing (logging intensive)\n
 	"""
 
+    stream_alerts: bool = Field(default=False, alias="com.nevion.powercore.stream_alerts")
+    """
+Enable Output(RX) flag notifications\n
+	"""
+
 
 class CustomSettings_com_nevion_prismon_1_0_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.prismon-1.0.0"] = "com.nevion.prismon-1.0.0"
+
+
+class CustomSettings_com_nevion_probel_sw_p_08_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.probel_sw_p_08-0.1.0"] = "com.nevion.probel_sw_p_08-0.1.0"
+
+    disconnect_source_address: int = Field(
+        default=1023, ge=0, le=1023, alias="com.nevion.probel_sw_p_08.disconnect_source_address"
+    )
+    """
+Disconnect Source Address\n
+Must match disconnect source address in custom matrix\n
+	"""
+
+    matrix_module_index: int = Field(default=0, ge=0, le=16, alias="com.nevion.probel_sw_p_08.matrix_module_index")
+    """
+Matrix Level\n
+This must be one higher than level in custom matrix\n
+	"""
+
+    name_length: int = Field(default=32, ge=0, le=32, alias="com.nevion.probel_sw_p_08.name_length")
+    """
+Length of labels\n
+Must be in range [0,2,4,8,16,32]\n
+	"""
+
+    num_router_levels: int = Field(default=0, ge=0, le=16, alias="com.nevion.probel_sw_p_08.num_router_levels")
+    """
+SWP08 Level\n
+Support up to 16\n
+	"""
+
+    num_router_modules: int = Field(default=1, ge=0, le=15, alias="com.nevion.probel_sw_p_08.num_router_modules")
+    """
+Number of matrices\n
+The number of matrices\n
+	"""
+
+    num_router_ports: int = Field(default=32, ge=0, le=1023, alias="com.nevion.probel_sw_p_08.num_router_ports")
+    """
+Number of router ports\n
+This must be the same number of ports as on the device\n
+	"""
+
+    park_port: int = Field(default=0, ge=0, le=1023, alias="com.nevion.probel_sw_p_08.park_port")
+    """
+Custom park port\n
+Must match park port in topology\n
+	"""
+
+    port: int = Field(default=8910, ge=0, le=65535, alias="com.nevion.probel_sw_p_08.port")
+    """
+Port\n
+	"""
 
 
 class CustomSettings_com_nevion_r3lay_0_1_0(DriverCustomSettings):
@@ -1113,6 +1330,12 @@ The HTTP port used to reach the Node directly\n
 
 class CustomSettings_com_nevion_sencore_dmg_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.sencore_dmg-0.1.0"] = "com.nevion.sencore_dmg-0.1.0"
+
+    coder_ip_mapping: str = Field(default="", alias="com.nevion.sencore_dmg.coder_ip_mapping")
+    """
+Coder-IP mapping\n
+Coder module - IP module association map\n
+	"""
 
     lan_wan_mapping: str = Field(default="", alias="com.nevion.sencore_dmg.lan_wan_mapping")
     """
@@ -1172,6 +1395,12 @@ Experimental alarm port\n
 HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
 	"""
 
+    is05_api_version: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip50y.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
+	"""
+
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.sony_nxlk-ip50y.port")
     """
 Port\n
@@ -1226,10 +1455,26 @@ Experimental alarm port\n
 HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
 	"""
 
+    is05_api_version: bool = Field(default=False, alias="com.nevion.sony_nxlk-ip51y.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
+	"""
+
     port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.sony_nxlk-ip51y.port")
     """
 Port\n
 The HTTP port used to reach the Node directly\n
+	"""
+
+
+class CustomSettings_com_nevion_spg9000_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.spg9000-0.1.0"] = "com.nevion.spg9000-0.1.0"
+
+    x_api_key: str = Field(default="apikey", alias="com.nevion.spg9000.x_api_key")
+    """
+x-api-key\n
+x-api-key (configurable in SPG9000's System tab)\n
 	"""
 
 
@@ -1260,6 +1505,16 @@ Configure this unit using bulk API\n
     """
 Enable 4.1 API (legacy UUIDs)\n
 Uses legacy uppercase UUIDs in API to match previously synced topologies\n
+	"""
+
+
+class CustomSettings_com_nevion_tag_mcs_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.tag_mcs-0.1.0"] = "com.nevion.tag_mcs-0.1.0"
+
+    enable_bulk_config: bool = Field(default=True, alias="com.nevion.tag_mcs.enable_bulk_config")
+    """
+Enable bulk config\n
+Configure this unit using bulk API\n
 	"""
 
 
@@ -1297,6 +1552,10 @@ Possible values:\n
     """
 Number of UMDs\n
 	"""
+
+
+class CustomSettings_com_nevion_telestream_surveyor_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.telestream_surveyor-0.1.0"] = "com.nevion.telestream_surveyor-0.1.0"
 
 
 class CustomSettings_com_nevion_thomson_mxs_0_1_0(DriverCustomSettings):
@@ -1379,6 +1638,26 @@ class CustomSettings_com_nevion_tx9_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.tx9-0.1.0"] = "com.nevion.tx9-0.1.0"
 
 
+class CustomSettings_com_nevion_txdarwin_dynamic_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.txdarwin_dynamic-0.1.0"] = "com.nevion.txdarwin_dynamic-0.1.0"
+
+    port: int = Field(default=9000, ge=1, le=65535, alias="com.nevion.txdarwin_dynamic.port")
+    """
+GraphQL port\n
+The HTTP port used to reach the GraphQL API\n
+	"""
+
+
+class CustomSettings_com_nevion_txdarwin_static_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.txdarwin_static-0.1.0"] = "com.nevion.txdarwin_static-0.1.0"
+
+    port: int = Field(default=9000, ge=1, le=65535, alias="com.nevion.txdarwin_static.port")
+    """
+GraphQL port\n
+The HTTP port used to reach the GraphQL API\n
+	"""
+
+
 class CustomSettings_com_nevion_txedge_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.txedge-0.1.0"] = "com.nevion.txedge-0.1.0"
 
@@ -1413,6 +1692,12 @@ Enable to activate logic to join existing TS input element for ASI outputs when 
 class CustomSettings_com_nevion_virtuoso_fa_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.virtuoso_fa-0.1.0"] = "com.nevion.virtuoso_fa-0.1.0"
 
+    enable_hibernation: bool = Field(default=False, alias="com.nevion.virtuoso_fa.enable_hibernation")
+    """
+Enable hibernation & wake up(supported for v.3.2.14 and above)\n
+Automatically put modules not involved in any connection into hibernation. Automatically wake up hibernating modules when setting up a connection involving them.\n
+	"""
+
 
 class CustomSettings_com_nevion_virtuoso_mi_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.virtuoso_mi-0.1.0"] = "com.nevion.virtuoso_mi-0.1.0"
@@ -1427,6 +1712,12 @@ Use a more thorough communication check, this will report an IP address as down 
     """
 Enable bulk config\n
 Configure this unit's audio elements using bulk API\n
+	"""
+
+    enable_hibernation: bool = Field(default=False, alias="com.nevion.virtuoso_mi.enable_hibernation")
+    """
+Enable hibernation & wake up(supported for v.1.8.8 and above)\n
+Automatically put modules not involved in any connection into hibernation. Automatically wake up hibernating modules when setting up a connection involving them.\n
 	"""
 
     linear_uplink_support: bool = Field(default=False, alias="com.nevion.virtuoso_mi.linear_uplink_support")
@@ -1511,6 +1802,11 @@ Possible values:\n
 	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
+    matrixId: str = Field(default="", alias="matrixId")
+    """
+Custom matrix ID\n
+	"""
+
 
 class CustomSettings_com_sony_Panel_1_0(DriverCustomSettings):
     driver_id: Literal["com.sony.Panel-1.0"] = "com.sony.Panel-1.0"
@@ -1538,6 +1834,11 @@ Possible values:\n
 	`TALLY_MASTER_DEVICE`: Tally Master Device\n
 	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
 	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+	"""
+
+    matrixId: str = Field(default="", alias="matrixId")
+    """
+Custom matrix ID\n
 	"""
 
 
@@ -1569,13 +1870,62 @@ Possible values:\n
 	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
+    matrixId: str = Field(default="", alias="matrixId")
+    """
+Custom matrix ID\n
+	"""
+
+
+class CustomSettings_com_sony_XVS_G1_1_0(DriverCustomSettings):
+    driver_id: Literal["com.sony.XVS-G1-1.0"] = "com.sony.XVS-G1-1.0"
+
+    deviceId: str = Field(default="", alias="com.nevion.nsbus.deviceId")
+    """
+NS-BUS Device ID\n
+Device ID for primary management address usually auto-populated by device discovery\n
+	"""
+
+    force_tcp: bool = Field(default=False, alias="com.nevion.nsbus.router.force_tcp")
+    """
+NS-BUS Router Matrix Protocol: Force TCP\n
+Don't use TLS on outgoing connection. Note: Depends on support from device, e.g. SC1 may not support this.\n
+	"""
+
+    tallyType: Literal["NOT_USE_TALLY", "TALLY_MASTER_DEVICE", "TALLY_DISPLAY_DEVICE", "MASTER_AND_DISPLAY_DEVICE"] = (
+        Field(default="NOT_USE_TALLY", alias="com.nevion.nsbus.tallyType")
+    )
+    """
+NS-BUS Tally Type\n
+Tally type usually auto-populated by device discovery\n
+Possible values:\n
+	`NOT_USE_TALLY`: No Tally (default)\n
+	`TALLY_MASTER_DEVICE`: Tally Master Device\n
+	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
+	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+	"""
+
+    matrixId: str = Field(default="", alias="matrixId")
+    """
+Custom matrix ID\n
+	"""
+
 
 class CustomSettings_com_sony_cna2_0_1_0(DriverCustomSettings):
     driver_id: Literal["com.sony.cna2-0.1.0"] = "com.sony.cna2-0.1.0"
 
-    host_port: int = Field(default=80, alias="com.sony.cna2.host_port")
+    domain_number: int = Field(default=0, alias="com.sony.cna2.domain_number")
     """
-Port\n
+Domain Number\n
+	"""
+
+    matrix_type: str = Field(default="1:1", alias="com.sony.cna2.matrix_type")
+    """
+MatrixType\n
+	"""
+
+    total_cameras: int = Field(default=96, ge=1, le=96, alias="com.sony.cna2.total_cameras")
+    """
+Total Number of System Cameras\n
 	"""
 
     webhook_url: str = Field(default="", alias="com.sony.cna2.webhook_url")
@@ -1607,6 +1957,11 @@ Possible values:\n
 	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
 	"""
 
+    matrixId: str = Field(default="", alias="matrixId")
+    """
+Custom matrix ID\n
+	"""
+
 
 class CustomSettings_com_sony_nsbus_generic_router_1_0(DriverCustomSettings):
     driver_id: Literal["com.sony.nsbus_generic_router-1.0"] = "com.sony.nsbus_generic_router-1.0"
@@ -1634,6 +1989,11 @@ Possible values:\n
 	`TALLY_MASTER_DEVICE`: Tally Master Device\n
 	`TALLY_DISPLAY_DEVICE`: Tally Display Device\n
 	`MASTER_AND_DISPLAY_DEVICE`: Tally Master and Display Device
+	"""
+
+    matrixId: str = Field(default="", alias="matrixId")
+    """
+Custom matrix ID\n
 	"""
 
 
@@ -1689,12 +2049,15 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.ateme_dr8400-0.1.0": CustomSettings_com_nevion_ateme_dr8400_0_1_0,
     "com.nevion.avnpxh12-0.1.0": CustomSettings_com_nevion_avnpxh12_0_1_0,
     "com.nevion.aws_media-0.1.0": CustomSettings_com_nevion_aws_media_0_1_0,
+    "com.nevion.blade_runner-0.1.0": CustomSettings_com_nevion_blade_runner_0_1_0,
     "com.nevion.cisco_7600_series-0.1.0": CustomSettings_com_nevion_cisco_7600_series_0_1_0,
     "com.nevion.cisco_asr-0.1.0": CustomSettings_com_nevion_cisco_asr_0_1_0,
     "com.nevion.cisco_catalyst_3850-0.1.0": CustomSettings_com_nevion_cisco_catalyst_3850_0_1_0,
     "com.nevion.cisco_me-0.1.0": CustomSettings_com_nevion_cisco_me_0_1_0,
+    "com.nevion.cisco_ncs540-0.1.0": CustomSettings_com_nevion_cisco_ncs540_0_1_0,
     "com.nevion.cisco_nexus-0.1.0": CustomSettings_com_nevion_cisco_nexus_0_1_0,
     "com.nevion.cisco_nexus_nbm-0.1.0": CustomSettings_com_nevion_cisco_nexus_nbm_0_1_0,
+    "com.nevion.comprimato-0.1.0": CustomSettings_com_nevion_comprimato_0_1_0,
     "com.nevion.cp330-0.1.0": CustomSettings_com_nevion_cp330_0_1_0,
     "com.nevion.cp4400-0.1.0": CustomSettings_com_nevion_cp4400_0_1_0,
     "com.nevion.cp505-0.1.0": CustomSettings_com_nevion_cp505_0_1_0,
@@ -1745,6 +2108,7 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.laguna-0.1.0": CustomSettings_com_nevion_laguna_0_1_0,
     "com.nevion.lawo_ravenna-0.1.0": CustomSettings_com_nevion_lawo_ravenna_0_1_0,
     "com.nevion.liebert_nx-0.1.0": CustomSettings_com_nevion_liebert_nx_0_1_0,
+    "com.nevion.lvb440-1.0.0": CustomSettings_com_nevion_lvb440_1_0_0,
     "com.nevion.maxiva-0.1.0": CustomSettings_com_nevion_maxiva_0_1_0,
     "com.nevion.maxiva_uaxop4p6e-0.1.0": CustomSettings_com_nevion_maxiva_uaxop4p6e_0_1_0,
     "com.nevion.maxiva_uaxt30uc-0.1.0": CustomSettings_com_nevion_maxiva_uaxt30uc_0_1_0,
@@ -1752,9 +2116,11 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.mediakind_ce1-0.1.0": CustomSettings_com_nevion_mediakind_ce1_0_1_0,
     "com.nevion.mediakind_rx1-0.1.0": CustomSettings_com_nevion_mediakind_rx1_0_1_0,
     "com.nevion.mock-0.1.0": CustomSettings_com_nevion_mock_0_1_0,
+    "com.nevion.mock_cloud-0.1.0": CustomSettings_com_nevion_mock_cloud_0_1_0,
     "com.nevion.montone42-0.1.0": CustomSettings_com_nevion_montone42_0_1_0,
     "com.nevion.multicon-0.1.0": CustomSettings_com_nevion_multicon_0_1_0,
     "com.nevion.mwedge-0.1.0": CustomSettings_com_nevion_mwedge_0_1_0,
+    "com.nevion.ndi-0.1.0": CustomSettings_com_nevion_ndi_0_1_0,
     "com.nevion.nec_dtl_30-0.1.0": CustomSettings_com_nevion_nec_dtl_30_0_1_0,
     "com.nevion.nec_dtu_70d-0.1.0": CustomSettings_com_nevion_nec_dtu_70d_0_1_0,
     "com.nevion.nec_dtu_l10-0.1.0": CustomSettings_com_nevion_nec_dtu_l10_0_1_0,
@@ -1764,19 +2130,24 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.nokia7705-0.1.0": CustomSettings_com_nevion_nokia7705_0_1_0,
     "com.nevion.nso-0.1.0": CustomSettings_com_nevion_nso_0_1_0,
     "com.nevion.nx4600-0.1.0": CustomSettings_com_nevion_nx4600_0_1_0,
+    "com.nevion.nxl_me80-1.0.0": CustomSettings_com_nevion_nxl_me80_1_0_0,
     "com.nevion.openflow-0.0.1": CustomSettings_com_nevion_openflow_0_0_1,
     "com.nevion.powercore-0.1.0": CustomSettings_com_nevion_powercore_0_1_0,
     "com.nevion.prismon-1.0.0": CustomSettings_com_nevion_prismon_1_0_0,
+    "com.nevion.probel_sw_p_08-0.1.0": CustomSettings_com_nevion_probel_sw_p_08_0_1_0,
     "com.nevion.r3lay-0.1.0": CustomSettings_com_nevion_r3lay_0_1_0,
     "com.nevion.selenio_13p-0.1.0": CustomSettings_com_nevion_selenio_13p_0_1_0,
     "com.nevion.sencore_dmg-0.1.0": CustomSettings_com_nevion_sencore_dmg_0_1_0,
     "com.nevion.snell_probelrouter-0.0.1": CustomSettings_com_nevion_snell_probelrouter_0_0_1,
     "com.nevion.sony_nxlk-ip50y-0.1.0": CustomSettings_com_nevion_sony_nxlk_ip50y_0_1_0,
     "com.nevion.sony_nxlk-ip51y-0.1.0": CustomSettings_com_nevion_sony_nxlk_ip51y_0_1_0,
+    "com.nevion.spg9000-0.1.0": CustomSettings_com_nevion_spg9000_0_1_0,
     "com.nevion.starfish_splicer-0.1.0": CustomSettings_com_nevion_starfish_splicer_0_1_0,
     "com.nevion.sublime-0.1.0": CustomSettings_com_nevion_sublime_0_1_0,
     "com.nevion.tag_mcm9000-0.1.0": CustomSettings_com_nevion_tag_mcm9000_0_1_0,
+    "com.nevion.tag_mcs-0.1.0": CustomSettings_com_nevion_tag_mcs_0_1_0,
     "com.nevion.tally-0.1.0": CustomSettings_com_nevion_tally_0_1_0,
+    "com.nevion.telestream_surveyor-0.1.0": CustomSettings_com_nevion_telestream_surveyor_0_1_0,
     "com.nevion.thomson_mxs-0.1.0": CustomSettings_com_nevion_thomson_mxs_0_1_0,
     "com.nevion.thomson_vibe-0.1.0": CustomSettings_com_nevion_thomson_vibe_0_1_0,
     "com.nevion.tns4200-0.1.0": CustomSettings_com_nevion_tns4200_0_1_0,
@@ -1791,6 +2162,8 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.tvg450-0.1.0": CustomSettings_com_nevion_tvg450_0_1_0,
     "com.nevion.tvg480-0.1.0": CustomSettings_com_nevion_tvg480_0_1_0,
     "com.nevion.tx9-0.1.0": CustomSettings_com_nevion_tx9_0_1_0,
+    "com.nevion.txdarwin_dynamic-0.1.0": CustomSettings_com_nevion_txdarwin_dynamic_0_1_0,
+    "com.nevion.txdarwin_static-0.1.0": CustomSettings_com_nevion_txdarwin_static_0_1_0,
     "com.nevion.txedge-0.1.0": CustomSettings_com_nevion_txedge_0_1_0,
     "com.nevion.v__matrix-0.1.0": CustomSettings_com_nevion_v__matrix_0_1_0,
     "com.nevion.v__matrix_smv-0.1.0": CustomSettings_com_nevion_v__matrix_smv_0_1_0,
@@ -1804,6 +2177,7 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.sony.MLS-X1-1.0": CustomSettings_com_sony_MLS_X1_1_0,
     "com.sony.Panel-1.0": CustomSettings_com_sony_Panel_1_0,
     "com.sony.SC1-1.0": CustomSettings_com_sony_SC1_1_0,
+    "com.sony.XVS-G1-1.0": CustomSettings_com_sony_XVS_G1_1_0,
     "com.sony.cna2-0.1.0": CustomSettings_com_sony_cna2_0_1_0,
     "com.sony.generic_external_control-1.0": CustomSettings_com_sony_generic_external_control_1_0,
     "com.sony.nsbus_generic_router-1.0": CustomSettings_com_sony_nsbus_generic_router_1_0,
@@ -1832,12 +2206,15 @@ DriverLiteral = Literal[
     "com.nevion.ateme_dr8400-0.1.0",
     "com.nevion.avnpxh12-0.1.0",
     "com.nevion.aws_media-0.1.0",
+    "com.nevion.blade_runner-0.1.0",
     "com.nevion.cisco_7600_series-0.1.0",
     "com.nevion.cisco_asr-0.1.0",
     "com.nevion.cisco_catalyst_3850-0.1.0",
     "com.nevion.cisco_me-0.1.0",
+    "com.nevion.cisco_ncs540-0.1.0",
     "com.nevion.cisco_nexus-0.1.0",
     "com.nevion.cisco_nexus_nbm-0.1.0",
+    "com.nevion.comprimato-0.1.0",
     "com.nevion.cp330-0.1.0",
     "com.nevion.cp4400-0.1.0",
     "com.nevion.cp505-0.1.0",
@@ -1888,6 +2265,7 @@ DriverLiteral = Literal[
     "com.nevion.laguna-0.1.0",
     "com.nevion.lawo_ravenna-0.1.0",
     "com.nevion.liebert_nx-0.1.0",
+    "com.nevion.lvb440-1.0.0",
     "com.nevion.maxiva-0.1.0",
     "com.nevion.maxiva_uaxop4p6e-0.1.0",
     "com.nevion.maxiva_uaxt30uc-0.1.0",
@@ -1895,9 +2273,11 @@ DriverLiteral = Literal[
     "com.nevion.mediakind_ce1-0.1.0",
     "com.nevion.mediakind_rx1-0.1.0",
     "com.nevion.mock-0.1.0",
+    "com.nevion.mock_cloud-0.1.0",
     "com.nevion.montone42-0.1.0",
     "com.nevion.multicon-0.1.0",
     "com.nevion.mwedge-0.1.0",
+    "com.nevion.ndi-0.1.0",
     "com.nevion.nec_dtl_30-0.1.0",
     "com.nevion.nec_dtu_70d-0.1.0",
     "com.nevion.nec_dtu_l10-0.1.0",
@@ -1907,19 +2287,24 @@ DriverLiteral = Literal[
     "com.nevion.nokia7705-0.1.0",
     "com.nevion.nso-0.1.0",
     "com.nevion.nx4600-0.1.0",
+    "com.nevion.nxl_me80-1.0.0",
     "com.nevion.openflow-0.0.1",
     "com.nevion.powercore-0.1.0",
     "com.nevion.prismon-1.0.0",
+    "com.nevion.probel_sw_p_08-0.1.0",
     "com.nevion.r3lay-0.1.0",
     "com.nevion.selenio_13p-0.1.0",
     "com.nevion.sencore_dmg-0.1.0",
     "com.nevion.snell_probelrouter-0.0.1",
     "com.nevion.sony_nxlk-ip50y-0.1.0",
     "com.nevion.sony_nxlk-ip51y-0.1.0",
+    "com.nevion.spg9000-0.1.0",
     "com.nevion.starfish_splicer-0.1.0",
     "com.nevion.sublime-0.1.0",
     "com.nevion.tag_mcm9000-0.1.0",
+    "com.nevion.tag_mcs-0.1.0",
     "com.nevion.tally-0.1.0",
+    "com.nevion.telestream_surveyor-0.1.0",
     "com.nevion.thomson_mxs-0.1.0",
     "com.nevion.thomson_vibe-0.1.0",
     "com.nevion.tns4200-0.1.0",
@@ -1934,6 +2319,8 @@ DriverLiteral = Literal[
     "com.nevion.tvg450-0.1.0",
     "com.nevion.tvg480-0.1.0",
     "com.nevion.tx9-0.1.0",
+    "com.nevion.txdarwin_dynamic-0.1.0",
+    "com.nevion.txdarwin_static-0.1.0",
     "com.nevion.txedge-0.1.0",
     "com.nevion.v__matrix-0.1.0",
     "com.nevion.v__matrix_smv-0.1.0",
@@ -1947,6 +2334,7 @@ DriverLiteral = Literal[
     "com.sony.MLS-X1-1.0",
     "com.sony.Panel-1.0",
     "com.sony.SC1-1.0",
+    "com.sony.XVS-G1-1.0",
     "com.sony.cna2-0.1.0",
     "com.sony.generic_external_control-1.0",
     "com.sony.nsbus_generic_router-1.0",
@@ -1978,12 +2366,15 @@ CustomSettings = Union[
     CustomSettings_com_nevion_ateme_dr8400_0_1_0,
     CustomSettings_com_nevion_avnpxh12_0_1_0,
     CustomSettings_com_nevion_aws_media_0_1_0,
+    CustomSettings_com_nevion_blade_runner_0_1_0,
     CustomSettings_com_nevion_cisco_7600_series_0_1_0,
     CustomSettings_com_nevion_cisco_asr_0_1_0,
     CustomSettings_com_nevion_cisco_catalyst_3850_0_1_0,
     CustomSettings_com_nevion_cisco_me_0_1_0,
+    CustomSettings_com_nevion_cisco_ncs540_0_1_0,
     CustomSettings_com_nevion_cisco_nexus_0_1_0,
     CustomSettings_com_nevion_cisco_nexus_nbm_0_1_0,
+    CustomSettings_com_nevion_comprimato_0_1_0,
     CustomSettings_com_nevion_cp330_0_1_0,
     CustomSettings_com_nevion_cp4400_0_1_0,
     CustomSettings_com_nevion_cp505_0_1_0,
@@ -2034,6 +2425,7 @@ CustomSettings = Union[
     CustomSettings_com_nevion_laguna_0_1_0,
     CustomSettings_com_nevion_lawo_ravenna_0_1_0,
     CustomSettings_com_nevion_liebert_nx_0_1_0,
+    CustomSettings_com_nevion_lvb440_1_0_0,
     CustomSettings_com_nevion_maxiva_0_1_0,
     CustomSettings_com_nevion_maxiva_uaxop4p6e_0_1_0,
     CustomSettings_com_nevion_maxiva_uaxt30uc_0_1_0,
@@ -2041,9 +2433,11 @@ CustomSettings = Union[
     CustomSettings_com_nevion_mediakind_ce1_0_1_0,
     CustomSettings_com_nevion_mediakind_rx1_0_1_0,
     CustomSettings_com_nevion_mock_0_1_0,
+    CustomSettings_com_nevion_mock_cloud_0_1_0,
     CustomSettings_com_nevion_montone42_0_1_0,
     CustomSettings_com_nevion_multicon_0_1_0,
     CustomSettings_com_nevion_mwedge_0_1_0,
+    CustomSettings_com_nevion_ndi_0_1_0,
     CustomSettings_com_nevion_nec_dtl_30_0_1_0,
     CustomSettings_com_nevion_nec_dtu_70d_0_1_0,
     CustomSettings_com_nevion_nec_dtu_l10_0_1_0,
@@ -2053,19 +2447,24 @@ CustomSettings = Union[
     CustomSettings_com_nevion_nokia7705_0_1_0,
     CustomSettings_com_nevion_nso_0_1_0,
     CustomSettings_com_nevion_nx4600_0_1_0,
+    CustomSettings_com_nevion_nxl_me80_1_0_0,
     CustomSettings_com_nevion_openflow_0_0_1,
     CustomSettings_com_nevion_powercore_0_1_0,
     CustomSettings_com_nevion_prismon_1_0_0,
+    CustomSettings_com_nevion_probel_sw_p_08_0_1_0,
     CustomSettings_com_nevion_r3lay_0_1_0,
     CustomSettings_com_nevion_selenio_13p_0_1_0,
     CustomSettings_com_nevion_sencore_dmg_0_1_0,
     CustomSettings_com_nevion_snell_probelrouter_0_0_1,
     CustomSettings_com_nevion_sony_nxlk_ip50y_0_1_0,
     CustomSettings_com_nevion_sony_nxlk_ip51y_0_1_0,
+    CustomSettings_com_nevion_spg9000_0_1_0,
     CustomSettings_com_nevion_starfish_splicer_0_1_0,
     CustomSettings_com_nevion_sublime_0_1_0,
     CustomSettings_com_nevion_tag_mcm9000_0_1_0,
+    CustomSettings_com_nevion_tag_mcs_0_1_0,
     CustomSettings_com_nevion_tally_0_1_0,
+    CustomSettings_com_nevion_telestream_surveyor_0_1_0,
     CustomSettings_com_nevion_thomson_mxs_0_1_0,
     CustomSettings_com_nevion_thomson_vibe_0_1_0,
     CustomSettings_com_nevion_tns4200_0_1_0,
@@ -2080,6 +2479,8 @@ CustomSettings = Union[
     CustomSettings_com_nevion_tvg450_0_1_0,
     CustomSettings_com_nevion_tvg480_0_1_0,
     CustomSettings_com_nevion_tx9_0_1_0,
+    CustomSettings_com_nevion_txdarwin_dynamic_0_1_0,
+    CustomSettings_com_nevion_txdarwin_static_0_1_0,
     CustomSettings_com_nevion_txedge_0_1_0,
     CustomSettings_com_nevion_v__matrix_0_1_0,
     CustomSettings_com_nevion_v__matrix_smv_0_1_0,
@@ -2093,6 +2494,7 @@ CustomSettings = Union[
     CustomSettings_com_sony_MLS_X1_1_0,
     CustomSettings_com_sony_Panel_1_0,
     CustomSettings_com_sony_SC1_1_0,
+    CustomSettings_com_sony_XVS_G1_1_0,
     CustomSettings_com_sony_cna2_0_1_0,
     CustomSettings_com_sony_generic_external_control_1_0,
     CustomSettings_com_sony_nsbus_generic_router_1_0,

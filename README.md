@@ -43,6 +43,10 @@ The package is available via the [Python Package Index (PyPI)](https://pypi.org/
 pip install videoipath-automation-tool
 ```
 
+**Note:** By default, the latest Long-Term Support (LTS) version (currently **2024.4.12**) is used for schema validation and IntelliSense.
+
+To switch to a specific version, see the [Driver Versioning Guide](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/driver-versioning.md)
+
 ### A Simple Example: Adding a Device to the Inventory
 
 ```python
@@ -76,7 +80,7 @@ except Exception as e:
 
 - [Getting Started Guide](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/getting-started-guide/README.md)
 - [Python Module Architecture](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/python-module-architecture.md)
-- [Driver Compatibility](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/driver-compatibility.md)
+- [Driver Versioning](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/driver-versioning.md)
 - [Development and Release](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/development-and-release.md)
 
 ## Feedback & Contributions
