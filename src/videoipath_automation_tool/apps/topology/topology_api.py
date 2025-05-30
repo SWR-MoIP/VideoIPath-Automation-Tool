@@ -34,16 +34,16 @@ class TopologyAPI:
             vip_connector (VideoIPathConnector): VideoIPathConnector instance to handle the connection to the VideoIPath-Server.
             logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
         """
+        # --- Setup Logging ---
+        self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_api")
+        self.vip_connector = vip_connector
+
         # --- Load environment variables ---
         self._settings = Settings()
         self.EDGE_FETCH_MODE = self._settings.VIPAT_EDGE_FETCH_MODE
         self._logger.debug(f"EDGE_FETCH_MODE set to: {self.EDGE_FETCH_MODE}")
         self.EDGE_MAX_FETCH_WORKERS = self._settings.VIPAT_EDGE_MAX_FETCH_WORKERS
         self._logger.debug(f"EDGE_MAX_FETCH_WORKERS set to: {self.EDGE_MAX_FETCH_WORKERS}")
-
-        # --- Setup Logging ---
-        self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_api")
-        self.vip_connector = vip_connector
 
         self._logger.debug("Topology API initialized.")
 
