@@ -45,7 +45,7 @@ class TopologyAPI:
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_api")
         self.vip_connector = vip_connector
 
-        # --- Load environment variables ---
+        # --- Setup Edge Fetch Mode and Max Fetch Workers ---
         self.edge_fetch_mode = edge_fetch_mode
         if edge_fetch_mode not in ["BULK", "BATCHED"]:
             raise ValueError(f"Invalid edge_fetch_mode: {edge_fetch_mode}. Supported modes are 'BULK' and 'BATCHED'.")
