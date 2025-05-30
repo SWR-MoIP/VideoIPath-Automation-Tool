@@ -34,6 +34,8 @@ VIPAT_USE_HTTPS=true
 VIPAT_VERIFY_SSL_CERT=false
 VIPAT_LOG_LEVEL=INFO
 VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK=true
+VIPAT_EDGE_FETCH_MODE=BATCHED
+VIPAT_EDGE_MAX_FETCH_WORKERS=15
 ```
 
 ### Step 2: Code Example
@@ -91,6 +93,8 @@ print(app.get_server_version())
 | `VIPAT_VERIFY_SSL_CERT`  | `true`, `false`                                | Optional: Verify the SSL certificate. Defaults to `true`. |
 | `VIPAT_LOG_LEVEL`     | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. |
 | `VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK` | `true`, `false` | Optional: Enable advanced driver schema checks. Defaults to `true`. |
+| `VIPAT_EDGE_FETCH_MODE` | `BATCHED`, `BULK` | Optional: Defines how revision data for unidirectional edges is fetched. <br> **BATCHED** (default) performs multiple smaller, parallel requests and scales better for large topologies. <br> **BULK** (legacy) performs a single request and is only recommended for very small topologies. Defaults to `BATCHED`. |
+| `VIPAT_EDGE_MAX_FETCH_WORKERS` | Integer > 1 (e.g. `15`) | Optional: Maximum number of parallel workers used for batched revision fetches. Defaults to `15`. |
 
 ## Log Levels
 

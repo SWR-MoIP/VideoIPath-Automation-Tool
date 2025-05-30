@@ -1,6 +1,7 @@
 import logging
 import urllib.parse
-from typing import List, Literal, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Dict, List, Literal, Optional
 
 from videoipath_automation_tool.apps.topology.model.actions.validate_topology_update import ValidateTopologyUpdateData
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_base_device import BaseDevice
@@ -18,6 +19,7 @@ from videoipath_automation_tool.apps.topology.model.topology_device_configuratio
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch, RequestV2Post
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
+from videoipath_automation_tool.settings import Settings
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 from videoipath_automation_tool.validators.device_id import validate_device_id
 from videoipath_automation_tool.validators.device_id_including_virtual import validate_device_id_including_virtual
@@ -32,6 +34,12 @@ class TopologyAPI:
             vip_connector (VideoIPathConnector): VideoIPathConnector instance to handle the connection to the VideoIPath-Server.
             logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
         """
+        # --- Load environment variables ---
+        self._settings = Settings()
+        self.EDGE_FETCH_MODE = self._settings.VIPAT_EDGE_FETCH_MODE
+        self._logger.debug(f"EDGE_FETCH_MODE set to: {self.EDGE_FETCH_MODE}")
+        self.EDGE_MAX_FETCH_WORKERS = self._settings.VIPAT_EDGE_MAX_FETCH_WORKERS
+        self._logger.debug(f"EDGE_MAX_FETCH_WORKERS set to: {self.EDGE_MAX_FETCH_WORKERS}")
 
         # --- Setup Logging ---
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_api")
@@ -293,26 +301,24 @@ class TopologyAPI:
 
         elif type_filter == "unidirectionalEdge":
             # Attention: This is a special case!
-            # The only way to get all edges corresponding to a device is to fetch edgesByDevice.
-            # The response data does not contain revision information, which is necessary for configuration changes.
-            # Therefore all revision values are fetched first and merged with the edge config data.
+            # The only way to retrieve all edges for a device is via the edgesByDevice endpoint.
+            # This response includes the full edge configuration, but it does not contain revision information,
+            # which is required for any configuration changes.
+            # Therefore, revision data must be fetched separately and merged into the edge configuration data.
 
-            # 1. Fetch revision data
-            revision_data = self.vip_connector.rest.get(
-                "/rest/v2/data/config/network/nGraphElements/* where type = 'unidirectionalEdge' /id,rev,vid"
-            )
-            rev_dict = {}
-            for item in revision_data.data["config"]["network"]["nGraphElements"]["_items"]:
-                id = item["_id"]
-                rev = item["_rev"]
-                rev_dict[id] = rev
+            # Two fetch modes are supported:
+            # - BULK:    Fetch all revisions in a single request. Faster in small topologies,
+            #            but significantly slower and riskier in large ones.
+            # - BATCHED: Fetch revisions in smaller batches (based on URL length constraints).
+            #            This mode scales better in large topologies and is therefore the default (and recommended) mode.
 
-            # 2. Fetch edge data
+            # 1. Fetch edge data
             api_response = self.vip_connector.rest.get(
                 f"/rest/v2/data/status/network/edgesByDevice/* where _id='{device_id}' /**"
             )
             if api_response is None:
                 raise ValueError(f"nGraphElement with deviceId {device_id} and type {type_filter} not found.")
+
             edge_list = []
             if api_response.data["status"]["network"]["edgesByDevice"]["_items"]:
                 for item in api_response.data["status"]["network"]["edgesByDevice"]["_items"][0]:
@@ -327,9 +333,94 @@ class TopologyAPI:
                         }
                     )
 
-            # 3. Merge revision data with edge data and validate
+            # 2. Fetch revision data (bulk or per edge) and merge it into the edge data
+            rev_dict = {}
+            if self.EDGE_FETCH_MODE == "BULK":
+                revision_data = self.vip_connector.rest.get(
+                    "/rest/v2/data/config/network/nGraphElements/* where type = 'unidirectionalEdge' /id,rev,vid"
+                )
+
+                for item in revision_data.data["config"]["network"]["nGraphElements"]["_items"]:
+                    id = item["_id"]
+                    rev = item["_rev"]
+                    rev_dict[id] = rev
+
+                for edge in edge_list:
+                    edge["_rev"] = rev_dict[edge["_id"]]
+
+            elif self.EDGE_FETCH_MODE == "BATCHED":
+
+                def build_batched_queries(edge_ids: List[str], base_url: str, max_url_len: int = 2000) -> List[str]:
+                    base_prefix = "/rest/v2/data/config/network/nGraphElements/* where "
+                    suffix = " /id,rev,vid"
+                    batch_queries = []
+
+                    current_query = ""
+                    for eid in edge_ids:
+                        next_part = f"_id='{eid}'"
+                        if current_query:
+                            next_part = " or " + next_part
+
+                        full_url = base_url + base_prefix + current_query + next_part + suffix
+                        full_url_encoded = urllib.parse.quote(full_url, safe="")
+                        if len(full_url_encoded) > max_url_len:
+                            batch_queries.append(base_prefix + current_query + suffix)
+                            current_query = f"_id='{eid}'"
+                        else:
+                            current_query += next_part
+
+                    if current_query:
+                        batch_queries.append(base_prefix + current_query + suffix)
+
+                    return batch_queries
+
+                def fetch_batch(url: str) -> Dict[str, str]:
+                    result = {}
+                    revision_data = self.vip_connector.rest.get(
+                        url, auth_check=False, node_check=False, url_validation=False
+                    )
+                    if not revision_data or not revision_data.data:
+                        raise ValueError(f"Failed to fetch revisions in batch query: {url}")
+
+                    for item in revision_data.data["config"]["network"]["nGraphElements"]["_items"]:
+                        result[item["_id"]] = item["_rev"]
+                    return result
+
+                # Build batched queries from edge IDs
+                edge_ids = [e["_id"] for e in edge_list]
+                batch_urls = build_batched_queries(
+                    edge_ids, base_url=self.vip_connector.rest.base_url, max_url_len=2000
+                )
+
+                rev_dict = {}
+
+                # Parallel batch fetching
+                max_workers = min(
+                    self.EDGE_MAX_FETCH_WORKERS, len(batch_urls)
+                )  # Max 15 workers or less if fewer URLs to fetch
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    futures = [executor.submit(fetch_batch, url) for url in batch_urls]
+                    for future in as_completed(futures):
+                        batch_result = future.result()
+                        rev_dict.update(batch_result)
+
+                # Merge revisions into edge_list
+                for edge in edge_list:
+                    edge["_rev"] = rev_dict.get(edge["_id"])
+
+            else:
+                raise ValueError(
+                    f"Unknown unidirectional_edge_rev_fetch_mode: {self.EDGE_FETCH_MODE}. "
+                    "Supported modes are 'BATCHED' and 'BULK'."
+                )
+
+            # 4. Ensure every edge has a _rev value set
+            missing_revs = [e["_id"] for e in edge_list if not e.get("_rev")]
+            if missing_revs:
+                raise ValueError(f"Missing _rev for edges: {missing_revs}")
+
+            # 5. Validate and return edges
             for edge in edge_list:
-                edge["_rev"] = rev_dict[edge["_id"]]
                 return_data.append(UnidirectionalEdge.model_validate(edge))
 
         elif type_filter == "nGraphResourceTransform":
