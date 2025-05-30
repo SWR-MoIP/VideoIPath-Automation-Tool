@@ -80,6 +80,8 @@ print(app.get_server_version())
 - `log_level`: The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. If not set as a parameter or environment variable, it falls back to the root logger's level (default is set to `WARNING`).
 - `environment`: The environment of the VideoIPath Server, possible values are `DEV`, `TEST`, and `PROD` (for future use)
 - `advanced_driver_schema_check`: If set to `True`, the local driver schema is checked against the server's driver schema (custom settings fields).
+- `edge_fetch_mode`: Defines how revision data for unidirectional edges is fetched. Possible values are `BATCHED` (default) and `BULK`. The `BATCHED` mode performs multiple smaller, parallel requests and scales better for large topologies, while the `BULK` mode performs a single request and is only recommended for very small topologies.
+- `edge_max_fetch_workers`: Maximum number of parallel workers used for batched revision fetches. This is only relevant if `edge_fetch_mode` is set to `BATCHED`. The default value is `15`, and it must be an integer greater than `1`.
 
 ### Environment Variables
 

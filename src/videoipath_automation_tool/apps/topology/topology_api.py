@@ -19,31 +19,39 @@ from videoipath_automation_tool.apps.topology.model.topology_device_configuratio
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch, RequestV2Post
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.settings import Settings
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 from videoipath_automation_tool.validators.device_id import validate_device_id
 from videoipath_automation_tool.validators.device_id_including_virtual import validate_device_id_including_virtual
 
 
 class TopologyAPI:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self,
+        vip_connector: VideoIPathConnector,
+        logger: Optional[logging.Logger] = None,
+        edge_fetch_mode: Literal["BULK", "BATCHED"] = "BATCHED",
+        edge_max_fetch_workers: int = 15,
+    ):
         """
         Class for VideoIPath topology API.
 
         Args:
             vip_connector (VideoIPathConnector): VideoIPathConnector instance to handle the connection to the VideoIPath-Server.
             logger (Optional[logging.Logger]): Logger instance. If `None`, a fallback logger is used.
+            edge_fetch_mode (str, optional): Edge revision fetch strategy ('BATCHED' or 'BULK'). See docs for usage recommendations. Defaults to `BATCHED`.
+            edge_max_fetch_workers (int, optional): Maximum number of parallel workers for batched edge revision fetches. Defaults to `15`.
         """
         # --- Setup Logging ---
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_api")
         self.vip_connector = vip_connector
 
         # --- Load environment variables ---
-        self._settings = Settings()
-        self.EDGE_FETCH_MODE = self._settings.VIPAT_EDGE_FETCH_MODE
-        self._logger.debug(f"EDGE_FETCH_MODE set to: {self.EDGE_FETCH_MODE}")
-        self.EDGE_MAX_FETCH_WORKERS = self._settings.VIPAT_EDGE_MAX_FETCH_WORKERS
-        self._logger.debug(f"EDGE_MAX_FETCH_WORKERS set to: {self.EDGE_MAX_FETCH_WORKERS}")
+        self.edge_fetch_mode = edge_fetch_mode
+        if edge_fetch_mode not in ["BULK", "BATCHED"]:
+            raise ValueError(f"Invalid edge_fetch_mode: {edge_fetch_mode}. Supported modes are 'BULK' and 'BATCHED'.")
+        self.edge_max_fetch_workers = edge_max_fetch_workers
+        if edge_max_fetch_workers < 1:
+            raise ValueError(f"Invalid edge_max_fetch_workers: {edge_max_fetch_workers}. Must be at least 1.")
 
         self._logger.debug("Topology API initialized.")
 
@@ -313,6 +321,9 @@ class TopologyAPI:
             #            This mode scales better in large topologies and is therefore the default (and recommended) mode.
 
             # 1. Fetch edge data
+            self._logger.warning(f"EDGE_FETCH_MODE set to: {self.edge_fetch_mode}")
+            self._logger.warning(f"EDGE_MAX_FETCH_WORKERS set to: {self.edge_max_fetch_workers}")
+
             api_response = self.vip_connector.rest.get(
                 f"/rest/v2/data/status/network/edgesByDevice/* where _id='{device_id}' /**"
             )
@@ -335,7 +346,7 @@ class TopologyAPI:
 
             # 2. Fetch revision data (bulk or per edge) and merge it into the edge data
             rev_dict = {}
-            if self.EDGE_FETCH_MODE == "BULK":
+            if self.edge_fetch_mode == "BULK":
                 revision_data = self.vip_connector.rest.get(
                     "/rest/v2/data/config/network/nGraphElements/* where type = 'unidirectionalEdge' /id,rev,vid"
                 )
@@ -348,7 +359,7 @@ class TopologyAPI:
                 for edge in edge_list:
                     edge["_rev"] = rev_dict[edge["_id"]]
 
-            elif self.EDGE_FETCH_MODE == "BATCHED":
+            elif self.edge_fetch_mode == "BATCHED":
 
                 def build_batched_queries(edge_ids: List[str], base_url: str, max_url_len: int = 2000) -> List[str]:
                     base_prefix = "/rest/v2/data/config/network/nGraphElements/* where "
@@ -396,7 +407,7 @@ class TopologyAPI:
 
                 # Parallel batch fetching
                 max_workers = min(
-                    self.EDGE_MAX_FETCH_WORKERS, len(batch_urls)
+                    self.edge_max_fetch_workers, len(batch_urls)
                 )  # Max 15 workers or less if fewer URLs to fetch
                 with ThreadPoolExecutor(max_workers=max_workers) as executor:
                     futures = [executor.submit(fetch_batch, url) for url in batch_urls]
@@ -410,7 +421,7 @@ class TopologyAPI:
 
             else:
                 raise ValueError(
-                    f"Unknown unidirectional_edge_rev_fetch_mode: {self.EDGE_FETCH_MODE}. "
+                    f"Unknown unidirectional_edge_rev_fetch_mode: {self.edge_fetch_mode}. "
                     "Supported modes are 'BATCHED' and 'BULK'."
                 )
 

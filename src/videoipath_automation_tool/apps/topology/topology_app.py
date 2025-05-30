@@ -19,18 +19,31 @@ from videoipath_automation_tool.validators.device_id_including_virtual import va
 
 
 class TopologyApp:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self,
+        vip_connector: VideoIPathConnector,
+        logger: Optional[logging.Logger] = None,
+        edge_fetch_mode: Literal["BULK", "BATCHED"] = "BATCHED",
+        edge_max_fetch_workers: int = 15,
+    ):
         """TopologyApp contains functionality to interact with the VideoIPath Topology.
 
         Args:
             vip_connector (VideoIPathConnector): VideoIPathConnector instance to handle the connection to the VideoIPath-Server.
             logger (Optional[logging.Logger], optional): Logger instance to use for logging.
+            edge_fetch_mode (str, optional): Edge revision fetch strategy ('BATCHED' or 'BULK'). See docs for usage recommendations. Defaults to `BATCHED`.
+            edge_max_fetch_workers (int, optional): Maximum number of parallel workers for batched edge revision fetches. Defaults to `15`.
         """
         # --- Setup Logging ---
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_inventory_app")
 
         # --- Setup Topology API ---
-        self._topology_api = TopologyAPI(vip_connector=vip_connector, logger=self._logger)
+        self._topology_api = TopologyAPI(
+            vip_connector=vip_connector,
+            logger=self._logger,
+            edge_fetch_mode=edge_fetch_mode,
+            edge_max_fetch_workers=edge_max_fetch_workers,
+        )
 
         # --- Setup Placement Layer ---
         self.placement = TopologyPlacement(self._topology_api, self._logger)
