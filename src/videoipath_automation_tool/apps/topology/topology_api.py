@@ -321,8 +321,8 @@ class TopologyAPI:
             #            This mode scales better in large topologies and is therefore the default (and recommended) mode.
 
             # 1. Fetch edge data
-            self._logger.warning(f"EDGE_FETCH_MODE set to: {self.edge_fetch_mode}")
-            self._logger.warning(f"EDGE_MAX_FETCH_WORKERS set to: {self.edge_max_fetch_workers}")
+            self._logger.debug(f"EDGE_FETCH_MODE set to: {self.edge_fetch_mode}")
+            self._logger.debug(f"EDGE_MAX_FETCH_WORKERS set to: {self.edge_max_fetch_workers}")
 
             api_response = self.vip_connector.rest.get(
                 f"/rest/v2/data/status/network/edgesByDevice/* where _id='{device_id}' /**"
