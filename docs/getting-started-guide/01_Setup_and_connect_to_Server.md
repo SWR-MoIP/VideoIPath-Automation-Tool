@@ -34,8 +34,6 @@ VIPAT_USE_HTTPS=true
 VIPAT_VERIFY_SSL_CERT=false
 VIPAT_LOG_LEVEL=INFO
 VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK=true
-VIPAT_EDGE_FETCH_MODE=BATCHED
-VIPAT_EDGE_MAX_FETCH_WORKERS=15
 ```
 
 ### Step 2: Code Example
@@ -80,8 +78,6 @@ print(app.get_server_version())
 - `log_level`: The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. If not set as a parameter or environment variable, it falls back to the root logger's level (default is set to `WARNING`).
 - `environment`: The environment of the VideoIPath Server, possible values are `DEV`, `TEST`, and `PROD` (for future use)
 - `advanced_driver_schema_check`: If set to `True`, the local driver schema is checked against the server's driver schema (custom settings fields).
-- `edge_fetch_mode`: Defines how revision data for unidirectional edges is fetched. Possible values are `BATCHED` (default) and `BULK`. The `BATCHED` mode performs multiple smaller, parallel requests and scales better for large topologies, while the `BULK` mode performs a single request and is only recommended for very small topologies.
-- `edge_max_fetch_workers`: Maximum number of parallel workers used for batched revision fetches. This is only relevant if `edge_fetch_mode` is set to `BATCHED`. The default value is `15`, and it must be an integer greater than `1`.
 
 ### Environment Variables
 
@@ -95,8 +91,6 @@ print(app.get_server_version())
 | `VIPAT_VERIFY_SSL_CERT`  | `true`, `false`                                | Optional: Verify the SSL certificate. Defaults to `true`. |
 | `VIPAT_LOG_LEVEL`     | `debug`, `info`, `warning`, `error`, `critical` | Optional: Set the log level. |
 | `VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK` | `true`, `false` | Optional: Enable advanced driver schema checks. Defaults to `true`. |
-| `VIPAT_EDGE_FETCH_MODE` | `BATCHED`, `BULK` | Optional: Defines how revision data for unidirectional edges is fetched. <br> **BATCHED** (default) performs multiple smaller, parallel requests and scales better for large topologies. <br> **BULK** (legacy) performs a single request and is only recommended for very small topologies. Defaults to `BATCHED`. |
-| `VIPAT_EDGE_MAX_FETCH_WORKERS` | Integer > 1 (e.g. `15`) | Optional: Maximum number of parallel workers used for batched revision fetches. Defaults to `15`. |
 
 ## Log Levels
 
