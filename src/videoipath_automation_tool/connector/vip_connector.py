@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 
+from videoipath_automation_tool.connector.vip_base_connector import VideoIPathBaseConnectorTimeouts
 from videoipath_automation_tool.connector.vip_rest_connector import (
     VideoIPathRestConnector,
 )
@@ -19,6 +20,9 @@ class VideoIPathConnector:
         use_https: bool = True,
         verify_ssl_cert: bool = True,
         logger: Optional[logging.Logger] = None,
+        timeout_http_get: int = 10,
+        timeout_http_patch: int = 10,
+        timeout_http_post: int = 10,
     ):
         """
         Low-level HTTP client for the VideoIPath API with support for REST v2 and RPC calls.
@@ -39,6 +43,12 @@ class VideoIPathConnector:
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_connector")
         self._videoipath_version = ""
 
+        timeouts = VideoIPathBaseConnectorTimeouts(
+            get=timeout_http_get,
+            patch=timeout_http_patch,
+            post=timeout_http_post,
+        )
+
         self._rest_connector = VideoIPathRestConnector(
             server_address=server_address,
             username=username,
@@ -46,6 +56,7 @@ class VideoIPathConnector:
             use_https=use_https,
             verify_ssl_cert=verify_ssl_cert,
             logger=self._logger,
+            timeouts=timeouts,
         )
         self._rpc_connector = VideoIPathRPCConnector(
             server_address=server_address,
@@ -54,6 +65,7 @@ class VideoIPathConnector:
             use_https=use_https,
             verify_ssl_cert=verify_ssl_cert,
             logger=self._logger,
+            timeouts=timeouts,
         )
 
         self._logger.debug("VideoIPath Connectors initialized.")

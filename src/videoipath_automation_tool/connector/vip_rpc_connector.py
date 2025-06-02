@@ -16,7 +16,6 @@ class VideoIPathRPCConnector(VideoIPathBaseConnector):
         "/api/activateLicense",
         "/api/deactivateLicense",
     }
-    TIMEOUT_SECONDS = 10
 
     def post(self, url_path: str, body: RequestRPC, url_validation: bool = True) -> ResponseRPC:
         """
@@ -48,7 +47,7 @@ class VideoIPathRPCConnector(VideoIPathBaseConnector):
         response = self._execute_request(
             method="POST",
             url=self._build_url(url_path),
-            timeout=self.TIMEOUT_SECONDS,
+            timeout=self.timeouts.post,
             request_payload=body.model_dump(mode="json", by_alias=True),
         )
 
@@ -104,7 +103,7 @@ class VideoIPathRPCConnector(VideoIPathBaseConnector):
             self._execute_request(
                 method="POST",
                 url=self._build_url(url),
-                timeout=self.TIMEOUT_SECONDS,
+                timeout=self.timeouts.post,
                 request_payload=body.model_dump(mode="json", by_alias=True),
             )
             return True

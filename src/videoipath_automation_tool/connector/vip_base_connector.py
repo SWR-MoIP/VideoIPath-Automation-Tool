@@ -6,6 +6,23 @@ from typing import Optional
 import requests
 
 
+class VideoIPathBaseConnectorTimeouts:
+    """Timeouts for VideoIPath API requests."""
+
+    def __init__(self, get: int = 10, patch: int = 10, post: int = 10):
+        """
+        Initializes the timeouts for VideoIPath API requests.
+
+        Args:
+            get (int): Timeout for GET requests in seconds (default: 10).
+            patch (int): Timeout for PATCH requests in seconds (default: 10).
+            post (int): Timeout for POST requests in seconds (default: 10).
+        """
+        self.get = get
+        self.patch = patch
+        self.post = post
+
+
 class VideoIPathBaseConnector(ABC):
     def __init__(
         self,
@@ -13,6 +30,7 @@ class VideoIPathBaseConnector(ABC):
         username: str,
         password: str,
         logger: logging.Logger,
+        timeouts: VideoIPathBaseConnectorTimeouts,
         use_https: bool = True,
         verify_ssl_cert: bool = True,
     ):
@@ -38,6 +56,7 @@ class VideoIPathBaseConnector(ABC):
         self.use_https = use_https
         self.verify_ssl_cert = verify_ssl_cert
         self._videoipath_version = ""
+        self.timeouts = timeouts
 
         self.server_address = self._parse_server_address(
             server_address

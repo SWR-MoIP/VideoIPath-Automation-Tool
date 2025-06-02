@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     VIPAT_VERIFY_SSL_CERT: bool = Field(default=True)
     VIPAT_LOG_LEVEL: Optional[Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]] = None
     VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK: bool = Field(default=True)
+    VIPAT_TIMEOUT_HTTP_GET: int = Field(default=10)
+    VIPAT_TIMEOUT_HTTP_PATCH: int = Field(default=10)
+    VIPAT_TIMEOUT_HTTP_POST: int = Field(default=10)
 
     class Config:
         env_file = ".env"

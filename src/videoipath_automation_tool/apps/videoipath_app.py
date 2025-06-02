@@ -29,6 +29,9 @@ class VideoIPathApp:
         log_level: Optional[Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]] = None,
         environment: Optional[str] = None,
         advanced_driver_schema_check: Optional[bool] = None,
+        timeout_http_get: Optional[int] = None,
+        timeout_http_patch: Optional[int] = None,
+        timeout_http_post: Optional[int] = None,
     ):
         """
         Initialize the VideoIPath Automation Tool, establish connection to the VideoIPath-Server and initialize the Apps for interaction.
@@ -43,6 +46,9 @@ class VideoIPathApp:
             log_level (str, optional): The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. [ENV: VIPAT_LOG_LEVEL]
             environment (str, optional): Define the environment: `DEV`, `TEST`, `PROD`. [ENV: VIPAT_ENVIRONMENT]
             advanced_driver_schema_check (bool, optional): Enable advanced driver schema check, which contains comparison of the driver schema (custom fields) with the fetched driver schema from the VideoIPath Server. [ENV: VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK]
+            timeout_http_get (int, optional): Timeout for HTTP GET requests in seconds. [ENV: VIPAT_TIMEOUT_HTTP_GET]
+            timeout_http_patch (int, optional): Timeout for HTTP PATCH requests in seconds. [ENV: VIPAT_TIMEOUT_HTTP_PATCH]
+            timeout_http_post (int, optional): Timeout for HTTP POST requests in seconds. [ENV: VIPAT_TIMEOUT_HTTP_POST]
         """
 
         # --- Load environment variables ---
@@ -96,6 +102,36 @@ class VideoIPathApp:
             else _settings.VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK
         )
 
+        # --- Setup Timeouts ---
+        timeout_http_get = timeout_http_get if timeout_http_get is not None else _settings.VIPAT_TIMEOUT_HTTP_GET
+        self._logger.debug(f"HTTP GET timeout set to {timeout_http_get} seconds.")
+        if timeout_http_get <= 0:
+            raise ValueError("HTTP GET timeout must be greater than 0 seconds.")
+        if timeout_http_get <= 5:
+            self._logger.warning(
+                f"HTTP GET timeout is set to a low value ({timeout_http_get} seconds). This may lead to timeouts during API requests."
+            )
+
+        timeout_http_patch = (
+            timeout_http_patch if timeout_http_patch is not None else _settings.VIPAT_TIMEOUT_HTTP_PATCH
+        )
+        self._logger.debug(f"HTTP PATCH timeout set to {timeout_http_patch} seconds.")
+        if timeout_http_patch <= 0:
+            raise ValueError("HTTP PATCH timeout must be greater than 0 seconds.")
+        if timeout_http_patch <= 5:
+            self._logger.warning(
+                f"HTTP PATCH timeout is set to a low value ({timeout_http_patch} seconds). This may lead to timeouts during API requests."
+            )
+
+        timeout_http_post = timeout_http_post if timeout_http_post is not None else _settings.VIPAT_TIMEOUT_HTTP_POST
+        self._logger.debug(f"HTTP POST timeout set to {timeout_http_post} seconds.")
+        if timeout_http_post <= 0:
+            raise ValueError("HTTP POST timeout must be greater than 0 seconds.")
+        if timeout_http_post <= 5:
+            self._logger.warning(
+                f"HTTP POST timeout is set to a low value ({timeout_http_post} seconds). This may lead to timeouts during API requests."
+            )
+
         # --- Initialize VideoIPath API Connector including check for connection and authentication ---
         self._logger.debug("Initialize VideoIPath API Connector.")
 
@@ -142,6 +178,9 @@ class VideoIPathApp:
             use_https=use_https,
             verify_ssl_cert=verify_ssl_cert,
             logger=self._logger,
+            timeout_http_get=timeout_http_get,
+            timeout_http_patch=timeout_http_patch,
+            timeout_http_post=timeout_http_post,
         )
 
         # --- Reset the variables ---
