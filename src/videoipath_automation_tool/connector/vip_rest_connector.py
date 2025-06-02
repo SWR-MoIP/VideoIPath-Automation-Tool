@@ -6,8 +6,6 @@ from videoipath_automation_tool.connector.vip_base_connector import VideoIPathBa
 
 
 class VideoIPathRestConnector(VideoIPathBaseConnector):
-    TIMEOUTS = {"GET": 5, "PATCH": 10, "POST": 10}
-
     ALLOWED_URLS = {
         "GET": {
             "PREFIXES": {"/rest/v2/data/config/", "/rest/v2/data/status/"},
@@ -65,7 +63,7 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         response = self._execute_request(
             method="GET",
             url=self._build_url(url_path),
-            timeout=self.TIMEOUTS["GET"],
+            timeout=self.timeouts.get,
             request_payload=None,
         )
 
@@ -129,7 +127,7 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         response = self._execute_request(
             method="PATCH",
             url=self._build_url(url_path),
-            timeout=self.TIMEOUTS["PATCH"],
+            timeout=self.timeouts.patch,
             request_payload=body.model_dump(mode="json", by_alias=True),
         )
 
@@ -192,7 +190,7 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         response = self._execute_request(
             method="POST",
             url=self._build_url(url_path),
-            timeout=self.TIMEOUTS["POST"],
+            timeout=self.timeouts.post,
             request_payload=body.model_dump(mode="json", by_alias=True),
         )
 
