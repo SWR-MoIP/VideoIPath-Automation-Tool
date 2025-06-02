@@ -1,5 +1,5 @@
 import logging
-from typing import Literal, Optional, cast
+from typing import Literal, Optional
 
 from videoipath_automation_tool.apps.inventory import InventoryApp
 from videoipath_automation_tool.apps.inventory.model.drivers import AVAILABLE_SCHEMA_VERSIONS, SELECTED_SCHEMA_VERSION
@@ -29,8 +29,6 @@ class VideoIPathApp:
         log_level: Optional[Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]] = None,
         environment: Optional[str] = None,
         advanced_driver_schema_check: Optional[bool] = None,
-        edge_fetch_mode: Optional[Literal["BATCHED", "BULK"]] = None,
-        edge_max_fetch_workers: Optional[int] = None,
     ):
         """
         Initialize the VideoIPath Automation Tool, establish connection to the VideoIPath-Server and initialize the Apps for interaction.
@@ -45,8 +43,6 @@ class VideoIPathApp:
             log_level (str, optional): The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. [ENV: VIPAT_LOG_LEVEL]
             environment (str, optional): Define the environment: `DEV`, `TEST`, `PROD`. [ENV: VIPAT_ENVIRONMENT]
             advanced_driver_schema_check (bool, optional): Enable advanced driver schema check, which contains comparison of the driver schema (custom fields) with the fetched driver schema from the VideoIPath Server. [ENV: VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK]
-            edge_fetch_mode (str, optional): Edge revision fetch strategy ('BATCHED' or 'BULK'). See docs for usage recommendations. Defaults to `BATCHED`. [ENV: VIPAT_EDGE_FETCH_MODE]
-            edge_max_fetch_workers (int, optional): Maximum number of parallel workers for batched edge revision fetches. Defaults to `15`. [ENV: VIPAT_EDGE_MAX_FETCH_WORKERS]
         """
 
         # --- Load environment variables ---
@@ -99,24 +95,6 @@ class VideoIPathApp:
             if advanced_driver_schema_check is not None
             else _settings.VIPAT_ADVANCED_DRIVER_SCHEMA_CHECK
         )
-
-        # --- Setup Edge Fetch Mode and Max Fetch Workers ---
-        self.edge_fetch_mode = edge_fetch_mode if edge_fetch_mode else _settings.VIPAT_EDGE_FETCH_MODE
-
-        if self.edge_fetch_mode not in ["BATCHED", "BULK"]:
-            raise ValueError("Invalid edge fetch mode provided. Must be 'BATCHED' or 'BULK'.")
-
-        self._logger.debug(f"Edge fetch mode set to '{self.edge_fetch_mode}'.")
-
-        self.edge_max_fetch_workers = (
-            edge_max_fetch_workers if edge_max_fetch_workers else _settings.VIPAT_EDGE_MAX_FETCH_WORKERS
-        )
-
-        if self.edge_max_fetch_workers < 1:
-            raise ValueError(
-                "Invalid edge max fetch workers provided. Please provide a valid number of workers greater than 0."
-            )
-        self._logger.debug(f"Edge max fetch workers set to '{edge_max_fetch_workers}'.")
 
         # --- Initialize VideoIPath API Connector including check for connection and authentication ---
         self._logger.debug("Initialize VideoIPath API Connector.")
@@ -224,12 +202,7 @@ class VideoIPathApp:
     def topology(self):
         if self._topology is None:
             self._logger.debug("TopologyApp first called. Initialize TopologyApp.")
-            self._topology = TopologyApp(
-                vip_connector=self._videoipath_connector,
-                logger=self._logger,
-                edge_fetch_mode=cast(Literal["BATCHED", "BULK"], self.edge_fetch_mode),
-                edge_max_fetch_workers=self.edge_max_fetch_workers,
-            )
+            self._topology = TopologyApp(vip_connector=self._videoipath_connector, logger=self._logger)
         return self._topology
 
     @property
