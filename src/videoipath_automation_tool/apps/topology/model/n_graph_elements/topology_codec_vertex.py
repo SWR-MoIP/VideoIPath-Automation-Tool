@@ -63,6 +63,7 @@ class CodecVertex(Vertex):
         partnerConfig (Optional[dict[str, Union[str, int, bool]]]): The partner configuration.
         public (bool): Indicates whether the vertex is public (Federation).
         sdpSupport (bool): The vertex is publishing SDP.
+        exclusive (bool): A connected source cannot have other receivers (even for multicast).
         serviceId (Optional[int]): The service ID.
         spareDstIp (Optional[Union[nAddress, nPoolId]]): The spare (multicast) destination IP address or pool ID.
         spareDstMac (Optional[MacAddress]): The spare destination MAC address.
@@ -91,6 +92,7 @@ class CodecVertex(Vertex):
     partnerConfig: Optional[dict[str, Union[str, int, bool]]]
     public: bool = False
     sdpSupport: bool = True
+    exclusive: bool = False
     serviceId: Optional[int]
     spareDstIp: Optional[Union[nAddress, nPoolId]]
     spareDstMac: Optional[MacAddress]
