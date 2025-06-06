@@ -11,6 +11,7 @@ parser.add_argument("version", help="Version of VideoIPath to use", default="202
 def main():
     args = parser.parse_args()
     schema_file = Path(ROOT_DIR) / "apps" / "inventory" / "model" / "driver_schema" / f"{args.version}.json"
+    print(f"Generate Schema for VideoIPath version {args.version} ...")
 
     if not schema_file.exists():
         print(
