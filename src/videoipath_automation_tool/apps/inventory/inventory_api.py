@@ -664,6 +664,68 @@ class InventoryAPI:
             response.data["status"]["devman"]["discoveredDevices"]["_items"][0]
         )
 
+    # --- Global Configuration Helpers ---
+    def get_global_snmp_config_id_by_label(self, label: str) -> Optional[str]:
+        """Method to get the global SNMP configuration id by label.
+        Note: If multiple SNMP configurations with the same label exist, the first one is returned.
+
+        Args:
+            label (str): Label of the SNMP configuration
+
+        Returns:
+            Optional[str]: SNMP configuration id, None if not found
+        """
+        if not label:
+            raise ValueError("Label must not be empty.")
+
+        escaped_label = urllib.parse.quote(label, safe="")
+        url = f"/rest/v2/data/config/system/snmp/*/* where descriptor.label='{escaped_label}' /*"
+        response = self.vip_connector.rest.get(url)
+        if response.data and response.data["config"]["system"]["snmp"]["session"]:
+            matches = response.data["config"]["system"]["snmp"]["session"]
+            if len(matches) == 1:
+                return list(matches.keys())[0]
+            elif len(matches) > 1:
+                self._logger.warning(
+                    f"Multiple SNMP configurations found with label '{label}'. Returning the first one."
+                )
+                return list(matches.keys())[0]
+        return None
+
+    def get_global_snmp_config_label_by_id(self, snmp_config_id: str) -> Optional[str]:
+        """Method to get the global SNMP configuration label by id.
+
+        Args:
+            snmp_config_id (str): SNMP configuration id
+
+        Returns:
+            Optional[str]: SNMP configuration label, None if not found
+        """
+        if not snmp_config_id:
+            raise ValueError("SNMP configuration id must not be empty.")
+
+        url = f"/rest/v2/data/config/system/snmp/session/{snmp_config_id}/descriptor/label"
+        response = self.vip_connector.rest.get(url)
+        if response.data and response.data["config"]["system"]["snmp"]["session"][snmp_config_id]:
+            return response.data["config"]["system"]["snmp"]["session"][snmp_config_id]["descriptor"]["label"]
+        return None
+
+    def get_all_global_snmp_config_ids(self) -> dict[str, str]:
+        """Method to list all global SNMP configuration ids with their labels.
+
+        Returns:
+            dict: {snmp_config_id: snmp_config_label}
+        """
+        url = "/rest/v2/data/config/system/snmp/*/*/descriptor/label"
+        response = self.vip_connector.rest.get(url)
+        if not response.data:
+            raise ValueError("Response data is empty.")
+
+        snmp_configs = response.data["config"]["system"]["snmp"]["session"]
+        return {
+            snmp_config_id: snmp_config["descriptor"]["label"] for snmp_config_id, snmp_config in snmp_configs.items()
+        }
+
     # --- Deprecated Methods ---
     @deprecated(
         "The method `fetch_device_ids_list` is deprecated and will be removed in a future release. ",
