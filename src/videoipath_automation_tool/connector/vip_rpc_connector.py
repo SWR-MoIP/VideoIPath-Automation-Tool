@@ -15,6 +15,7 @@ class VideoIPathRPCConnector(VideoIPathBaseConnector):
         "/api/uploadLicense",
         "/api/activateLicense",
         "/api/deactivateLicense",
+        "/api/updateSnmpConfig",
     }
 
     def post(self, url_path: str, body: RequestRPC, url_validation: bool = True) -> ResponseRPC:
