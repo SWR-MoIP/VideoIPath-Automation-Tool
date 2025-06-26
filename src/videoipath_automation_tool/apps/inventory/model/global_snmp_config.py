@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Literal, cast
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -117,18 +118,144 @@ class SnmpConfiguration(BaseModel):
             raise ValueError("Data dictionary must contain exactly one key/value pair: <id>: <configuration>")
         return cls(**data)
 
-    # def dump_to_dict(self) -> dict:
-    #     """
-    #     Dumps the SnmpConfiguration instance to a dictionary.
+    # --- Getters and Setters ---
+    @property
+    def label(self) -> str:
+        """Label of the SNMP configuration."""
+        return self.descriptor.label
 
-    #     Returns:
-    #         dict: A dictionary representation of the SnmpConfiguration instance.
-    #     """
-    #     config_id = self.id
-    #     data = self.model_dump(mode="json", exclude={"id"})
-    #     return {config_id: data}
+    @label.setter
+    def label(self, value: str):
+        """Sets the label of the SNMP configuration."""
+        self.descriptor.label = value
 
+    @property
+    def description(self) -> str:
+        """Description of the SNMP configuration."""
+        return self.descriptor.desc
 
-# class SnmpConfig(BaseModel):
-#     id: str
-#     configuration: SnmpConfiguration = Field(default_factory=SnmpConfiguration)
+    @description.setter
+    def description(self, value: str):
+        """Sets the description of the SNMP configuration."""
+        self.descriptor.desc = value
+
+    @property
+    def version(self) -> Literal["SNMP v1", "SNMP v2c", "SNMP v3"]:
+        """Preferred SNMP version."""
+        version_map = {SnmpVersion.V1: "SNMP v1", SnmpVersion.V2C: "SNMP v2c", SnmpVersion.V3: "SNMP v3"}
+        return cast(Literal["SNMP v1", "SNMP v2c", "SNMP v3"], version_map[self.protocol.preferredVersion])
+
+    @version.setter
+    def version(self, value: Literal["SNMP v1", "SNMP v2c", "SNMP v3"]):
+        """Sets the preferred SNMP version."""
+        version_map = {"SNMP v1": SnmpVersion.V1, "SNMP v2c": SnmpVersion.V2C, "SNMP v3": SnmpVersion.V3}
+        if value not in version_map:
+            raise ValueError(f"Invalid SNMP version: {value}")
+        self.protocol.preferredVersion = version_map[value]
+
+    @property
+    def retries(self) -> int:
+        """Retries"""
+        return self.protocol.retries
+
+    @retries.setter
+    def retries(self, value: int):
+        """Sets the number of retries for SNMP requests."""
+        if not isinstance(value, int) or value < 0:
+            raise ValueError("Retries must be a non-negative integer.")
+        self.protocol.retries = value
+
+    @property
+    def timeout(self) -> int:
+        """Timeout in milliseconds."""
+        return self.protocol.timeout
+
+    @timeout.setter
+    def timeout(self, value: int):
+        """Sets the timeout for SNMP requests in milliseconds."""
+        if not isinstance(value, int) or value < 0:
+            raise ValueError("Timeout must be a non-negative integer.")
+        self.protocol.timeout = value
+
+    @property
+    def local_engine_id(self) -> str:
+        """Local Engine ID"""
+        return self.protocol.localEngineId
+
+    @local_engine_id.setter
+    def local_engine_id(self, value: str):
+        """Sets the local engine ID for SNMP."""
+        if not isinstance(value, str) or not value:
+            raise ValueError("Local Engine ID must be a non-empty string.")
+        self.protocol.localEngineId = value
+
+    @property
+    def use_get_bulk(self) -> bool:
+        """Use GetBulk"""
+        return self.protocol.useGetBulk
+
+    @use_get_bulk.setter
+    def use_get_bulk(self, value: bool):
+        """Sets whether to use GetBulk for SNMP requests."""
+        if not isinstance(value, bool):
+            raise ValueError("Use GetBulk must be a boolean value.")
+        self.protocol.useGetBulk = value
+
+    @property
+    def max_repetitions(self) -> int:
+        """Max Repetitions"""
+        return self.protocol.maxRepetitions
+
+    @max_repetitions.setter
+    def max_repetitions(self, value: int):
+        """Sets the maximum number of repetitions for SNMP requests."""
+        if not isinstance(value, int) or value < 0:
+            raise ValueError("Max Repetitions must be a non-negative integer.")
+        self.protocol.maxRepetitions = value
+
+    @property
+    def read_community(self) -> str:
+        """Read Community"""
+        return self.security.read.community
+
+    @read_community.setter
+    def read_community(self, value: str):
+        """Sets the read community for SNMP."""
+        if not isinstance(value, str) or not value:
+            raise ValueError("Read Community must be a non-empty string.")
+        self.security.read.community = value
+
+    @property
+    def write_community(self) -> str:
+        """Write Community"""
+        return self.security.write.community
+
+    @write_community.setter
+    def write_community(self, value: str):
+        """Sets the write community for SNMP."""
+        if not isinstance(value, str) or not value:
+            raise ValueError("Write Community must be a non-empty string.")
+        self.security.write.community = value
+
+    def list_usernames(self) -> list[str]:
+        """Returns a list of usernames in the SNMP configuration."""
+        return list(self.users.keys())
+
+    def get_user_id_by_username(self, username: str) -> str:
+        """Returns the user ID for a given username."""
+        user_ids = [user_id for user_id, user in self.users.items() if user.name == username]
+        if not user_ids:
+            raise ValueError(f"No user found with username: {username}")
+        if len(user_ids) > 1:
+            raise ValueError(f"Multiple users found with username: {username}. Please specify a unique user.")
+        return user_ids[0]
+
+    def set_read_user_by_username(self, username: str):
+        """Sets the read user by username."""
+        user_id = self.get_user_id_by_username(username)
+        self.security.read.user = user_id
+
+    def set_write_user_by_username(self, username: str):
+        """Sets the write user by username."""
+        user_id = self.get_user_id_by_username(username)
+        self.security.write.user = user_id
