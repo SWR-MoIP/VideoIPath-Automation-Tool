@@ -2,7 +2,34 @@ from enum import Enum
 from typing import Literal, cast
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+def _validate_engine_id_format(engine_id: str) -> str:
+    """
+    Basic format check for SNMPv3 Engine ID.
+    - Allows empty string
+    - Must be valid hex string (after cleaning)
+    - Length: 5–32 bytes (10–64 hex digits)
+    - No RFC compliance guaranteed
+    """
+    if not engine_id:
+        return engine_id  # allowed for v1/v2c
+
+    cleaned = engine_id.replace(":", "").replace(" ", "").lower()
+
+    if len(cleaned) % 2 != 0:
+        raise ValueError("Engine ID must contain full bytes (even number of hex digits)")
+
+    try:
+        raw = bytes.fromhex(cleaned)
+    except ValueError:
+        raise ValueError("Engine ID must be a valid hex string")
+
+    if not (5 <= len(raw) <= 32):
+        raise ValueError("Engine ID must be 5–32 bytes long")
+
+    return cleaned
 
 
 # --- User Enum Classes ---
@@ -44,7 +71,7 @@ class SnmpVersion(int, Enum):
 
 
 # --- Data Model Classes ---
-class SnmpUser(BaseModel):
+class SnmpUser(BaseModel, validate_assignment=True):
     level: SecurityLevel = SecurityLevel.NO_AUTH_NO_PRIV
     name: str = "New User"
     authProtocol: AuthProtocol = AuthProtocol.MD5
@@ -53,32 +80,47 @@ class SnmpUser(BaseModel):
     privPassword: str = ""
     authPassword: str = ""
 
+    @field_validator("engineId")
+    def validate_engine_id(cls, value: str) -> str:
+        """
+        Validates the SNMPv3 Engine ID format.
+        - Allows empty string
+        - Must be valid hex string (after cleaning)
+        - Length: 5–32 bytes (10–64 hex digits)
+        """
+        return _validate_engine_id_format(value)
 
-class SnmpDescriptor(BaseModel):
+
+class SnmpDescriptor(BaseModel, validate_assignment=True):
     label: str = ""
     desc: str = ""
 
 
-class SnmpSecurityEntry(BaseModel):
+class SnmpSecurityEntry(BaseModel, validate_assignment=True):
     user: str = ""  # User ID from "Users" section. Must be a valid UUID of an existing user.
     community: str = ""  # Value from "Protocol Settings => SNMP v1/v2c Security => Write / Read community"
 
 
-class SnmpSecurity(BaseModel):
+class SnmpSecurity(BaseModel, validate_assignment=True):
     read: SnmpSecurityEntry = SnmpSecurityEntry(community="public")
     write: SnmpSecurityEntry = SnmpSecurityEntry(community="private")
 
 
-class SnmpProtocolSettings(BaseModel):
+class SnmpProtocolSettings(BaseModel, validate_assignment=True):
     preferredVersion: SnmpVersion = SnmpVersion.V2C
-    retries: int = 1
-    maxRepetitions: int = 10
+    retries: int = Field(default=1, ge=0)
+    maxRepetitions: int = Field(default=10, ge=0)
     useGetBulk: bool = True
-    timeout: int = 5000
+    timeout: int = Field(default=5000, ge=0)
     localEngineId: str = ""
 
+    @field_validator("localEngineId")
+    @classmethod
+    def validate_engine_id(cls, value: str) -> str:
+        return _validate_engine_id_format(value)
 
-class SnmpConfiguration(BaseModel):
+
+class SnmpConfiguration(BaseModel, validate_assignment=True):
     id: str = Field(alias="_id")
     descriptor: SnmpDescriptor = Field(default_factory=SnmpDescriptor)
     users: dict[str, SnmpUser] = Field(default_factory=dict)
@@ -161,8 +203,6 @@ class SnmpConfiguration(BaseModel):
     @retries.setter
     def retries(self, value: int):
         """Sets the number of retries for SNMP requests."""
-        if not isinstance(value, int) or value < 0:
-            raise ValueError("Retries must be a non-negative integer.")
         self.protocol.retries = value
 
     @property
@@ -173,8 +213,6 @@ class SnmpConfiguration(BaseModel):
     @timeout.setter
     def timeout(self, value: int):
         """Sets the timeout for SNMP requests in milliseconds."""
-        if not isinstance(value, int) or value < 0:
-            raise ValueError("Timeout must be a non-negative integer.")
         self.protocol.timeout = value
 
     @property
@@ -185,8 +223,6 @@ class SnmpConfiguration(BaseModel):
     @local_engine_id.setter
     def local_engine_id(self, value: str):
         """Sets the local engine ID for SNMP."""
-        if not isinstance(value, str) or not value:
-            raise ValueError("Local Engine ID must be a non-empty string.")
         self.protocol.localEngineId = value
 
     @property
@@ -197,8 +233,6 @@ class SnmpConfiguration(BaseModel):
     @use_get_bulk.setter
     def use_get_bulk(self, value: bool):
         """Sets whether to use GetBulk for SNMP requests."""
-        if not isinstance(value, bool):
-            raise ValueError("Use GetBulk must be a boolean value.")
         self.protocol.useGetBulk = value
 
     @property
@@ -209,8 +243,6 @@ class SnmpConfiguration(BaseModel):
     @max_repetitions.setter
     def max_repetitions(self, value: int):
         """Sets the maximum number of repetitions for SNMP requests."""
-        if not isinstance(value, int) or value < 0:
-            raise ValueError("Max Repetitions must be a non-negative integer.")
         self.protocol.maxRepetitions = value
 
     @property
@@ -221,8 +253,6 @@ class SnmpConfiguration(BaseModel):
     @read_community.setter
     def read_community(self, value: str):
         """Sets the read community for SNMP."""
-        if not isinstance(value, str) or not value:
-            raise ValueError("Read Community must be a non-empty string.")
         self.security.read.community = value
 
     @property
@@ -233,8 +263,6 @@ class SnmpConfiguration(BaseModel):
     @write_community.setter
     def write_community(self, value: str):
         """Sets the write community for SNMP."""
-        if not isinstance(value, str) or not value:
-            raise ValueError("Write Community must be a non-empty string.")
         self.security.write.community = value
 
     def list_usernames(self) -> list[str]:

@@ -10,11 +10,13 @@ from videoipath_automation_tool.apps.inventory.app.create_device_from_discovered
 from videoipath_automation_tool.apps.inventory.app.get_device import InventoryGetDeviceMixin
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
 from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettings, CustomSettingsType, DriverLiteral
+from videoipath_automation_tool.apps.inventory.model.global_snmp_config import SnmpConfiguration
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_device_configuration_compare import (
     InventoryDeviceComparison,
 )
 from videoipath_automation_tool.apps.inventory.model.inventory_discovered_device import DiscoveredInventoryDevice
+from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.validators.device_id import validate_device_id
 
@@ -348,6 +350,83 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
             InventoryDevice: The created inventory device instance
         """
         return InventoryDevice.parse_configuration(config)
+
+    # --- Global SNMP Configuration Helpers ---
+    def get_global_snmp_config_id_by_label(self, label: str) -> Optional[str | List[str]]:
+        """Method to get the global SNMP configuration id by label.
+        Note: If multiple SNMP configurations with the same label exist, a list of ids is returned.
+
+        Args:
+            label (str): Label of the SNMP configuration
+
+        Returns:
+            Optional[str | List[str]]: SNMP configuration id, None if not found, List of ids if multiple configurations with the same label exist
+        """
+        return self._inventory_api.get_global_snmp_config_id_by_label(label=label)
+
+    def get_global_snmp_config_label_by_id(self, snmp_config_id: str) -> Optional[str]:
+        """Method to get the global SNMP configuration label by id.
+
+        Args:
+            snmp_config_id (str): SNMP configuration id
+
+        Returns:
+            Optional[str]: SNMP configuration label, None if not found
+        """
+        return self._inventory_api.get_global_snmp_config_label_by_id(snmp_config_id=snmp_config_id)
+
+    def get_all_global_snmp_config_ids(self) -> dict[str, str]:
+        """Method to list all global SNMP configuration ids with their labels.
+
+        Returns:
+            dict: {snmp_config_id: snmp_config_label}
+        """
+        return self._inventory_api.get_all_global_snmp_config_ids()
+
+    # --- Global SNMP Configuration CRUD Methods ---
+    def get_global_snmp_config(self, snmp_config_id: str) -> SnmpConfiguration:
+        """Method to get a global SNMP configuration by id from VideoIPath-Inventory
+
+        Args:
+            snmp_config_id (str): SNMP configuration id
+
+        Returns:
+            GlobalSnmpConfig: Global SNMP configuration object
+        """
+        return self._inventory_api.get_global_snmp_config(snmp_config_id=snmp_config_id)
+
+    def add_global_snmp_config(self, snmp_config: SnmpConfiguration) -> SnmpConfiguration:
+        """Method to add a new global SNMP configuration
+
+        Args:
+            snmp_config (SnmpConfiguration): SNMP configuration object to add
+
+        Returns:
+            SnmpConfiguration: Added SNMP configuration object
+        """
+        return self._inventory_api.add_global_snmp_config(snmp_config=snmp_config)
+
+    def update_global_snmp_config(self, snmp_config: SnmpConfiguration) -> SnmpConfiguration:
+        """Method to update a global SNMP configuration
+
+        Args:
+            snmp_config (SnmpConfiguration): SNMP configuration object to update
+
+        Returns:
+            SnmpConfiguration: Updated SNMP configuration object
+        """
+        return self._inventory_api.update_global_snmp_config(snmp_config=snmp_config)
+
+    def remove_global_snmp_config(self, snmp_config_id: str) -> ResponseRPC:
+        """Method to remove a global SNMP configuration by id from VideoIPath-Inventory
+
+        Args:
+            snmp_config_id (str): SNMP configuration id
+
+        Returns:
+            ResponseRPC: Response object
+        """
+        return self._inventory_api.remove_global_snmp_config(snmp_config_id=snmp_config_id)
 
     # --- Deprecated Methods ---
     @deprecated(
