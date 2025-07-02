@@ -13,6 +13,8 @@ from videoipath_automation_tool.apps.inventory.inventory_utils import (
 )
 from videoipath_automation_tool.apps.inventory.model.device_status import DeviceStatus
 from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType, DriverLiteral
+from videoipath_automation_tool.apps.inventory.model.global_snmp_config import SnmpConfiguration
+from videoipath_automation_tool.apps.inventory.model.global_snmp_request_rpc import SnmpRequestRpc
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_discovered_device import DiscoveredInventoryDevice
 from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
@@ -663,6 +665,169 @@ class InventoryAPI:
         return DiscoveredInventoryDevice.model_validate(
             response.data["status"]["devman"]["discoveredDevices"]["_items"][0]
         )
+
+    # --- Global SNMP Configuration Helpers ---
+    def get_global_snmp_config_id_by_label(self, label: str) -> Optional[str | List[str]]:
+        """Method to get the global SNMP configuration id by label.
+        Note: If multiple SNMP configurations with the same label exist, a list of ids is returned.
+
+        Args:
+            label (str): Label of the SNMP configuration
+
+        Returns:
+            Optional[str | List[str]]: SNMP configuration id, None if not found, List of ids if multiple configurations with the same label exist
+        """
+        if not label:
+            raise ValueError("Label must not be empty.")
+
+        escaped_label = urllib.parse.quote(label, safe="")
+        url = f"/rest/v2/data/config/system/snmp/*/* where descriptor.label='{escaped_label}' /*"
+        response = self.vip_connector.rest.get(url)
+        if response.data and response.data["config"]["system"]["snmp"]["session"]:
+            matches = response.data["config"]["system"]["snmp"]["session"]
+            if len(matches) == 1:
+                return list(matches.keys())[0]
+            elif len(matches) > 1:
+                self._logger.warning(
+                    f"Multiple SNMP configurations found with label '{label}''. Returning all matching ids."
+                )
+                return list(matches.keys())
+        return None
+
+    def get_global_snmp_config_label_by_id(self, snmp_config_id: str) -> Optional[str]:
+        """Method to get the global SNMP configuration label by id.
+
+        Args:
+            snmp_config_id (str): SNMP configuration id
+
+        Returns:
+            Optional[str]: SNMP configuration label, None if not found
+        """
+        if not snmp_config_id:
+            raise ValueError("SNMP configuration id must not be empty.")
+
+        url = f"/rest/v2/data/config/system/snmp/session/{snmp_config_id}/descriptor/label"
+        response = self.vip_connector.rest.get(url, node_check=False)
+        if response.data and response.data["config"]["system"]["snmp"]["session"]:
+            if snmp_config_id in response.data["config"]["system"]["snmp"]["session"]:
+                return response.data["config"]["system"]["snmp"]["session"][snmp_config_id]["descriptor"]["label"]
+        return None
+
+    def get_all_global_snmp_config_ids(self) -> dict[str, str]:
+        """Method to list all global SNMP configuration ids with their labels.
+
+        Returns:
+            dict: {snmp_config_id: snmp_config_label}
+        """
+        url = "/rest/v2/data/config/system/snmp/*/*/descriptor/label"
+        response = self.vip_connector.rest.get(url)
+        if not response.data:
+            raise ValueError("Response data is empty.")
+
+        snmp_configs = response.data["config"]["system"]["snmp"]["session"]
+        return {
+            snmp_config_id: snmp_config["descriptor"]["label"] for snmp_config_id, snmp_config in snmp_configs.items()
+        }
+
+    # --- Global SNMP Configuration CRUD Methods ---
+    def get_global_snmp_config(self, snmp_config_id: str) -> SnmpConfiguration:
+        """Method to get a global SNMP configuration by id from VideoIPath-Inventory
+
+        Args:
+            snmp_config_id (str): SNMP configuration id
+
+        Returns:
+            GlobalSnmpConfig: Global SNMP configuration object
+        """
+        if not snmp_config_id:
+            raise ValueError("SNMP configuration id must not be empty.")
+
+        url = f"/rest/v2/data/config/system/snmp/session/{snmp_config_id}/**"
+        response = self.vip_connector.rest.get(url)
+        if not response.data:
+            raise ValueError("Response data is empty.")
+
+        return SnmpConfiguration.parse_from_dict(response.data["config"]["system"]["snmp"]["session"])
+
+    def add_global_snmp_config(self, snmp_config: SnmpConfiguration) -> SnmpConfiguration:
+        """Method to add a new global SNMP configuration
+
+        Args:
+            snmp_config (SnmpConfiguration): SNMP configuration object to add
+
+        Returns:
+            SnmpConfiguration: Added SNMP configuration object
+        """
+        if not snmp_config.id:
+            raise ValueError("SNMP configuration id must be set.")
+
+        self._logger.debug(f"Adding new global SNMP configuration with id '{snmp_config.id}'.")
+
+        existing_configs_label = self.get_global_snmp_config_label_by_id(snmp_config.id)
+        if existing_configs_label is not None:
+            raise ValueError(f"SNMP configuration with id '{snmp_config.id}' already exists. Please update it instead.")
+
+        body = SnmpRequestRpc()
+        body.add(snmp_config)
+
+        response = self.vip_connector.rpc.post("/api/updateSnmpConfig", body=body)
+
+        if response.header.status != "OK":
+            raise ValueError(f"Failed to add global SNMP configuration. Error: {response}")
+
+        return self.get_global_snmp_config(snmp_config_id=snmp_config.id)
+
+    def update_global_snmp_config(self, snmp_config: SnmpConfiguration) -> SnmpConfiguration:
+        """Method to update a global SNMP configuration
+
+        Args:
+            snmp_config (SnmpConfiguration): SNMP configuration object to update
+
+        Returns:
+            SnmpConfiguration: Updated SNMP configuration object
+        """
+        if not snmp_config.id:
+            raise ValueError("SNMP configuration id must be set.")
+
+        self._logger.debug(f"Updating global SNMP configuration with id '{snmp_config.id}'.")
+
+        existing_configs_label = self.get_global_snmp_config_label_by_id(snmp_config.id)
+        if existing_configs_label is None:
+            raise ValueError(f"SNMP configuration with id '{snmp_config.id}' does not exist. Please add it first.")
+
+        body = SnmpRequestRpc()
+        body.update(snmp_config)
+
+        response = self.vip_connector.rpc.post("/api/updateSnmpConfig", body=body)
+
+        if response.header.status != "OK":
+            raise ValueError(f"Failed to update global SNMP configuration. Error: {response}")
+
+        return self.get_global_snmp_config(snmp_config_id=snmp_config.id)
+
+    def remove_global_snmp_config(self, snmp_config_id: str) -> ResponseRPC:
+        """Method to remove a global SNMP configuration by id from VideoIPath-Inventory
+
+        Args:
+            snmp_config_id (str): SNMP configuration id
+
+        Returns:
+            ResponseRPC: Response object
+        """
+        if not snmp_config_id:
+            raise ValueError("SNMP configuration id must be set.")
+
+        self._logger.debug(f"Removing global SNMP configuration with id '{snmp_config_id}'.")
+
+        body = SnmpRequestRpc()
+        body.remove(snmp_config_id)
+
+        response = self.vip_connector.rpc.post("/api/updateSnmpConfig", body=body)
+
+        if response.header.status != "OK":
+            raise ValueError(f"Failed to remove global SNMP configuration. Error: {response}")
+
+        return response
 
     # --- Deprecated Methods ---
     @deprecated(

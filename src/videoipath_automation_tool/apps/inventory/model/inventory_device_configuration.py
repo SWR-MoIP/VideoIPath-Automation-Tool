@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import deprecated
 
 from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettingsType
+from videoipath_automation_tool.validators.uuid_4 import validate_uuid_4
 
 
 class CinfoOverridesSNMP(BaseModel, validate_assignment=True):
@@ -179,6 +180,55 @@ class DeviceConfiguration(BaseModel, Generic[CustomSettingsType], validate_assig
     @metadata.setter
     def metadata(self, value):
         self.meta = value
+
+    @property
+    def use_global_snmp_settings(self) -> bool:
+        """Use (activate) global SNMP settings."""
+        return self.cinfoOverrides.snmp.useDefault
+
+    @use_global_snmp_settings.setter
+    def use_global_snmp_settings(self, value: bool):
+        """Use (activate) global SNMP settings."""
+        self.cinfoOverrides.snmp.useDefault = value
+
+    def get_global_snmp_setting_id(self) -> str:
+        """
+        Returns the ID of the global SNMP setting currently in use.
+
+        Returns:
+            str: The ID of the global SNMP setting.
+                - "default" if the system's default configuration is used.
+                - Otherwise, returns the UUID of the configured global SNMP setting.
+                Note: Retrieve the Label of the global SNMP setting using:
+                `app.inventory.get_global_snmp_config_label_by_id(id)`
+        """
+        return self.cinfoOverrides.snmp.id
+
+    def set_global_snmp_setting(self, setting_id: str, activate: bool = True):
+        """
+        Sets the global SNMP setting by ID.
+
+        Args:
+            setting_id (str): The ID of the global SNMP setting to use.
+                - Use "default" to apply the system's default configuration.
+                - For other configurations, retrieve the ID by label using:
+                    `app.inventory.get_global_snmp_config_id_by_label(label)`
+
+            activate (bool): Whether to activate the global SNMP settings (`use_global_snmp_settings = True`).
+                Defaults to True. Set to False if you only want to store the ID without activating it yet.
+
+        Raises:
+            ValueError: If the setting ID is empty or not a valid UUID (unless "default").
+        """
+        if not setting_id:
+            raise ValueError("Setting ID cannot be empty.")
+        if setting_id != "default":
+            setting_id = validate_uuid_4(setting_id)
+
+        self.cinfoOverrides.snmp.id = setting_id
+
+        if activate:
+            self.cinfoOverrides.snmp.useDefault = True
 
     # --- Deprecated properties ---
     @property
