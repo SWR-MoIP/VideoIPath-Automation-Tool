@@ -107,6 +107,14 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
     def create_device_from_discovered_device(
         self,
         discovered_device_id: str,
+        driver: Literal["com.nevion.appeartv_x_platform_legacy-0.1.0"],
+        suggested_config_index: int = 0,
+    ) -> InventoryDevice[CustomSettings_com_nevion_appeartv_x_platform_legacy_0_1_0]: ...
+
+    @overload
+    def create_device_from_discovered_device(
+        self,
+        discovered_device_id: str,
         driver: Literal["com.nevion.appeartv_x_platform_static-0.1.0"],
         suggested_config_index: int = 0,
     ) -> InventoryDevice[CustomSettings_com_nevion_appeartv_x_platform_static_0_1_0]: ...

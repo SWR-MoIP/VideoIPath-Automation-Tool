@@ -17,7 +17,7 @@ Before establishing a connection to the VideoIPath Server, ensure that the follo
 
 ### Driver Versioning
 
-To ensure IntelliSense support and runtime validation of custom settings, the VideoIPath Server should be running a compatible version of the driver schema. By default, the package uses the latest Long-Term Support (LTS) version, which is currently **2024.4.12**. If you need to use a different version, refer to the [Driver Versioning Guide](../driver-versioning.md).
+To ensure IntelliSense support and runtime validation of custom settings, the VideoIPath Server should be running a compatible version of the driver schema. By default, the package uses the latest Long-Term Support (LTS) version, which is currently **2024.4.14**. If you need to use a different version, refer to the [Driver Versioning Guide](../driver-versioning.md).
 
 ## Example 1: Establishing a Connection to the VideoIPath Server via Environment Variables
 

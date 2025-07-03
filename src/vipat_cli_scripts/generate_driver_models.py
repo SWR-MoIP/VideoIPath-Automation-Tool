@@ -4,7 +4,7 @@ from pathlib import Path
 
 from vipat_cli_scripts.version_utils import ROOT_DIR, list_available_schema_versions, load_module
 
-DEFAULT_VERSION = "2024.4.12"
+DEFAULT_VERSION = "2024.4.14"
 DEFAULT_SCHEMA_FILE = Path(ROOT_DIR) / "apps" / "inventory" / "model" / "driver_schema" / f"{DEFAULT_VERSION}.json"
 DEFAULT_OUTPUT_FILE = Path(ROOT_DIR) / "apps" / "inventory" / "model" / "drivers.py"
 

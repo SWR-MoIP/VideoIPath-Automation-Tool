@@ -205,6 +205,21 @@ class InventoryGetDeviceMixin:
         label: Optional[str] = None,
         device_id: Optional[str] = None,
         address: Optional[str] = None,
+        custom_settings_type: Optional[Literal["com.nevion.appeartv_x_platform_legacy-0.1.0"]] = None,
+        config_only: bool = False,
+        label_search_mode: Literal[
+            "canonical_label", "factory_label_only", "user_defined_label_only"
+        ] = "canonical_label",
+        status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
+        status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
+    ) -> InventoryDevice[CustomSettings_com_nevion_appeartv_x_platform_legacy_0_1_0]: ...
+
+    @overload
+    def get_device(
+        self,
+        label: Optional[str] = None,
+        device_id: Optional[str] = None,
+        address: Optional[str] = None,
         custom_settings_type: Optional[Literal["com.nevion.appeartv_x_platform_static-0.1.0"]] = None,
         config_only: bool = False,
         label_search_mode: Literal[

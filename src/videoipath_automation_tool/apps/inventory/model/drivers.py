@@ -5,12 +5,12 @@ from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - Schema 2024.4.12.json is used as reference to define the custom settings model!
+# - Schema 2024.4.14.json is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
 
-SELECTED_SCHEMA_VERSION = "2024.4.12"
+SELECTED_SCHEMA_VERSION = "2024.4.14"
 AVAILABLE_SCHEMA_VERSIONS = [
     "2023.4.2",
     "2023.4.35",
@@ -19,6 +19,7 @@ AVAILABLE_SCHEMA_VERSIONS = [
     "2024.3.3",
     "2024.4.11",
     "2024.4.12",
+    "2024.4.14",
     "2025.2.0",
 ]
 
@@ -197,6 +198,10 @@ Coder module - IP module association map\n
 LAN-WAN mapping\n
 LAN/WAN module association map\n
 	"""
+
+
+class CustomSettings_com_nevion_appeartv_x_platform_legacy_0_1_0(DriverCustomSettings):
+    driver_id: Literal["com.nevion.appeartv_x_platform_legacy-0.1.0"] = "com.nevion.appeartv_x_platform_legacy-0.1.0"
 
 
 class CustomSettings_com_nevion_appeartv_x_platform_static_0_1_0(DriverCustomSettings):
@@ -2049,6 +2054,7 @@ DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
     "com.nevion.amethyst3-0.1.0": CustomSettings_com_nevion_amethyst3_0_1_0,
     "com.nevion.anubis-0.1.0": CustomSettings_com_nevion_anubis_0_1_0,
     "com.nevion.appeartv_x_platform-0.2.0": CustomSettings_com_nevion_appeartv_x_platform_0_2_0,
+    "com.nevion.appeartv_x_platform_legacy-0.1.0": CustomSettings_com_nevion_appeartv_x_platform_legacy_0_1_0,
     "com.nevion.appeartv_x_platform_static-0.1.0": CustomSettings_com_nevion_appeartv_x_platform_static_0_1_0,
     "com.nevion.archwave_unet-0.1.0": CustomSettings_com_nevion_archwave_unet_0_1_0,
     "com.nevion.arista-0.1.0": CustomSettings_com_nevion_arista_0_1_0,
@@ -2206,6 +2212,7 @@ DriverLiteral = Literal[
     "com.nevion.amethyst3-0.1.0",
     "com.nevion.anubis-0.1.0",
     "com.nevion.appeartv_x_platform-0.2.0",
+    "com.nevion.appeartv_x_platform_legacy-0.1.0",
     "com.nevion.appeartv_x_platform_static-0.1.0",
     "com.nevion.archwave_unet-0.1.0",
     "com.nevion.arista-0.1.0",
@@ -2366,6 +2373,7 @@ CustomSettings = Union[
     CustomSettings_com_nevion_amethyst3_0_1_0,
     CustomSettings_com_nevion_anubis_0_1_0,
     CustomSettings_com_nevion_appeartv_x_platform_0_2_0,
+    CustomSettings_com_nevion_appeartv_x_platform_legacy_0_1_0,
     CustomSettings_com_nevion_appeartv_x_platform_static_0_1_0,
     CustomSettings_com_nevion_archwave_unet_0_1_0,
     CustomSettings_com_nevion_arista_0_1_0,

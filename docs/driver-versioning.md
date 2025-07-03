@@ -3,7 +3,7 @@
 
 Driver schemas are auto-generated from the VideoIPath API's JSON schema, enabling IntelliSense support during development and runtime validation of custom settings.
 
-By default, the system uses the latest Long-Term Support (LTS) version, currently **2024.4.12**.
+By default, the system uses the latest Long-Term Support (LTS) version, currently **2024.4.14**.
 
 To switch to a different version after installation, run:
 
