@@ -1,0 +1,4574 @@
+{
+  "data": {
+    "status": {
+      "network": {
+        "nGraphSchemaFlat": {
+          "_items": [
+            {
+              "_id": "baseDevice",
+              "_schema": {
+                "default": {},
+                "descriptor": {
+                  "desc": "",
+                  "label": "BaseDevice"
+                },
+                "isNullable": false,
+                "options": [],
+                "status": "Current",
+                "type": "map",
+                "values": {
+                  "descriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "descriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "iconSize": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Device icon size"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Auto"
+                          },
+                          "value": "auto"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Large"
+                          },
+                          "value": "large"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Medium"
+                          },
+                          "value": "medium"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Small"
+                          },
+                          "value": "small"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "iconType": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Driver icon type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Audio Mixer"
+                          },
+                          "value": "audioMixer"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Camera"
+                          },
+                          "value": "camera"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Decoder"
+                          },
+                          "value": "decoder"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Default Driver-Specified Icon"
+                          },
+                          "value": "default"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device"
+                          },
+                          "value": "device"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Encoder"
+                          },
+                          "value": "encoder"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Encoder/Decoder"
+                          },
+                          "value": "encoderDecoder"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Gateway"
+                          },
+                          "value": "gateway"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "IP Switch/Router"
+                          },
+                          "value": "ipSwitchRouter"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Media device"
+                          },
+                          "value": "mediaDevice"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Monitor"
+                          },
+                          "value": "monitor"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Unspecified"
+                          },
+                          "value": "none"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Processing Device"
+                          },
+                          "value": "processingDevice"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Server"
+                          },
+                          "value": "server"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Transport Stream Processor"
+                          },
+                          "value": "transportStreamProcessor"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "VLAN Cloud virtual device"
+                          },
+                          "value": "vlanCloud"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Video/Audio Router (Matrix)"
+                          },
+                          "value": "videoAudioRouterMatrix"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Video Mixer"
+                          },
+                          "value": "videoMixer"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "isVirtual": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if device does not correspond to physical device/driver.",
+                        "label": "Virtual"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "maps": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": ""
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "sdpStrategy": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Sdp Polling Strategy"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Continuous"
+                          },
+                          "value": "always"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Fetch and Confirm"
+                          },
+                          "value": "once"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Continuous Video, Confirm Others"
+                          },
+                          "value": "video"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "siteId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "The ID of the site this device is located at.",
+                        "label": "Site ID"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": true,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "tags": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "User defined tags",
+                        "label": "Tags"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  }
+                }
+              },
+              "_vid": "baseDevice"
+            },
+            {
+              "_id": "codecVertex",
+              "_schema": {
+                "default": {},
+                "descriptor": {
+                  "desc": "",
+                  "label": "CodecVertex"
+                },
+                "isNullable": false,
+                "options": [],
+                "status": "Current",
+                "type": "map",
+                "values": {
+                  "active": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if the vertex can be used in service routing.",
+                        "label": "Active"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "bidirPartnerId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Bidir partner id"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": true,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "codecFormat": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Codec format type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "ASI"
+                          },
+                          "value": "ASI"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Ancillary"
+                          },
+                          "value": "Ancillary"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Audio"
+                          },
+                          "value": "Audio"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Video"
+                          },
+                          "value": "Video"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "configPriority": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Priority level of the endpoint during configuration",
+                        "label": "Config priority level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "High"
+                          },
+                          "value": "high"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Low"
+                          },
+                          "value": "low"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "control": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Determines how the vertex is configured, e.g. if it should be auto-reapplied (full).",
+                        "label": "Control level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Full"
+                          },
+                          "value": "full"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Initial"
+                          },
+                          "value": "semi"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "custom": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A map structure containing String-DtValue pairs",
+                        "label": "DtMap"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "descriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "descriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "deviceId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Device Id"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "extraAlertFilters": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Extra Alert Filters"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "extraFormats": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "Formats added when used as endpoint",
+                        "label": "Extra Formats"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "fDescriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "gpid.component": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Source component"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Alert Manager"
+                          },
+                          "value": 5
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Booking Manager"
+                          },
+                          "value": 8
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Config"
+                          },
+                          "value": 101
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Configuration Manager"
+                          },
+                          "value": 7
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device"
+                          },
+                          "value": 1
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device Manager"
+                          },
+                          "value": 6
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Domain"
+                          },
+                          "value": 13
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "External Manager"
+                          },
+                          "value": 16
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "GPIO Manager"
+                          },
+                          "value": 19
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Generic"
+                          },
+                          "value": 0
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Licensing"
+                          },
+                          "value": 10
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Matrix Manager"
+                          },
+                          "value": 18
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Metrics"
+                          },
+                          "value": 102
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NDCP Manager"
+                          },
+                          "value": 17
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Reachability"
+                          },
+                          "value": 14
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Redundancy Controller"
+                          },
+                          "value": 12
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Resource"
+                          },
+                          "value": 99
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "REST"
+                          },
+                          "value": 11
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Service"
+                          },
+                          "value": 100
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System"
+                          },
+                          "value": 2
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System Topology"
+                          },
+                          "value": 9
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Tally Manager"
+                          },
+                          "value": 20
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Topology Manager"
+                          },
+                          "value": 15
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Unknown"
+                          },
+                          "value": 999
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "User"
+                          },
+                          "value": 4
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Virtual Router Manager"
+                          },
+                          "value": 21
+                        }
+                      ],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "gpid.pointId": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A hierarchical ID with dot separated levels",
+                        "label": "Point ID"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "imgUrl": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Image URL"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "isIgmpSource": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "Vertex can function as last hop in IGMP config.",
+                        "label": "Igmp Source"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "isVirtual": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if vertex does not correspond to physical resource/driver.",
+                        "label": "Virtual"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "mainDstIp": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Main Destination Ip Address"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "mainDstMac": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Main Destination Mac Address"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": true,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "mainDstPort": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Main Destination TCP/UDP Port"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "ranges": [
+                        [
+                          1,
+                          65535,
+                          1
+                        ]
+                      ],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "mainDstVlan": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Main Destination Vlan"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "mainSrcGateway": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Main Source Ip Gateway"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "mainSrcIp": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Main Source Ip Address"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "mainSrcMac": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Main Source Mac Address"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": true,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "mainSrcNetmask": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Main Source Ip Netmask"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "maps": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "Collection of object coordinates for various maps/contexts.",
+                        "label": "Maps"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "multiplicity": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "How many physical ip streams it can produce",
+                        "label": "Multiplicity"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "partnerConfig": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Vertex Partner Config"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "public": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "Share via distributed systems",
+                        "label": "Public"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "sdpSupport": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "The vertex publishes an SDP",
+                        "label": "SDP support"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "serviceId": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Service Id"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "sipsMode": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "SIPS mode type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NONE"
+                          },
+                          "value": "NONE"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Auto"
+                          },
+                          "value": "SIPSAuto"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Duplicate"
+                          },
+                          "value": "SIPSDuplicate"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Merge"
+                          },
+                          "value": "SIPSMerge"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Split"
+                          },
+                          "value": "SIPSSplit"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "spareDstIp": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Spare Destination Ip Address"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "spareDstMac": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Spare Destination Mac Address"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": true,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "spareDstPort": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Spare Destination TCP/UDP Port"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "ranges": [
+                        [
+                          1,
+                          65535,
+                          1
+                        ]
+                      ],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "spareDstVlan": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Spare Destination Vlan"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "spareSrcGateway": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Spare Source Ip Gateway"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "spareSrcIp": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Spare Source Ip Address"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "spareSrcMac": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Spare Source Mac Address"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": true,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "spareSrcNetmask": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Spare Source Ip Netmask"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "tags": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "User defined tags",
+                        "label": "Tags"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "useAsEndpoint": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Use as Endpoint"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "vertexType": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Vertex type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "BiDirectional"
+                          },
+                          "value": "BiDirectional"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Input"
+                          },
+                          "value": "In"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Internal"
+                          },
+                          "value": "Internal"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Output"
+                          },
+                          "value": "Out"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Undecided"
+                          },
+                          "value": "Undecided"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "_vid": "codecVertex"
+            },
+            {
+              "_id": "genericVertex",
+              "_schema": {
+                "default": {},
+                "descriptor": {
+                  "desc": "",
+                  "label": "GenericVertex"
+                },
+                "isNullable": false,
+                "options": [],
+                "status": "Current",
+                "type": "map",
+                "values": {
+                  "active": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if the vertex can be used in service routing.",
+                        "label": "Active"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "configPriority": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Priority level of the endpoint during configuration",
+                        "label": "Config priority level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "High"
+                          },
+                          "value": "high"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Low"
+                          },
+                          "value": "low"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "control": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Determines how the vertex is configured, e.g. if it should be auto-reapplied (full).",
+                        "label": "Control level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Full"
+                          },
+                          "value": "full"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Initial"
+                          },
+                          "value": "semi"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "custom": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A map structure containing String-DtValue pairs",
+                        "label": "DtMap"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "descriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "descriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "deviceId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Device Id"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "extraAlertFilters": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Extra Alert Filters"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "fDescriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "gpid.component": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Source component"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Alert Manager"
+                          },
+                          "value": 5
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Booking Manager"
+                          },
+                          "value": 8
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Config"
+                          },
+                          "value": 101
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Configuration Manager"
+                          },
+                          "value": 7
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device"
+                          },
+                          "value": 1
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device Manager"
+                          },
+                          "value": 6
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Domain"
+                          },
+                          "value": 13
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "External Manager"
+                          },
+                          "value": 16
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "GPIO Manager"
+                          },
+                          "value": 19
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Generic"
+                          },
+                          "value": 0
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Licensing"
+                          },
+                          "value": 10
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Matrix Manager"
+                          },
+                          "value": 18
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Metrics"
+                          },
+                          "value": 102
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NDCP Manager"
+                          },
+                          "value": 17
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Reachability"
+                          },
+                          "value": 14
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Redundancy Controller"
+                          },
+                          "value": 12
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Resource"
+                          },
+                          "value": 99
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "REST"
+                          },
+                          "value": 11
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Service"
+                          },
+                          "value": 100
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System"
+                          },
+                          "value": 2
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System Topology"
+                          },
+                          "value": 9
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Tally Manager"
+                          },
+                          "value": 20
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Topology Manager"
+                          },
+                          "value": 15
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Unknown"
+                          },
+                          "value": 999
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "User"
+                          },
+                          "value": 4
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Virtual Router Manager"
+                          },
+                          "value": 21
+                        }
+                      ],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "gpid.pointId": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A hierarchical ID with dot separated levels",
+                        "label": "Point ID"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "imgUrl": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Image URL"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "isVirtual": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if vertex does not correspond to physical resource/driver.",
+                        "label": "Virtual"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "maps": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "Collection of object coordinates for various maps/contexts.",
+                        "label": "Maps"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "sipsMode": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "SIPS mode type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NONE"
+                          },
+                          "value": "NONE"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Auto"
+                          },
+                          "value": "SIPSAuto"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Duplicate"
+                          },
+                          "value": "SIPSDuplicate"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Merge"
+                          },
+                          "value": "SIPSMerge"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Split"
+                          },
+                          "value": "SIPSSplit"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "tags": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "User defined tags",
+                        "label": "Tags"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "useAsEndpoint": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Use as Endpoint"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "vertexType": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Vertex type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "BiDirectional"
+                          },
+                          "value": "BiDirectional"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Input"
+                          },
+                          "value": "In"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Internal"
+                          },
+                          "value": "Internal"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Output"
+                          },
+                          "value": "Out"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Undecided"
+                          },
+                          "value": "Undecided"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "_vid": "genericVertex"
+            },
+            {
+              "_id": "ipTransformVertex",
+              "_schema": {
+                "default": {},
+                "descriptor": {
+                  "desc": "",
+                  "label": "IpTransformVertex"
+                },
+                "isNullable": false,
+                "options": [],
+                "status": "Current",
+                "type": "map",
+                "values": {
+                  "active": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if the vertex can be used in service routing.",
+                        "label": "Active"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "configPriority": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Priority level of the endpoint during configuration",
+                        "label": "Config priority level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "High"
+                          },
+                          "value": "high"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Low"
+                          },
+                          "value": "low"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "control": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Determines how the vertex is configured, e.g. if it should be auto-reapplied (full).",
+                        "label": "Control level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Full"
+                          },
+                          "value": "full"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Initial"
+                          },
+                          "value": "semi"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "custom": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A map structure containing String-DtValue pairs",
+                        "label": "DtMap"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "descriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "descriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "deviceId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Device Id"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "extraAlertFilters": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Extra Alert Filters"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "fDescriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "gpid.component": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Source component"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Alert Manager"
+                          },
+                          "value": 5
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Booking Manager"
+                          },
+                          "value": 8
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Config"
+                          },
+                          "value": 101
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Configuration Manager"
+                          },
+                          "value": 7
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device"
+                          },
+                          "value": 1
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device Manager"
+                          },
+                          "value": 6
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Domain"
+                          },
+                          "value": 13
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "External Manager"
+                          },
+                          "value": 16
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "GPIO Manager"
+                          },
+                          "value": 19
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Generic"
+                          },
+                          "value": 0
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Licensing"
+                          },
+                          "value": 10
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Matrix Manager"
+                          },
+                          "value": 18
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Metrics"
+                          },
+                          "value": 102
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NDCP Manager"
+                          },
+                          "value": 17
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Reachability"
+                          },
+                          "value": 14
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Redundancy Controller"
+                          },
+                          "value": 12
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Resource"
+                          },
+                          "value": 99
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "REST"
+                          },
+                          "value": 11
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Service"
+                          },
+                          "value": 100
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System"
+                          },
+                          "value": 2
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System Topology"
+                          },
+                          "value": 9
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Tally Manager"
+                          },
+                          "value": 20
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Topology Manager"
+                          },
+                          "value": 15
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Unknown"
+                          },
+                          "value": 999
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "User"
+                          },
+                          "value": 4
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Virtual Router Manager"
+                          },
+                          "value": 21
+                        }
+                      ],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "gpid.pointId": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A hierarchical ID with dot separated levels",
+                        "label": "Point ID"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "imgUrl": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Image URL"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "isVirtual": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if vertex does not correspond to physical resource/driver.",
+                        "label": "Virtual"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "maps": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "Collection of object coordinates for various maps/contexts.",
+                        "label": "Maps"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "sipsMode": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "SIPS mode type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NONE"
+                          },
+                          "value": "NONE"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Auto"
+                          },
+                          "value": "SIPSAuto"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Duplicate"
+                          },
+                          "value": "SIPSDuplicate"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Merge"
+                          },
+                          "value": "SIPSMerge"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Split"
+                          },
+                          "value": "SIPSSplit"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "tags": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "User defined tags",
+                        "label": "Tags"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "useAsEndpoint": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Use as Endpoint"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "vertexType": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Vertex type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "BiDirectional"
+                          },
+                          "value": "BiDirectional"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Input"
+                          },
+                          "value": "In"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Internal"
+                          },
+                          "value": "Internal"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Output"
+                          },
+                          "value": "Out"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Undecided"
+                          },
+                          "value": "Undecided"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "_vid": "ipTransformVertex"
+            },
+            {
+              "_id": "ipVertex",
+              "_schema": {
+                "default": {},
+                "descriptor": {
+                  "desc": "",
+                  "label": "IpVertex"
+                },
+                "isNullable": false,
+                "options": [],
+                "status": "Current",
+                "type": "map",
+                "values": {
+                  "active": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if the vertex can be used in service routing.",
+                        "label": "Active"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "configPriority": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Priority level of the endpoint during configuration",
+                        "label": "Config priority level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "High"
+                          },
+                          "value": "high"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Low"
+                          },
+                          "value": "low"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "control": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Determines how the vertex is configured, e.g. if it should be auto-reapplied (full).",
+                        "label": "Control level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Full"
+                          },
+                          "value": "full"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Initial"
+                          },
+                          "value": "semi"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "custom": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A map structure containing String-DtValue pairs",
+                        "label": "DtMap"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "descriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "descriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "deviceId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Device Id"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "extraAlertFilters": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Extra Alert Filters"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "fDescriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "gpid.component": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Source component"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Alert Manager"
+                          },
+                          "value": 5
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Booking Manager"
+                          },
+                          "value": 8
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Config"
+                          },
+                          "value": 101
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Configuration Manager"
+                          },
+                          "value": 7
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device"
+                          },
+                          "value": 1
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device Manager"
+                          },
+                          "value": 6
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Domain"
+                          },
+                          "value": 13
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "External Manager"
+                          },
+                          "value": 16
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "GPIO Manager"
+                          },
+                          "value": 19
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Generic"
+                          },
+                          "value": 0
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Licensing"
+                          },
+                          "value": 10
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Matrix Manager"
+                          },
+                          "value": 18
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Metrics"
+                          },
+                          "value": 102
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NDCP Manager"
+                          },
+                          "value": 17
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Reachability"
+                          },
+                          "value": 14
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Redundancy Controller"
+                          },
+                          "value": 12
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Resource"
+                          },
+                          "value": 99
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "REST"
+                          },
+                          "value": 11
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Service"
+                          },
+                          "value": 100
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System"
+                          },
+                          "value": 2
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System Topology"
+                          },
+                          "value": 9
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Tally Manager"
+                          },
+                          "value": 20
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Topology Manager"
+                          },
+                          "value": 15
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Unknown"
+                          },
+                          "value": 999
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "User"
+                          },
+                          "value": 4
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Virtual Router Manager"
+                          },
+                          "value": 21
+                        }
+                      ],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "gpid.pointId": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A hierarchical ID with dot separated levels",
+                        "label": "Point ID"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "imgUrl": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Image URL"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "ipAddress": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "IP Address"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "ipNetmask": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "IP Netmask"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "isVirtual": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if vertex does not correspond to physical resource/driver.",
+                        "label": "Virtual"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "maps": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "Collection of object coordinates for various maps/contexts.",
+                        "label": "Maps"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "public": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "Share via distributed systems",
+                        "label": "Public"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "sipsMode": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "SIPS mode type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NONE"
+                          },
+                          "value": "NONE"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Auto"
+                          },
+                          "value": "SIPSAuto"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Duplicate"
+                          },
+                          "value": "SIPSDuplicate"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Merge"
+                          },
+                          "value": "SIPSMerge"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Split"
+                          },
+                          "value": "SIPSSplit"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "supportsCpipeCfg": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Supports C-Pipe Config"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "supportsIgmpCfg": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Supports Igmp Config"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "supportsMacForwardingCfg": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Supports Mac Forwarding Config"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "supportsNsoCfg": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Supports Nso Config"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "supportsOpenflowCfg": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Supports Openflow Config"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "supportsStaticIgmpCfg": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Supports Static Igmp Config"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "supportsVlanCfg": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Supports Vlan Config"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "supportsVplsCfg": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Supports VPLS Config"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "tags": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "User defined tags",
+                        "label": "Tags"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "useAsEndpoint": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Use as Endpoint"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "vertexType": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Vertex type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "BiDirectional"
+                          },
+                          "value": "BiDirectional"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Input"
+                          },
+                          "value": "In"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Internal"
+                          },
+                          "value": "Internal"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Output"
+                          },
+                          "value": "Out"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Undecided"
+                          },
+                          "value": "Undecided"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "vlanId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Vlan Id"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": true,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "vrfId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "VRF Id"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": true,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "_vid": "ipVertex"
+            },
+            {
+              "_id": "nGraphResourceTransform",
+              "_schema": {
+                "default": {},
+                "descriptor": {
+                  "desc": "",
+                  "label": "ResourceTransform"
+                },
+                "isNullable": false,
+                "options": [],
+                "status": "Current",
+                "type": "map",
+                "values": {
+                  "active": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if the edge is active and used in service routing.",
+                        "label": "Active"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "descriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "descriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fResourceIds": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "Factory resource ids",
+                        "label": "fResourceIds"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "fromId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "ID of the from-vertex",
+                        "label": "fromId"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "resourceIds": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "User resource ids",
+                        "label": "resourceIds"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "tags": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Tags"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "toId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "ID of the to-vertex",
+                        "label": "toId"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "_vid": "nGraphResourceTransform"
+            },
+            {
+              "_id": "routerVertex",
+              "_schema": {
+                "default": {},
+                "descriptor": {
+                  "desc": "",
+                  "label": "RouterVertex"
+                },
+                "isNullable": false,
+                "options": [],
+                "status": "Current",
+                "type": "map",
+                "values": {
+                  "active": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if the vertex can be used in service routing.",
+                        "label": "Active"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "configPriority": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Priority level of the endpoint during configuration",
+                        "label": "Config priority level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "High"
+                          },
+                          "value": "high"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Low"
+                          },
+                          "value": "low"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "control": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "Determines how the vertex is configured, e.g. if it should be auto-reapplied (full).",
+                        "label": "Control level"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Full"
+                          },
+                          "value": "full"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": "off"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Initial"
+                          },
+                          "value": "semi"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "custom": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A map structure containing String-DtValue pairs",
+                        "label": "DtMap"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "descriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "descriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "deviceId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Device Id"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "extraAlertFilters": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Extra Alert Filters"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "fDescriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "gpid.component": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Source component"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Alert Manager"
+                          },
+                          "value": 5
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Booking Manager"
+                          },
+                          "value": 8
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Config"
+                          },
+                          "value": 101
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Configuration Manager"
+                          },
+                          "value": 7
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device"
+                          },
+                          "value": 1
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Device Manager"
+                          },
+                          "value": 6
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Domain"
+                          },
+                          "value": 13
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "External Manager"
+                          },
+                          "value": 16
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "GPIO Manager"
+                          },
+                          "value": 19
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Generic"
+                          },
+                          "value": 0
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Licensing"
+                          },
+                          "value": 10
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Matrix Manager"
+                          },
+                          "value": 18
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Metrics"
+                          },
+                          "value": 102
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NDCP Manager"
+                          },
+                          "value": 17
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Reachability"
+                          },
+                          "value": 14
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Redundancy Controller"
+                          },
+                          "value": 12
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Resource"
+                          },
+                          "value": 99
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "REST"
+                          },
+                          "value": 11
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Service"
+                          },
+                          "value": 100
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System"
+                          },
+                          "value": 2
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "System Topology"
+                          },
+                          "value": 9
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Tally Manager"
+                          },
+                          "value": 20
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Topology Manager"
+                          },
+                          "value": 15
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Unknown"
+                          },
+                          "value": 999
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "User"
+                          },
+                          "value": 4
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Virtual Router Manager"
+                          },
+                          "value": 21
+                        }
+                      ],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "gpid.pointId": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "A hierarchical ID with dot separated levels",
+                        "label": "Point ID"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "imgUrl": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Image URL"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "isVirtual": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if vertex does not correspond to physical resource/driver.",
+                        "label": "Virtual"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "maps": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "Collection of object coordinates for various maps/contexts.",
+                        "label": "Maps"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "parkPort": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Park Port"
+                      },
+                      "isNullable": true,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "sipsMode": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "SIPS mode type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "NONE"
+                          },
+                          "value": "NONE"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Auto"
+                          },
+                          "value": "SIPSAuto"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Duplicate"
+                          },
+                          "value": "SIPSDuplicate"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Merge"
+                          },
+                          "value": "SIPSMerge"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "SIPS Split"
+                          },
+                          "value": "SIPSSplit"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "tags": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "User defined tags",
+                        "label": "Tags"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "useAsEndpoint": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Use as Endpoint"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "vertexType": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Vertex type"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "BiDirectional"
+                          },
+                          "value": "BiDirectional"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Input"
+                          },
+                          "value": "In"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Internal"
+                          },
+                          "value": "Internal"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Output"
+                          },
+                          "value": "Out"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Undecided"
+                          },
+                          "value": "Undecided"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "_vid": "routerVertex"
+            },
+            {
+              "_id": "unidirectionalEdge",
+              "_schema": {
+                "default": {},
+                "descriptor": {
+                  "desc": "",
+                  "label": "UnidirectionalEdge"
+                },
+                "isNullable": false,
+                "options": [],
+                "status": "Current",
+                "type": "map",
+                "values": {
+                  "active": {
+                    "_schema": {
+                      "default": true,
+                      "descriptor": {
+                        "desc": "True, if the edge is active and used in service routing.",
+                        "label": "Active"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "CheckBox"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "bool"
+                    }
+                  },
+                  "bandwidth": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "Max allowed bandwidth.",
+                        "label": "Bandwidth capacity"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "TextField"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": "Mbit/s"
+                    }
+                  },
+                  "capacity": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "Max number of simultaneous services.",
+                        "label": "Services capacity"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "TextField"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "conflictPri": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Conflict priority"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "High"
+                          },
+                          "value": 1
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Low"
+                          },
+                          "value": 3
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Normal"
+                          },
+                          "value": 2
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Off"
+                          },
+                          "value": 0
+                        }
+                      ],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "descriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "descriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "excludeFormats": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Exclude Formats"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "fDescriptor.desc": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A more elaborate description of the entity",
+                        "label": "Description"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fDescriptor.label": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "A label for the described entity",
+                        "label": "Label"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "fromId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "ID of the from-vertex",
+                        "label": "fromId"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "includeFormats": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Include Formats"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "redundancyMode": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "",
+                        "label": "RedundancyMode"
+                      },
+                      "encoding": "UTF-8",
+                      "gui": {
+                        "tags": [],
+                        "widget": "Dropdown"
+                      },
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "Any"
+                          },
+                          "value": "Any"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "OnlyMain"
+                          },
+                          "value": "OnlyMain"
+                        },
+                        {
+                          "descriptor": {
+                            "desc": "",
+                            "label": "OnlySpare"
+                          },
+                          "value": "OnlySpare"
+                        }
+                      ],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "tags": {
+                    "_schema": {
+                      "default": {},
+                      "descriptor": {
+                        "desc": "",
+                        "label": "Tags"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "status": "Current",
+                      "type": "unknown"
+                    }
+                  },
+                  "toId": {
+                    "_schema": {
+                      "default": "",
+                      "descriptor": {
+                        "desc": "ID of the to-vertex",
+                        "label": "toId"
+                      },
+                      "encoding": "UTF-8",
+                      "isNullable": false,
+                      "lengthRanges": [],
+                      "options": [],
+                      "status": "Current",
+                      "type": "string"
+                    }
+                  },
+                  "weight": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "The edge weight/cost for routing.",
+                        "label": "Fixed weight"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "TextField"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "weightFactors.bandwidth.weight": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "Enables bandwidth-based weight calculation. The number corresponds to the weight at 100% link utilization.",
+                        "label": "Bandwidth weight factor"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "TextField"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "weightFactors.service.max": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "The maximum value that service weighting will contribute with. Useful to define an absolute.",
+                        "label": "Max total"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "TextField"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  },
+                  "weightFactors.service.weight": {
+                    "_schema": {
+                      "default": 0,
+                      "descriptor": {
+                        "desc": "Enables service-based weight calculation. The given number is the weight that each service contributes with.",
+                        "label": "Weight per service"
+                      },
+                      "gui": {
+                        "tags": [],
+                        "widget": "TextField"
+                      },
+                      "isNullable": false,
+                      "options": [],
+                      "ranges": [],
+                      "status": "Current",
+                      "type": "number",
+                      "units": ""
+                    }
+                  }
+                }
+              },
+              "_vid": "unidirectionalEdge"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
