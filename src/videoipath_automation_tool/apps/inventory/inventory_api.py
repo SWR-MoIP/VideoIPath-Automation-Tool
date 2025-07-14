@@ -555,7 +555,7 @@ class InventoryAPI:
 
         response = self.vip_connector.rest.get(url)
 
-        if response.data and response.data["config"]["devman"]["devices"]["_items"]:
+        if response.data and isinstance(response.data["config"]["devman"]["devices"]["_items"], list):
             devices = response.data["config"]["devman"]["devices"]["_items"]
         else:
             raise ValueError("Response data is empty.")
