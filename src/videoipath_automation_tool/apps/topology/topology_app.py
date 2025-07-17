@@ -27,7 +27,7 @@ class TopologyApp:
             logger (Optional[logging.Logger], optional): Logger instance to use for logging.
         """
         # --- Setup Logging ---
-        self._logger = logger or create_fallback_logger("videoipath_automation_tool_inventory_app")
+        self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_app")
 
         # --- Setup Topology API ---
         self._topology_api = TopologyAPI(vip_connector=vip_connector, logger=self._logger)
