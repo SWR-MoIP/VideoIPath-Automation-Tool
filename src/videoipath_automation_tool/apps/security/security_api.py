@@ -59,7 +59,7 @@ class SecurityAPI:
         else:
             raise ValueError("Response data is empty or malformed.")
 
-    def _build_domain_id_name_mapping(self, domains: List[Domain]) -> dict:
+    def _build_domain_id_name_mapping(self, domains: List[Domain]) -> dict[str, str]:
         """
         Build a mapping of domain IDs to names for quick lookup.
 
@@ -71,7 +71,7 @@ class SecurityAPI:
         """
         return {domain.id: domain.name for domain in domains if domain.id and domain.name}
 
-    def _build_domain_name_id_mapping(self, domains: List[Domain]) -> dict:
+    def _build_domain_name_id_mapping(self, domains: List[Domain]) -> dict[str, str]:
         """
         Build a mapping of domain names to IDs for quick lookup.
 
@@ -96,10 +96,17 @@ class SecurityAPI:
         response = self.vip_connector.rest.get(
             f"/rest/v2/data/config/domainman/domains/* where _id = '{domain_id}' /**"
         )
-        if response.data and "config" in response.data and "domainman" in response.data["config"]:
+
+        domains = (
+            response.data.get("config", {}).get("domainman", {}).get("domains", {}).get("_items")
+            if response.data
+            else None
+        )
+
+        if domains and isinstance(domains, list):
             return self._validate_filtered_response(response.data, "id", domain_id)
         else:
-            raise ValueError(f"Domain with ID {domain_id} not found or malformed response.")
+            raise DomainNotFoundError(f"Domain with ID '{domain_id}' not found or malformed response.")
 
     def get_domain_by_name(self, domain_name: str) -> Domain:
         """
@@ -117,7 +124,7 @@ class SecurityAPI:
         if response.data and "config" in response.data and "domainman" in response.data["config"]:
             return self._validate_filtered_response(response.data, "name", domain_name)
         else:
-            raise ValueError(f"Domain with name {domain_name} not found or malformed.")
+            raise DomainNotFoundError(f"Domain with name '{domain_name}' not found or malformed.")
 
     def add_domain(self, domain: Domain, name_id_check: bool = True) -> Domain:
         """
@@ -175,8 +182,6 @@ class SecurityAPI:
         Returns:
             Domain: The updated Domain object with its revision updated.
         """
-        body = self._generate_domain_action_request_body(add_list=[], update_list=[domain], remove_list=[])
-        response = self.vip_connector.rest.patch("/rest/v2/data/config/domainman/domains", body=body)
 
         if name_check:
             try:
@@ -187,6 +192,9 @@ class SecurityAPI:
                     )
             except DomainNotFoundError:
                 pass
+
+        body = self._generate_domain_action_request_body(add_list=[], update_list=[domain], remove_list=[])
+        response = self.vip_connector.rest.patch("/rest/v2/data/config/domainman/domains", body=body)
 
         if not response.result or not response.result.items:
             raise ValueError("Failed to update domain. Response does not contain expected items.")
