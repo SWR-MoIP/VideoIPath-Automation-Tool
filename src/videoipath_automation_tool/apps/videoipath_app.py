@@ -5,6 +5,7 @@ from videoipath_automation_tool.apps.inventory import InventoryApp
 from videoipath_automation_tool.apps.inventory.model.drivers import AVAILABLE_SCHEMA_VERSIONS, SELECTED_SCHEMA_VERSION
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
 from videoipath_automation_tool.apps.profile.profile_app import ProfileApp
+from videoipath_automation_tool.apps.security.security_app import SecurityApp
 from videoipath_automation_tool.apps.topology.topology_app import TopologyApp
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.settings import Settings
@@ -219,6 +220,7 @@ class VideoIPathApp:
         self._topology = None
         self._preferences = None
         self._profile = None
+        self._security = None
 
         self._logger.info("VideoIPath Automation Tool initialized.")
 
@@ -257,6 +259,13 @@ class VideoIPathApp:
             self._logger.debug("ProfileApp first called. Initialize ProfileApp.")
             self._profile = ProfileApp(vip_connector=self._videoipath_connector, logger=self._logger)
         return self._profile
+
+    @property
+    def security(self):
+        if self._security is None:
+            self._logger.debug("SecurityApp first called. Initialize SecurityApp.")
+            self._security = SecurityApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        return self._security
 
     # --- Basic Methods ---
     def _determine_fallback_driver_schema_version(self) -> Optional[str]:
