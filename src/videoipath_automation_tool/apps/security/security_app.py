@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from videoipath_automation_tool.apps.security.app.security_domains_app import SecurityDomains
+from videoipath_automation_tool.apps.security.app.security_resources_app import SecurityResources
 from videoipath_automation_tool.apps.security.security_api import SecurityAPI
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
@@ -25,6 +26,6 @@ class SecurityApp:
         self.domains = SecurityDomains(self._security_api, self._logger)
 
         # --- Setup Resources Layer ---
-        # self.resources = SecurityResources(self._security_api, self._logger)
+        self.resources = SecurityResources(self._security_api, self._logger)
 
         self._logger.debug("Security APP initialized.")

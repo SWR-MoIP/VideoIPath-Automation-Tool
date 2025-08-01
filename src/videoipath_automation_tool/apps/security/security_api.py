@@ -3,28 +3,18 @@ from typing import List, Optional
 
 from videoipath_automation_tool.apps.security.model.domain_membership_model import LocalMemberships, ResourceType
 from videoipath_automation_tool.apps.security.model.domain_model import Domain
+from videoipath_automation_tool.apps.security.security_exceptions import (
+    DomainAlreadyExistsError,
+    DomainNotFoundError,
+    DomainRemoveError,
+    MembershipAlreadyExistsError,
+    MembershipsNotFoundError,
+    MultipleDomainsFoundError,
+    MultipleMembershipsFoundError,
+)
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
-
-
-# Exceptions:
-class DomainNotFoundError(Exception):
-    """Exception raised when a domain is not found."""
-
-    pass
-
-
-class DomainAlreadyExistsError(Exception):
-    """Exception raised when a domain to be created already exists."""
-
-    pass
-
-
-class MultipleDomainsFoundError(Exception):
-    """Exception raised when multiple domains are found for a given query."""
-
-    pass
 
 
 class SecurityAPI:
@@ -227,15 +217,15 @@ class SecurityAPI:
         response = self.vip_connector.rest.patch("/rest/v2/data/config/domainman/domains", body=body)
 
         if not response.result or not response.result.items:
-            raise ValueError("Failed to remove domain. Response does not contain expected items.")
+            raise DomainRemoveError("Failed to remove domain. Response does not contain expected items.")
         if len(response.result.items) != 1:
-            raise ValueError("Unexpected number of items in response. Expected 1 item for the removed domain.")
+            raise DomainRemoveError("Unexpected number of items in response. Expected 1 item for the removed domain.")
 
         removed_domain = response.result.items[0]
         if removed_domain.res == "removed":
             self._logger.info(f"Domain '{domain.desc.label}' with ID '{domain.id}' removed successfully.")
         else:
-            raise ValueError(f"Domain removal failed with response: {removed_domain.msg}")
+            raise DomainRemoveError(f"Domain removal failed with response: {removed_domain.msg}")
 
     def _validate_filtered_response(self, response_data: dict, filter_type: str, filter_value: str) -> Domain:
         """
@@ -293,7 +283,7 @@ class SecurityAPI:
         else:
             raise ValueError("Response data is empty or malformed.")
 
-    def get_membership_by_type_and_id(self, resource_type: ResourceType, resource_id: str) -> LocalMemberships:
+    def get_memberships_by_type_and_id(self, resource_type: ResourceType, resource_id: str) -> LocalMemberships:
         """
         Fetch a specific local domain membership by resource type and ID.
 
@@ -312,9 +302,11 @@ class SecurityAPI:
         if response.data and "config" in response.data and "domainman" in response.data["config"]:
             memberships = response.data["config"]["domainman"]["localDomainMemberships"]["_items"]
             if not isinstance(memberships, list) or len(memberships) == 0:
-                raise DomainNotFoundError(f"No membership found for {resource_type.value} with ID '{resource_id}'.")
+                raise MembershipsNotFoundError(
+                    f"No memberships found for {resource_type.value} with ID '{resource_id}'."
+                )
             if len(memberships) > 1:
-                raise MultipleDomainsFoundError(
+                raise MultipleMembershipsFoundError(
                     f"Multiple memberships found for {resource_type.value} with ID '{resource_id}'."
                 )
             return LocalMemberships.model_validate(memberships[0])
@@ -323,46 +315,109 @@ class SecurityAPI:
                 f"Membership with {resource_type.value} ID '{resource_id}' not found or malformed response."
             )
 
-    def add_membership(self, membership: LocalMemberships, check_existing: bool = True) -> LocalMemberships:
+    def add_memberships(self, memberships: LocalMemberships, check_existing: bool = True) -> LocalMemberships:
         """
-        Add a new local domain membership.
+        Add new local domain memberships.
 
         Args:
-            membership (LocalMemberships): The LocalMemberships object to add.
+            memberships (LocalMemberships): The LocalMemberships object to add.
 
         Returns:
             LocalMemberships: The added LocalMemberships object with its ID and revision updated.
         """
         if check_existing:
             try:
-                resource_type = membership.resource_type
-                resource_id = membership.resource_id
+                resource_type = memberships.resource_type
+                resource_id = memberships.resource_id
                 if not resource_type or not resource_id:
-                    raise ValueError("Membership must have a valid resource type and ID.")
-                existing_membership = self.get_membership_by_type_and_id(resource_type, resource_id)
-                raise DomainAlreadyExistsError(
-                    f"Membership for {resource_type.value} with ID '{resource_id}' already exists."
+                    raise ValueError("Memberships must have a valid resource type and ID.")
+                self.get_memberships_by_type_and_id(resource_type, resource_id)
+                raise MembershipAlreadyExistsError(
+                    f"Memberships for {resource_type.value} with ID '{resource_id}' already exist."
                 )
-            except DomainNotFoundError:
+            except MembershipsNotFoundError:
                 pass
 
         body = RequestV2Patch()
-        body.add(membership)
+        body.add(memberships)
         body.mode = "ignore_revs"  # Ignore revision checks for adding memberships
 
         response = self.vip_connector.rest.patch("/rest/v2/data/config/domainman/localDomainMemberships", body=body)
         if not response.result or not response.result.items:
-            raise ValueError("Failed to add membership. Response does not contain expected items.")
+            raise ValueError("Failed to add memberships. Response does not contain expected items.")
         if len(response.result.items) != 1:
-            raise ValueError("Unexpected number of items in response. Expected 1 item for the added membership.")
+            raise ValueError("Unexpected number of items in response. Expected 1 item for the added memberships.")
         if response.result.items[0].res != "added":
-            raise ValueError(f"Membership addition failed with response: {response.result.items[0].msg}")
+            raise ValueError(f"Memberships addition failed with response: {response.result.items[0].msg}")
 
         # Update the membership object with the ID and revision from the response
         if not response.result.items[0].id or not response.result.items[0].rev:
-            raise ValueError("Response does not contain ID or revision for the added membership.")
+            raise ValueError("Response does not contain ID or revision for the added memberships.")
         added_membership = response.result.items[0]
-        membership.id = added_membership.id
-        membership.rev = added_membership.rev
+        memberships.id = added_membership.id
+        memberships.rev = added_membership.rev
 
-        return membership
+        return memberships
+
+    def update_memberships(self, memberships: LocalMemberships, ignore_revs: bool = False) -> LocalMemberships:
+        """
+        Update existing local domain memberships.
+
+        Args:
+            memberships (LocalMemberships): The LocalMemberships object with updated values.
+
+        Returns:
+            LocalMemberships: The updated LocalMemberships object with its revision updated.
+        """
+        body = RequestV2Patch()
+        body.update(memberships)
+
+        if ignore_revs:
+            body.mode = "ignore_revs"
+
+        response = self.vip_connector.rest.patch("/rest/v2/data/config/domainman/localDomainMemberships", body=body)
+        if not response.result or not response.result.items:
+            raise ValueError("Failed to update memberships. Response does not contain expected items.")
+        if len(response.result.items) != 1:
+            raise ValueError("Unexpected number of items in response. Expected 1 item for the updated memberships.")
+        updated_membership = response.result.items[0]
+        if updated_membership.res == "updated":
+            self._logger.info(
+                f"Memberships for {memberships.resource_type.value} with ID '{memberships.resource_id}' updated."
+            )
+        elif updated_membership.res.startswith("ignored"):
+            self._logger.warning(
+                f"Ignored update for memberships of {memberships.resource_type.value} with ID '{memberships.resource_id}' because no changes were made."
+            )
+        else:
+            raise ValueError(f"Memberships update failed with response: {updated_membership.msg}")
+
+        memberships.rev = updated_membership.rev
+        return memberships
+
+    def remove_memberships(self, memberships: LocalMemberships) -> None:
+        """
+        Remove local domain memberships.
+
+        Args:
+            memberships (LocalMemberships): The LocalMemberships object to remove.
+
+        Raises:
+            DomainNotFoundError: If the membership does not exist.
+        """
+        body = RequestV2Patch()
+        body.remove(memberships)
+
+        response = self.vip_connector.rest.patch("/rest/v2/data/config/domainman/localDomainMemberships", body=body)
+        if not response.result or not response.result.items:
+            raise ValueError("Failed to remove membership. Response does not contain expected items.")
+        if len(response.result.items) != 1:
+            raise ValueError("Unexpected number of items in response. Expected 1 item for the removed membership.")
+        removed_membership = response.result.items[0]
+        if removed_membership.res == "removed":
+            self._logger.info(
+                f"Memberships for {memberships.resource_type.value} with ID '{memberships.resource_id}' removed successfully."
+            )
+        else:
+            raise ValueError(f"Memberships removal failed with response: {removed_membership.msg}")
+        # No return value, as the membership is removed
