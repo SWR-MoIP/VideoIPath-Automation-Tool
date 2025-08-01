@@ -44,12 +44,20 @@ class RequestV2Patch(BaseModel):
     """
 
     actions: list[Action] = Field(default_factory=list)
-    mode: Literal["strict", "relaxed"] = (
+    mode: Literal["strict", "relaxed", "ignore_revs"] = (
         "strict"  # Attention: Mode "restore" not implemented, because of the danger of data loss!
     )
 
     # Background Information (Source: /rest/v2/data/status/system/enums/rest/updateMode/**)
     # "updateMode" : {
+    #     "ignore_revs" : {
+    #     "desc" : {
+    #         "desc" : "The update request is processed strictly, except for revision checks.",
+    #         "label" : "Ignore Revisions"
+    #     },
+    #     "label" : "ignore_revs",
+    #     "value" : 4
+    #     },
     #   "relaxed" : {
     #     "desc" : {
     #       "desc" : "The update request is processed relaxed. No revisions are checked; update and add actions are treated similarly.",
@@ -68,7 +76,7 @@ class RequestV2Patch(BaseModel):
     #   },
     #   "strict" : {
     #     "desc" : {
-    #       "desc" : "The update request is processed strictly. Exact revision matches are required.",
+    #       "desc" : "The update request is processed strictly. Exact structure and revision matches are required; update and add actions need to be consistent with the current state.",
     #       "label" : "Strict"
     #     },
     #     "label" : "strict",

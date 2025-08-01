@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 
-from videoipath_automation_tool.apps.security.model.domain_membership_model import LocalMemberships
+from videoipath_automation_tool.apps.security.model.domain_membership_model import LocalMemberships, ResourceType
 from videoipath_automation_tool.apps.security.model.domain_model import Domain
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
@@ -293,29 +293,76 @@ class SecurityAPI:
         else:
             raise ValueError("Response data is empty or malformed.")
 
-    def get_membership_by_type_and_id(self, resource_type: str, resource_id: str) -> LocalMemberships:
+    def get_membership_by_type_and_id(self, resource_type: ResourceType, resource_id: str) -> LocalMemberships:
         """
         Fetch a specific local domain membership by resource type and ID.
 
         Args:
-            resource_type (str): The type of the resource (e.g., "device", "profile").
+            resource_type (ResourceType): The type of the resource (e.g., "device", "profile").
             resource_id (str): The ID of the resource.
 
         Returns:
             LocalMemberships: The LocalMemberships object corresponding to the given type and ID.
         """
-        # TODO: Validate resource_type and resource_id format
+
         response = self.vip_connector.rest.get(
-            f"/rest/v2/data/config/domainman/localDomainMemberships/* where _id = '{resource_type}:{resource_id}' /**"
+            f"/rest/v2/data/config/domainman/localDomainMemberships/* where _id = '{resource_type.value}:{resource_id}' /**"
         )
+
         if response.data and "config" in response.data and "domainman" in response.data["config"]:
             memberships = response.data["config"]["domainman"]["localDomainMemberships"]["_items"]
             if not isinstance(memberships, list) or len(memberships) == 0:
-                raise DomainNotFoundError(f"No membership found for {resource_type} with ID '{resource_id}'.")
+                raise DomainNotFoundError(f"No membership found for {resource_type.value} with ID '{resource_id}'.")
             if len(memberships) > 1:
                 raise MultipleDomainsFoundError(
-                    f"Multiple memberships found for {resource_type} with ID '{resource_id}'."
+                    f"Multiple memberships found for {resource_type.value} with ID '{resource_id}'."
                 )
             return LocalMemberships.model_validate(memberships[0])
         else:
-            raise ValueError(f"Membership with {resource_type} ID '{resource_id}' not found or malformed response.")
+            raise ValueError(
+                f"Membership with {resource_type.value} ID '{resource_id}' not found or malformed response."
+            )
+
+    def add_membership(self, membership: LocalMemberships, check_existing: bool = True) -> LocalMemberships:
+        """
+        Add a new local domain membership.
+
+        Args:
+            membership (LocalMemberships): The LocalMemberships object to add.
+
+        Returns:
+            LocalMemberships: The added LocalMemberships object with its ID and revision updated.
+        """
+        if check_existing:
+            try:
+                resource_type = membership.resource_type
+                resource_id = membership.resource_id
+                if not resource_type or not resource_id:
+                    raise ValueError("Membership must have a valid resource type and ID.")
+                existing_membership = self.get_membership_by_type_and_id(resource_type, resource_id)
+                raise DomainAlreadyExistsError(
+                    f"Membership for {resource_type.value} with ID '{resource_id}' already exists."
+                )
+            except DomainNotFoundError:
+                pass
+
+        body = RequestV2Patch()
+        body.add(membership)
+        body.mode = "ignore_revs"  # Ignore revision checks for adding memberships
+
+        response = self.vip_connector.rest.patch("/rest/v2/data/config/domainman/localDomainMemberships", body=body)
+        if not response.result or not response.result.items:
+            raise ValueError("Failed to add membership. Response does not contain expected items.")
+        if len(response.result.items) != 1:
+            raise ValueError("Unexpected number of items in response. Expected 1 item for the added membership.")
+        if response.result.items[0].res != "added":
+            raise ValueError(f"Membership addition failed with response: {response.result.items[0].msg}")
+
+        # Update the membership object with the ID and revision from the response
+        if not response.result.items[0].id or not response.result.items[0].rev:
+            raise ValueError("Response does not contain ID or revision for the added membership.")
+        added_membership = response.result.items[0]
+        membership.id = added_membership.id
+        membership.rev = added_membership.rev
+
+        return membership
