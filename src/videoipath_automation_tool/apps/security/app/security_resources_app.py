@@ -242,3 +242,31 @@ class SecurityResources:
         membership.domains.append(domain.id)
 
         return membership
+
+    def remove_domain_by_name_from_membership_object(
+        self, domain_name: str, membership: LocalMemberships
+    ) -> LocalMemberships:
+        """
+        Removes a domain from a membership object by its name.
+
+        Args:
+            domain_name (str): The name of the domain to remove.
+            membership (LocalMemberships): The LocalMemberships object from which the domain will be removed.
+
+        Returns:
+            LocalMemberships: The updated LocalMemberships object with the domain removed.
+        """
+        domain = self._security_api.get_domain_by_name(domain_name)
+
+        if not domain or not domain.id:
+            raise ValueError(f"Domain with name '{domain_name}' not found.")
+
+        if domain.id not in membership.domains:
+            self._logger.info(
+                f"Domain '{domain_name}' is not in the membership for resource ID '{membership.resource_id}'. No changes made."
+            )
+            return membership
+
+        membership.domains.remove(domain.id)
+
+        return membership
