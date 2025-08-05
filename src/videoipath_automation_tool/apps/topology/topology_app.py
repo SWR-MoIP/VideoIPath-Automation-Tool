@@ -8,6 +8,9 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ba
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_generic_vertex import GenericVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ip_vertex import IpVertex
+from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_resource_transform import (
+    NGraphResourceTransform,
+)
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_unidirectional_edge import (
     UnidirectionalEdge,
 )
@@ -165,7 +168,7 @@ class TopologyApp:
 
     def get_element_by_id(
         self, vertex_id: str
-    ) -> BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex:
+    ) -> BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform:
         """
         Get an element by its unique id.
 
@@ -173,7 +176,7 @@ class TopologyApp:
             vertex_id (str): Unique Vertex id.
 
         Returns:
-            BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex: nGraph element object.
+            BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform: nGraph element object.
         """
         return self._topology_api._fetch_nGraphElement_by_key(vertex_id)
 
@@ -182,7 +185,13 @@ class TopologyApp:
         vertex_label: str,
         mode: Literal["user_defined", "factory"] = "user_defined",
         filter_type: Literal[
-            "all", "base_device", "codec_vertex", "ip_vertex", "unidirectional_edge", "generic_vertex"
+            "all",
+            "base_device",
+            "codec_vertex",
+            "ip_vertex",
+            "unidirectional_edge",
+            "generic_vertex",
+            "n_graph_resource_transform",
         ] = "all",
     ) -> (
         BaseDevice
@@ -190,7 +199,8 @@ class TopologyApp:
         | IpVertex
         | UnidirectionalEdge
         | GenericVertex
-        | List[BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex]
+        | NGraphResourceTransform
+        | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]
     ):
         """Get an element by its label.
 
@@ -204,12 +214,15 @@ class TopologyApp:
         """
         return self._topology_api.get_element_by_label(vertex_label, mode, filter_type)
 
-    def update_element(self, element: BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex):
+    def update_element(
+        self,
+        element: BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform,
+    ):
         """
         Update a single nGraph element in the topology.
 
         Args:
-            vertex (BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex): nGraph element object.
+            vertex (BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform): nGraph element object.
         """
         return self._topology_api.update_element(element)
 
@@ -334,7 +347,8 @@ class TopologyApp:
         | IpVertex
         | UnidirectionalEdge
         | GenericVertex
-        | List[BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex]
+        | NGraphResourceTransform
+        | List[BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform]
     ):
         self._logger.warning(
             "Method 'get_vertex_by_label' is deprecated. It will be removed in future versions. Please use 'get_element_by_label' instead."
@@ -342,12 +356,14 @@ class TopologyApp:
         return self._topology_api.get_element_by_label(vertex_label, mode)
 
     @deprecated("This method is deprecated and will be removed in future versions. Use 'update_element' instead.")
-    def update_vertex(self, vertex: BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex):
+    def update_vertex(
+        self, vertex: BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform
+    ):
         """
         Update a single vertex in the topology.
 
         Args:
-            vertex (BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex): Vertex object.
+            vertex (BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform): Vertex object.
         """
         self._logger.warning(
             "Method 'update_vertex' is deprecated. It will be removed in future versions. Please use 'update_element' instead."

@@ -7,6 +7,9 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_co
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_generic_vertex import GenericVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ip_vertex import IpVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import NGraphElement
+from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_resource_transform import (
+    NGraphResourceTransform,
+)
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_unidirectional_edge import (
     UnidirectionalEdge,
 )
@@ -249,6 +252,7 @@ class TopologyDeviceComparison(BaseModel):
     codec_vertices: NGraphElementListComparison
     internal_edges: NGraphElementListComparison
     external_edges: NGraphElementListComparison
+    resource_transform_edges: NGraphElementListComparison
 
     @classmethod
     def analyze_topology_devices(
@@ -273,6 +277,10 @@ class TopologyDeviceComparison(BaseModel):
         external_edges = cls.create_compare_list(
             reference_device.configuration.external_edges, staged_device.configuration.external_edges
         )
+        resource_transform_edges = cls.create_compare_list(
+            reference_device.configuration.resource_transform_edges,
+            staged_device.configuration.resource_transform_edges,
+        )
 
         return cls(
             reference_device=reference_device,
@@ -283,6 +291,7 @@ class TopologyDeviceComparison(BaseModel):
             codec_vertices=codec_vertices,
             internal_edges=internal_edges,
             external_edges=external_edges,
+            resource_transform_edges=resource_transform_edges,
         )
 
     @staticmethod
@@ -291,12 +300,14 @@ class TopologyDeviceComparison(BaseModel):
         | List[GenericVertex]
         | List[IpVertex]
         | List[CodecVertex]
-        | List[UnidirectionalEdge],
+        | List[UnidirectionalEdge]
+        | List[NGraphResourceTransform],
         staged_elements: List[NGraphElement]
         | List[GenericVertex]
         | List[IpVertex]
         | List[CodecVertex]
-        | List[UnidirectionalEdge],
+        | List[UnidirectionalEdge]
+        | List[NGraphResourceTransform],
     ) -> NGraphElementListComparison:
         """Method to create a comparison list between two lists of nGraphElements."""
         reference_element_ids = [element.id for element in reference_elements]
@@ -353,6 +364,9 @@ class TopologyDeviceComparison(BaseModel):
         if len(self.external_edges.get_changed(include_rev)) > 0:
             changed_elements += self.external_edges.get_changed(include_rev)
 
+        if len(self.resource_transform_edges.get_changed(include_rev)) > 0:
+            changed_elements += self.resource_transform_edges.get_changed(include_rev)
+
         return changed_elements
 
     def get_added_elements(self) -> List[NGraphElement]:
@@ -363,6 +377,7 @@ class TopologyDeviceComparison(BaseModel):
         added_elements += self.codec_vertices.get_added()
         added_elements += self.internal_edges.get_added()
         added_elements += self.external_edges.get_added()
+        added_elements += self.resource_transform_edges.get_added()
         return added_elements
 
     def get_removed_elements(self) -> List[NGraphElement]:
@@ -373,4 +388,5 @@ class TopologyDeviceComparison(BaseModel):
         removed_elements += self.codec_vertices.get_removed()
         removed_elements += self.internal_edges.get_removed()
         removed_elements += self.external_edges.get_removed()
+        removed_elements += self.resource_transform_edges.get_removed()
         return removed_elements

@@ -17,6 +17,9 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_
     MapsElement,
     SdpStrategy,
 )
+from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_resource_transform import (
+    NGraphResourceTransform,
+)
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_unidirectional_edge import (
     UnidirectionalEdge,
 )
@@ -34,6 +37,7 @@ class TopologyDeviceConfiguration(BaseModel):
         codec_vertices (List[CodecVertex]): Configuration of the codec vertices of the device
         internal_edges (List[UnidirectionalEdge]): Configuration of the internal unidirectional edges of the device (All edges that connect vertices within the same device)
         external_edges (List[UnidirectionalEdge]): Configuration of the external unidirectional edges of the device (All edges that connect this device to other devices)
+        resource_transform_edges (List[NGraphResourceTransform]): Configuration of the resource transform edges of the device
     """
 
     base_device: BaseDevice
@@ -42,6 +46,7 @@ class TopologyDeviceConfiguration(BaseModel):
     codec_vertices: List[CodecVertex] = Field(default_factory=list)
     internal_edges: List[UnidirectionalEdge] = Field(default_factory=list)
     external_edges: List[UnidirectionalEdge] = Field(default_factory=list)
+    resource_transform_edges: List[NGraphResourceTransform] = Field(default_factory=list)
 
     # --- Setters and Getters ---
 
@@ -245,7 +250,7 @@ class TopologyDeviceConfiguration(BaseModel):
 
     def get_nGraphElement_by_id(
         self, element_id: str
-    ) -> Optional[BaseDevice | GenericVertex | IpVertex | CodecVertex | UnidirectionalEdge]:
+    ) -> Optional[BaseDevice | GenericVertex | IpVertex | CodecVertex | UnidirectionalEdge | NGraphResourceTransform]:
         """Get an nGraphElement by its ID. Method will return the first element found with the specified ID.
 
         Args:
@@ -261,6 +266,7 @@ class TopologyDeviceConfiguration(BaseModel):
             self.codec_vertices,
             self.internal_edges,
             self.external_edges,
+            self.resource_transform_edges,
         )
 
         matching_element = next((element for element in all_elements if element.id == element_id), None)

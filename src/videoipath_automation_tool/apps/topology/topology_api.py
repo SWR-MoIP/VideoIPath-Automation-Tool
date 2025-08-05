@@ -8,6 +8,9 @@ from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_co
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_generic_vertex import GenericVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_ip_vertex import IpVertex
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import NGraphElement
+from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_resource_transform import (
+    NGraphResourceTransform,
+)
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_unidirectional_edge import (
     UnidirectionalEdge,
 )
@@ -70,7 +73,13 @@ class TopologyAPI:
         label: str,
         mode: Literal["user_defined", "factory"] = "user_defined",
         filter_type: Literal[
-            "all", "base_device", "codec_vertex", "generic_vertex", "ip_vertex", "unidirectional_edge"
+            "all",
+            "base_device",
+            "codec_vertex",
+            "generic_vertex",
+            "ip_vertex",
+            "unidirectional_edge",
+            "n_graph_resource_transform",
         ] = "all",
     ) -> (
         BaseDevice
@@ -78,14 +87,15 @@ class TopologyAPI:
         | GenericVertex
         | IpVertex
         | UnidirectionalEdge
-        | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]
+        | NGraphResourceTransform
+        | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]
     ):
         """Get an element by its label.
 
         Args:
             label (str): Label of the element.
             mode (Literal[&quot;user_defined&quot;, &quot;factory&quot;], optional): Search mode. Defaults to "user_defined".
-            filter_type (Literal[&quot;all&quot;, &quot;base_device&quot;, &quot;codec_vertex&quot;, &quot;generic_vertex&quot;, &quot;ip_vertex&quot;, &quot;unidirectional_edge&quot;], optional): Filter type. Defaults to "all".
+            filter_type (Literal[&quot;all&quot;, &quot;base_device&quot;, &quot;codec_vertex&quot;, &quot;generic_vertex&quot;, &quot;ip_vertex&quot;, &quot;unidirectional_edge&quot;, &quot;n_graph_resource_transform&quot;], optional): Filter type. Defaults to "all".
 
         Returns:
             nGraph element object or list of objects.
@@ -101,6 +111,8 @@ class TopologyAPI:
             filter_string = "and type='ipVertex'"
         elif filter_type == "unidirectional_edge":
             filter_string = "and type='unidirectionalEdge'"
+        elif filter_type == "n_graph_resource_transform":
+            filter_string = "and type='nGraphResourceTransform'"
         elif filter_type != "all":
             raise ValueError(f"Unknown filter_type: {filter_type}")
 
@@ -150,7 +162,7 @@ class TopologyAPI:
 
     def _fetch_all_nGraphElements_by_device_id(
         self, device_id: str
-    ) -> list[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]:
+    ) -> list[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]:
         """Get all corresponding nGraphElements to a device (given by device id).
 
         Args:
@@ -160,7 +172,7 @@ class TopologyAPI:
             ValueError: If device_id does not start with 'device' or 'virtual'.
 
         Returns:
-            list[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]: List of nGraphElement objects of the corresponding device.
+            list[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]: List of nGraphElement objects of the corresponding device.
         """
         device_id = validate_device_id_including_virtual(device_id)
 
@@ -169,18 +181,29 @@ class TopologyAPI:
         generic_vertices = self._fetch_filtered_nGraph_elements_by_device_id(device_id, "genericVertex")
         ip_vertices = self._fetch_filtered_nGraph_elements_by_device_id(device_id, "ipVertex")
         unidirectional_edges = self._fetch_filtered_nGraph_elements_by_device_id(device_id, "unidirectionalEdge")
-        return [base_device] + codec_vertices + generic_vertices + ip_vertices + unidirectional_edges
+        resource_transform_edges = self._fetch_filtered_nGraph_elements_by_device_id(
+            device_id, "nGraphResourceTransform"
+        )
+
+        return (
+            [base_device]
+            + codec_vertices
+            + generic_vertices
+            + ip_vertices
+            + unidirectional_edges
+            + resource_transform_edges
+        )
 
     def _fetch_all_elements_from_nGraphFromDrivers_by_device_id(
         self, device_id: str
-    ) -> List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]:
+    ) -> List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]:
         """Get all corresponding nGraphFromDrivers to a device (given by device id).
 
         Args:
             device_id (str): Device Id (e.g. "device1")
 
         Returns:
-            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]: List of nGraphElement objects of the corresponding device from the nGraphFromDrivers.
+            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]: List of nGraphElement objects of the corresponding device from the nGraphFromDrivers.
         """
         device_id = validate_device_id(device_id)
 
@@ -208,7 +231,9 @@ class TopologyAPI:
     def _build_device_configuration(
         self,
         device_id: str,
-        vertex_list: List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge],
+        vertex_list: List[
+            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform
+        ],
     ) -> dict:
         device_configuration = {
             "base_device": None,
@@ -217,6 +242,7 @@ class TopologyAPI:
             "ip_vertices": [],
             "internal_edges": [],
             "external_edges": [],
+            "resource_transform_edges": [],
         }
         for vertex in vertex_list:
             if isinstance(vertex, BaseDevice):
@@ -237,6 +263,8 @@ class TopologyAPI:
                     device_configuration["external_edges"].append(vertex)
                 else:
                     raise ValueError(f"Unknown edge type: {vertex}")
+            elif isinstance(vertex, NGraphResourceTransform):
+                device_configuration["resource_transform_edges"].append(vertex)
             else:
                 raise ValueError(f"Unknown vertex type: {vertex}")
         return device_configuration
@@ -244,8 +272,10 @@ class TopologyAPI:
     def _fetch_filtered_nGraph_elements_by_device_id(
         self,
         device_id: str,
-        type_filter: Literal["codecVertex", "genericVertex", "ipVertex", "unidirectionalEdge", "baseDevice"],
-    ) -> List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]:
+        type_filter: Literal[
+            "codecVertex", "genericVertex", "ipVertex", "unidirectionalEdge", "baseDevice", "nGraphResourceTransform"
+        ],
+    ) -> List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]:
         """Get a list type-filtered list of nGraphElement objects corresponding to a device (given by device id).
 
         Args:
@@ -253,7 +283,7 @@ class TopologyAPI:
             type_filter (Literal[&quot;codecVertex&quot;, &quot;genericVertex&quot;, &quot;ipVertex&quot;, &quot;unidirectionalEdge&quot;, &quot;baseDevice&quot;]): Type filter for the nGraphElement objects.
 
         Returns:
-            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge]: List of nGraphElement objects of the corresponding device with the given type filter.
+            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]: List of nGraphElement objects of the corresponding device with the given type filter.
         """
         return_data = []
         device_id = validate_device_id_including_virtual(device_id)
@@ -291,7 +321,7 @@ class TopologyAPI:
                 for item in api_response.data["config"]["network"]["nGraphElements"]["_items"]:
                     return_data.append(IpVertex.model_validate(item))
 
-        elif type_filter == "unidirectionalEdge":
+        elif type_filter == "unidirectionalEdge" or type_filter == "nGraphResourceTransform":
             # Attention: This is a special case!
             # The only way to get all edges corresponding to a device is to fetch edgesByDevice.
             # The response data does not contain revision information, which is necessary for configuration changes.
@@ -299,7 +329,7 @@ class TopologyAPI:
 
             # 1. Fetch revision data
             revision_data = self.vip_connector.rest.get(
-                "/rest/v2/data/config/network/nGraphElements/* where type = 'unidirectionalEdge' /id,rev,vid"
+                f"/rest/v2/data/config/network/nGraphElements/* where type = '{type_filter}' /id,rev,vid"
             )
             rev_dict = {}
             for item in revision_data.data["config"]["network"]["nGraphElements"]["_items"]:
@@ -318,22 +348,28 @@ class TopologyAPI:
                 for item in api_response.data["status"]["network"]["edgesByDevice"]["_items"][0]:
                     if item == "_id" or item == "_vid":
                         continue
+                    item_data = api_response.data["status"]["network"]["edgesByDevice"]["_items"][0][item]
+                    if item_data["type"] != type_filter:
+                        self._logger.debug(
+                            f"Edge with id {item} has type {item_data['type']}, but expected type {type_filter}. Skipping."
+                        )
+                        continue
                     edge_list.append(
                         {
                             "_id": item,
                             "_vid": item,
                             "_rev": None,
-                            **api_response.data["status"]["network"]["edgesByDevice"]["_items"][0][item],
+                            **item_data,
                         }
                     )
 
             # 3. Merge revision data with edge data and validate
             for edge in edge_list:
                 edge["_rev"] = rev_dict[edge["_id"]]
-                return_data.append(UnidirectionalEdge.model_validate(edge))
-
-        elif type_filter == "nGraphResourceTransform":
-            raise ValueError("'nGraphResourceTransform' not implemented yet.")
+                if type_filter == "unidirectionalEdge":
+                    return_data.append(UnidirectionalEdge.model_validate(edge))
+                elif type_filter == "nGraphResourceTransform":
+                    return_data.append(NGraphResourceTransform.model_validate(edge))
 
         elif type_filter == "ipTransformVertex":
             raise ValueError("'ipTransformVertex' not implemented yet.")
@@ -348,14 +384,14 @@ class TopologyAPI:
 
     def _fetch_nGraphElement_by_key(
         self, key: str
-    ) -> BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge:
+    ) -> BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform:
         """Get a nGraphElement by its key.
 
         Args:
             key (str): Key of the nGraphElement.
 
         Returns:
-            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge: nGraphElement object.
+            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform: nGraphElement object.
         """
         response = self.vip_connector.rest.get(f"/rest/v2/data/config/network/nGraphElements/* where _id='{key}' /**")
         if response.data is None:
@@ -368,14 +404,14 @@ class TopologyAPI:
 
     def _validate_nGraphElement(
         self, dict: dict
-    ) -> BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge:
+    ) -> BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform:
         """Validate dict of nGraphElement and return a nGraphElement object of the correct type.
 
         Args:
             dict (dict): Dictionary containing the nGraphElement data from the API.
 
         Returns:
-            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge: nGraphElement object of the correct type.
+            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform: nGraphElement object of the correct type.
         """
 
         if "type" not in dict:
@@ -391,7 +427,7 @@ class TopologyAPI:
         elif dict["type"] == "unidirectionalEdge":
             return UnidirectionalEdge(**dict)
         elif dict["type"] == "nGraphResourceTransform":
-            raise ValueError("'nGraphResourceTransform' not implemented yet.")
+            return NGraphResourceTransform(**dict)
         elif dict["type"] == "ipTransformVertex":
             raise ValueError("'ipTransformVertex' not implemented yet.")
         elif dict["type"] == "routerVertex":
@@ -633,6 +669,7 @@ class TopologyAPI:
             + device.configuration.ip_vertices
             + device.configuration.internal_edges
             + device.configuration.external_edges
+            + device.configuration.resource_transform_edges
         )
         if len(remove_list) == 0:
             raise ValueError("No elements to remove.")
@@ -688,6 +725,7 @@ class TopologyAPI:
             + device.configuration.ip_vertices
             + device.configuration.internal_edges
             + device.configuration.external_edges
+            + device.configuration.resource_transform_edges
         )
         body = self._generate_nGraphElements_patch_payload(
             add_elements=add_list, update_elements=[], remove_elements=[]
@@ -728,6 +766,7 @@ class TopologyAPI:
             + device.configuration.ip_vertices
             + device.configuration.internal_edges
             + device.configuration.external_edges
+            + device.configuration.resource_transform_edges
         )
 
         body = self._generate_nGraphElements_patch_payload(
@@ -735,11 +774,14 @@ class TopologyAPI:
         )
         return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
-    def add_element(self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge):
+    def add_element(
+        self,
+        element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform,
+    ):
         """Add a single nGraphElement.
 
         Args:
-            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): nGraphElement object.
+            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform): nGraphElement object.
 
         Returns:
             RequestRestV2: RequestRestV2 object.
@@ -749,11 +791,14 @@ class TopologyAPI:
         )
         return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
-    def update_element(self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge):
+    def update_element(
+        self,
+        element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform,
+    ):
         """Update a single nGraphElement.
 
         Args:
-            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): nGraphElement object.
+            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform): nGraphElement object.
 
         Returns:
             RequestRestV2: RequestRestV2 object.
@@ -763,11 +808,14 @@ class TopologyAPI:
         )
         return self.vip_connector.rest.patch("/rest/v2/data/config/network/nGraphElements", body)
 
-    def remove_element(self, element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge):
+    def remove_element(
+        self,
+        element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform,
+    ):
         """Remove a single nGraphElement.
 
         Args:
-            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): nGraphElement object.
+            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform): nGraphElement object.
 
         Returns:
             RequestRestV2: RequestRestV2 object.
@@ -781,17 +829,31 @@ class TopologyAPI:
 
     def _apply_reference_revision_to_element(
         self,
-        element: BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement,
+        element: BaseDevice
+        | CodecVertex
+        | GenericVertex
+        | IpVertex
+        | UnidirectionalEdge
+        | NGraphResourceTransform
+        | NGraphElement,
         reference_device: TopologyDevice,
-    ) -> BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement:
+    ) -> (
+        BaseDevice
+        | CodecVertex
+        | GenericVertex
+        | IpVertex
+        | UnidirectionalEdge
+        | NGraphResourceTransform
+        | NGraphElement
+    ):
         """Use the revision from the reference device for a given element.
 
         Args:
-            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge): Element to update.
+            element (BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform): Element to update.
             reference_device (TopologyDevice): Reference device.
 
         Returns:
-            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge: Updated element.
+            BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform: Updated element.
         """
         reference_element = reference_device.configuration.get_nGraphElement_by_id(element.id)
         if not reference_element:
@@ -1142,21 +1204,45 @@ class TopologyAPI:
     def _generate_nGraphElements_patch_payload(
         self,
         add_elements: Optional[
-            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]
+            List[
+                BaseDevice
+                | CodecVertex
+                | GenericVertex
+                | IpVertex
+                | UnidirectionalEdge
+                | NGraphResourceTransform
+                | NGraphElement
+            ]
         ],
         update_elements: Optional[
-            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]
+            List[
+                BaseDevice
+                | CodecVertex
+                | GenericVertex
+                | IpVertex
+                | UnidirectionalEdge
+                | NGraphResourceTransform
+                | NGraphElement
+            ]
         ],
         remove_elements: Optional[
-            List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]
+            List[
+                BaseDevice
+                | CodecVertex
+                | GenericVertex
+                | IpVertex
+                | UnidirectionalEdge
+                | NGraphResourceTransform
+                | NGraphElement
+            ]
         ],
     ) -> "RequestV2Patch":
         """Generate a RequestRestV2Patch object for updating nGraphElements configuration.
 
         Args:
-            add_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]]): List of elements which should be added.
-            update_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]]): List of elements which should be updated.
-            remove_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphElement]]): List of elements which should be removed.
+            add_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform | NGraphElement]]): List of elements which should be added.
+            update_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform | NGraphElement]]): List of elements which should be updated.
+            remove_elements (Optional[List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform | NGraphElement]]): List of elements which should be removed.
 
         Returns:
             RequestRestV2: RequestRestV2 object.
