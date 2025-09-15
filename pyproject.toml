@@ -40,12 +40,12 @@ packages = [{ include = "videoipath_automation_tool", from = "src" },
   { include = "vipat_cli_scripts", from = "src" },]
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.12.12"
+ruff = "^0.13.0"
 pre-commit = "^4.3.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.4.2"
-pytest-cov = "^6.3.0"
+pytest-cov = "^7.0.0"
 pytest-dotenv = "^0.5.2"
 
 [tool.pytest.ini_options]
