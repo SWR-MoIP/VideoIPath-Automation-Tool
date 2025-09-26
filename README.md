@@ -43,7 +43,7 @@ The package is available via the [Python Package Index (PyPI)](https://pypi.org/
 pip install videoipath-automation-tool
 ```
 
-**Note:** By default, the latest Long-Term Support (LTS) version (currently **2024.4.14**) is used for schema validation and IntelliSense.
+**Note:** By default, the latest Long-Term Support (LTS) version (currently **2024.4.20**) is used for schema validation and IntelliSense.
 
 To switch to a specific version, see the [Driver Versioning Guide](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/driver-versioning.md)
 

@@ -5,12 +5,12 @@ from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - Schema 2024.4.14.json is used as reference to define the custom settings model!
+# - Schema 2024.4.20.json is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
 
-SELECTED_SCHEMA_VERSION = "2024.4.14"
+SELECTED_SCHEMA_VERSION = "2024.4.20"
 AVAILABLE_SCHEMA_VERSIONS = [
     "2023.4.2",
     "2023.4.35",
@@ -23,6 +23,7 @@ AVAILABLE_SCHEMA_VERSIONS = [
     "2024.4.11",
     "2024.4.12",
     "2024.4.14",
+    "2024.4.20",
     "2025.2.0",
 ]
 
@@ -1143,14 +1144,78 @@ Enable to activate logic to join existing TS input element for ASI outputs when 
 class CustomSettings_com_nevion_nxl_me80_1_0_0(DriverCustomSettings):
     driver_id: Literal["com.nevion.nxl_me80-1.0.0"] = "com.nevion.nxl_me80-1.0.0"
 
-    wan1_port_start_number: int = Field(default=0, ge=0, le=65520, alias="com.nevion.nxl_me80.wan1_port_start_number")
+    always_enable_rtp: bool = Field(default=False, alias="com.nevion.nxl_me80.always_enable_rtp")
     """
-WAN 1 Port start number\n
+Always enable RTP\n
+The "rtp_enabled" field in "transport_params" will always be set to true\n
 	"""
 
-    wan2_port_start_number: int = Field(default=0, ge=0, le=65520, alias="com.nevion.nxl_me80.wan2_port_start_number")
+    auth_client_id: str = Field(default="", alias="com.nevion.nxl_me80.auth_client_id")
     """
-WAN 2 Port start number\n
+NXL-ME80 Authorization Code Client ID\n
+Client ID from registered ME80 Authorization Code\n
+	"""
+
+    cc_client_id: str = Field(default="", alias="com.nevion.nxl_me80.cc_client_id")
+    """
+NXL-ME80 Client Credential Client ID\n
+Client ID from registered ME80 Client Credential\n
+	"""
+
+    client_secret: str = Field(default="", alias="com.nevion.nxl_me80.client_secret")
+    """
+NXL-ME80 Client Credential Client Secret\n
+Client Secret from registered ME80 Client Credential\n
+	"""
+
+    disable_rx_sdp: bool = Field(default=False, alias="com.nevion.nxl_me80.disable_rx_sdp")
+    """
+Disable Rx SDP\n
+Configure this unit's receivers with regular transport parameters only\n
+	"""
+
+    disable_rx_sdp_with_null: bool = Field(default=True, alias="com.nevion.nxl_me80.disable_rx_sdp_with_null")
+    """
+Disable Rx SDP with null\n
+Configures how RX SDPs are disabled. If unchecked, an empty string is used\n
+	"""
+
+    enable_bulk_config: bool = Field(default=False, alias="com.nevion.nxl_me80.enable_bulk_config")
+    """
+Enable bulk config\n
+Configure this unit using bulk API\n
+	"""
+
+    enable_experimental_alarm: bool = Field(default=False, alias="com.nevion.nxl_me80.enable_experimental_alarm")
+    """
+Enable experimental alarms using IS-07\n
+Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
+	"""
+
+    experimental_alarm_port: Optional[int] = Field(
+        default=0, ge=0, le=65535, alias="com.nevion.nxl_me80.experimental_alarm_port"
+    )
+    """
+Experimental alarm port\n
+HTTP port for location of experimental IS-07 alarm websocket. If empty or 0 it uses Port field instead\n
+	"""
+
+    is05_api_version: bool = Field(default=False, alias="com.nevion.nxl_me80.is05_api_version")
+    """
+Enable Max IS05 API version\n
+Configure IS05 API version to use max\n
+	"""
+
+    me80_port: int = Field(default=443, ge=0, le=65535, alias="com.nevion.nxl_me80.me80_port")
+    """
+NXL-ME80 Port\n
+NXL-ME80 port setting used for CTRL\n
+	"""
+
+    port: int = Field(default=80, ge=1, le=65535, alias="com.nevion.nxl_me80.port")
+    """
+Port\n
+The HTTP port used to reach the Node directly\n
 	"""
 
 
@@ -1227,6 +1292,12 @@ Port\n
 Request queueing\n
 	"""
 
+    request_separation: int = Field(default=0, ge=0, le=250, alias="com.nevion.emberplus.request_separation")
+    """
+Request Separation [ms]\n
+Set to zero to disable.\n
+	"""
+
     suppress_illegal: bool = Field(default=False, alias="com.nevion.emberplus.suppress_illegal")
     """
 Suppress illegal update warnings\n
@@ -1235,6 +1306,33 @@ Suppress illegal update warnings\n
     trace: bool = Field(default=False, alias="com.nevion.emberplus.trace")
     """
 Tracing (logging intensive)\n
+	"""
+
+    bulk_config: Literal["Aggregate configs in bigger requests", "One by one", "Set single configs in parallel"] = (
+        Field(default="Set single configs in parallel", alias="com.nevion.powercore.bulk_config")
+    )
+    """
+Bulk config setting mode\n
+Bulk config mode: None = default set single configs in parallel\n
+Possible values:\n
+	`Aggregate configs in bigger requests`: Aggregate configs in bigger requests\n
+	`One by one`: One by one\n
+	`Set single configs in parallel`: Set single configs in parallel (default)
+	"""
+
+    env_alarms: bool = Field(default=False, alias="com.nevion.powercore.env_alarms")
+    """
+Enable environmental alarm reporting\n
+	"""
+
+    keep_alive_period: int = Field(default=2000, ge=100, le=60000, alias="com.nevion.powercore.keep_alive_period")
+    """
+Send KeepAlive request period in millis\n
+	"""
+
+    max_bulk_transactions: int = Field(default=1000, ge=1, le=1000, alias="com.nevion.powercore.max_bulk_transactions")
+    """
+Max number of bulk transactions\n
 	"""
 
     stream_alerts: bool = Field(default=False, alias="com.nevion.powercore.stream_alerts")

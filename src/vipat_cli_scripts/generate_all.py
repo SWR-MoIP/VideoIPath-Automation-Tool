@@ -5,7 +5,7 @@ from vipat_cli_scripts.generate_driver_models import main as generate_driver_mod
 from vipat_cli_scripts.version_utils import ROOT_DIR, list_available_schema_versions, load_module
 
 parser = argparse.ArgumentParser(description="Generate all version-specific code for a given VideoIPath version")
-parser.add_argument("version", help="Version of VideoIPath to use", default="2024.4.14", nargs="?")
+parser.add_argument("version", help="Version of VideoIPath to use", default="2024.4.20", nargs="?")
 
 
 def main():
