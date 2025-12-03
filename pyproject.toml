@@ -26,6 +26,7 @@ dependencies = [
     "pydantic-settings (>=2.2.1,<3.0.0)",
     "urllib3 (>=2.2.3,<3.0.0)",
     "deepdiff (>=8.6.1,<9.0.0)",
+    "mcp (>=1.0.0,<2.0.0)",
 ]
 
 [project.urls]
@@ -37,7 +38,8 @@ Documentation = "https://github.com/SWR-MoIP/VideoIPath-Automation-Tool#document
 
 [tool.poetry]
 packages = [{ include = "videoipath_automation_tool", from = "src" },
-  { include = "vipat_cli_scripts", from = "src" },]
+  { include = "vipat_cli_scripts", from = "src" },
+  { include = "videoipath_mcp", from = "src" },]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.6"
@@ -61,6 +63,7 @@ in-project = true
 set-videoipath-version = "vipat_cli_scripts.generate_all:main"
 get-videoipath-version = "vipat_cli_scripts.version_utils:get_videoipath_version"
 list-videoipath-versions = "vipat_cli_scripts.version_utils:list_videoipath_versions"
+videoipath-mcp-server = "videoipath_mcp.main:main"
 
 [tool.ruff]
 include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]
