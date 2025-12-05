@@ -5,12 +5,12 @@ from pydantic import BaseModel, Field
 
 # Notes:
 # - The name of the custom settings model follows the naming convention: CustomSettings_<driver_organization>_<driver_name>_<driver_version> => "." and "-" are replaced by "_"!
-# - Schema 2024.4.20.json is used as reference to define the custom settings model!
+# - Schema 2024.4.30.json is used as reference to define the custom settings model!
 # - The "driver_id" attribute is necessary for the discriminator, which is used to determine the correct model for the custom settings in DeviceConfiguration!
 # - The "alias" attribute is used to map the attribute to the correct key (with driver organization & name) in the JSON payload for the API!
 # - "DriverLiteral" is used to provide a list of all possible drivers in the IDEs IntelliSense!
 
-SELECTED_SCHEMA_VERSION = "2024.4.20"
+SELECTED_SCHEMA_VERSION = "2024.4.30"
 AVAILABLE_SCHEMA_VERSIONS = [
     "2023.4.2",
     "2023.4.35",
@@ -24,6 +24,7 @@ AVAILABLE_SCHEMA_VERSIONS = [
     "2024.4.12",
     "2024.4.14",
     "2024.4.20",
+    "2024.4.30",
     "2025.2.0",
     "2025.3.2",
 ]
