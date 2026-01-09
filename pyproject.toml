@@ -1,6 +1,6 @@
 [project]
 name = "videoipath-automation-tool"
-version = "0.7.0"
+version = "0.7.1"
 description = "A Python package for automating VideoIPath configuration workflows."
 license = "AGPL-3.0-only"
 license-files = ["LICENSE"]
@@ -24,7 +24,7 @@ dependencies = [
     "pydantic (>=2.6.4,<3.0.0)",
     "pydantic-extra-types (>=2.6.0,<3.0.0)",
     "pydantic-settings (>=2.2.1,<3.0.0)",
-    "urllib3 (>=2.2.3,<3.0.0)",
+    "urllib3 (>=2.6.3,<3.0.0)",
     "deepdiff (>=8.6.1,<9.0.0)",
 ]
 
