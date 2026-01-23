@@ -76,7 +76,7 @@ A device can be removed from the topology using its device ID.
 app.topology.remove_device_by_id(device_id="device10")
 ```
 
-### 3. Accessing Vertices and Edges
+## 3. Working with Vertices and Edges
 
 It is possible to either iterate through all vertices/edges of a category, which is often useful for bulk operations, or access individual vertices/edges directly by their ID or label.
 
@@ -123,9 +123,9 @@ print(vertice_video_ip_in_1_1.id)
 # > device80.1.3000000
 ```
 
-### 3.2. Example: Configure existing Edges/Vertices
+### 3.4. Example: Configure existing Edges/Vertices
 
-#### 3.2.1. Configure Codec Vertices based on information from factory labels
+#### 3.4.1. Configure Codec Vertices based on information from factory labels
 
 ```python
 device = app.topology.get_device(device_id="device80")
@@ -177,7 +177,7 @@ More examples will be added soon!
 
 ---
 
-## 3.3. Createing external Edges between devices
+### 3.5. Creating external Edges between devices
 
 ```python
 virtuoso_device_id = "device80"
@@ -188,7 +188,7 @@ spine_blue_device_id = "device1"
 edges_red_slot_1 = app.topology.create_edges(
     device_1_id=virtuoso_device_id,
     device_1_vertex_factory_label="Ethernet 1.3",
-    device_2_id=spine_red,
+    device_2_id=spine_red_device_id,
     device_2_vertex_factory_label="Ethernet29",
     bandwidth=10000,
     bandwidth_factor=0.9,
@@ -197,7 +197,7 @@ edges_red_slot_1 = app.topology.create_edges(
 edges_blue_slot_1 = app.topology.create_edges(
     device_1_id=virtuoso_device_id,
     device_1_vertex_factory_label="Ethernet 1.4",
-    device_2_id=spine_blue,
+    device_2_id=spine_blue_device_id,
     device_2_vertex_factory_label="Ethernet29",
     bandwidth=10000,
     bandwidth_factor=0.9,
@@ -218,4 +218,4 @@ virtuoso_topology.configuration.external_edges.extend(edges_blue_slot_1)
 app.topology.update_device(device=virtuoso_topology)
 ```
 
-## The documentation is currently being expanded. Upcoming sections will include details on device positioning, virtual device management, and device comparison, as well as synchronization status and various helper functions
+> **Note:** The documentation is currently being expanded. Upcoming sections will include details on device positioning, virtual device management, and device comparison, as well as synchronization status and various helper functions.

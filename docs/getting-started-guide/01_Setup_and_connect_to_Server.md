@@ -52,7 +52,7 @@ app = VideoIPathApp()
 
 # Example: Get the server version
 print(app.get_server_version())
-# > 2024.1.4
+# > 2024.4.30
 ```
 
 ## Example 2: Establishing a Connection to the VideoIPath Server via parameters
@@ -66,7 +66,7 @@ app = VideoIPathApp(server_address="10.1.100.10", username="api-user", password=
 
 # Example: Get the server version
 print(app.get_server_version())
-# > 2024.1.4
+# > 2024.4.30
 ```
 
 ## Additional Information
@@ -79,7 +79,7 @@ print(app.get_server_version())
 - `use_https`: Set to `True` if the VideoIPath Server uses HTTPS.
 - `verify_ssl_cert`: Set to `True` if the SSL certificate should be verified.
 - `log_level`: The log level for the logging module, possible values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. If not set as a parameter or environment variable, it falls back to the root logger's level (default is set to `WARNING`).
-- `environment`: The environment of the VideoIPath Server, possible values are `DEV`, `TEST`, and `PROD` (for future use)
+- `environment`: The environment of the VideoIPath Server, possible values are `DEV` and `PROD` (for future use)
 - `advanced_driver_schema_check`: If set to `True`, the local driver schema is checked against the server's driver schema (custom settings fields).
 - `timeout_http_get`: Optional. Timeout in seconds for HTTP GET requests. Default is `10`.
 - `timeout_http_patch`: Optional. Timeout in seconds for HTTP PATCH requests. Default is `10`.
@@ -89,7 +89,7 @@ print(app.get_server_version())
 
 | Variable        | Values                                          | Description                                      |
 |-----------------|-------------------------------------------------|--------------------------------------------------|
-| `VIPAT_ENVIRONMENT`   | `DEV`, `TEST`, `PROD`                          | Optional: Define the environment. Defaults to `PROD`. |
+| `VIPAT_ENVIRONMENT`   | `DEV`, `PROD`                          | Optional: Define the environment. Defaults to `PROD`. |
 | `VIPAT_VIDEOIPATH_SERVER_ADDRESS` | e.g. IP `10.200.10.21` or hostname `vip.company.com` | IP address or hostname of the VideoIPath server. |
 | `VIPAT_VIDEOIPATH_USERNAME` | e.g. `api_user`                               | Username for the API User.                      |
 | `VIPAT_VIDEOIPATH_PASSWORD` | e.g. `very_strong_passw0rd`                    | Password for the API User.                      |

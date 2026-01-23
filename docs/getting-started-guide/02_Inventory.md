@@ -309,6 +309,8 @@ File content:
 In this example the configuration was changed in the GUI after the backup was made.
 
 ```python
+from videoipath_automation_tool.apps.inventory.model import InventoryDevice
+
 with open("gtw_31_config.json", "r") as file:
     gtw_31_config = json.load(file)
 
@@ -382,7 +384,7 @@ print(f"Device '{duplicated_device.configuration.label}' with id '{duplicated_de
 # > Device 'Hello World' with id 'device1' duplicated in Inventory!")
 ```
 
-#### 2.4.1 Clone a device
+#### 2.4.2 Clone a device on the same VideoIPath instance
 
 ```python
 # Get the device with the user defined label "Hello World" from the inventory

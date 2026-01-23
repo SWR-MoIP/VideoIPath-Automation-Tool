@@ -1,6 +1,6 @@
 # System Preferences: Multicast Pools
 
-## Tipp: Define a variable for the allocation_pools_config for easier access
+## Tip: Define a variable for the allocation_pools_config for easier access
 
 ```python
 allocation_pools_config = app.preferences.system_configuration.allocation_pools
@@ -54,7 +54,7 @@ available_ranges=['A', 'B', 'default']
 id='B' vid='B' ranges=[Range(startip=IPv4Address('234.0.0.0'), endip=IPv4Address('234.255.255.254')), Range(startip=IPv4Address('236.0.0.1'), endip=IPv4Address('236.0.0.2'))] utilization=Utilization(percentage=0, total=16777215, used=0)
 ```
 
-# Code Example 4: Remove a range from a pool
+## Code Example 4: Remove a range from a pool
 
 ```python
 b_range = allocation_pools_config.get_multicast_range_by_name("B")
@@ -75,18 +75,18 @@ After Removal:
 available_ranges=['A', 'B', 'default']
 ```
 
-# Code Example 5: Delete a pool
+## Code Example 5: Delete a pool
 
 ```python
 # Can be done either by range name or the range object itself
 allocation_pools_config.remove_multicast_range("B")
 ```
 
-# Code Example 6: Use Information to validate a vertex configuration
+## Code Example 6: Use Information to validate a vertex configuration
 
 ```python
 # The implementation of Inspect-Topology GUI allows to set invalid multicast pools.
-# => Tipp: Use Information to validate a vertex configuration
+# => Tip: Use Information to validate a vertex configuration
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import nPoolId
 
 allocation_pools_config = app.preferences.system_configuration.allocation_pools
