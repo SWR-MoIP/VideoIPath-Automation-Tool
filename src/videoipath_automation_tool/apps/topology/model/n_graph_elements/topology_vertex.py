@@ -121,6 +121,7 @@ class Vertex(NGraphElement, validate_assignment=True):
 
     @property
     def module_number(self) -> int:
+        """Module number that this vertex is part of"""
         return int(self.id.split(".")[2])
 
     @property
