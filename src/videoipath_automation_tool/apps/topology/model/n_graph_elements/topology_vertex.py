@@ -120,6 +120,10 @@ class Vertex(NGraphElement, validate_assignment=True):
         return self.deviceId
 
     @property
+    def module_number(self) -> int:
+        return int(self.id.split(".")[2])
+
+    @property
     def is_virtual(self) -> bool:
         """Indicates if the vertex is virtual"""
         return self.isVirtual
