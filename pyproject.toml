@@ -1,6 +1,6 @@
 [project]
 name = "videoipath-automation-tool"
-version = "0.7.1"
+version = "0.8.0"
 description = "A Python package for automating VideoIPath configuration workflows."
 license = "AGPL-3.0-only"
 license-files = ["LICENSE"]
