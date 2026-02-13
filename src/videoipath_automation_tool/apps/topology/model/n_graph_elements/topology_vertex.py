@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 from pydantic import Field, field_validator
 
@@ -120,9 +120,12 @@ class Vertex(NGraphElement, validate_assignment=True):
         return self.deviceId
 
     @property
-    def module_number(self) -> int:
-        """Module number that this vertex is part of"""
-        return int(self.id.split(".")[2])
+    def module_id(self) -> Optional[str]:
+        """Module identifier this vertex belongs to, or None for common vertices (e.g. SwitchingCore)."""
+        pid = self.gpid.pointId
+        if len(pid) >= 4 and pid[1] in ("dev", "virt"):
+            return pid[2]
+        return None
 
     @property
     def is_virtual(self) -> bool:
