@@ -1,6 +1,7 @@
 import logging
 from typing import Literal, Optional
 
+from videoipath_automation_tool.apps.inspect.inspect_app import InspectApp
 from videoipath_automation_tool.apps.inventory import InventoryApp
 from videoipath_automation_tool.apps.inventory.model.drivers import AVAILABLE_SCHEMA_VERSIONS, SELECTED_SCHEMA_VERSION
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
@@ -217,6 +218,7 @@ class VideoIPathApp:
 
         # --- Initialize App placeholders ---
         self._inventory = None
+        self._inspect = None
         self._topology = None
         self._preferences = None
         self._profile = None
@@ -227,6 +229,7 @@ class VideoIPathApp:
         # --- For Development Environment, load the APIs directly and map them to the VideoIPathApp for easier access ---
         if environment == "DEV":
             self._inventory_api = self.inventory._inventory_api
+            self._inspect_api = self.inspect._inspect_api
             self._topology_api = self.topology._topology_api
             self._preferences_api = self.preferences._preferences_api
             self._profile_api = self.profile._profile_api
@@ -238,6 +241,13 @@ class VideoIPathApp:
             self._logger.debug("InventoryApp first called. Initialize InventoryApp.")
             self._inventory = InventoryApp(vip_connector=self._videoipath_connector, logger=self._logger)
         return self._inventory
+
+    @property
+    def inspect(self):
+        if self._inspect is None:
+            self._logger.debug("InspectApp first called. Initialize InspectApp.")
+            self._inspect = InspectApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        return self._inspect
 
     @property
     def topology(self):
