@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 
+from videoipath_automation_tool.apps.inspect.app.topology.topology_app import InspectTopologyApp
 from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
@@ -19,5 +20,8 @@ class InspectApp:
 
         # --- Setup Inspect API ---
         self._inspect_api = InspectAPI(vip_connector=vip_connector, logger=self._logger)
+
+        # --- Setup Topology Layer ---
+        self.topology = InspectTopologyApp(self._inspect_api, self._logger)
 
         self._logger.debug("Inspect APP initialized.")
