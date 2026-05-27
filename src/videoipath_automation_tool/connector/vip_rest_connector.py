@@ -13,8 +13,18 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         },
         "PATCH": {"PREFIXES": {"/rest/v2/data/config/"}, "EXACT_MATCHES": set()},
         "POST": {
-            "PREFIXES": {"/rest/v2/actions/status/collector/"},
-            "EXACT_MATCHES": {"/rest/v2/actions/status/pathman/validateTopologyUpdate"},
+            "PREFIXES": set(),
+            "EXACT_MATCHES": {
+                # Topology App
+                "/rest/v2/actions/status/pathman/validateTopologyUpdate",
+                # Inspect App — network
+                "/rest/v2/actions/status/network/addDevices",
+                "/rest/v2/actions/status/network/syncDevices",
+                # Inspect App — collector
+                "/rest/v2/actions/status/collector/lookupInspectDevice",
+                "/rest/v2/actions/status/collector/lookupSyncInfo",
+                "/rest/v2/actions/status/collector/updateTopology",
+            },
         },
     }
 
@@ -164,7 +174,7 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         This method validates the URL, constructs the request, and handles API responses.
 
         Args:
-            url_path (str): The API endpoint path (e.g., "/rest/v2/actions/status/collector/lookupGraphElement").
+            url_path (str): The API endpoint path (e.g., "/rest/v2/actions/status/collector/lookupInspectDevice").
             body (RequestV2Post): The request body object.
             auth_check (bool, optional): If `True`, verifies authentication status in the response (default: `True`).
             url_validation (bool, optional): If `True`, validates the URL path (default: `True`).
@@ -181,7 +191,9 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
             requests.RequestException: For other network-related errors.
 
         Example:
-            response = connector.post("/rest/v2/actions/status/collector/lookupGraphElement", body)
+            body = RequestV2Post()
+            body.data = "device0"
+            response = connector.post("/rest/v2/actions/status/collector/lookupInspectDevice", body)
             print(response.data)
         """
         if url_validation:
