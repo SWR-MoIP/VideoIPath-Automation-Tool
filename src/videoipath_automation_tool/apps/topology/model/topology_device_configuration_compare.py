@@ -94,7 +94,7 @@ class NGraphElementDiff(BaseModel):
                 "type_changes",  # Indicates changes in the data type of an object
                 "iterable_item_added",  # Identifies items added to an iterable (e.g., lists, tuples)
                 "iterable_item_removed",  # Identifies items removed from an iterable (e.g., lists, tuples)
-                "unprocessed"  # Indicates differences that were not processed by DeepDiff
+                "unprocessed",  # Indicates differences that were not processed by DeepDiff
                 "dictionary_item_added",  # Identifies items added to a dictionary
                 "dictionary_item_removed",  # Identifies items removed from a dictionary
             ]
