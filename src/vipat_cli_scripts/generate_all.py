@@ -1,4 +1,5 @@
 import argparse
+import sys
 from pathlib import Path
 
 from vipat_cli_scripts.generate_driver_models import main as generate_driver_models
@@ -20,7 +21,7 @@ def main():
         versions = list_available_schema_versions()
         for version in versions:
             print(f"- {version}")
-        exit(1)
+        sys.exit(1)
 
     generate_driver_models(schema_file)
 
