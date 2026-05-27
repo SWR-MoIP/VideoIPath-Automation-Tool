@@ -67,7 +67,7 @@ class NGraphElementDiff(BaseModel):
         path = path.removeprefix("root")
 
         # Convert the string path into a list of keys
-        path_parts = path_parts = path.replace("']['", "/")[2:-2].split("/")
+        path_parts = path.replace("']['", "/")[2:-2].split("/")
 
         # extract the value
         for part in path_parts:
