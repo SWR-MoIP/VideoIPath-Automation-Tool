@@ -21,7 +21,7 @@
 
 ## Introduction
 
-The **VideoIPath Automation Tool** is a Python package designed to simplify and optimize interactions with the VideoIPath API. The focus is on providing a user-friendly and efficient way to automate configuration tasks and bulk operations on VideoIPath servers. The package abstracts the complexity of the API and provides a high-level interface. Currently, the package offers methods for managing devices  in the Inventory and Topology apps, as well as the configuration of multicast pools and profiles.
+The **VideoIPath Automation Tool** is a Python package designed to simplify and optimize interactions with the VideoIPath API. The focus is on providing a user-friendly and efficient way to automate configuration tasks and bulk operations on VideoIPath servers. The package abstracts the complexity of the API and provides a high-level interface. Currently, the package offers methods for managing devices in the Inventory and Topology apps, as well as the configuration of multicast pools and profiles. 
 
 The provided methods and data models ensure easy handling, robust validation, comprehensive logging, and enhanced reliability.
 
