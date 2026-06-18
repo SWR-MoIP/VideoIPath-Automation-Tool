@@ -82,6 +82,7 @@ except Exception as e:
 - [Python Module Architecture](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/python-module-architecture.md)
 - [Driver Versioning](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/driver-versioning.md)
 - [Development and Release](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/development-and-release.md)
+- [Inspect App — Architecture & Concept Docs](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/inspect-app/README.md) (planning)
 
 ## Feedback & Contributions
 

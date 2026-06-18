@@ -21,7 +21,7 @@
     "python.analysis.extraPaths": [
         "${workspaceFolder}/.venv/*"
     ],
-    "python.languageServer": "Pylance",
+    "python.languageServer": "None",
     "python.analysis.addImport.exactMatchOnly": true,
     "python.analysis.autoFormatStrings": true,
     "python.analysis.fixAll": [
