@@ -24,9 +24,13 @@ reference is now a primary source. Nothing here is implemented yet; this is the 
    (the `[VERIFY]` items to confirm against a real server). Cross-references the
    [Public API 2025 LTS](https://documenter.getpostman.com/view/11222813/2sBXihpCS8#intro)
    reference.
-2. **[decisions/](./decisions/)** — the architecture decisions (ADRs), one per
+2. **[models.md](./models.md)** — practical model guide for transport `InspectApi*`
+   DTOs, `InspectSnapshot`, and user-facing domain objects such as `InspectDevice`.
+3. **[endpoints.md](./endpoints.md)** — anonymized endpoint reference with
+   concrete request and response shapes captured from a local test instance.
+4. **[decisions/](./decisions/)** — the architecture decisions (ADRs), one per
    topic. Start with [the index](./decisions/README.md).
-3. **[implementation-plan.md](./implementation-plan.md)** — phased, non-breaking
+5. **[implementation-plan.md](./implementation-plan.md)** — phased, non-breaking
    rollout, target package layout, milestones, and risks.
 
 > **Wider context:** the package-wide re-think that grew out of this Inspect

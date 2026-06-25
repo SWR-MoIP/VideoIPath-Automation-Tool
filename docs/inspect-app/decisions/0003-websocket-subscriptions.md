@@ -1,14 +1,18 @@
 # ADR-0003: WebSocket event subscriptions
 
-> Status: **Proposed**
+> Status: **Deprecated**
 > Date: 2026-06-15 · Deciders: Paul Winterstein, Jonas Scholl
 
 ## Context
 
-Inspect adds a **WebSocket channel** for live status/event updates. The package
-has no WebSocket client today; the connector layer is sync `requests`. We want
-live updates without destabilising the synchronous CRUD core, and without
-forcing every user into `asyncio` (see [ADR-0004](./0004-async-strategy.md)).
+The VideoIPath server exposes a **WebSocket channel** for live status/event
+updates. This ADR originally explored how the Python package might consume
+those subscriptions.
+
+The package has no WebSocket client today; the connector layer is sync
+`requests`. [ADR-0001](./0001-api-paradigm.md) now accepts a fully
+data-driven, request/response model for deterministic pipeline automations,
+which makes WebSocket support unnecessary for the package's scope.
 
 The [Public API 2025 LTS](https://documenter.getpostman.com/view/11222813/2sBXihpCS8#intro)
 reference **confirms** the high-level model: the `status` plane is "frequently
@@ -42,4 +46,19 @@ format, heartbeat, reconnect) remain **[VERIFY]** — capture them per
 
 ## Decision
 
-_To be decided._
+**Option 1: skip WebSocket; no live subscriptions in the package.**
+
+WebSocket event subscriptions are **out of scope**. The package does not
+implement a subscription API, background listener thread, or async event stream.
+Callers that need updated status re-fetch via the normal read methods.
+
+This ADR is **deprecated** — kept for historical context on the server
+capability, not as an active design direction.
+
+## Consequences
+
+- No new WebSocket dependency or concurrency machinery.
+- Removes the primary driver for an async public API surface.
+- Server-side subscription capability remains documented in
+  [concepts.md](../concepts.md) for reference; a future ADR would be needed to
+  revisit this if long-lived monitoring clients become a package goal.

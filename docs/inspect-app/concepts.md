@@ -1,6 +1,6 @@
 # Inspect App — Concepts & Technical Model
 
-> Status: **Draft** · Last updated: 2026-06-18
+> Status: **Draft** · Last updated: 2026-06-25
 >
 > This document captures what the *Inspect* app is, how it maps onto the
 > existing package, and which technical details still need to be verified
@@ -16,13 +16,16 @@ the operator to perform high-level monitoring of services combined with the
 ability to drill-down and inspect details to pinpoint service-affecting
 problems."*
 
-In recent VideoIPath releases the Inspect app **replaces the Topology app**: it
-becomes the entry point for building the network connectivity model (vertices,
-edges, device placement), connecting devices, and watching their live
-operational status — including **WebSocket event subscriptions** for live
-updates. Inspect applies configuration changes with a **commit-style** model:
-create/edit/delete actions are gathered into a change set and committed together
-(see [ADR-0006](./decisions/0006-commit-write-model.md)).
+In recent VideoIPath releases the Inspect app **replaces the Topology app** in
+the product UI: it becomes the entry point for building the network connectivity
+model (vertices, edges, device placement), connecting devices, and watching
+operational status. The server exposes live update capabilities, but this
+package deliberately stays request/response only (see
+[ADR-0001](./decisions/0001-api-paradigm.md) and
+[ADR-0003](./decisions/0003-websocket-subscriptions.md)). Inspect applies
+configuration changes with a **commit-style** model: create/edit/delete actions
+are gathered into a client-side change set and committed together (see
+[ADR-0006](./decisions/0006-commit-write-model.md)).
 
 Inspect does **not** replace the **Inventory** app. Devices are still onboarded
 in Inventory first; only then can they be placed and connected in Inspect. So
@@ -42,7 +45,7 @@ contract is mostly net-new** relative to what `app.topology` and
 **Reads** — one server-built aggregate:
 
 - `GET /rest/v2/data/status/collector/**` → `data.status.collector` (§3.1)
-- Bundles topology nodes, inter-device edges, services/paths, live status, and
+- Bundles topology nodes, inter-device edges, services/paths, status, and
   security context in a single tree with `_items[]` collections.
 
 **Writes** — one bulk action per commit:
@@ -58,20 +61,21 @@ contract is mostly net-new** relative to what `app.topology` and
 **Namespace** — the `collector` API entry points live under `status`
 (`data/status/collector` for reads, `actions/status/collector` for writes), but
 the **underlying store is the existing config plane**: `updateTopology` mutations
-land in `config/network/nGraphElements`. Confirmed by capture — the edge
-`device0.1.10.out::device1.1.11.in` set to `weight: 1` via `updateTopology`
-appears in `GET …/data/config/network/nGraphElements/**` with `weight: 1` and a
+land in `config/network/nGraphElements`. Confirmed by capture — an anonymized
+edge updated via `updateTopology` appeared in
+`GET …/data/config/network/nGraphElements/**` with the changed value and a
 bumped `_rev`. So the collector is a **facade**: a status-namespace read/action
 surface in front of the revisioned `nGraphElements` config store (§3.3).
 
-**Shared with existing apps** — the underlying store and its models, not the
-collector wire shape:
+**Shared with existing apps** — the underlying store and wire conventions, not
+model classes:
 
 - The config store `nGraphElements` is **the same one `app.topology` already
-  reads and models** (`BaseDevice`, `IpVertex`, `UnidirectionalEdge`,
-  `codecVertex`). Inspect edits land there, revisioned with `_rev` (§3.3).
+  reads and models**. Inspect edits land there, revisioned with `_rev` (§3.3),
+  but the Inspect package keeps its own `InspectApi*` DTOs and does **not** import
+  or subclass topology/inventory model classes.
 - REST v2 envelope, session/XSRF auth, pid/id formats
-- Vertex ids (`device0.1.10.out`), edge keys (`fromId::toId`)
+- Vertex ids (`device-a.module-1.port-out-1.out`), edge keys (`fromId::toId`)
 - `descriptor` / `fDescriptor` objects, `sa` / `severity` status semantics
 - Device positions as float coordinates — `meta.coordinates` in the collector
   aggregate, `maps[].x/y` in `nGraphElements`, same *Inspect Topology* format as
@@ -81,9 +85,9 @@ collector wire shape:
 
 | Layer | Responsibility |
 | ----- | -------------- |
-| Collector read/parse | Model and parse `data.status.collector` |
-| Change-set / commit write | Assemble `updateTopology` payloads, handle validation responses |
-| Live / events | WebSocket subscriptions for status deltas |
+| Collector read/parse | Parse `data.status.collector` with `InspectApi*` transport DTOs, then expose user-facing `InspectDevice` / `InspectService` objects via `InspectSnapshot` |
+| Change-set / commit write | Assemble `updateTopology` payloads with `InspectApi*` DTOs, handle validation responses |
+| Lookup / network actions | Model captured lookup, add-device, and sync-device action envelopes with `InspectApi*` DTOs |
 
 Inventory onboarding stays on the existing path (`config/devman/devices`,
 `/api/updateDevices`). `app.topology` and `app.inventory` remain unchanged;
@@ -96,13 +100,13 @@ How Inspect concepts map onto existing package concepts:
 | Inspect concept        | Inspect API (collector)                                | Existing model / app                          |
 | ---------------------- | ------------------------------------------------------ | --------------------------------------------- |
 | Device (inventory)     | Prerequisite — not part of collector; onboard via `config/devman/devices` | `InventoryDevice` (`apps/inventory`) |
-| Device (topology node) | Read: `collector.inspect.nodeStatus`; stored as `baseDevice` in `nGraphElements` | `TopologyDevice` (`apps/topology`) — store reuses existing model |
-| Vertices / Edges       | Read: `nodeStatus` `vertexInfo` / `externalEdgesByDeviceKey`; stored as `ipVertex` / `codecVertex` / `unidirectionalEdge` in `nGraphElements` | `BaseDevice`, `IpVertex`, `UnidirectionalEdge` — store reuses existing models |
+| Device (topology node) | Read: `collector.inspect.nodeStatus`; stored as `baseDevice` in `nGraphElements` | Store shape overlaps with Topology, but Inspect uses `InspectApiBaseDevice` |
+| Vertices / Edges       | Read: `nodeStatus` `vertexInfo` / `externalEdgesByDeviceKey`; stored as `ipVertex` / `codecVertex` / `unidirectionalEdge` in `nGraphElements` | Store shape overlaps with Topology, but Inspect uses `InspectApi*` nGraph DTOs |
 | Change set / commit    | `POST …/actions/status/collector/updateTopology` → writes `nGraphElements` ([ADR-0006](./decisions/0006-commit-write-model.md)) | _commit flow net-new; target store is existing `nGraphElements`_ |
 | Services / paths       | `collector.inspect.paths`, `pathDescriptions` on nodes/edges | _none — net-new_ |
 | Device / edge status   | Embedded in collector (`status`, `sa`/`severity`, bandwidth, PTP) | `inventory.model.device_status`, `status/network/*` — partial overlap |
 | Sync status            | `syncSeverity` on nodeStatus items                     | `TopologySynchronize` via `status/network/nGraphSyncStatus` |
-| Live events            | WebSocket delta subscriptions                          | _none — net-new_ |
+| Lookup / network actions | `lookupInspectDevice`, `lookupSyncInfo`, `addDevices`, `syncDevices` | request/response envelopes captured and modelled |
 | Connections / Partial connections | **[VERIFY]** — may relate to `pathDescriptions` / bookings | _none yet_ |
 
 ### 3.1 Collector aggregate — primary read surface
@@ -133,15 +137,15 @@ Top-level sections under `data.status.collector`:
 
 | Concept | Example | Notes |
 | ------- | ------- | ----- |
-| Device | `device0` | `deviceId`, `pid`, `_id` on nodeStatus items |
-| Module pid | `device0.dev.1` | Nested under `modules` |
-| Port pid | `device0.dev.1.10` | Nested under `ports` |
-| Vertex id | `device0.1.10.out` | Shorter form in `vertexInfo`; used in edge keys |
-| Edge id | `device0.1.10.out::device1.1.11.in` | Same key as `replaceEdges` in `updateTopology` |
-| Device pair | `device0::device1` | Key for `externalEdgesByDeviceKey` items |
-| Service / path | `100001::main` | `bookingId` + path role; appears in `pathDescriptions` and `inspect.paths` |
-| Resource id | `device:device0.dev.1.1` | Prefixed resource references |
-| Topo endpoint ref | `topo:device0.1.1` | Used in `serviceFields.from` / `.to` |
+| Device | `device-a` | `deviceId`, `pid`, `_id` on nodeStatus items |
+| Module pid | `device-a.dev.module-1` | Nested under `modules` |
+| Port pid | `device-a.dev.module-1.port-out-1` | Nested under `ports` |
+| Vertex id | `device-a.module-1.port-out-1.out` | Shorter form in `vertexInfo`; used in edge keys |
+| Edge id | `device-a.module-1.port-out-1.out::device-b.module-1.port-in-1.in` | Same key as `replaceEdges` in `updateTopology` |
+| Device pair | `device-a::device-b` | Key for `externalEdgesByDeviceKey` items |
+| Service / path | `booking-1001::main` | `bookingId` + path role; appears in `pathDescriptions` and `inspect.paths` |
+| Resource id | `device:device-a.dev.module-1.port-out-1` | Prefixed resource references |
+| Topo endpoint ref | `topo:device-a.module-1.port-out-1` | Used in `serviceFields.from` / `.to` |
 
 **`vertexInfo`** on ports describes topology vertices:
 
@@ -153,8 +157,7 @@ Top-level sections under `data.status.collector`:
 both `deviceLevel` (local hop: input → output within a device) and
 `serviceLevel` (end-to-end service: `bookingId`, `serviceLabel`, `fromStatus` /
 `toStatus`, `isMain`, `serviceStatus`). This is how the UI connects topology
-elements to booked services — e.g. booking `100001` `"Encoder 1.1 -> Decoder 1.5"`
-traverses `device0.1.10.out::device1.1.11.in`.
+elements to booked services.
 
 **Edge live status** (`externalEdgesByDeviceKey`): each edge carries
 `bandwidth`, `fromStatus` / `toStatus`, `pathDescriptions`, and aggregate
@@ -171,7 +174,8 @@ traverses `device0.1.10.out::device1.1.11.in`.
 - Edge keys and vertex ids from reads map directly onto `updateTopology` write
   payloads.
 - Commit validation references the same `bookingId`s visible in
-  `pathDescriptions` (e.g. failed delete for booking `100001` / main path edge).
+  `pathDescriptions` (e.g. failed delete for an anonymized booking / main path
+  edge).
 - **[VERIFY]** exact sub-paths behind the `/**` wildcard, projection/filter
   support, and pagination for large topologies.
 
@@ -181,22 +185,27 @@ The VideoIPath backend separates **config** (mutable, revisioned) and
 **status** (read-only, subscription-friendly)
 ([Public API 2025 LTS](https://documenter.getpostman.com/view/11222813/2sBXihpCS8#intro)).
 Inspect's `collector` API entry points sit under `status`, but its topology
-edits resolve to the **config** plane (`nGraphElements`):
+edits resolve to the **config** plane (`nGraphElements`). Network action
+endpoints under `actions/status/network/*` are also relevant for device add/sync
+workflows:
 
 | Plane | Used by | Read | Write |
 | ----- | ------- | ---- | ----- |
 | Config | `app.topology`, `app.inventory`, **Inspect (effective store)** | `GET …/data/config/…` | `PATCH …/data/config/…` (revisioned) or RPC |
-| Status | Inventory status reads | `GET …/data/status/…` | — |
+| Status | Inventory status reads, Inspect status reads | `GET …/data/status/…` | — |
 | Collector (facade) | `app.inspect` | `GET …/data/status/collector/**` (composed aggregate) | `POST …/actions/status/collector/updateTopology` → `nGraphElements` |
+| Network actions | `app.inspect` device topology workflows | — | `POST …/actions/status/network/addDevices`, `POST …/actions/status/network/syncDevices` |
 
 So Inspect's read aggregate is status-namespace and net-new in shape, but its
 writes are commit-time-validated bulk actions that land in the revisioned
 `config/network/nGraphElements` store (§3.3). The client gathers edits locally
-until commit; server-side staging / change-set ids are **[VERIFY]**
-([ADR-0006](./decisions/0006-commit-write-model.md)).
+until commit; ADR-0006 accepts that there is no separate server-side change-set
+id for the verified `updateTopology` flow.
 
-Status-plane **WebSocket subscriptions** deliver event-based deltas — the live
-update channel for Inspect ([ADR-0003](./decisions/0003-websocket-subscriptions.md)).
+The server can expose status-plane subscriptions, but WebSockets are out of
+scope for this package. Fresh status is obtained by explicit re-fetches
+([ADR-0001](./decisions/0001-api-paradigm.md),
+[ADR-0003](./decisions/0003-websocket-subscriptions.md)).
 
 This framing underpins the API-paradigm and loading decisions
 ([ADR-0001](./decisions/0001-api-paradigm.md),
@@ -206,8 +215,9 @@ This framing underpins the API-paradigm and loading decisions
 
 `GET /rest/v2/data/config/network/nGraphElements/**` →
 `data.config.network.nGraphElements._items[]`. This is the **revisioned source
-of truth** for topology that Inspect's `updateTopology` writes into, and it is
-already modelled by `app.topology`.
+of truth** for topology that Inspect's `updateTopology` writes into. Its wire
+shape overlaps with the Topology app, but the Inspect package models it with
+standalone `InspectApi*` DTOs.
 
 | Field | Notes |
 | ----- | ----- |
@@ -225,19 +235,17 @@ Element `type` values seen in capture:
 | `ipVertex` | Ethernet/IP port vertex (`.in` / `.out`) | `vertexType`, `gpid.pointId`, `supports*Cfg` capability flags |
 | `unidirectionalEdge` | Directed link/route between vertices | `fromId`, `toId`, `weight`, `capacity`, `bandwidth`, `redundancyMode`, `weightFactors`, `conflictPri` |
 
-**Write round-trip confirmed:** the edge `device0.1.10.out::device1.1.11.in`
-edited via `updateTopology` (ADR-0006 example, `weight: 1`) is present here with
-`weight: 1` and `_rev: "3-…"`, and inter-device links appear as paired
-unidirectional edges (`device0.1.10.out::device1.1.11.in` and
-`device1.1.11.out::device0.1.10.in`, each `capacity: 65535`). Internal
-fan-out edges (vertex→vertex within a device) use `capacity: 1`.
+**Write round-trip confirmed:** an anonymized edge edited via `updateTopology`
+is present here with the changed value and a bumped `_rev`, and inter-device
+links appear as paired unidirectional edges (one in each direction, typically
+with `capacity: 65535`). Internal fan-out edges (vertex→vertex within a device)
+use `capacity: 1`.
 
-**Implication:** Inspect's underlying topology model is the existing
-`nGraphElements`, so the package's `BaseDevice` / `IpVertex` /
-`UnidirectionalEdge` / codec-vertex models are reusable for the **store**, even
-though the **collector read aggregate** (§3.1) has its own status-oriented
-shape. **[VERIFY]** whether `updateTopology` performs `_rev` checks server-side
-or last-writer-wins.
+**Implication:** Inspect's underlying topology store is `nGraphElements`, but
+the package keeps a separate Inspect model namespace (`InspectApiBaseDevice`,
+`InspectApiIpVertex`, `InspectApiUnidirectionalEdge`, …). Do not reuse topology app
+model classes in Inspect DTOs. **[VERIFY]** whether `updateTopology` performs
+`_rev` checks server-side or last-writer-wins.
 
 ## 4. How the transport works today (recap)
 
@@ -253,13 +261,19 @@ So the new layer fits the existing patterns rather than reinventing them:
   Pydantic.
 - Apps are **lazy-loaded** off `VideoIPathApp` and are **stateless**: every call
   re-fetches from the server (e.g. `topology.get_device` issues several `GET`s
-  and rebuilds the aggregate each time).
+  and rebuilds the aggregate each time). Inspect should follow that pattern.
+- Inspect models live in two layers:
+  - `apps/inspect/model` — `InspectApi*` transport DTOs for HTTP payloads
+  - `apps/inspect/domain` and `apps/inspect/snapshot.py` — user-facing read
+    models backed by a collector snapshot and internal indexes
+- App/API methods should own fetching, staging, committing, and error handling.
 
 ## 5. Endpoint discovery — how to fill in the **[VERIFY]** gaps
 
 Two complementary sources: the **official reference** (authoritative for the
 documented surface) and **browser capture** (authoritative for what the Inspect
-GUI actually does, including undocumented calls and WebSocket frames).
+GUI actually does, including undocumented calls). WebSocket frames can be useful
+product context, but they are out of scope for the package per ADR-0003.
 
 0. **Start from the official reference.** The
    [VideoIPath Public API 2025 LTS](https://documenter.getpostman.com/view/11222813/2sBXihpCS8#intro)
@@ -271,9 +285,8 @@ GUI actually does, including undocumented calls and WebSocket frames).
    > resource during capture.
 1. **Capture browser traffic.** Open the Inspect app in the VideoIPath web UI
    with the browser DevTools → Network tab. Record a full session (HAR export):
-   open a device, connect two devices, **commit a change set**, drill into a
-   service, watch live updates. Note REST calls *and* the WebSocket (`WS`
-   filter) frames.
+   open a device, add/sync devices, connect two devices, **commit a change set**,
+   and drill into a service. Note REST calls and payloads.
 2. **Replay through the package logger.** The connector logs every response at
    `DEBUG` (`_log_response`). Set `log_level="DEBUG"` and call candidate
    endpoints to confirm payload shapes.
@@ -294,36 +307,29 @@ REST:
 - [ ] Collector sub-paths: exact URLs behind the `/**` wildcard; projection/filter/pagination support
 - [ ] Connections / Partial Connections: resource paths, shapes, lifecycle
 - [x] Change set / commit endpoint: `POST /rest/v2/actions/status/collector/updateTopology` — bulk delta with `replaceDevices`, `replaceVertices`, `replaceEdges` (key `"fromId::toId"`), `replaceResourceTransforms`, `addExternalEdges`, `remove`, `force` ([ADR-0006](./decisions/0006-commit-write-model.md))
-- [ ] Change set staging: server-side change-set id vs. client-only gather until commit
+- [x] Change set staging: client-side gather until `updateTopology`; no separate server-side change-set id for the verified flow (ADR-0006)
 - [x] Commit failure response: check `data.res.ok` / `data.validation.result.ok` (not `header.ok`); `validation.details[id]` carries `status`, `rev`, `resolvable`, `type`; failed delete example: `"A required edge was not found. (main)"`, `items: []` ([ADR-0006](./decisions/0006-commit-write-model.md))
-- [ ] Commit success response: `data.items` shape when validation passes
+- [x] Commit success response for no-op: `data.items: []`, `data.res.ok: true`, `data.validation.result.ok: true` ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorupdatetopology))
+- [ ] Commit success response with real applied changes: `data.items` contents when validation passes and changes are applied
 - [ ] Commit semantics: partial apply after validation pass, discard/rollback of abandoned client-side change sets
 - [ ] Import / Export (preview): scope and payload format
-- [x] Write/action endpoint: `/rest/v2/actions/status/collector/updateTopology` (others under `…/actions/status/collector/*` still **[VERIFY]**)
-- [x] Config store / write target: `updateTopology` lands in `GET /rest/v2/data/config/network/nGraphElements/**` (`_items[]`, `_rev`, `type` ∈ `baseDevice` / `codecVertex` / `ipVertex` / `unidirectionalEdge`); reuses existing topology models (§3.3)
+- [x] Write/action endpoint: `/rest/v2/actions/status/collector/updateTopology`
+- [x] Collector action payloads captured and modelled: `/rest/v2/actions/status/collector/lookupInspectDevice`, `/rest/v2/actions/status/collector/lookupSyncInfo`
+- [x] Network action request shapes, normal action responses, and validation-error responses captured: `/rest/v2/actions/status/network/addDevices`, `/rest/v2/actions/status/network/syncDevices`
+- [x] Config store / write target: `updateTopology` lands in `GET /rest/v2/data/config/network/nGraphElements/**` (`_items[]`, `_rev`, `type` ∈ `baseDevice` / `codecVertex` / `ipVertex` / `unidirectionalEdge`); model with standalone `InspectApi*` DTOs (§3.3)
 - [ ] `_rev` handling on commit: does `updateTopology` enforce optimistic concurrency or last-writer-wins?
 - [ ] Version gating: first VideoIPath version that exposes each endpoint
-
-WebSocket (see [ADR-0003](./decisions/0003-websocket-subscriptions.md)):
-
-- [ ] URL / scheme (`ws://` vs `wss://`, path, port)
-- [ ] Auth handshake (Basic header, cookie/session, query token?)
-- [ ] Subscribe / unsubscribe message format (which resources can be watched?)
-- [ ] Event/patch frame format (full snapshot vs. delta/patch; ids & revisions)
-- [ ] Heartbeat / keep-alive, server-side timeouts, reconnect & resync semantics
-- [ ] Back-pressure / message ordering / dropped-update guarantees
+- [x] DTO coverage: add typed request/response models for captured lookup, action result, and validation-error endpoint payloads in [endpoints.md](./endpoints.md)
 
 ## 6. Open questions
 
 - **Collector sub-paths and scaling** — exact URLs behind `/**`; projection,
   filtering, and pagination for large topologies
   ([ADR-0002](./decisions/0002-loading-and-state.md)).
-- **WebSocket scope** — generic subscription to any `status/...` path, or
-  Inspect-specific streams? ([ADR-0003](./decisions/0003-websocket-subscriptions.md))
 - **Commit model** ([ADR-0006](./decisions/0006-commit-write-model.md)) —
-  server-side change-set id vs. client-only gather; successful response shape
-  (`data.items`); all-or-nothing apply after validation; meaning of validation
-  `status` codes and `resolvable: true` cases.
+  successful applied-change response shape (`data.items`); all-or-nothing apply
+  after validation; meaning of validation `status` codes and `resolvable: true`
+  cases.
 - **Commit concurrency** — `updateTopology` writes bump `nGraphElements` `_rev`
   (§3.3); does the action enforce `_rev` checks or last-writer-wins?
 - **Connections / Partial Connections** — relationship to `pathDescriptions`,

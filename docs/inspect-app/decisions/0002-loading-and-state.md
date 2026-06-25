@@ -1,6 +1,6 @@
 # ADR-0002: Loading & state model
 
-> Status: **Proposed**
+> Status: **Accepted**
 > Date: 2026-06-15 · Deciders: Paul Winterstein, Jonas Scholl
 
 ## Context
@@ -54,4 +54,21 @@ Two sub-questions follow:
 
 ## Decision
 
-_To be decided._
+**Option 1: stateless, eager per-entity — always load the full aggregate.**
+
+Each read fetches the **complete device aggregate** for the requested entity,
+including edges, connections, vertices, and related sections. No lazy partial
+objects, no field/section projection as a default path, and no client-side cache
+or long-lived snapshots.
+
+Bulk helpers may be added later to reduce N+1 when iterating many entities, but
+each entity returned is still a full aggregate.
+
+## Consequences
+
+- Predictable object shape: callers always receive a coherent, complete device.
+- Always fresh on each read; no cache-invalidation logic.
+- Chatty per-entity reads remain a known cost; internal parallelism for
+  multi-request reads is handled separately ([ADR-0004](./0004-async-strategy.md)).
+- Projection/narrow reads and client-side caching are deferred unless a concrete
+  pipeline need emerges.

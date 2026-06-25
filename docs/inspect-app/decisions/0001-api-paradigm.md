@@ -1,6 +1,6 @@
-# ADR-0001: API paradigm — data-driven core + event layer
+# ADR-0001: API paradigm — data-driven, request/response
 
-> Status: **Proposed**
+> Status: **Accepted**
 > Date: 2026-06-15 · Deciders: Paul Winterstein, Jonas Scholl
 
 ## Context
@@ -10,15 +10,16 @@ aggregate (`InventoryDevice`, `TopologyDevice`), mutates the object locally, and
 calls `update_*`, which diffs against the server state and `PATCH`es only the
 changed elements (revision-checked). It is stateless and request/response based.
 
-Inspect adds a **monitoring** dimension (services, live status, drill-down) and
-a **WebSocket** channel. Monitoring is naturally **event/observation-driven**:
-the client reacts to changes it did not initiate. So the question is whether to:
+Inspect adds a **monitoring** dimension (services, status, drill-down). The
+primary consumers are **deterministic pipeline automations** — short-lived,
+scripted runs that load state, apply changes, and exit. For that usage model,
+live event streams and WebSocket subscriptions add complexity without clear
+benefit: each run should start from an explicit server read and produce a known
+outcome.
 
-- keep everything data-driven (poll for status), or
-- move to an event/action-driven model, or
-- combine the two.
-
-This maps cleanly onto the config-plane vs. status-plane split described in
+The question was whether to keep everything data-driven, move to an
+event/action-driven model, or combine the two. This maps onto the config-plane
+vs. status-plane split described in
 [concepts.md](../concepts.md#3-domain-model).
 
 ## Options
@@ -44,4 +45,21 @@ This maps cleanly onto the config-plane vs. status-plane split described in
 
 ## Decision
 
-_To be decided._
+**Option 1: data-driven only (request/response).**
+
+The package stays fully data-driven. Reads fetch aggregates from the server;
+writes apply changes via explicit API calls. No WebSocket subscriptions, no live
+update layer, no event-driven observation API.
+
+Status reads use the same request/response model as configuration CRUD. If
+freshness is needed, the caller re-fetches explicitly.
+
+## Consequences
+
+- Consistent with existing apps and the automation/pipeline usage model.
+- No WebSocket client, subscription machinery, or dual interaction styles to
+  build or document.
+- Live monitoring UX (as in the Inspect UI) is out of scope for the package;
+  automations get predictable, reproducible runs instead.
+- See [ADR-0003](./0003-websocket-subscriptions.md) (deprecated) and
+  [ADR-0004](./0004-async-strategy.md) for related decisions.

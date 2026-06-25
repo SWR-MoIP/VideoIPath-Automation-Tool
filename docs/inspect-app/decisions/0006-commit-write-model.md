@@ -1,6 +1,6 @@
 # ADR-0006: Commit-style write model (change sets)
 
-> Status: **Proposed**
+> Status: **Accepted**
 > Date: 2026-06-18 · Deciders: Paul Winterstein, Jonas Scholl
 
 ## Context
@@ -24,6 +24,11 @@ There is **no commit, transaction, or staging concept** in the package today
 (the topology "staged device" is only an in-memory diff input, not a server-side
 batch). So Inspect's commit behaviour is a **net-new write path**, not a reuse of
 the existing one.
+
+**Data vs. operations:** Pydantic models / DTOs hold **data only** — fields,
+nested structures, validation. They do not expose `add`, `update`, `delete`, or
+`commit` methods. All mutations go through the **app instance** or an optional
+**transaction** object that stages changes and commits them to the server.
 
 ### Verified wire format (browser capture, 2026-06-18)
 
@@ -112,7 +117,7 @@ delete-device attempt the top-level `header` still reported success:
 | `data.items` | `[]` | No applied changes returned |
 
 Per-entity validation details live in `data.validation.details`, keyed by id
-(e.g. `"100001"`):
+(e.g. `"booking-1001"`):
 
 | Field | Example | Notes |
 | ----- | ------- | ----- |
@@ -129,7 +134,7 @@ Per-entity validation details live in `data.validation.details`, keyed by id
     "caption": "Operation Successful",
     "code": "OK",
     "ok": true,
-    "user": "sysadmin"
+    "user": "api-user"
   },
   "data": {
     "items": [],
@@ -140,11 +145,11 @@ Per-entity validation details live in `data.validation.details`, keyed by id
     "validation": {
       "createIds": [],
       "details": {
-        "100001": {
+        "booking-1001": {
           "isCancel": false,
           "isProduct": false,
           "resolvable": false,
-          "rev": "2-2026-06-15T13:03:50.631612311Z[UTC]",
+          "rev": "2-2026-06-15T13:03:50.000000000Z[UTC]",
           "status": -22,
           "type": "generic"
         }
@@ -226,4 +231,27 @@ What remains **[VERIFY]**:
 
 ## Decision
 
-_To be decided._
+**Option 3 (hybrid): explicit transaction via context manager, plus direct write
+operations on the app.**
+
+- **Data-only DTOs** — models represent server payloads; no behaviour methods.
+- **App-level direct writes** — `add` / `update` / `delete` on the inspect app
+  apply and commit immediately (one change set, one `updateTopology` call), for
+  simple one-off scripts.
+- **Optional transaction** — a context manager (e.g. `with app.inspect.transaction()`
+  or similar) stages multiple actions and commits them atomically on exit; discard
+  on error or explicit cancel.
+
+Staging is **client-side** until the `POST …/updateTopology` commit; there is no
+separate server-side change-set id (per verified wire format below).
+
+## Consequences
+
+- Two documented usage styles, but both map to the same underlying commit
+  payload shape.
+- Context manager must define exit behaviour: commit on success, discard/raise
+  on failure; document what happens to an uncommitted transaction.
+- DTOs stay portable and serializable; business logic lives in the app/transaction
+  layer, consistent with existing topology/inventory patterns.
+- Single-change scripts stay ergonomic via direct writes; pipeline edits that
+  touch multiple elements use the transaction path for atomicity.

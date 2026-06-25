@@ -1,0 +1,87 @@
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class InspectApiBaseModel(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_assignment=True, extra="allow")
+
+
+class InspectApiDescriptor(InspectApiBaseModel):
+    desc: str = ""
+    label: str = ""
+
+
+class InspectApiCollection(InspectApiBaseModel):
+    items: list[dict[str, Any]] = Field(default_factory=list, alias="_items")
+
+
+class InspectApiStatusSummary(InspectApiBaseModel):
+    sa: int | str | None = None
+    severity: int | str | None = None
+
+
+class InspectApiStatusContext(InspectApiBaseModel):
+    devicePid: str | None = None
+    modulePid: str | None = None
+    portPid: str | None = None
+
+
+class InspectApiEndpointStatus(InspectApiBaseModel):
+    context: InspectApiStatusContext | None = None
+    label: str | None = None
+    pid: str | None = None
+    status: InspectApiStatusSummary | None = None
+
+
+class InspectServiceStatus(InspectApiBaseModel):
+    config: InspectApiStatusSummary | None = None
+    total: InspectApiStatusSummary | None = None
+
+
+class InspectApiRestV2Header(InspectApiBaseModel):
+    auth: bool
+    caption: str
+    code: str
+    errorCodes: list[Any] = Field(default_factory=list)
+    errorDetails: list[Any] = Field(default_factory=list)
+    id: str
+    msg: list[str] = Field(default_factory=list)
+    ok: bool
+    user: str
+
+
+class InspectApiPostRequestHeader(InspectApiBaseModel):
+    id: int = 0
+
+
+class InspectApiSimpleActionResult(InspectApiBaseModel):
+    msg: list[str] = Field(default_factory=list)
+    ok: bool
+
+
+class InspectApiSimpleActionResponse(InspectApiBaseModel):
+    data: InspectApiSimpleActionResult
+    header: InspectApiRestV2Header
+
+
+class InspectApiActionValidationErrorResponse(InspectApiBaseModel):
+    header: InspectApiRestV2Header
+
+
+__all__ = [
+    "InspectApiActionValidationErrorResponse",
+    "InspectApiBaseModel",
+    "InspectApiCollection",
+    "InspectApiDescriptor",
+    "InspectApiEndpointStatus",
+    "InspectApiPostRequestHeader",
+    "InspectApiRestV2Header",
+    "InspectServiceStatus",
+    "InspectApiSimpleActionResponse",
+    "InspectApiSimpleActionResult",
+    "InspectApiStatusContext",
+    "InspectApiStatusSummary",
+]
