@@ -9,10 +9,10 @@
 > involved, or how the work is split across planes.
 >
 > It stands in deliberate contrast to the current
-> [`python-module-architecture.md`](./python-module-architecture.md), whose
+> [`python-module-architecture.md`](../python-module-architecture.md), whose
 > stated goal is to *"maintain a structure similar to VideoIPath."* That goal is
 > exactly what this proposal revisits. The VIP wire format and per-app research
-> this builds on lives in [`inspect-app/`](./inspect-app/README.md)
+> this builds on lives in [`inspect-app/`](../inspect-app/README.md)
 > (`concepts.md` and the ADRs); those documents remain the **faithful map of the
 > server**, while this one is the **map we want to present to users**.
 >
@@ -60,7 +60,7 @@ what*: onboard in Inventory → place/connect in Topology → monitor in Inspect
 while Inspect writes land back in `nGraphElements`.
 
 This is awkward for reasons confirmed against a real server (see
-[`inspect-app/concepts.md`](./inspect-app/concepts.md) and the captured
+[`inspect-app/concepts.md`](../inspect-app/concepts.md) and the captured
 `collector` payload):
 
 1. **The app split is VIP's internal structure, not the user's mental model.**
@@ -221,7 +221,7 @@ Design principles:
   `0.0`).
 - **Status is a first-class, read-only projection**, separate from config. This
   matches the config-plane vs. status-plane split
-  ([ADR-0001](./inspect-app/decisions/0001-api-paradigm.md)) and keeps the live
+  ([ADR-0001](../inspect-app/decisions/0001-api-paradigm.md)) and keeps the live
   story clean.
 - **Make illegal states unrepresentable** where cheap (enums for `Direction`,
   `PortKind`, `Redundancy`, `LifecycleState`, `SyncState`).
@@ -250,14 +250,17 @@ is the most likely source of subtle bugs.
 
 ## 8. Reads — the collector snapshot as the aggregate root
 
-The `collector` aggregate (`GET …/data/status/collector/**`) returns the
-**entire connected graph in one internally-consistent request**: devices, ports,
-inter-device connections, services, security, profiles, tags. This eliminates
-the N+1 / per-device fan-out and the torn data/rev split of the topology read
-path. For "linked devices that have connections too," the server hands you the
-whole component at once — **do not** rebuild the domain graph from N per-device
-fetches. For onboarding-only attributes not in the collector (driver,
-credentials, custom settings), the ACL supplements with an Inventory read.
+The `collector` tree is the aggregate root for reads. Loading follows
+[ADR-0007](../inspect-app/decisions/0007-lazy-snapshot-loading.md):
+a **skeleton** query pair fetches the whole graph structure (all devices
+without module/port detail + all edges with a lean projection) in one
+consistent round, and per-device subtrees are **lazily hydrated** on demand.
+The rule: never rebuild the *graph structure* from N per-device fetches — the
+skeleton delivers it at once; per-device fetches are only for drill-down
+detail. The full `GET …/data/status/collector/**` aggregate remains the eager
+mode when a point-in-time view of everything is needed. For onboarding-only
+attributes not in the collector (driver, credentials, custom settings), the
+ACL supplements with an Inventory read.
 
 The cost is **heavy denormalization**. A single service (`100001::main`)
 appears in at least six places in the snapshot, each with full status
@@ -304,19 +307,26 @@ operations. The ACL owns this table; the user never sees it.
 | Domain operation | Orchestrated VIP sequence |
 | ---------------- | ------------------------- |
 | `network.discover()` | Inventory discovered-devices read |
-| `network.add_device(driver, connection, …)` | Inventory RPC `/api/updateDevices` (assigns `deviceN`) → optional Topology placement PATCH |
-| `device.configure(...)` | Inventory custom-settings update (RPC) and/or Topology vertex/capability PATCH — by field |
-| `device.place(x, y)` | Topology `baseDevice` `maps[]` PATCH (revisioned) |
-| `network.connect(a, b, …)` | Resolve port→vertex ids → `updateTopology` / `nGraphElements` edge upsert (paired edges) |
+| `network.add_device(driver, connection, …)` | Inventory RPC `/api/updateDevices` (assigns `deviceN`) → optional placement via `addDevices` network action / `updateTopology` `replaceDevices` |
+| `device.configure(...)` | Inventory custom-settings update (RPC) and/or `updateTopology` `replaceVertices` — by field |
+| `device.place(x, y)` | `updateTopology` `replaceDevices` (coordinates) |
+| `network.connect(a, b, …)` | Resolve port→vertex ids → `updateTopology` `replaceEdges` / `addExternalEdges` (paired edges) |
 | `network.get(...)` / `list_*()` | `collector` snapshot read (+ inventory status where needed) |
-| `network.disconnect(...)` / `remove_device(...)` | `updateTopology` remove and/or Inventory RPC remove |
-| `device.refresh()` / `network.refresh()` | Re-fetch `collector` snapshot (§11.3) |
+| `network.disconnect(...)` / `remove_device(...)` | `updateTopology` `remove` and/or Inventory RPC remove |
+| `device.refresh()` / `network.refresh()` | Re-fetch `collector` snapshot (§11.3); after own commits: targeted refresh ([ADR-0010](../inspect-app/decisions/0010-post-commit-snapshot-refresh.md)) |
+
+All topology-plane operations go through the **Inspect surface only**
+(`updateTopology`, collector reads, `addDevices`/`syncDevices`) — never through
+`PATCH nGraphElements`
+([ADR-0008](../inspect-app/decisions/0008-collector-only-endpoints.md)). The
+legacy Topology path remains available solely via the `app.topology` escape
+hatch.
 
 ## 10. The configuration / write interface
 
 Make the **change set the unit of work** — this is genuinely how the server
 behaves for topology/connection edits
-([ADR-0006](./inspect-app/decisions/0006-commit-write-model.md)), so it is a
+([ADR-0006](../inspect-app/decisions/0006-commit-write-model.md)), so it is a
 semantic to **expose**, not hide. Adopt ADR-0006 option 3 (explicit change set +
 convenience auto-commit), with a context manager as the ergonomic default.
 Proposed shape:
@@ -327,9 +337,9 @@ with app.network.change_set() as cs:
     cs.place(device_id, at=Point(x, y))
     conn = cs.connect(port_a, port_b, bandwidth=Gbps(10), redundancy=Redundancy.ANY)
     cs.remove(old_connection_id)
-    result = cs.validate()          # maps data.validation.result; surfaces affected services
+    result = cs.validate()          # client-side conflict check (ADR-0009); server validation runs at commit
     if result.ok:
-        cs.commit()                 # one updateTopology POST
+        cs.commit()                 # conflict re-check → one updateTopology POST → targeted refresh (ADR-0010)
 # on exception → auto-discard; on clean exit without commit → configurable
 
 # Convenience — single change auto-commits
@@ -362,8 +372,8 @@ The three planes do **not** share a write/consistency model:
 | Plane | Write mechanism | Concurrency control |
 | ----- | --------------- | ------------------- |
 | Inventory | RPC `/api/updateDevices` | No revision/strict mode (RPC semantics) |
-| Topology | `PATCH nGraphElements` | `_rev` optimistic locking, `mode: strict` |
-| Inspect | `updateTopology` action | Commit-time validation; `_rev` behaviour **[VERIFY]** (ADR-0006) |
+| Topology (escape hatch only, [ADR-0008](../inspect-app/decisions/0008-collector-only-endpoints.md)) | `PATCH nGraphElements` | `_rev` optimistic locking, `mode: strict` |
+| Inspect | `updateTopology` action | Commit-time validation; **last-writer-wins** (verified 2025.4.9 — `_rev` ignored); client-side compare-and-commit ([ADR-0009](../inspect-app/decisions/0009-write-consistency.md)) |
 
 So a single domain write that touches multiple planes has **no single
 transaction and no uniform conflict story**. The ACL must define, per
@@ -383,16 +393,19 @@ config plane (`nGraphElements`). Consequences:
    `syncSeverity` are not backed by any revision. There is **no cheap "did
    anything change?" probe** for status — the only ways to learn current status
    are to re-fetch the collector (whole or subtree) or subscribe via WebSocket
-   ([ADR-0003](./inspect-app/decisions/0003-websocket-subscriptions.md)).
-2. **Config-plane rev-polling detects config edits only.** Cheaply polling
-   `nGraphElements .../id,rev` catches "someone re-wired," but never "a
-   connection went into alarm." For monitoring, the latter is the majority of
-   interesting events. So rev-polling is necessary-but-insufficient.
-3. **Read and write tokens live in different planes.** A safe optimistic write
-   needs the `nGraphElements` `_rev` (or the `updateTopology` per-entity `rev`),
-   which is **absent from the collector read**. A domain object built from the
-   collector **cannot, by itself, support an optimistic write** — the write path
-   must resolve revisions separately at commit time.
+   ([ADR-0003](../inspect-app/decisions/0003-websocket-subscriptions.md)).
+2. **Config-plane rev-polling is off the table anyway.** Polling
+   `nGraphElements .../id,rev` could catch "someone re-wired" (never "a
+   connection went into alarm"), but the package does not call that surface
+   ([ADR-0008](../inspect-app/decisions/0008-collector-only-endpoints.md)) —
+   and it would still miss the status changes that matter for monitoring.
+3. **There is no write token at all on the Inspect surface.** The collector
+   read is rev-less and `updateTopology` ignores `_rev` (last-writer-wins,
+   verified 2025.4.9) — so revision-based optimistic writes are impossible,
+   not merely inconvenient. A domain object built from the collector **cannot
+   support an optimistic write**; concurrent-edit detection is the change
+   set's job via stage-time baselines + pre-commit compare
+   ([ADR-0009](../inspect-app/decisions/0009-write-consistency.md)).
 
 ### 11.3 Freshness strategy — re-snapshot, not rev-diff
 
@@ -400,30 +413,42 @@ The collector deliberately trades per-entity revisioning for a single
 globally-consistent snapshot — excellent for **read correctness** (no torn
 graph), poor for **incremental freshness**. Therefore:
 
-- Treat the collector snapshot as an **immutable value object**, replaced
-  wholesale on `refresh()` — not mutated in place.
+- The collector snapshot is **replaced wholesale on `refresh()`** — never
+  patched by diffing. Within its lifetime it *accretes*: skeleton-first, with
+  lazily hydrated subtrees merged in
+  ([ADR-0007](../inspect-app/decisions/0007-lazy-snapshot-loading.md)).
 - `refresh()` means "fetch a new snapshot," not "diff revisions." Stamp each
-  snapshot with a **client-side fetch time** as the freshness marker, since the
-  server provides no token.
-- If projection/filtering behind the `/**` wildcard turns out to be supported
-  (open `[VERIFY]`, not proven by the capture), a scoped re-snapshot of a
-  subtree is the optimisation — still a re-snapshot, not a diff.
+  entity/section with a **client-side fetch time** as the freshness marker,
+  since the server provides no token.
+- Projection/filtering on collector sub-paths is **proven** (Inspect UI
+  WebSocket capture — see
+  [endpoints.md](../inspect-app/endpoints.md#collector-scoped-queries-captured-from-the-inspect-ui)):
+  scoped re-snapshots of a subtree are the freshness optimisation — still a
+  re-snapshot, not a diff.
+- **After the package's own commits**, freshness is cheaper: the change set
+  knows what it touched, so the snapshot is updated by targeted invalidation +
+  scoped re-fetch instead of a full re-snapshot
+  ([ADR-0010](../inspect-app/decisions/0010-post-commit-snapshot-refresh.md)).
 - This is the strongest argument for making **WebSocket the real freshness
   channel for status**, while config edits keep the rev-based path
-  ([ADR-0001](./inspect-app/decisions/0001-api-paradigm.md),
-  [ADR-0002](./inspect-app/decisions/0002-loading-and-state.md),
-  [ADR-0003](./inspect-app/decisions/0003-websocket-subscriptions.md)).
+  ([ADR-0001](../inspect-app/decisions/0001-api-paradigm.md),
+  [ADR-0002](../inspect-app/decisions/0002-loading-and-state.md),
+  [ADR-0003](../inspect-app/decisions/0003-websocket-subscriptions.md)).
 
 ### 11.4 Separate the read snapshot from the write handle
 
-Because the snapshot has no revisions, a domain mutation (`connect`, `remove`)
-must, at commit time, resolve the affected entities' `nGraphElements` revisions
-itself (or go through `updateTopology` and surface its validation result). Do
-**not** let a read object pretend it can optimistically write. The clean split:
+Because the snapshot has no revisions (and the write path enforces none), a
+domain mutation (`connect`, `remove`) must not pretend a read object can
+optimistically write. The clean split:
 
-- **Read snapshot** — immutable, rev-less, globally consistent, replace wholesale.
-- **Write handle / change set** — resolves revisions at commit, owns the
-  commit/validate/discard/conflict lifecycle.
+- **Read snapshot** — rev-less, replace wholesale on refresh; accretes lazily
+  hydrated detail within its lifetime (ADR-0007); after own commits it is
+  updated by targeted scoped re-reads
+  ([ADR-0010](../inspect-app/decisions/0010-post-commit-snapshot-refresh.md)).
+- **Write handle / change set** — fetches stage-time baselines via
+  Inspect-surface lookups, re-checks them immediately before the
+  `updateTopology` POST, and owns the commit/validate/discard/conflict
+  lifecycle ([ADR-0009](../inspect-app/decisions/0009-write-consistency.md)).
 
 ## 12. Limits of the abstraction
 
@@ -466,9 +491,10 @@ The single most important artifact of this approach. Proposed starting point
 | Device lifecycle (onboard → place → connect → monitor) | **Expose** as `LifecycleState` | Users must reason about *where* a device is, not *which app* |
 | Change set / commit | **Expose** (first-class) | Genuine server semantic; enables atomic multi-edits |
 | Commit validation result & affected services | **Expose** (typed result) | `header.ok` lies; users must see real outcome |
-| Optimistic concurrency / revisions | **Expose as opaque token** | Needed for safe writes; but never raw `_rev` strings |
+| Concurrent-write conflicts | **Expose** as explicit conflict check + typed conflict error ([ADR-0009](../inspect-app/decisions/0009-write-consistency.md)) | No rev token exists on the Inspect surface (`updateTopology` is last-writer-wins); pretending otherwise would fake a guarantee |
 | Multi-dimensional status (`alarm`/`bandwidth`/`maintenance`/`ptp`, `sa`/`severity`) | **Expose** (preserve dimensions + provide rollup) | Lossy to collapse; monitoring users need the detail |
 | Snapshot freshness (no `_rev`) | **Expose** via explicit `refresh()` + fetch-time stamp | Honest about the lack of a server token |
+| Lazy hydration on property access ([ADR-0007](../inspect-app/decisions/0007-lazy-snapshot-loading.md)) | **Expose** (documented behaviour) | Getters may perform one fetch and raise connector errors; hiding it would misrepresent cost and failure modes |
 | Driver-specific custom settings | **Cannot hide** — abstract the entry point only | A device *is* its driver schema (§12) |
 
 ## 14. Migration & coexistence
@@ -505,7 +531,7 @@ alternative to the additive approach — see §15.
 | Completeness bar for v1 | Full coverage **vs.** 80% happy path + escape hatch for the rest | Recommend the latter; lowest cost |
 | Hide-vs-expose ledger (§13) | Ratify explicitly | The most consequential artifact |
 | Snapshot vs. WS for status freshness | re-snapshot now, WS as the real channel | §11.3; ties into ADR-0002 / ADR-0003 |
-| Read-snapshot ↔ write-handle revision bridge | How the change set resolves `_rev` at commit | §11.4; ties into ADR-0006 |
+| Read-snapshot ↔ write-handle bridge | ~~How the change set resolves `_rev` at commit~~ **Decided**: stage-time baselines + pre-commit compare ([ADR-0009](../inspect-app/decisions/0009-write-consistency.md)); post-commit targeted refresh ([ADR-0010](../inspect-app/decisions/0010-post-commit-snapshot-refresh.md)) | §11.4 |
 | Relationship to existing docs | Supersede `python-module-architecture.md` design goal **vs.** coexist as "current vs. target" | Currently coexists as the target picture |
 
 ## 16. Field-mapping reference (wire → domain)
@@ -540,9 +566,9 @@ discovery and turned into fixtures.
 
 ## 17. Relationship to existing documents
 
-- [`python-module-architecture.md`](./python-module-architecture.md) — describes
+- [`python-module-architecture.md`](../python-module-architecture.md) — describes
   the **current** mirror-VIP architecture. This document proposes the **target**.
-- [`inspect-app/`](./inspect-app/README.md) — `concepts.md` (the VIP wire-format
+- [`inspect-app/`](../inspect-app/README.md) — `concepts.md` (the VIP wire-format
   research, including the `collector` aggregate and `nGraphElements` store) and
   the ADRs (API paradigm, loading, WebSocket, async, testing, commit model). The
   decisions there apply package-wide and are referenced throughout this document.

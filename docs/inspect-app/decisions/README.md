@@ -18,11 +18,15 @@ accepted — to change a decision, add a new ADR that supersedes the old one
 | ADR                                                   | Title                                | Status     |
 | ----------------------------------------------------- | ------------------------------------ | ---------- |
 | [0001](./0001-api-paradigm.md)                        | API paradigm: data-driven            | Accepted   |
-| [0002](./0002-loading-and-state.md)                   | Loading & state model                | Accepted   |
+| [0002](./0002-loading-and-state.md)                   | Loading & state model                | Superseded by ADR-0007 |
 | [0003](./0003-websocket-subscriptions.md)             | WebSocket event subscriptions        | Deprecated |
 | [0004](./0004-async-strategy.md)                      | Async readiness & migration          | Accepted   |
 | [0005](./0005-e2e-testing.md)                         | E2E testing strategy                 | Accepted   |
 | [0006](./0006-commit-write-model.md)                  | Commit-style write model (change sets) | Accepted   |
+| [0007](./0007-lazy-snapshot-loading.md)               | Skeleton-first loading & lazy hydration | Accepted   |
+| [0008](./0008-collector-only-endpoints.md)            | Collector-only endpoint policy       | Accepted   |
+| [0009](./0009-write-consistency.md)                   | Write consistency (compare-and-commit) | Accepted   |
+| [0010](./0010-post-commit-snapshot-refresh.md)        | Post-commit snapshot refresh         | Accepted   |
 
 ## Template
 

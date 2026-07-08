@@ -1,7 +1,14 @@
 # ADR-0002: Loading & state model
 
-> Status: **Accepted**
+> Status: **Superseded by [ADR-0007](./0007-lazy-snapshot-loading.md)**
 > Date: 2026-06-15 · Deciders: Paul Winterstein, Jonas Scholl
+>
+> The per-read decision below ("always load the full aggregate") did not hold
+> up for large environments; a WebSocket capture of the Inspect UI later
+> confirmed collector projection/filter support and showed the vendor UI
+> loading skeleton-first. ADR-0007 replaces the per-read model with
+> skeleton-first loading + lazy hydration. The "no client-side cache across
+> reads/snapshots" part of this ADR still stands.
 
 ## Context
 

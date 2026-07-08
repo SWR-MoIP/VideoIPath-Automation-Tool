@@ -2,6 +2,11 @@
 
 > Status: **Accepted**
 > Date: 2026-06-18 · Deciders: Paul Winterstein, Jonas Scholl
+>
+> Concurrency handling for this write model is decided in
+> [ADR-0009](./0009-write-consistency.md) (compare-and-commit; the server is
+> last-writer-wins). Post-commit snapshot refresh is decided in
+> [ADR-0010](./0010-post-commit-snapshot-refresh.md).
 
 ## Context
 
@@ -98,8 +103,34 @@ This confirms the **gather-then-commit** mental model at the API boundary: the
 Inspect UI accumulates edits client-side, then sends one `updateTopology` payload
 with populated `replace*` / `add*` / `remove` sections. Reads use the matching
 **collector** namespace: `GET …/data/status/collector/**` returns the composed
-topology + status + services tree ([concepts.md §3.1](../concepts.md#31-collector-aggregate--primary-inspect-read-surface)).
+topology + status + services tree ([concepts.md §3.1](../concepts.md#31-collector-aggregate--primary-read-surface)).
 Edge keys (`fromId::toId`) and vertex ids are consistent between read and write.
+
+#### Response shape — successful commit (verified 2026-07-08, VideoIPath 2025.4.9)
+
+Edge `weight` change applied via `replaceEdges`:
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "external": null,
+        "id": "device-a.dev.module-1.port-out-1.out::device-b.dev.module-1.port-in-1.in",
+        "idx": 0,
+        "res": { "msg": [""], "ok": true }
+      }
+    ],
+    "res": { "msg": [], "ok": true },
+    "validation": {
+      "createIds": [],
+      "details": {},
+      "result": { "msg": [], "ok": true }
+    }
+  },
+  "header": { "ok": true, "code": "OK" }
+}
+```
 
 #### Response shape — failed commit (browser capture, 2026-06-18)
 
@@ -166,8 +197,9 @@ Per-entity validation details live in `data.validation.details`, keyed by id
 The package must treat a commit as failed when `data.res.ok` or
 `data.validation.result.ok` is `false`, even if `header.ok` is `true`. Revisions
 appear on validation detail entries (`rev`), not as a top-level `_rev` conflict
-like the existing `PATCH nGraphElements` path — **[VERIFY]** whether revision
-mismatch surfaces the same way on other failure modes.
+like the existing `PATCH nGraphElements` path. On 2025.4.9, `updateTopology` is
+**last-writer-wins** — a stale `_rev` in the payload is ignored
+([endpoints.md](../endpoints.md#post-restv2actionsstatuscollectorupdatetopology)).
 
 ### Write target — the `nGraphElements` config store (confirmed)
 
@@ -184,23 +216,28 @@ error *"A required edge was not found. (main)"* refers to this edge model. See
 
 This means the change-set write layer does **not** need new topology element
 models — it can reuse the existing ones for the persisted form, while the
-collector read aggregate keeps its own status-oriented shape. **[VERIFY]**
-whether `updateTopology` enforces `_rev` optimistic concurrency or is
-last-writer-wins.
+collector read aggregate keeps its own status-oriented shape. **Confirmed
+last-writer-wins** on 2025.4.9 — `updateTopology` does not enforce `_rev`
+checks; stale `_rev` in `replaceEdges` is ignored
+([endpoints.md](../endpoints.md#post-restv2actionsstatuscollectorupdatetopology)).
 
-What remains **[VERIFY]**:
+What remains unverified:
 
-- Whether the server exposes a **separate staging / change-set id** API, or
-  staging is purely client-side until this POST.
-- **Successful** commit response shape (`data.items` contents when `ok: true`).
-- Whether multi-category edits that pass validation can still **partially apply**
-  (the failed example returned empty `items`, suggesting reject-before-apply).
-- Other `…/actions/status/collector/*` endpoints (discard, validate-only, …).
-- Meaning of validation `status` codes (e.g. `-22`) and when `resolvable` is
-  `true`.
-- Cross-check against the
-  [Public API 2025 LTS](https://documenter.getpostman.com/view/11222813/2sBXihpCS8#intro)
-  (`Connections` / `Partial Connections` / `Import and Export`).
+- ~~Whether the server exposes a **separate staging / change-set id** API~~
+  **Confirmed client-side only** on 2025.4.9.
+- ~~**Successful** commit response shape~~ **Confirmed** (see above).
+- ~~**Partial apply** after validation~~ **Confirmed reject-before-apply**.
+- ~~Validation `status` codes and `resolvable`~~ **Confirmed** for booking-blocked
+  delete (`status: -22`, `resolvable: false`). `resolvable: true` not observed.
+- ~~`validateTopology` / `discardTopology` / `importTopology` / `exportTopology`~~
+  **Confirmed unregistered** on 2025.4.9 via
+  `GET /rest/v2/actions/status/collector/<name>` schema (empty `collector: {}`);
+  27+ POST payload variants tried. See
+  [endpoints.md — Action registration discovery](../endpoints.md#action-registration-discovery).
+- ~~Import / Export (preview)~~ **Confirmed unregistered** — empty data
+  namespaces and empty GET action schema.
+- Other `…/actions/status/collector/*` lookup endpoints — captured in
+  [endpoints.md](../endpoints.md).
 
 ## Options
 

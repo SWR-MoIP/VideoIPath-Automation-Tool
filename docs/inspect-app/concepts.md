@@ -1,6 +1,6 @@
 # Inspect App — Concepts & Technical Model
 
-> Status: **Draft** · Last updated: 2026-06-25
+> Status: **Draft** · Last updated: 2026-07-08
 >
 > This document captures what the *Inspect* app is, how it maps onto the
 > existing package, and which technical details still need to be verified
@@ -42,11 +42,20 @@ v2 API surface under the `status` namespace. The server composes reads from
 contract is mostly net-new** relative to what `app.topology` and
 `app.inventory` use today.
 
-**Reads** — one server-built aggregate:
+**Reads** — scoped queries against the collector tree
+([ADR-0007](./decisions/0007-lazy-snapshot-loading.md)):
 
+- The collector sub-paths accept `* where <expr>` filters, `limit N`, and deep
+  field projections — confirmed by a WebSocket capture of the Inspect UI, which
+  never loads the full tree (see
+  [endpoints.md — Collector Scoped Queries](./endpoints.md#collector-scoped-queries-captured-from-the-inspect-ui)).
+- Default loading model: a **skeleton** read (all devices without modules/ports
+  + all edges with a lean projection) followed by **lazy per-device hydration**
+  and section-level loads for services.
 - `GET /rest/v2/data/status/collector/**` → `data.status.collector` (§3.1)
-- Bundles topology nodes, inter-device edges, services/paths, status, and
-  security context in a single tree with `_items[]` collections.
+  remains the eager/fallback mode: the whole tree — topology nodes,
+  inter-device edges, services/paths, status, and security context — in a
+  single response with `_items[]` collections.
 
 **Writes** — one bulk action per commit:
 
@@ -102,12 +111,13 @@ How Inspect concepts map onto existing package concepts:
 | Device (inventory)     | Prerequisite — not part of collector; onboard via `config/devman/devices` | `InventoryDevice` (`apps/inventory`) |
 | Device (topology node) | Read: `collector.inspect.nodeStatus`; stored as `baseDevice` in `nGraphElements` | Store shape overlaps with Topology, but Inspect uses `InspectApiBaseDevice` |
 | Vertices / Edges       | Read: `nodeStatus` `vertexInfo` / `externalEdgesByDeviceKey`; stored as `ipVertex` / `codecVertex` / `unidirectionalEdge` in `nGraphElements` | Store shape overlaps with Topology, but Inspect uses `InspectApi*` nGraph DTOs |
+| Vertex tags            | Read: per-port `tagsInfo` on hydrated `nodeStatus`; editable form via `lookupInspectVertexByIds` (`assignedTags`, `fields.tags`, `fields.localAssignedTags`) | **Not in `nGraphElements`** — `app.topology` has no vertex-tag concept; server-side bindings live in `videoipath_docs.device_tags`, not the `ngraph` table (§3.4) |
 | Change set / commit    | `POST …/actions/status/collector/updateTopology` → writes `nGraphElements` ([ADR-0006](./decisions/0006-commit-write-model.md)) | _commit flow net-new; target store is existing `nGraphElements`_ |
 | Services / paths       | `collector.inspect.paths`, `pathDescriptions` on nodes/edges | _none — net-new_ |
 | Device / edge status   | Embedded in collector (`status`, `sa`/`severity`, bandwidth, PTP) | `inventory.model.device_status`, `status/network/*` — partial overlap |
 | Sync status            | `syncSeverity` on nodeStatus items                     | `TopologySynchronize` via `status/network/nGraphSyncStatus` |
-| Lookup / network actions | `lookupInspectDevice`, `lookupSyncInfo`, `addDevices`, `syncDevices` | request/response envelopes captured and modelled |
-| Connections / Partial connections | **[VERIFY]** — may relate to `pathDescriptions` / bookings | _none yet_ |
+| Lookup / network actions | `lookupInspectDevice`, `lookupInspectEdgesByIds`, `lookupInspectVertexByIds`, `lookupSyncInfo`, `addDevices`, `syncDevices` | request/response envelopes captured and modelled |
+| Connections / Partial connections | `collector.inspect.paths` + `conman.services`; linked via `serviceFields.bid` / `bookingId` in `pathDescriptions` ([endpoints.md](./endpoints.md#get-restv2datastatuscollectorinspectpaths)) | _read via collector + conman; no separate Connections REST on this instance_ |
 
 ### 3.1 Collector aggregate — primary read surface
 
@@ -165,19 +175,36 @@ elements to booked services.
 
 **Node live status** (`inspect.nodeStatus`): hierarchical `status` with
 `sa` / `severity` at device, module, port; plus `ptpDeviceStatus`, `syncSeverity`,
-`hasEndpoints`, domains, tags.
+`hasEndpoints`, domains, and tags. Device-level tags appear on the node itself
+(`tags`, `meta.tags`, `tagsInfo`); **vertex-level tag bindings** appear on
+hydrated ports (`tagsInfo` with `assigned` / `inherited` / `local` / `custom`
+subtrees — see §3.4). The skeleton projection only carries device-level tagging;
+port `tagsInfo` requires per-device hydration (`modules/*`).
 
 **Package implications:**
 
-- `app.inspect` uses `GET …/data/status/collector/**` as its canonical read
-  entry point.
+- `app.inspect` reads the collector through **scoped queries**
+  ([ADR-0007](./decisions/0007-lazy-snapshot-loading.md)): skeleton first
+  (`inspect/nodeStatus` with `modules/"_noId"`, `externalEdgesByDeviceKey`
+  with a lean projection), then per-device hydration (`modules/*` detail
+  projection) and section-level loads (`inspect/paths`). The full
+  `GET …/data/status/collector/**` fetch is the eager/fallback mode.
+- The collector query language is confirmed via UI capture: `* where <expr>`
+  (with `and`/`or`, `contains()`, `lower()`), `limit N`, field projections
+  with `/.../` up-navigation, `**` subtrees, and the `"_noId"`
+  expansion-suppressor (see
+  [endpoints.md](./endpoints.md#collector-scoped-queries-captured-from-the-inspect-ui)).
 - Edge keys and vertex ids from reads map directly onto `updateTopology` write
   payloads.
 - Commit validation references the same `bookingId`s visible in
   `pathDescriptions` (e.g. failed delete for an anonymized booking / main path
   edge).
-- **[VERIFY]** exact sub-paths behind the `/**` wildcard, projection/filter
-  support, and pagination for large topologies.
+- Scoped collector queries work as REST GETs when the URL fits within the server
+  URI limit ([endpoints.md](./endpoints.md#collector-scoped-queries-captured-from-the-inspect-ui)). The full UI
+  projection hits **HTTP 414**; use a trimmed skeleton projection or `/**`
+  fallback. Both `nodeStatus/<device-id>/…` and
+  `* where deviceId='…' limit 1/…` work for single-device hydration. Omitting
+  `where` does **not** require `limit`.
 
 ### 3.2 API planes — existing apps vs. Inspect
 
@@ -193,7 +220,7 @@ workflows:
 | ----- | ------- | ---- | ----- |
 | Config | `app.topology`, `app.inventory`, **Inspect (effective store)** | `GET …/data/config/…` | `PATCH …/data/config/…` (revisioned) or RPC |
 | Status | Inventory status reads, Inspect status reads | `GET …/data/status/…` | — |
-| Collector (facade) | `app.inspect` | `GET …/data/status/collector/**` (composed aggregate) | `POST …/actions/status/collector/updateTopology` → `nGraphElements` |
+| Collector (facade) | `app.inspect` | Scoped queries on `…/data/status/collector/…` (skeleton + hydration, ADR-0007); `GET …/**` as eager/fallback | `POST …/actions/status/collector/updateTopology` → `nGraphElements` |
 | Network actions | `app.inspect` device topology workflows | — | `POST …/actions/status/network/addDevices`, `POST …/actions/status/network/syncDevices` |
 
 So Inspect's read aggregate is status-namespace and net-new in shape, but its
@@ -201,6 +228,18 @@ writes are commit-time-validated bulk actions that land in the revisioned
 `config/network/nGraphElements` store (§3.3). The client gathers edits locally
 until commit; ADR-0006 accepts that there is no separate server-side change-set
 id for the verified `updateTopology` flow.
+
+**Endpoint policy** ([ADR-0008](./decisions/0008-collector-only-endpoints.md)):
+the Inspect package calls **only** the Inspect surface — collector data reads,
+collector actions, and the `addDevices`/`syncDevices` network actions. The
+config-plane row above is context, not a call path: the package never issues
+`GET`/`PATCH …/config/network/nGraphElements` (that stays `app.topology`'s
+surface). Consequence: no `_rev` is available to Inspect, and since
+`updateTopology` ignores revisions anyway (last-writer-wins, verified),
+concurrent-write detection is client-side compare-and-commit
+([ADR-0009](./decisions/0009-write-consistency.md)); after a commit the
+snapshot catches up via targeted scoped re-reads
+([ADR-0010](./decisions/0010-post-commit-snapshot-refresh.md)).
 
 The server can expose status-plane subscriptions, but WebSockets are out of
 scope for this package. Fresh status is obtained by explicit re-fetches
@@ -219,6 +258,11 @@ of truth** for topology that Inspect's `updateTopology` writes into. Its wire
 shape overlaps with the Topology app, but the Inspect package models it with
 standalone `InspectApi*` DTOs.
 
+> Documented here as store/background knowledge only — the package does **not**
+> read or write this endpoint at runtime
+> ([ADR-0008](./decisions/0008-collector-only-endpoints.md)). The persisted
+> element *shape* still matters: `updateTopology` `replace*` payloads carry it.
+
 | Field | Notes |
 | ----- | ----- |
 | `_id` / `_vid` | Element id; edges use the `fromId::toId` key (same as collector and `replaceEdges`) |
@@ -230,9 +274,9 @@ Element `type` values seen in capture:
 
 | `type` | Represents | Key fields |
 | ------ | ---------- | ---------- |
-| `baseDevice` | Topology device node | `maps[]` (`cType: "Topology"`, integer `x`/`y`), `iconType`, `sdpStrategy`, `isVirtual` |
-| `codecVertex` | Codec/SDI endpoint vertex | `vertexType` (`In`/`Out`), `codecFormat`, `useAsEndpoint`, `control`, SIPS/SDP fields |
-| `ipVertex` | Ethernet/IP port vertex (`.in` / `.out`) | `vertexType`, `gpid.pointId`, `supports*Cfg` capability flags |
+| `baseDevice` | Topology device node | `maps[]` (`cType: "Topology"`, integer `x`/`y`), `iconType`, `sdpStrategy`, `isVirtual`, `tags` (device-level only) |
+| `ipVertex` | Ethernet/IP port vertex (`.in` / `.out`) | `vertexType`, `gpid.pointId`, `supports*Cfg` capability flags — **not** vertex tag bindings (§3.4) |
+| `codecVertex` | Codec/SDI endpoint vertex | `vertexType` (`In`/`Out`), `codecFormat`, `useAsEndpoint`, `control`, SIPS/SDP fields — **not** vertex tag bindings (§3.4) |
 | `unidirectionalEdge` | Directed link/route between vertices | `fromId`, `toId`, `weight`, `capacity`, `bandwidth`, `redundancyMode`, `weightFactors`, `conflictPri` |
 
 **Write round-trip confirmed:** an anonymized edge edited via `updateTopology`
@@ -244,8 +288,35 @@ use `capacity: 1`.
 **Implication:** Inspect's underlying topology store is `nGraphElements`, but
 the package keeps a separate Inspect model namespace (`InspectApiBaseDevice`,
 `InspectApiIpVertex`, `InspectApiUnidirectionalEdge`, …). Do not reuse topology app
-model classes in Inspect DTOs. **[VERIFY]** whether `updateTopology` performs
-`_rev` checks server-side or last-writer-wins.
+model classes in Inspect DTOs. `updateTopology` is **last-writer-wins** — a
+stale `_rev` in the payload is ignored ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorupdatetopology)).
+
+### 3.4 Tagging — device vs. vertex (Inspect vs. Topology)
+
+Inspect distinguishes two tag scopes. This is a **key difference from
+`app.topology`**, which only models tags on topology **devices** (`baseDevice`
+entries in `nGraphElements`).
+
+| Scope | What is tagged | Topology / `nGraphElements` | Inspect read surface | Server storage |
+| ----- | -------------- | --------------------------- | -------------------- | -------------- |
+| **Device** | Topology node (`baseDevice`) | `tags` on the `baseDevice` item | `nodeStatus` `tags` / `meta.tags` / `tagsInfo`; `lookupInspectDevice` | `ngraph` / `nGraphElements` |
+| **Vertex** | Individual port vertex (`ipVertex`, `codecVertex`, …) | **Not present** — no vertex-tag field on persisted graph elements | Hydrated port `tagsInfo`; editable form in `lookupInspectVertexByIds` | `videoipath_docs.device_tags` (separate from `ngraph`) |
+
+**Implications for the package:**
+
+- `app.topology` reads/writes device tags via `nGraphElements` only. It has no
+  API for binding tags to a vertex id such as
+  `device-a.module-1.port-out-1.out`.
+- `app.inspect` must treat vertex tags as a **separate concern** from the
+  persisted graph element shape. Do not assume a vertex's `tags` array in an
+  `nGraphElements` `ipVertex` / `codecVertex` item (if present at all) is the
+  source of truth for tag bindings — confirmed empty in captures while
+  `lookupInspectVertexByIds` carries `assignedTags` and `fields.tags`.
+- Stage-time baselines and compare-and-commit for vertex edits must use
+  `lookupInspectVertexByIds` for tag fields ([ADR-0009](./decisions/0009-write-consistency.md)),
+  not `nGraphElements` or the collector skeleton.
+- Collector `tagInfo` provides tag → profile metadata for the aggregate; it does
+  not replace per-vertex `assignedTags` on the lookup response.
 
 ## 4. How the transport works today (recap)
 
@@ -255,13 +326,19 @@ So the new layer fits the existing patterns rather than reinventing them:
   sub-connectors: REST v2 (`GET`/`PATCH`/`POST`) and RPC (`POST /api/*`). Basic
   auth, gzip, per-method timeouts.
 - Each connector enforces an **allow-list of URL prefixes** (`ALLOWED_URLS` /
-  `ALLOWED_EXACT_MATCHES`). New Inspect endpoints must be added there.
+  `ALLOWED_EXACT_MATCHES`). New Inspect endpoints must be added there — but
+  only Inspect-surface prefixes; `config/network/nGraphElements` is not added
+  for the Inspect app ([ADR-0008](./decisions/0008-collector-only-endpoints.md)).
 - Responses are wrapped in a common envelope (`ResponseV2Get`/`…Patch`/`…Post`)
   with a `header` (`code`, `auth`, …) and a `data`/`result` body, validated by
   Pydantic.
 - Apps are **lazy-loaded** off `VideoIPathApp` and are **stateless**: every call
   re-fetches from the server (e.g. `topology.get_device` issues several `GET`s
-  and rebuilds the aggregate each time). Inspect should follow that pattern.
+  and rebuilds the aggregate each time). Inspect deviates deliberately: state
+  is **snapshot-scoped** — a skeleton is loaded up front, detail is lazily
+  hydrated into the same snapshot, and freshness means building a new snapshot
+  ([ADR-0007](./decisions/0007-lazy-snapshot-loading.md)). There is still no
+  cache across snapshots.
 - Inspect models live in two layers:
   - `apps/inspect/model` — `InspectApi*` transport DTOs for HTTP payloads
   - `apps/inspect/domain` and `apps/inspect/snapshot.py` — user-facing read
@@ -272,8 +349,13 @@ So the new layer fits the existing patterns rather than reinventing them:
 
 Two complementary sources: the **official reference** (authoritative for the
 documented surface) and **browser capture** (authoritative for what the Inspect
-GUI actually does, including undocumented calls). WebSocket frames can be useful
-product context, but they are out of scope for the package per ADR-0003.
+GUI actually does, including undocumented calls). WebSocket *subscriptions*
+stay out of scope for the package per ADR-0003, but captured WS frames are a
+first-class **discovery source**: the subscription `path`s address the same
+data tree as REST v2 and revealed the collector's query language and the UI's
+skeleton-first load strategy (see
+[endpoints.md — Collector Scoped Queries](./endpoints.md#collector-scoped-queries-captured-from-the-inspect-ui),
+[ADR-0007](./decisions/0007-lazy-snapshot-loading.md)).
 
 0. **Start from the official reference.** The
    [VideoIPath Public API 2025 LTS](https://documenter.getpostman.com/view/11222813/2sBXihpCS8#intro)
@@ -304,33 +386,53 @@ REST:
 - [x] Base path: Inspect uses `/rest/v2/` for collector read/write (`data/status/collector/**`, `actions/status/collector/updateTopology`)
 - [x] Service / monitoring aggregate: `GET /rest/v2/data/status/collector/**` → `data.status.collector` with `inspect.nodeStatus`, `inspect.paths`, `externalEdgesByDeviceKey`, `security`, `superProfiles`, `tagInfo` (§3.1)
 - [x] Drill-down: services linked via `pathDescriptions` on ports/edges (`deviceLevel` + `serviceLevel`) and `inspect.paths._items[]` (`bookingId`, path segments, `serviceFields`)
-- [ ] Collector sub-paths: exact URLs behind the `/**` wildcard; projection/filter/pagination support
-- [ ] Connections / Partial Connections: resource paths, shapes, lifecycle
+- [x] Collector sub-paths & query language: confirmed via Inspect UI WebSocket capture — `* where <expr>`, `limit N`, deep projections with `/.../` up-navigation, `**`, `"_noId"` expansion-suppressor; UI loads skeleton-first (`modules/"_noId"`) — decoded queries in [endpoints.md](./endpoints.md#collector-scoped-queries-captured-from-the-inspect-ui) ([ADR-0007](./decisions/0007-lazy-snapshot-loading.md))
+- [x] Scoped-query REST GET equivalence: confirmed for practical query lengths; full UI projection → HTTP 414 ([endpoints.md](./endpoints.md#collector-scoped-queries-captured-from-the-inspect-ui))
+- [x] Single-device hydration form: both `nodeStatus/<device-id>/…` and `* where deviceId='…' limit 1/…` work; prefer direct id
+- [x] Exact `"_noId"` semantics: subtree expansion suppressor → `modules: {}` at collection level, key omitted on single-device queries
+- [x] Populated `modules/*` detail payload: confirmed on synced devices; `syncSeverity=2` devices return empty modules until synced
+- [x] Skeleton vs. full aggregate: ~92 KB skeleton (27 devices + 40 edges) vs ~19 MB `/**` on this instance; `limit` not required when `where` is omitted
+- [x] Connections / Partial Connections: services via `collector.inspect.paths` + `conman.services`; `bid` ↔ `connection.id`
 - [x] Change set / commit endpoint: `POST /rest/v2/actions/status/collector/updateTopology` — bulk delta with `replaceDevices`, `replaceVertices`, `replaceEdges` (key `"fromId::toId"`), `replaceResourceTransforms`, `addExternalEdges`, `remove`, `force` ([ADR-0006](./decisions/0006-commit-write-model.md))
 - [x] Change set staging: client-side gather until `updateTopology`; no separate server-side change-set id for the verified flow (ADR-0006)
 - [x] Commit failure response: check `data.res.ok` / `data.validation.result.ok` (not `header.ok`); `validation.details[id]` carries `status`, `rev`, `resolvable`, `type`; failed delete example: `"A required edge was not found. (main)"`, `items: []` ([ADR-0006](./decisions/0006-commit-write-model.md))
 - [x] Commit success response for no-op: `data.items: []`, `data.res.ok: true`, `data.validation.result.ok: true` ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorupdatetopology))
-- [ ] Commit success response with real applied changes: `data.items` contents when validation passes and changes are applied
-- [ ] Commit semantics: partial apply after validation pass, discard/rollback of abandoned client-side change sets
-- [ ] Import / Export (preview): scope and payload format
+- [x] Commit success response with real applied changes: `data.items[]` with `{id, idx, res.ok}` per applied entity ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorupdatetopology))
+- [x] Commit semantics: reject-before-apply; invalid ops return `items: []`; client-side staging only (no server change-set id)
+- [x] Import / Export (preview): **unregistered** on 2025.4.9 — empty data namespaces; GET action schema empty; POST → `No action node in request`
 - [x] Write/action endpoint: `/rest/v2/actions/status/collector/updateTopology`
 - [x] Collector action payloads captured and modelled: `/rest/v2/actions/status/collector/lookupInspectDevice`, `/rest/v2/actions/status/collector/lookupSyncInfo`
 - [x] Network action request shapes, normal action responses, and validation-error responses captured: `/rest/v2/actions/status/network/addDevices`, `/rest/v2/actions/status/network/syncDevices`
 - [x] Config store / write target: `updateTopology` lands in `GET /rest/v2/data/config/network/nGraphElements/**` (`_items[]`, `_rev`, `type` ∈ `baseDevice` / `codecVertex` / `ipVertex` / `unidirectionalEdge`); model with standalone `InspectApi*` DTOs (§3.3)
-- [ ] `_rev` handling on commit: does `updateTopology` enforce optimistic concurrency or last-writer-wins?
-- [ ] Version gating: first VideoIPath version that exposes each endpoint
+- [x] `_rev` handling on commit: last-writer-wins; `_rev` in `replaceEdges` payload is ignored
+- [x] Version gating: collector read/write and `updateTopology` verified on **2025.4.9**
 - [x] DTO coverage: add typed request/response models for captured lookup, action result, and validation-error endpoint payloads in [endpoints.md](./endpoints.md)
+
+Write consistency & post-commit refresh ([ADR-0009](./decisions/0009-write-consistency.md), [ADR-0010](./decisions/0010-post-commit-snapshot-refresh.md)) — verified live on 2025.4.9 (2026-07-08):
+
+- [x] Persisted-element lookups: `lookupInspectEdgesByIds` returns the **full persisted edge form** (batched); `lookupInspectVertexById`/`…ByIds` and `lookupInspectDevice` return editable forms; **no `_rev` in any lookup response**; `lookupGraphElement` does **not** exist; `lookupNodeInfo`/`lookupEdgeInfo`/`lookupDeviceVertices` are display-oriented ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorlookupinspectedgesbyids))
+- [x] Vertex tag bindings: separate from `nGraphElements` — stored server-side in `videoipath_docs.device_tags`; surfaced on `lookupInspectVertexByIds` (`assignedTags`, `fields.tags`, `fields.localAssignedTags`) and hydrated port `tagsInfo` in `nodeStatus`; not modelled by `app.topology` (§3.4)
+- [x] UI edit/commit flows avoid `nGraphElements`: the Inspect UI bundle contains zero references; the edge edit flow calls `lookupInspectEdgesByIds` with both pair directions ([ADR-0008](./decisions/0008-collector-only-endpoints.md))
+- [x] Batched lookups for compare-and-commit baselines: `…ByIds` actions take id lists natively
+- [x] Direct edge-pair addressing for targeted refresh: `externalEdgesByDeviceKey/<deviceA::deviceB>/<projection>` returns the single pair item
+- [ ] Collector propagation delay: time between `updateTopology` OK and the change being visible in collector reads (drives the ADR-0010 retry window) — needs a live write test (coordinate nudge + revert)
+- [ ] Re-check on every server upgrade: does `updateTopology` gain `_rev` enforcement (would allow replacing client-side compare-and-commit)
 
 ## 6. Open questions
 
-- **Collector sub-paths and scaling** — exact URLs behind `/**`; projection,
-  filtering, and pagination for large topologies
-  ([ADR-0002](./decisions/0002-loading-and-state.md)).
-- **Commit model** ([ADR-0006](./decisions/0006-commit-write-model.md)) —
-  successful applied-change response shape (`data.items`); all-or-nothing apply
-  after validation; meaning of validation `status` codes and `resolvable: true`
-  cases.
-- **Commit concurrency** — `updateTopology` writes bump `nGraphElements` `_rev`
-  (§3.3); does the action enforce `_rev` checks or last-writer-wins?
-- **Connections / Partial Connections** — relationship to `pathDescriptions`,
-  bookings, and the Public API `Connections` resources.
+_All VERIFY items are resolved (results merged into
+[endpoints.md](./endpoints.md) and the §5.1 checklist) or documented as
+confirmed limitations / unregistered stubs — with one exception:_
+
+- **Collector propagation delay after a commit**
+  ([ADR-0010](./decisions/0010-post-commit-snapshot-refresh.md)) — requires a
+  live write test (coordinate nudge + revert) to size the post-commit retry
+  window.
+
+Remaining follow-up (only if a future server version registers new actions):
+
+- Re-run `GET /rest/v2/actions/status/collector/<actionName>` schema check after
+  upgrade; probe POST only for newly registered actions — and re-check whether
+  `updateTopology` gains `_rev` enforcement (ADR-0009 would be revisited).
+- Capture a `resolvable: true` validation case if one appears in the UI during
+  normal operator workflows.

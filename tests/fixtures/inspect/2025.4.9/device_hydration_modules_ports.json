@@ -1,0 +1,73 @@
+{
+  "data": {
+    "status": {
+      "collector": {
+        "inspect": {
+          "nodeStatus": {
+            "_items": [
+              {
+                "_id": "device-a",
+                "_vid": "device-a",
+                "modules": {
+                  "device-a.dev.0": {
+                    "ports": {
+                      "device-a.dev.module-1.port-out-1": {
+                        "descriptor": {
+                          "label": "port-out-1 (out)"
+                        },
+                        "pid": "device-a.dev.module-1.port-out-1"
+                      }
+                    }
+                  },
+                  "device-a.dev.uuid-0001": {
+                    "ports": {
+                      "device-a.dev.uuid-0001.S00000001-0000-4000-8000-000000000001": {
+                        "descriptor": {
+                          "label": "Example Stream"
+                        },
+                        "pid": "device-a.dev.uuid-0001.S00000001-0000-4000-8000-000000000001"
+                      },
+                      "device-a.dev.uuid-0001.S00000002-0000-4000-8000-000000000002": {
+                        "descriptor": {
+                          "label": "Example Stream"
+                        },
+                        "pid": "device-a.dev.uuid-0001.S00000002-0000-4000-8000-000000000002"
+                      }
+                    }
+                  },
+                  "device-a.dev.uuid-0002": {
+                    "ports": {
+                      "device-a.dev.uuid-0002.S00000003-0000-4000-8000-000000000003": {
+                        "descriptor": {
+                          "label": "Example Pipeline"
+                        },
+                        "pid": "device-a.dev.uuid-0002.S00000003-0000-4000-8000-000000000003"
+                      },
+                      "device-a.dev.uuid-0002.S00000004-0000-4000-8000-000000000004": {
+                        "descriptor": {
+                          "label": "Example Pipeline"
+                        },
+                        "pid": "device-a.dev.uuid-0002.S00000004-0000-4000-8000-000000000004"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

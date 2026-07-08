@@ -1,0 +1,75 @@
+{
+  "data": {
+    "status": {
+      "collector": {
+        "inspect": {
+          "paths": {
+            "_items": [
+              {
+                "_id": "booking-1001::main",
+                "_vid": "_:booking-1001::main",
+                "serviceFields": {
+                  "bid": "booking-1001",
+                  "from": "topo:device-a.1.101S",
+                  "isMain": true,
+                  "to": "topo:device-b.uuid-0001.R00000001-0000-4000-8000-000000000001"
+                }
+              },
+              {
+                "_id": "booking-1001::spare",
+                "_vid": "_:booking-1001::spare",
+                "serviceFields": {
+                  "bid": "booking-1001",
+                  "from": "topo:device-a.1.101S",
+                  "isMain": false,
+                  "to": "topo:device-b.uuid-0001.R00000001-0000-4000-8000-000000000001"
+                }
+              },
+              {
+                "_id": "booking-1002::main",
+                "_vid": "_:booking-1002::main",
+                "serviceFields": {
+                  "bid": "booking-1002",
+                  "from": "topo:device-b.uuid-0001.S00000005-0000-4000-8000-000000000005",
+                  "isMain": true,
+                  "to": "topo:device-c.3.3000000"
+                }
+              },
+              {
+                "_id": "booking-1002::spare",
+                "_vid": "_:booking-1002::spare",
+                "serviceFields": {
+                  "bid": "booking-1002",
+                  "from": "topo:device-b.uuid-0001.S00000005-0000-4000-8000-000000000005",
+                  "isMain": false,
+                  "to": "topo:device-c.3.3000000"
+                }
+              },
+              {
+                "_id": "booking-1003::main",
+                "_vid": "_:booking-1003::main",
+                "serviceFields": {
+                  "bid": "booking-1003",
+                  "from": "topo:device-b.uuid-0001.S00000006-0000-4000-8000-000000000006",
+                  "isMain": true,
+                  "to": "topo:device-c.3.5000000"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

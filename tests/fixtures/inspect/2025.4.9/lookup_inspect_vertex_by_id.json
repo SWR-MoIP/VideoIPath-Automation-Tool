@@ -1,0 +1,60 @@
+{
+  "data": {
+    "assignedTags": {
+      "all": [],
+      "inherited": {},
+      "inheritedConflict": false,
+      "local": {}
+    },
+    "context": {
+      "devicePid": "device-a",
+      "modulePid": "device-a.dev.module-1",
+      "portPid": "device-a.dev.module-1.port-out-1"
+    },
+    "customSchemas": {},
+    "fields": {
+      "active": true,
+      "controlProps": null,
+      "custom": {},
+      "desc": "",
+      "destinationMonitorLeader": false,
+      "extraAlertFilters": [],
+      "label": "Port A (out)",
+      "localAssignedTags": [],
+      "queueable": false,
+      "sipsMode": "NONE",
+      "tags": [],
+      "typeFields": {
+        "ipAddress": null,
+        "ipNetmask": null,
+        "public": false,
+        "supportsCpipeCfg": false,
+        "supportsIgmpCfg": false,
+        "supportsMacForwardingCfg": false,
+        "supportsNsoCfg": false,
+        "supportsOpenflowCfg": false,
+        "supportsStaticIgmpCfg": false,
+        "supportsVlanCfg": false,
+        "supportsVplsCfg": false,
+        "type": "ip",
+        "vlanId": null,
+        "vrfId": null
+      },
+      "useAsEndpoint": false
+    },
+    "id": "device-a.module-1.port-out-1.out",
+    "isVirtual": false,
+    "vertexType": "Out"
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

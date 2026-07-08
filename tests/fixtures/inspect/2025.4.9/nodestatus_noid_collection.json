@@ -1,0 +1,265 @@
+{
+  "data": {
+    "status": {
+      "collector": {
+        "inspect": {
+          "nodeStatus": {
+            "_items": [
+              {
+                "_id": "device-h",
+                "_vid": "device-h",
+                "descriptor": {
+                  "label": "Example Device A"
+                },
+                "deviceId": "device-h"
+              },
+              {
+                "_id": "device-i",
+                "_vid": "device-i",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-i"
+              },
+              {
+                "_id": "device-j",
+                "_vid": "device-j",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-j"
+              },
+              {
+                "_id": "device-a",
+                "_vid": "device-a",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-a"
+              },
+              {
+                "_id": "device-k",
+                "_vid": "device-k",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-k"
+              },
+              {
+                "_id": "device-b",
+                "_vid": "device-b",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-b"
+              },
+              {
+                "_id": "device-l",
+                "_vid": "device-l",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-l"
+              },
+              {
+                "_id": "device-m",
+                "_vid": "device-m",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-m"
+              },
+              {
+                "_id": "device-n",
+                "_vid": "device-n",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-n"
+              },
+              {
+                "_id": "device-o",
+                "_vid": "device-o",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-o"
+              },
+              {
+                "_id": "device-p",
+                "_vid": "device-p",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-p"
+              },
+              {
+                "_id": "device-q",
+                "_vid": "device-q",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-q"
+              },
+              {
+                "_id": "device-r",
+                "_vid": "device-r",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-r"
+              },
+              {
+                "_id": "device-s",
+                "_vid": "device-s",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-s"
+              },
+              {
+                "_id": "device-c",
+                "_vid": "device-c",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-c"
+              },
+              {
+                "_id": "device-t",
+                "_vid": "device-t",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-t"
+              },
+              {
+                "_id": "device-u",
+                "_vid": "device-u",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-u"
+              },
+              {
+                "_id": "device-v",
+                "_vid": "device-v",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-v"
+              },
+              {
+                "_id": "device-w",
+                "_vid": "device-w",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-w"
+              },
+              {
+                "_id": "device-x",
+                "_vid": "device-x",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-x"
+              },
+              {
+                "_id": "device-y",
+                "_vid": "device-y",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-y"
+              },
+              {
+                "_id": "device-z",
+                "_vid": "device-z",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-z"
+              },
+              {
+                "_id": "device-1",
+                "_vid": "device-1",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-1"
+              },
+              {
+                "_id": "device-2",
+                "_vid": "device-2",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-2"
+              },
+              {
+                "_id": "device-d",
+                "_vid": "device-d",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-d"
+              },
+              {
+                "_id": "device-e",
+                "_vid": "device-e",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-e"
+              },
+              {
+                "_id": "device-f",
+                "_vid": "device-f",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-f"
+              },
+              {
+                "_id": "device-g",
+                "_vid": "device-g",
+                "descriptor": {
+                  "label": "Example Device"
+                },
+                "deviceId": "device-g"
+              },
+              {
+                "_id": "virtual-0",
+                "_vid": "virtual-0",
+                "descriptor": {
+                  "label": "Virtual Device 1"
+                },
+                "deviceId": "virtual.0"
+              },
+              {
+                "_id": "virtual-1",
+                "_vid": "virtual-1",
+                "descriptor": {
+                  "label": "Virtual Device 1"
+                },
+                "deviceId": "virtual.1"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

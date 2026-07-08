@@ -20,23 +20,32 @@ Wire-shape examples and endpoint references live in
 
 ```mermaid
 flowchart LR
-    Http[HTTP collector response] --> ApiDto[InspectApiCollectorResponse]
-    ApiDto --> Snapshot[InspectSnapshot]
+    Skeleton[Skeleton fetch: devices + edges] --> Snapshot[InspectSnapshot]
     Snapshot --> Device[InspectDevice]
+    Device -- unloaded property --> Hydrate[Per-device detail fetch]
+    Hydrate -- merged into state --> Snapshot
     Device --> Ports[InspectPort]
     Device --> Edges[InspectEdge]
     Device --> Services[InspectService]
 ```
 
+A snapshot is built **skeleton-first**
+([ADR-0007](./decisions/0007-lazy-snapshot-loading.md)): two parallel scoped
+collector queries load all devices (without modules/ports) and all external
+edges (lean projection). Detail is **lazily hydrated** — accessing an unloaded
+property fetches that one device's full `nodeStatus` subtree (or, for
+services, the `inspect/paths` section once) and merges it into the snapshot's
+internal state. The concrete queries are documented in
+[endpoints.md](./endpoints.md#collector-scoped-queries-captured-from-the-inspect-ui).
+
 Typical read flow:
 
 ```python
-response = InspectApiCollectorResponse.model_validate(payload)
-snapshot = InspectSnapshot.from_response(response)
-device = snapshot.get_device_by_id("device-a")
-ports = device.ports
-edges = device.edges
-services = device.services
+snapshot = app.inspect.get_snapshot()          # skeleton fetch (devices + edges)
+device = snapshot.get_device_by_id("device-a") # local: skeleton-backed
+ports = device.ports          # first access: hydrates device-a, then local
+edges = device.edges          # local: edge skeleton
+services = device.services    # first access: loads the paths section, then local
 linked = device.linked_devices
 
 port = ports[0]
@@ -49,8 +58,21 @@ Relation getters resolve full domain objects from snapshot indexes. Repeated
 access returns the same cached instance for a given device, port, edge, or
 service.
 
-Refresh data by fetching a new collector response and building a new snapshot.
-Relation getters never perform hidden HTTP requests.
+The loading contract:
+
+- A getter performs **at most one hydration fetch** per entity (device
+  subtree) or section (services, maintenance bookings, …); after that, access
+  is local. Hydrated data is merged into the same snapshot state and indexes.
+- Because hydration is HTTP, touching an unloaded property can add latency and
+  raise connector errors — this is deliberate, documented behaviour.
+- Iterating detail over many devices hydrates one device per iteration (N+1);
+  use bulk preload helpers (e.g. `snapshot.preload_devices(...)` /
+  `get_devices(detail=True)`) for that pattern.
+- The snapshot is **not** a single point in time: skeleton and hydrated
+  subtrees carry their own fetch timestamps.
+
+Refresh data by building a new snapshot; the state accretes within one
+snapshot's lifetime but is never reused across snapshots.
 
 ## Mental Model
 
@@ -108,8 +130,29 @@ The useful Inspect content is under `data.status.collector`.
 ```
 
 VideoIPath collections use `_items`. Transport DTOs preserve that wire shape.
-`InspectSnapshot` indexes the parsed collector data once and exposes user-facing
-objects from those indexes.
+`InspectSnapshot` indexes the skeleton data at construction and extends its
+indexes incrementally as entities and sections are hydrated. Scoped queries
+return the same wire shapes as the full aggregate, just filtered/projected —
+one set of DTOs covers both (skeleton items simply have `modules: {}` and
+omitted fields).
+
+## Loaded vs. Unloaded State
+
+The snapshot tracks, per device and per section, whether detail has been
+hydrated and when it was fetched.
+
+| Data | Backing | Loaded when |
+| --- | --- | --- |
+| Device identity, `label`, `pid`, `coordinates`, icon/meta, `status`, `sync_severity`, `tags` | Device skeleton query | Snapshot construction |
+| Edge connectivity, endpoint ports/labels, status severities | Edge skeleton query | Snapshot construction |
+| Device `ports` (modules, port status, `vertexInfo`, port `tagsInfo`, PTP), port-level path drill-down | Per-device `nodeStatus` subtree (`modules/*` projection) | First access on that device |
+| `services`, service path structures | `inspect/paths` section query | First access to any service data |
+| Maintenance bookings, super profiles, tag info | Section queries | First access, if exposed |
+| Edge bandwidth values, edge `pathDescriptions` | Full per-pair edge shape | Not in the skeleton; loaded with the owning section/entity detail |
+
+An eager snapshot (`load="full"`, one `GET …/collector/**`) starts fully
+hydrated; fixture-built snapshots used in offline tests behave the same, with
+lazy loading inert.
 
 ## User-Facing Domain Objects
 
@@ -152,6 +195,7 @@ external edge to another device.
 | `module_id` | Owning module |
 | `status` | Port status summary |
 | `vertex_id` | Linked topology vertex when available |
+| `tags` | Vertex tag bindings when hydrated (`tagsInfo` from `nodeStatus`) |
 | `edge` | External edge when this port connects to another device; otherwise `None` |
 
 ### `InspectEdge`
@@ -392,6 +436,40 @@ Action endpoints return focused views for UI workflows.
 }
 ```
 
+`lookupInspectVertexByIds` returns the editable vertex form, including **vertex
+tag bindings** (not available from `nGraphElements` or `app.topology`):
+
+```json
+{
+  "data": {
+    "device-a.module-1.port-out-1.out": {
+      "assignedTags": {
+        "all": ["#example-tag"],
+        "inherited": {},
+        "inheritedConflict": false,
+        "local": { "#example-tag": { "label": "#example-tag", "path": [] } }
+      },
+      "context": {
+        "devicePid": "device-a",
+        "modulePid": "device-a.dev.module-1",
+        "portPid": "device-a.dev.module-1.port-out-1"
+      },
+      "fields": {
+        "label": "Port A (out)",
+        "localAssignedTags": ["#example-tag"],
+        "tags": ["#example-tag"],
+        "typeFields": { "type": "ip" }
+      },
+      "id": "device-a.module-1.port-out-1.out",
+      "vertexType": "Out"
+    }
+  }
+}
+```
+
+This is the stage-time baseline for vertex tag fields in compare-and-commit
+([ADR-0009](./decisions/0009-write-consistency.md)).
+
 `lookupSyncInfo` returns per-device sync differences:
 
 ```json
@@ -436,8 +514,19 @@ returned. Those responses contain only the REST header with validation details.
 
 The collector snapshot is a status view. Committed Inspect topology data is stored
 in `config.network.nGraphElements._items[]`. Each item has an ID, optional
-revision, display descriptors, tags, and a `type` value that tells callers which
+revision, display descriptors, and a `type` value that tells callers which
 shape to parse.
+
+> **Vertex tags are not persisted here.** Device-level tags live on `baseDevice`
+> items, but bindings of tags to individual vertices (`ipVertex`, `codecVertex`,
+> …) are stored server-side in `videoipath_docs.device_tags`, not in the
+> `ngraph` / `nGraphElements` store. `app.topology` therefore has no vertex-tag
+> concept. Inspect reads vertex tags from hydrated port `tagsInfo` in
+> `nodeStatus` and from `lookupInspectVertexByIds` (`assignedTags`,
+> `fields.tags`, `fields.localAssignedTags`) — see
+> [concepts.md §3.4](./concepts.md#34-tagging--device-vs-vertex-inspect-vs-topology).
+> A `tags` field may appear on vertex elements in `nGraphElements` wire examples
+> but is not the authoritative store for vertex tag bindings.
 
 ```mermaid
 flowchart LR
@@ -578,6 +667,51 @@ response.header.ok and response.data.res.ok and response.data.validation.result.
 
 Validation failures can still arrive with `header.ok == true`, so callers must
 inspect `data.res`, `data.validation.result`, and `data.validation.details`.
+
+### Consistency Against Concurrent Writers
+
+`updateTopology` enforces no revisions (last-writer-wins), `replace*` entries
+are full-object upserts, and collector reads carry no `_rev` — so the change
+set protects callers itself
+([ADR-0009](./decisions/0009-write-consistency.md)):
+
+- **Staging an entity fetches its baseline**: the current form, read via
+  Inspect-surface lookups (`lookupInspectDevice` for devices,
+  `lookupInspectVertexByIds` for vertices, `lookupInspectEdgesByIds` for edges
+  — the latter returns the full persisted edge form, batched; see
+  [endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorlookupinspectedgesbyids)).
+  The caller's mutations are applied on top of the baseline, so the committed
+  payload never clobbers fields built from stale state.
+- **`commit()` re-checks before posting**: the touched entities are re-read
+  and compared against their baselines; any third-party change aborts the whole
+  commit with a typed conflict error (entity ids + field diffs). Skipping the
+  check is an explicit opt-in (deliberate last-writer-wins).
+- The check is **detection, not enforcement** — a small race window between
+  re-read and POST remains; the server offers nothing stronger on the Inspect
+  surface.
+
+Snapshot data is never used as a baseline — it is a read projection without
+revisions, possibly stale by design (lazy hydration).
+
+### Snapshot Refresh After a Commit
+
+A successful commit leaves the caller's `InspectSnapshot` stale exactly where
+the change set touched it. Instead of a full re-snapshot (~MBs), the snapshot
+catches up with **targeted scoped re-reads**
+([ADR-0010](./decisions/0010-post-commit-snapshot-refresh.md)):
+
+- removed entities are dropped from the indexes locally;
+- affected devices and edge pairs (derived from the change-set keys and the
+  commit response `items[]`) are re-fetched with the same per-device /
+  per-pair queries the lazy-hydration path uses, replacing their records and
+  fetch timestamps;
+- loaded sections (e.g. services) are marked stale and re-load lazily on next
+  access;
+- the refresh verifies the committed values are visible and retries briefly if
+  the collector projection lags the config store.
+
+A failed commit changes nothing server-side (reject-before-apply), so the
+snapshot is left untouched.
 
 ## Python Module Layout
 

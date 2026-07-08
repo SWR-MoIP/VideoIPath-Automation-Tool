@@ -17,10 +17,18 @@ which makes WebSocket support unnecessary for the package's scope.
 The [Public API 2025 LTS](https://documenter.getpostman.com/view/11222813/2sBXihpCS8#intro)
 reference **confirms** the high-level model: the `status` plane is "frequently
 updated and a good candidate for subscriptions", and subscription handling uses
-**event-based (delta) change reporting** from server to client. So the *shape*
-(deltas over a persistent channel on the status plane) is settled; the **exact
-protocol details** (URL, auth handshake, subscribe message, concrete frame
-format, heartbeat, reconnect) remain **[VERIFY]** — capture them per
+**event-based (delta) change reporting** from server to client. Protocol details
+verified on 2025.4.9 ([endpoints.md — subscription transport](../endpoints.md#observed-subscription-transport-reference-only--out-of-package-scope)):
+
+| Item | Value |
+| ---- | ----- |
+| URL | `{ws\|wss}://<host>/rest/v2/sessions/me/ws?exclusive=false` |
+| Auth | Session cookies on handshake |
+| Subscribe | `{"channel":"subsc","messageId":N,"path":"…","id":"<uuid>"}` |
+| Reply | `{"channel":"subsc","id":"…","messageId":N,"payload":{"_id":"…","_ver":[1,1],"data":{…}}}` |
+| Unsubscribe | `{"channel":"unsubsc","messageId":N,"id":"<uuid>"}` |
+
+Captured frames also in `websocket-messages.txt`. See
 [concepts.md §5](../concepts.md#5-endpoint-discovery--how-to-fill-in-the-verify-gaps).
 
 ## Options
