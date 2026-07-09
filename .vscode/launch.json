@@ -2,13 +2,71 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Tests",
+      "name": "Unit Tests",
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "cwd": "${workspaceFolder}",
       "args": [
-        "-v"
+        "-m",
+        "not e2e",
+        "--ignore=tests/e2e"
       ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "E2E Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "-m",
+        "e2e",
+        "tests/e2e",
+        "--no-cov"
+      ],
+      "env": {
+        "VIPAT_E2E_ENABLED": "1"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Unit Tests (current file)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "-m",
+        "not e2e",
+        "--ignore=tests/e2e",
+        "${file}"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "E2E Tests (current file)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "-m",
+        "e2e",
+        "tests/e2e",
+        "--no-cov",
+        "${file}"
+      ],
+      "env": {
+        "VIPAT_E2E_ENABLED": "1"
+      },
+      "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal"
     }
   ]

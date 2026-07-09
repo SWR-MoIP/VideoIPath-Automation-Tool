@@ -52,6 +52,59 @@ gitGraph
     commit
 ```
 
+## Testing
+
+Tests use **pytest**. Install dev and test dependencies first:
+
+```bash
+poetry install --with dev,test
+```
+
+### Unit and e2e suites
+
+The suite is split into offline **unit tests** and developer-run **e2e tests** against a live VideoIPath instance:
+
+| | Unit | E2E |
+|---|---|---|
+| Location | `tests/` (except `tests/e2e/`) | `tests/e2e/` |
+| Marker | _(none)_ | `@pytest.mark.e2e` |
+| Environment | Dummy `VIPAT_*` values in `tests/conftest.py` | Project root `.env` (see `.env.template`) |
+| CI / default run | yes | no |
+
+**Commands** (prefer these over bare `pytest`):
+
+```bash
+poetry run test-unit    # offline suite; same as CI
+poetry run test-e2e     # live-server suite
+poetry run test     # unit, then e2e (stops on first failure)
+
+# Single file or test — extra args pass through
+poetry run test-unit tests/validators/test_device_id.py
+poetry run test-e2e tests/e2e/inspect/test_e2e_leaf_spine.py::test_name
+```
+
+`poetry run pytest` also runs unit tests only (e2e is excluded via `addopts` in `pyproject.toml`). All default runs report coverage on `src/`.
+
+### E2E setup
+
+1. Copy `.env.template` to `.env` (gitignored) and set your server connection variables (`VIPAT_VIDEOIPATH_SERVER_ADDRESS`, credentials, etc.).
+2. Run `poetry run test-e2e` or `poetry run test` — connection vars are loaded from `.env` automatically; no extra env vars on the command line.
+
+E2E writes are namespaced (`E2E-` label prefix, `vipat-e2e` tag) so a shared dev instance stays safe.
+
+### VS Code
+
+Launch configs in `.vscode/launch.json`:
+
+- **Unit Tests** / **Unit Tests (current file)** — offline suite
+- **E2E Tests** / **E2E Tests (current file)** — live-server suite (loads `.env`, uses the project `.venv`)
+
+Or run **Tests** from `.vscode/tasks.json` (`poetry run test`).
+
+### Test data
+
+Committed fixtures and examples must be anonymized — see `AGENTS.md` for placeholder conventions.
+
 ## Publishing / Releasing new Package Versions
 
 In order to publish a new version of the package, update the version in the `pyproject.toml` and create a new GitHub Release associated with a version tag. The release notes should contain all relevant changes, especially breaking changes, features & bug fixes.

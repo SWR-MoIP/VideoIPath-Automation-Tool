@@ -34,11 +34,21 @@ Inspect fixtures can be anonymized with `scripts/anonymize_inspect_fixtures.py` 
 # Install all dependencies (including dev and test groups)
 poetry install --with dev,test
 
-# Run all tests
-poetry run pytest
+# Run unit tests (offline; same as CI default)
+poetry run test-unit
 
-# Run a single test file
-poetry run pytest tests/validators/test_device_id.py
+# Run e2e tests against a live server (loads connection vars from .env — see .env.template)
+poetry run test-e2e
+
+# Run unit then e2e sequentially
+poetry run test
+
+# Single file or test (extra args pass through)
+poetry run test-unit tests/validators/test_device_id.py
+poetry run test-e2e tests/e2e/inspect/test_e2e_leaf_spine.py::test_name
+
+# Bare pytest also runs unit tests only (e2e excluded via pyproject addopts)
+poetry run pytest
 
 # Lint with auto-fix
 poetry run ruff check --fix src/ tests/
@@ -116,7 +126,7 @@ Driver schemas (Pydantic models for device `custom_settings`) are auto-generated
 
 ### Settings and environment variables
 
-All configuration is loaded via `Settings` (`settings.py`, backed by `pydantic-settings`). Variables are prefixed `VIPAT_`. Copy `.env.example` to `.env` for local development. Tests use `tests/.env.test`.
+All configuration is loaded via `Settings` (`settings.py`, backed by `pydantic-settings`). Variables are prefixed `VIPAT_`. Copy `.env.template` to `.env` for local development and e2e tests (gitignored). Unit tests set dummy `VIPAT_*` values in `tests/conftest.py`.
 
 Key variables:
 | Variable | Default | Notes |

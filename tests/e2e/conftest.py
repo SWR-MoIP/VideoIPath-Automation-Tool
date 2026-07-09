@@ -1,9 +1,12 @@
 """Gating and shared fixtures for the developer-run live-server E2E suite ([ADR-0005]).
 
 These tests are excluded by default (``-m "not e2e"`` in ``pyproject.toml``) and only run when:
-  * you pass ``-m e2e`` on the command line, **and**
-  * ``VIPAT_E2E_ENABLED=1`` is set (put it in ``tests/.env.test`` next to the connection vars), **and**
+  * you invoke an e2e entry point (``poetry run test-e2e``, ``poetry run test``, or VS Code **E2E Tests**), **and**
+  * connection vars are set in the project root ``.env`` (copy from ``.env.template``), **and**
   * the target server is a verified version (>= 2025.4).
+
+E2e entry points load ``.env`` and enable the suite automatically. E2e runs never collect coverage
+(``--no-cov``).
 
 Everything the suite writes is namespaced (``E2E-`` label prefix + ``vipat-e2e`` tag) so a shared
 local instance is safe: the scenario teardown removes only that namespace.
@@ -17,6 +20,9 @@ import pytest
 
 from videoipath_automation_tool.apps.inspect.inspect_app import _MIN_VERIFIED_VERSION, _parse_version
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
+from vipat_cli_scripts.project_env import load_project_env
+
+load_project_env()
 
 
 def _e2e_enabled() -> bool:
@@ -25,9 +31,10 @@ def _e2e_enabled() -> bool:
 
 @pytest.fixture(scope="session")
 def app() -> VideoIPathApp:
-    """A live ``VideoIPathApp`` built from ``tests/.env.test``; skips unless E2E is enabled + verified."""
+    """A live ``VideoIPathApp`` built from the project ``.env``; skips unless E2E is enabled + verified."""
+    load_project_env()
     if not _e2e_enabled():
-        pytest.skip("E2E disabled (set VIPAT_E2E_ENABLED=1 in tests/.env.test to run).")
+        pytest.skip("E2E disabled (use poetry run test-e2e, poetry run test, or the VS Code E2E launch config).")
     application = VideoIPathApp()
     version = application._videoipath_connector.videoipath_version
     parsed = _parse_version(version)

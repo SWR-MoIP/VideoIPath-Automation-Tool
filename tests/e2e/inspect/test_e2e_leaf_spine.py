@@ -11,7 +11,7 @@ topology app is never used.
 
 Run with::
 
-    poetry run pytest -m e2e tests/e2e/inspect
+    poetry run test-e2e
 """
 
 from __future__ import annotations

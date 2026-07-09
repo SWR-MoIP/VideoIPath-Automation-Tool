@@ -2,6 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Tests",
+      "type": "shell",
+      "command": "poetry",
+      "args": [
+        "run",
+        "test"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Data Model",
       "problemMatcher": [],
       "dependsOn": [
