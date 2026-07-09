@@ -319,7 +319,7 @@ module keys map to child objects whose expansion follows the projection depth
 only after sync completes; the earlier capture was not a projection bug.
 `GET …/nodeStatus/<device-id>/**` returns the full subtree (~21 KB for one
 device) — fixture:
-`tests/fixtures/inspect/2025.4.9/device_hydration_modules_ports.json`.
+`tests/inspect/fixtures/2025.4.9/device_hydration_modules_ports.json`.
 
 ### Edge skeleton — `externalEdgesByDeviceKey` lean projection
 
@@ -846,7 +846,7 @@ Response (keyed by requested edge id):
 }
 ```
 
-Fixture: `tests/fixtures/inspect/2025.4.9/lookup_inspect_edges_by_ids.json`.
+Fixture: `tests/inspect/fixtures/2025.4.9/lookup_inspect_edges_by_ids.json`.
 
 ### `POST /rest/v2/actions/status/collector/lookupInspectVertexById` / `…ByIds`
 
@@ -916,7 +916,7 @@ Response (single form; `…ByIds` nests this per id):
 }
 ```
 
-Fixture: `tests/fixtures/inspect/2025.4.9/lookup_inspect_vertex_by_id.json`.
+Fixture: `tests/inspect/fixtures/2025.4.9/lookup_inspect_vertex_by_id.json`.
 
 The `fields` object is **exactly the accepted `replaceVertices` payload shape**
 (verified 2025.4.9 — see
@@ -1459,7 +1459,7 @@ Failure modes (verified 2025.4.9):
   a bumped `_rev`; a parallel UUID-keyed document may also exist for the same
   edge.
 - `resolvable: true` has not been observed on 2025.4.9.
-- Fixtures: `tests/fixtures/inspect/2025.4.9/update_topology_success.json`,
+- Fixtures: `tests/inspect/fixtures/2025.4.9/update_topology_success.json`,
   `…/update_topology_replace_devices.json` (edit-form request, success
   response, and the raw-element rejection error),
   `…/update_topology_replace_vertices.json` (vertex edit-form request,
@@ -1595,7 +1595,7 @@ references none of them; `importExport` data namespaces are empty under
 `status`/`config`/`experimental`). These are unregistered server stubs — no
 further payload probing is warranted unless a future version registers them
 (re-check the GET schema after upgrades). Fixture:
-`tests/fixtures/inspect/2025.4.9/action_schema_collector.json`.
+`tests/inspect/fixtures/2025.4.9/action_schema_collector.json`.
 
 Cross-check against the UI bundle (`/assets/index-*.js`, 2025.4.9): it
 references `updateTopology`, `addDevices`, `syncDevices`, `lookupSyncInfo`,

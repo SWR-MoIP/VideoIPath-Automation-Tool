@@ -21,7 +21,7 @@ Governing decisions (all Accepted):
 | --- | --- |
 | [0001](./decisions/0001-api-paradigm.md)/[0003](./decisions/0003-websocket-subscriptions.md) | Request/response only; no WebSocket API |
 | [0004](./decisions/0004-async-strategy.md) | Sync public API; internal thread-pool parallelism for multi-request operations |
-| [0005](./decisions/0005-e2e-testing.md) | E2E = developer-run live-server tests via `tests/.env.test`; offline fixture tests feed from `tests/fixtures/inspect/<version>/` |
+| [0005](./decisions/0005-e2e-testing.md) | E2E = developer-run live-server tests via `tests/.env.test`; offline fixture tests feed from `tests/<app>/fixtures/<version>/` |
 | [0006](./decisions/0006-commit-write-model.md) | Commit-style writes: hybrid — direct auto-commit methods + explicit transaction context manager; success = `header.ok ∧ data.res.ok ∧ data.validation.result.ok` |
 | [0007](./decisions/0007-lazy-snapshot-loading.md) | Skeleton-first snapshot (devices + edges scoped queries), transparent per-entity lazy hydration, section-level lazy loads, accreting state, `load="full"` eager mode |
 | [0008](./decisions/0008-collector-only-endpoints.md) | Collector-only endpoints: never call `nGraphElements` / `edgesByDevice` at runtime |
@@ -235,7 +235,7 @@ Add `InspectDevice.is_hydrated` / `snapshot.fetched_at(...)` for introspection. 
 
 ### 6.1 Offline (runs in CI, every push)
 
-- **Fixture contract tests** (`tests/inspect/test_models.py`): every fixture in `tests/fixtures/inspect/2025.4.9/` parses into its DTO; write-payload builders reproduce the fixture requests byte-for-byte (devices/vertices edit forms, edge form, no-op).
+- **Fixture contract tests** (`tests/inspect/test_models.py`): every fixture in `tests/inspect/fixtures/2025.4.9/` parses into its DTO; write-payload builders reproduce the fixture requests byte-for-byte (devices/vertices edit forms, edge form, no-op).
 - **Snapshot unit tests** (`tests/inspect/test_snapshot.py`): fake fetcher returning fixture payloads — skeleton indexes, exactly-one hydration fetch per device, section laziness, preload fan-out, post-commit hooks (removal drops indexes; refresh replaces records; stale section reloads).
 - **Changeset unit tests** (`tests/inspect/test_changeset.py`): staging→baseline capture, intent application, conflict detection (mutated baseline → error with field diffs), `check_conflicts=False` bypass, three-flag result evaluation incl. the captured failure fixtures, affected-set derivation.
 - **Query tests**: encoding, 414 length guard, projection constants stability.

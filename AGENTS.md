@@ -24,7 +24,7 @@ Rules:
 2. **Apply the same rules to docs and inline examples** — a markdown code block with a real hostname is as sensitive as a JSON fixture.
 3. **Preserve structure, not identity.** Keep IDs, relationships, and field shapes realistic so tests and docs remain meaningful; only replace identifying values.
 4. **Review diffs for leaks.** Scan new files for hostnames, email addresses, customer abbreviations, and internal project codenames.
-5. **When in doubt, generalize.** Prefer `device-a` / `port-out-1` style names already used under `tests/fixtures/`.
+5. **When in doubt, generalize.** Prefer `device-a` / `port-out-1` style names already used under `tests/<app>/fixtures/`.
 
 Inspect fixtures can be anonymized with `scripts/anonymize_inspect_fixtures.py` when available.
 

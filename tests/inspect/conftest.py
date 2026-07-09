@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "inspect" / "2025.4.9"
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "2025.4.9"
 
 
 def load_fixture(name: str) -> dict:

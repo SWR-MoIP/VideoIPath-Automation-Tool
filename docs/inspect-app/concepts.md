@@ -375,7 +375,7 @@ skeleton-first load strategy (see
 3. **Diff against known resources.** Compare captured paths to the prefixes the
    package already allows. New prefixes ⇒ new Inspect resources.
 4. **Save representative payloads as fixtures.** Store sanitised JSON under
-   `tests/fixtures/inspect/<version>/…`. These feed the offline tests in
+   `tests/inspect/fixtures/<version>/…`. These feed the offline tests in
    [ADR-0005](./decisions/0005-e2e-testing.md) and double as living
    documentation of the wire format.
 

@@ -56,7 +56,7 @@ Default `addopts` run coverage on `src/` and exclude e2e (`-m "not e2e"`).
 
 - Mock external I/O with fake connectors and lightweight stand-ins (see `tests/inspect/test_actions.py`).
 - Dummy `VIPAT_*` env vars are set in `tests/conftest.py` (autouse fixture; skipped for e2e).
-- Load JSON fixtures from `tests/fixtures/` using `pathlib.Path`.
+- Load JSON fixtures from `tests/<app>/fixtures/<version>/` using `pathlib.Path`.
 - Put shared fixtures in `conftest.py` at the appropriate directory level.
 - Use session-scoped fixtures only when setup is expensive and reuse is intentional.
 
