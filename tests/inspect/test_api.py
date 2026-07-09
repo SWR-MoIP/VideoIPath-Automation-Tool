@@ -26,8 +26,15 @@ class FakeRest:
 def _ok_header():
     return SimpleNamespace(
         model_dump=lambda mode="json": {
-            "auth": True, "caption": "OK", "code": "OK", "errorCodes": [], "errorDetails": [],
-            "id": "0", "msg": [], "ok": True, "user": "api-user",
+            "auth": True,
+            "caption": "OK",
+            "code": "OK",
+            "errorCodes": [],
+            "errorDetails": [],
+            "id": "0",
+            "msg": [],
+            "ok": True,
+            "user": "api-user",
         }
     )
 
@@ -52,7 +59,9 @@ def _collector(node_items=None, edge_items=None, path_items=None):
 
 
 def test_device_skeleton_uses_projection_and_parses(load):
-    node_items = load("skeleton_nodestatus_short.json")["data"]["status"]["collector"]["inspect"]["nodeStatus"]["_items"]
+    node_items = load("skeleton_nodestatus_short.json")["data"]["status"]["collector"]["inspect"]["nodeStatus"][
+        "_items"
+    ]
     conn, rest = _connector(get_data=_collector(node_items=node_items))
     api = InspectAPI(conn)
     devices = api.get_device_skeleton()
@@ -84,7 +93,11 @@ def test_lookup_edges_hits_correct_endpoint(load):
 
 def test_update_topology_posts_delta():
     conn, rest = _connector(
-        post_data={"items": [], "res": {"msg": [], "ok": True}, "validation": {"details": {}, "result": {"msg": [], "ok": True}}}
+        post_data={
+            "items": [],
+            "res": {"msg": [], "ok": True},
+            "validation": {"details": {}, "result": {"msg": [], "ok": True}},
+        }
     )
     api = InspectAPI(conn)
     resp = api.update_topology(InspectApiUpdateTopologyData())

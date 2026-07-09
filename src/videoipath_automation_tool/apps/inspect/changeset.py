@@ -24,8 +24,9 @@ Verified server facts encoded here (2025.4.9):
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
+
+from pydantic import Field
 
 from videoipath_automation_tool.apps.inspect.errors import (
     InspectCommitConflictError,
@@ -38,6 +39,7 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiLookupInspectDeviceFields,
     InspectApiVertexEditForm,
 )
+from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, InspectInternalModel
 from videoipath_automation_tool.apps.inspect.model.update_topology import (
     InspectApiUpdateTopologyData,
     InspectApiUpdateTopologyResponse,
@@ -53,8 +55,7 @@ _VERTEX = "vertex"
 _EDGE = "edge"
 
 
-@dataclass(frozen=True)
-class CommitResult:
+class CommitResult(InspectFrozenModel):
     """Outcome of a successful commit ([ADR-0006]); a failed commit raises ``InspectCommitError``."""
 
     applied_ids: list[str]
@@ -70,8 +71,7 @@ class CommitResult:
         return self.response.data.validation
 
 
-@dataclass
-class _Staged:
+class _Staged(InspectInternalModel):
     kind: str
     entity_id: str
     # The write-shape baseline (edit/edge form) as fetched at stage time; None for a raw remove.
@@ -79,7 +79,7 @@ class _Staged:
     # JSON dump of the baseline at stage time, used for the compare-and-commit conflict check.
     baseline_dump: dict[str, Any] | None = None
     # Field-level intents (wire field names; dotted for one level of nesting, e.g. "descriptor.label").
-    intents: dict[str, Any] = field(default_factory=dict)
+    intents: dict[str, Any] = Field(default_factory=dict)
     remove: bool = False
     is_new: bool = False
 
@@ -384,10 +384,12 @@ class InspectTransaction:
         edge_id = _edge_key(from_vertex, to_vertex)
         existing = self._lookup_edge_form(edge_id)
         if existing is not None and not overwrite:
-            raise ValueError(
-                f"Edge '{edge_id}' already exists; pass overwrite=True to replace it."
-            )
-        form = existing.model_copy(deep=True) if existing is not None else InspectApiEdgeForm(fromId=from_vertex, toId=to_vertex)
+            raise ValueError(f"Edge '{edge_id}' already exists; pass overwrite=True to replace it.")
+        form = (
+            existing.model_copy(deep=True)
+            if existing is not None
+            else InspectApiEdgeForm(fromId=from_vertex, toId=to_vertex)
+        )
         form.fromId = from_vertex
         form.toId = to_vertex
         entry = _Staged(
@@ -446,9 +448,7 @@ class InspectTransaction:
             key = (entry.kind, entry.entity_id)
             server_form = current.get(key)
             if server_form is None:
-                conflicts.append(
-                    InspectConflict(entry.entity_id, entry.kind, {"__exists__": (True, False)})
-                )
+                conflicts.append(InspectConflict(entry.entity_id, entry.kind, {"__exists__": (True, False)}))
                 continue
             server_dump = server_form.model_dump(mode="json")
             if server_dump != entry.baseline_dump:

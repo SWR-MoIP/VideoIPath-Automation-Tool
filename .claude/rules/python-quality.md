@@ -11,9 +11,9 @@ paths:
 
 ## Structured data
 
-- Use **Pydantic `BaseModel`** for API responses, settings, and schemas.
-- Use **`@dataclass`** only for simple internal structs that do not need validation.
+- Use **Pydantic `BaseModel`** for all structured data — API responses, settings, internal records, result types, and domain wrappers. Do not use `@dataclass`.
 - Prefer typed models over plain `dict` for structured data.
+- Reuse project base models where they exist (e.g. `InspectApiBaseModel` for API shapes; inspect-internal bases for in-memory models).
 
 ## Exceptions
 

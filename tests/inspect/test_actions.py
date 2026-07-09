@@ -11,8 +11,15 @@ from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
 def _ok_header():
     return SimpleNamespace(
         model_dump=lambda mode="json": {
-            "auth": True, "caption": "OK", "code": "OK", "errorCodes": [], "errorDetails": [],
-            "id": "0", "msg": [], "ok": True, "user": "api-user",
+            "auth": True,
+            "caption": "OK",
+            "code": "OK",
+            "errorCodes": [],
+            "errorDetails": [],
+            "id": "0",
+            "msg": [],
+            "ok": True,
+            "user": "api-user",
         }
     )
 

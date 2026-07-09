@@ -15,10 +15,11 @@ from __future__ import annotations
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterator, Optional
+
+from pydantic import Field
 
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiCollectorResponse,
@@ -30,6 +31,7 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiPathItem,
     InspectPortStatus,
 )
+from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, InspectInternalModel
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
@@ -50,12 +52,11 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-@dataclass
-class _DeviceRecord:
+class _DeviceRecord(InspectInternalModel):
     device_id: str
     node: InspectApiNodeStatusItem
     level: HydrationLevel
-    fetched_at: datetime = field(default_factory=_now)
+    fetched_at: datetime = Field(default_factory=_now)
 
     @property
     def label(self) -> str | None:
@@ -66,15 +67,13 @@ class _DeviceRecord:
         return self.node.pid or self.node.deviceId
 
 
-@dataclass(frozen=True, slots=True)
-class _IndexedPort:
+class _IndexedPort(InspectFrozenModel):
     device_id: str
     module_id: str | None
     port: InspectPortStatus
 
 
-@dataclass(frozen=True, slots=True)
-class _IndexedEdge:
+class _IndexedEdge(InspectFrozenModel):
     edge_id: str
     pair_id: str
     edge: InspectApiExternalEdgeStatus
@@ -350,9 +349,7 @@ class InspectSnapshot:
             current = self._devices_by_id.get(device_id)
             if current is None or current.level is HydrationLevel.FULL:
                 return
-            self._devices_by_id[device_id] = _DeviceRecord(
-                device_id=device_id, node=detail, level=HydrationLevel.FULL
-            )
+            self._devices_by_id[device_id] = _DeviceRecord(device_id=device_id, node=detail, level=HydrationLevel.FULL)
             self._device_cache.pop(device_id, None)
             self._rebuild_device_ports(device_id, detail)
 
@@ -364,9 +361,7 @@ class InspectSnapshot:
         if detail is None:
             return
         with self._lock:
-            self._devices_by_id[device_id] = _DeviceRecord(
-                device_id=device_id, node=detail, level=HydrationLevel.FULL
-            )
+            self._devices_by_id[device_id] = _DeviceRecord(device_id=device_id, node=detail, level=HydrationLevel.FULL)
             self._device_cache.pop(device_id, None)
             self._rebuild_device_ports(device_id, detail)
 
@@ -457,7 +452,9 @@ class InspectSnapshot:
                 continue
             for edge in side.data.values():
                 from_device_id = (
-                    self._resolve_device_id(_device_id_from_context(edge.fromStatus.context if edge.fromStatus else None))
+                    self._resolve_device_id(
+                        _device_id_from_context(edge.fromStatus.context if edge.fromStatus else None)
+                    )
                     or primary_device_id
                 )
                 from_port_id = _port_id_from_endpoint(edge.fromStatus)
@@ -525,9 +522,7 @@ class InspectSnapshot:
                 if record is not None:
                     label = record.label
                     if label and label in self._devices_by_label:
-                        self._devices_by_label[label] = [
-                            d for d in self._devices_by_label[label] if d != removed
-                        ]
+                        self._devices_by_label[label] = [d for d in self._devices_by_label[label] if d != removed]
                         if not self._devices_by_label[label]:
                             self._devices_by_label.pop(label, None)
                     self._device_cache.pop(removed, None)

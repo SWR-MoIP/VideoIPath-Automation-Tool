@@ -1,20 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from videoipath_automation_tool.apps.inspect.model.common import InspectApiStatusSummary
+from videoipath_automation_tool.apps.inspect.model.common import InspectApiStatusSummary, InspectFrozenModel
+from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
-    from videoipath_automation_tool.apps.inspect.snapshot import _DeviceRecord, InspectSnapshot
+    from videoipath_automation_tool.apps.inspect.snapshot import _DeviceRecord
 
 
-@dataclass(frozen=True, slots=True)
-class InspectDevice:
+class InspectDevice(InspectFrozenModel):
     """A topology device/node. Skeleton fields (id, label, coordinates, status, sync, tags) are
     available immediately; ``ports`` and ``services`` lazily hydrate from the server on first
     access ([ADR-0007]). The record is resolved live from the snapshot, so a held reference sees

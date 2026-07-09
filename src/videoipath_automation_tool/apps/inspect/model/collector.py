@@ -257,8 +257,7 @@ class InspectApiCollector(InspectApiBaseModel):
     @property
     def external_edges_by_device_key_items(self) -> list[InspectApiExternalEdgesByDeviceKeyItem]:
         return [
-            InspectApiExternalEdgesByDeviceKeyItem.model_validate(item)
-            for item in self.externalEdgesByDeviceKey.items
+            InspectApiExternalEdgesByDeviceKeyItem.model_validate(item) for item in self.externalEdgesByDeviceKey.items
         ]
 
     @property

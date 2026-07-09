@@ -25,8 +25,15 @@ from videoipath_automation_tool.apps.inspect.model.update_topology import Inspec
 from .conftest import load_fixture
 
 _OK_HEADER = {
-    "auth": True, "caption": "OK", "code": "OK", "errorCodes": [], "errorDetails": [],
-    "id": "0", "msg": [], "ok": True, "user": "api-user",
+    "auth": True,
+    "caption": "OK",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": True,
+    "user": "api-user",
 }
 
 A_OUT = "device12.1.Ethernet1.out"
@@ -63,13 +70,24 @@ def _vertex_data():
 
 def _edge_item(weight=1):
     edge = {
-        "active": True, "bandwidth": -1.0, "capacity": 65535, "conflictPri": 0,
-        "descriptor": {"desc": "", "label": ""}, "excludeFormats": [],
-        "fDescriptor": {"desc": "", "label": ""}, "fromId": A_OUT, "includeFormats": [],
-        "redundancyMode": "Any", "tags": [], "toId": B_IN, "weight": weight,
+        "active": True,
+        "bandwidth": -1.0,
+        "capacity": 65535,
+        "conflictPri": 0,
+        "descriptor": {"desc": "", "label": ""},
+        "excludeFormats": [],
+        "fDescriptor": {"desc": "", "label": ""},
+        "fromId": A_OUT,
+        "includeFormats": [],
+        "redundancyMode": "Any",
+        "tags": [],
+        "toId": B_IN,
+        "weight": weight,
         "weightFactors": {"bandwidth": {"weight": 0}, "service": {"max": 100, "weight": 0}},
     }
-    return InspectApiLookupEdgeResponseItem.model_validate({"edge": edge, "fromDevice": "device12", "toDevice": "device7"})
+    return InspectApiLookupEdgeResponseItem.model_validate(
+        {"edge": edge, "fromDevice": "device12", "toDevice": "device7"}
+    )
 
 
 class FakeAPI:
@@ -77,7 +95,9 @@ class FakeAPI:
         self.devices = {}
         self.vertices = {}
         self.edges = {}
-        self.update_response = InspectApiUpdateTopologyResponse.model_validate(load_fixture("update_topology_success.json"))
+        self.update_response = InspectApiUpdateTopologyResponse.model_validate(
+            load_fixture("update_topology_success.json")
+        )
         self.update_calls = []
         self.lookup_device_calls = []
         self.lookup_vertices_calls = []
@@ -243,7 +263,9 @@ def test_commit_success_returns_result():
 
 def test_commit_failure_raises_commit_error():
     api = FakeAPI()
-    api.update_response = InspectApiUpdateTopologyResponse.model_validate(load_fixture("update_topology_fail_remove.json"))
+    api.update_response = InspectApiUpdateTopologyResponse.model_validate(
+        load_fixture("update_topology_fail_remove.json")
+    )
     with _txn(api) as tx:
         tx.remove("nonexistent-edge-id-xyz")
         with pytest.raises(InspectCommitError) as exc:

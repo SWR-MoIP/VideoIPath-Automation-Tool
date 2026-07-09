@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiPathItem, InspectServiceStatus
-from videoipath_automation_tool.apps.inspect.snapshot import _port_id_from_endpoint
+from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel
+from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _port_id_from_endpoint
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
-    from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 
-@dataclass(frozen=True, slots=True)
-class InspectService:
+class InspectService(InspectFrozenModel):
     snapshot: InspectSnapshot
     path_item: InspectApiPathItem
 

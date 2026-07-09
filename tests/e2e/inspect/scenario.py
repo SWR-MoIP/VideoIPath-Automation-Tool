@@ -20,11 +20,12 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import requests
+
+from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
@@ -59,22 +60,21 @@ def _tag_category(app: "VideoIPathApp", category: str) -> dict[str, Any] | None:
             return item
     return None
 
+
 # The fixture coordinates are captured from the live topology, so the replica would sit right on top
 # of it. Shift the whole E2E topology into its own region of the map so it never overlaps.
 POSITION_OFFSET_X = 0
 POSITION_OFFSET_Y = 3000
 
 
-@dataclass(frozen=True)
-class DeviceSpec:
+class DeviceSpec(InspectFrozenModel):
     name: str
     x: int
     y: int
     ports: int
 
 
-@dataclass(frozen=True)
-class LinkSpec:
+class LinkSpec(InspectFrozenModel):
     a: int  # device index
     b: int  # device index
     count: int  # number of parallel bidirectional links
@@ -90,10 +90,15 @@ class LeafSpineScenario:
         data = json.loads(TOPOLOGY_FILE.read_text())
         # Bake the offset into the specs so build placement and the placement-revert test agree.
         self.devices = [
-            DeviceSpec(d["name"], d["x"] + POSITION_OFFSET_X, d["y"] + POSITION_OFFSET_Y, d["ports"])
+            DeviceSpec(
+                name=d["name"],
+                x=d["x"] + POSITION_OFFSET_X,
+                y=d["y"] + POSITION_OFFSET_Y,
+                ports=d["ports"],
+            )
             for d in data["devices"]
         ]
-        self.links = [LinkSpec(a, b, n) for a, b, n in data["links"]]
+        self.links = [LinkSpec(a=a, b=b, count=n) for a, b, n in data["links"]]
         self.device_ids: dict[str, str] = {}  # E2E name -> VideoIPath device id
         self._out: dict[str, list[str]] = {}  # name -> ordered out-vertex ids
         self._in: dict[str, list[str]] = {}  # name -> ordered in-vertex ids

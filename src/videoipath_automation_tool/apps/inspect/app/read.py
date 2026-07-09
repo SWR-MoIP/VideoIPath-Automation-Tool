@@ -47,9 +47,7 @@ class InspectReadMixin:
     def _load_snapshot(self: _HasInspectState, load: LoadMode) -> InspectSnapshot:
         if load == "full":
             self._logger.debug("Loading full (eager) Inspect snapshot.")
-            return InspectSnapshot.from_full_response(
-                self._inspect_api.get_collector_full(), fetcher=self._inspect_api
-            )
+            return InspectSnapshot.from_full_response(self._inspect_api.get_collector_full(), fetcher=self._inspect_api)
         self._logger.debug("Loading skeleton Inspect snapshot (devices + edges in parallel).")
         with ThreadPoolExecutor(max_workers=2) as pool:
             devices_future = pool.submit(self._inspect_api.get_device_skeleton)

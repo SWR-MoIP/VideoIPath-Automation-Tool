@@ -143,9 +143,7 @@ class InspectAPI:
         self, device_ids: list[str], add_only: bool = True, conflict_strategy: int = 0
     ) -> InspectApiSimpleActionResponse:
         request = InspectApiSyncDevicesRequest(
-            data=InspectApiSyncDevicesRequestData(
-                ids=device_ids, addOnly=add_only, conflictStrategy=conflict_strategy
-            )
+            data=InspectApiSyncDevicesRequestData(ids=device_ids, addOnly=add_only, conflictStrategy=conflict_strategy)
         )
         response = self.vip_connector.rest.post("/rest/v2/actions/status/network/syncDevices", request)
         return InspectApiSimpleActionResponse.model_validate(_post_envelope(response))

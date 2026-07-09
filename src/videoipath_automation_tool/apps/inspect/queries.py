@@ -41,7 +41,7 @@ _SAFE = "/*,'=()"
 _DEVICE_SKELETON = (
     "/status/collector/inspect/nodeStatus/*"
     "/deviceId,resourceId,syncSeverity"
-    '/.../descriptor/**'
+    "/.../descriptor/**"
     "/.../.../meta/**"
     "/.../.../status/**"
     "/.../.../tags/*"

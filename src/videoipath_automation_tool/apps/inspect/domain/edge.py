@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiExternalEdgeLiveStatus
-from videoipath_automation_tool.apps.inspect.snapshot import _IndexedEdge
+from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel
+from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _IndexedEdge
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
-    from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 
-@dataclass(frozen=True, slots=True)
-class InspectEdge:
+class InspectEdge(InspectFrozenModel):
     snapshot: InspectSnapshot
     indexed: _IndexedEdge
 

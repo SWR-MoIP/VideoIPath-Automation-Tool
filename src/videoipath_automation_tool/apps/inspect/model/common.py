@@ -9,6 +9,14 @@ class InspectApiBaseModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_assignment=True, extra="allow")
 
 
+class InspectInternalModel(BaseModel):
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
+
+
+class InspectFrozenModel(InspectInternalModel):
+    model_config = ConfigDict(frozen=True, slots=True, validate_assignment=True, arbitrary_types_allowed=True)
+
+
 class InspectApiDescriptor(InspectApiBaseModel):
     desc: str = ""
     label: str = ""
@@ -74,6 +82,8 @@ class InspectApiActionValidationErrorResponse(InspectApiBaseModel):
 __all__ = [
     "InspectApiActionValidationErrorResponse",
     "InspectApiBaseModel",
+    "InspectFrozenModel",
+    "InspectInternalModel",
     "InspectApiCollection",
     "InspectApiDescriptor",
     "InspectApiEndpointStatus",
