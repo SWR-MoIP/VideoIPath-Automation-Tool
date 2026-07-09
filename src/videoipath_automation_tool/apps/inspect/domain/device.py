@@ -22,12 +22,6 @@ class InspectDevice(InspectFrozenModel):
     snapshot: InspectSnapshot
     id: str
 
-    def _record(self) -> "_DeviceRecord":
-        record = self.snapshot.get_device_record(self.id)
-        if record is None:
-            raise KeyError(f"Device '{self.id}' is no longer present in the snapshot.")
-        return record
-
     @property
     def label(self) -> str | None:
         return self._record().label
@@ -85,3 +79,9 @@ class InspectDevice(InspectFrozenModel):
     @property
     def linked_devices(self) -> list[InspectDevice]:
         return self.snapshot.get_linked_devices(self.id)
+
+    def _record(self) -> "_DeviceRecord":
+        record = self.snapshot.get_device_record(self.id)
+        if record is None:
+            raise KeyError(f"Device '{self.id}' is no longer present in the snapshot.")
+        return record

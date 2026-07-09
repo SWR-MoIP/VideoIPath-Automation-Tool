@@ -29,12 +29,47 @@ _DATA = "/rest/v2/data"
 # the full UI projection (thousands of chars) triggers HTTP 414 behind the proxy.
 MAX_QUERY_LENGTH = 4000
 
+
+def encode(path: str) -> str:
+    """Percent-encode a collector query path, preserving projection-grammar characters."""
+    return urllib.parse.quote(path, safe=_SAFE)
+
+
+def device_skeleton() -> str:
+    """GET path for the device skeleton (all devices, no module/port detail)."""
+    return _build(_DEVICE_SKELETON)
+
+
+def device_detail(device_id: str) -> str:
+    """GET path for one device's full nodeStatus sub-tree (modules, ports, vertexInfo, ...)."""
+    return _build(f"/status/collector/inspect/nodeStatus/{device_id}/**")
+
+
+def edge_skeleton() -> str:
+    """GET path for the lean edge skeleton (all device pairs, connectivity + status severities)."""
+    return _build(_EDGE_SKELETON)
+
+
+def edge_pair(pair_id: str) -> str:
+    """GET path for a single external-edge device pair (targeted refresh, [ADR-0010])."""
+    return _build(f"/status/collector/externalEdgesByDeviceKey/{pair_id}" + _EDGE_LEAN_TAIL)
+
+
+def paths_section() -> str:
+    """GET path for the services/paths section."""
+    return _build(_PATHS_SECTION)
+
+
+def collector_full() -> str:
+    """GET path for the full collector aggregate (eager / fallback mode)."""
+    return _build(_COLLECTOR_FULL)
+
+
+# --- Internal ---
+
 # Characters that are meaningful in the projection grammar and must survive encoding.
 # Everything else (spaces, double quotes, ...) is percent-encoded.
 _SAFE = "/*,'=()"
-
-
-# --- Verified query fragments (path relative to /rest/v2/data) ---
 
 # Device skeleton: identity + descriptor + meta (incl. coordinates) + status + syncSeverity
 # + tags, with the module sub-tree suppressed ("_noId"). ~200 char URL, ~30 KB / 30 devices.
@@ -77,46 +112,11 @@ _PATHS_SECTION = (
 _COLLECTOR_FULL = "/status/collector/**"
 
 
-def encode(path: str) -> str:
-    """Percent-encode a collector query path, preserving projection-grammar characters."""
-    return urllib.parse.quote(path, safe=_SAFE)
-
-
 def _build(path: str) -> str:
     encoded = encode(_DATA + path)
     if len(encoded) > MAX_QUERY_LENGTH:
         raise InspectQueryTooLongError(len(encoded), MAX_QUERY_LENGTH)
     return encoded
-
-
-def device_skeleton() -> str:
-    """GET path for the device skeleton (all devices, no module/port detail)."""
-    return _build(_DEVICE_SKELETON)
-
-
-def device_detail(device_id: str) -> str:
-    """GET path for one device's full nodeStatus sub-tree (modules, ports, vertexInfo, ...)."""
-    return _build(f"/status/collector/inspect/nodeStatus/{device_id}/**")
-
-
-def edge_skeleton() -> str:
-    """GET path for the lean edge skeleton (all device pairs, connectivity + status severities)."""
-    return _build(_EDGE_SKELETON)
-
-
-def edge_pair(pair_id: str) -> str:
-    """GET path for a single external-edge device pair (targeted refresh, [ADR-0010])."""
-    return _build(f"/status/collector/externalEdgesByDeviceKey/{pair_id}" + _EDGE_LEAN_TAIL)
-
-
-def paths_section() -> str:
-    """GET path for the services/paths section."""
-    return _build(_PATHS_SECTION)
-
-
-def collector_full() -> str:
-    """GET path for the full collector aggregate (eager / fallback mode)."""
-    return _build(_COLLECTOR_FULL)
 
 
 __all__ = [

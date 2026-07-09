@@ -43,23 +43,8 @@ from videoipath_automation_tool.connector.vip_connector import VideoIPathConnect
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 
 
-def _extract_items(data: dict[str, Any], *path: str) -> list[dict[str, Any]]:
-    """Walk ``data`` down ``path`` and return the ``_items`` list (empty if any node is absent)."""
-    node: Any = data
-    for key in path:
-        if not isinstance(node, dict):
-            return []
-        node = node.get(key)
-        if node is None:
-            return []
-    if isinstance(node, dict):
-        items = node.get("_items", [])
-        return items if isinstance(items, list) else []
-    return []
-
-
 class InspectAPI:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None) -> None:
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_inspect_api")
         self.vip_connector = vip_connector
         self._logger.debug("Inspect API initialized.")
@@ -147,6 +132,24 @@ class InspectAPI:
         )
         response = self.vip_connector.rest.post("/rest/v2/actions/status/network/syncDevices", request)
         return InspectApiSimpleActionResponse.model_validate(_post_envelope(response))
+
+
+# --- Internal ---
+
+
+def _extract_items(data: dict[str, Any], *path: str) -> list[dict[str, Any]]:
+    """Walk ``data`` down ``path`` and return the ``_items`` list (empty if any node is absent)."""
+    node: Any = data
+    for key in path:
+        if not isinstance(node, dict):
+            return []
+        node = node.get(key)
+        if node is None:
+            return []
+    if isinstance(node, dict):
+        items = node.get("_items", [])
+        return items if isinstance(items, list) else []
+    return []
 
 
 def _header_dict(response: Any) -> dict[str, Any]:

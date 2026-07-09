@@ -7,18 +7,17 @@ Read-only monitoring plus commit-style topology writes, built entirely on the co
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
+
+if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 from .actions import InspectActionsMixin
 from .read import InspectReadMixin, LoadMode
 from .write import InspectWriteMixin
-
-# First VideoIPath version the Inspect collector surface was verified against.
-_MIN_VERIFIED_VERSION = (2025, 4)
 
 
 class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
@@ -27,7 +26,7 @@ class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
         vip_connector: VideoIPathConnector,
         logger: Optional[logging.Logger] = None,
         load: LoadMode = "skeleton",
-    ):
+    ) -> None:
         """Inspect App: read the topology/status and apply commit-style topology changes.
 
         The app keeps a single internal topology view that is loaded lazily on the first read and
@@ -56,6 +55,10 @@ class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
                 f"Inspect app: VideoIPath version '{version}' predates the first verified Inspect "
                 f"surface ({_MIN_VERIFIED_VERSION[0]}.{_MIN_VERIFIED_VERSION[1]}). Behaviour is unverified."
             )
+
+
+# First VideoIPath version the Inspect collector surface was verified against.
+_MIN_VERIFIED_VERSION = (2025, 4)
 
 
 def _parse_version(version: str) -> Optional[tuple[int, int]]:

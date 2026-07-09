@@ -36,26 +36,6 @@ class InspectReadMixin:
     _snapshot: Optional[InspectSnapshot]
     _load_mode: LoadMode
 
-    # --- Internal snapshot lifecycle ---
-
-    def _get_snapshot(self: _HasInspectState) -> InspectSnapshot:
-        """Return the internal snapshot, building it on first access ([ADR-0007])."""
-        if self._snapshot is None:
-            self._snapshot = self._load_snapshot(self._load_mode)
-        return self._snapshot
-
-    def _load_snapshot(self: _HasInspectState, load: LoadMode) -> InspectSnapshot:
-        if load == "full":
-            self._logger.debug("Loading full (eager) Inspect snapshot.")
-            return InspectSnapshot.from_full_response(self._inspect_api.get_collector_full(), fetcher=self._inspect_api)
-        self._logger.debug("Loading skeleton Inspect snapshot (devices + edges in parallel).")
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            devices_future = pool.submit(self._inspect_api.get_device_skeleton)
-            edges_future = pool.submit(self._inspect_api.get_edge_skeleton)
-            devices = devices_future.result()
-            edges = edges_future.result()
-        return InspectSnapshot(fetcher=self._inspect_api, device_items=devices, edge_items=edges)
-
     def refresh(self: _HasInspectState, load: Optional[LoadMode] = None) -> None:
         """Reload the topology from the server, discarding the current internal view.
 
@@ -127,6 +107,26 @@ class InspectReadMixin:
     def get_services_for_device(self: _HasInspectState, device_id: str) -> list["InspectService"]:
         """All services whose path traverses the given device."""
         return self._get_snapshot().get_services_for_device(device_id)
+
+    # --- Internal snapshot lifecycle ---
+
+    def _get_snapshot(self: _HasInspectState) -> InspectSnapshot:
+        """Return the internal snapshot, building it on first access ([ADR-0007])."""
+        if self._snapshot is None:
+            self._snapshot = self._load_snapshot(self._load_mode)
+        return self._snapshot
+
+    def _load_snapshot(self: _HasInspectState, load: LoadMode) -> InspectSnapshot:
+        if load == "full":
+            self._logger.debug("Loading full (eager) Inspect snapshot.")
+            return InspectSnapshot.from_full_response(self._inspect_api.get_collector_full(), fetcher=self._inspect_api)
+        self._logger.debug("Loading skeleton Inspect snapshot (devices + edges in parallel).")
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            devices_future = pool.submit(self._inspect_api.get_device_skeleton)
+            edges_future = pool.submit(self._inspect_api.get_edge_skeleton)
+            devices = devices_future.result()
+            edges = edges_future.result()
+        return InspectSnapshot(fetcher=self._inspect_api, device_items=devices, edge_items=edges)
 
 
 __all__ = ["InspectReadMixin", "LoadMode"]

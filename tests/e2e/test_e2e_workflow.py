@@ -42,7 +42,8 @@ class LinkSpec(InspectFrozenModel):
     b: int  # device index
 
 
-# A full leaf-spine in its own map region (all coordinates shifted +3000 in y so the test data rather not conflict with other data). Port counts equal each device's link degree; devices with
+# A full leaf-spine in its own map region (all coordinates shifted +3000 in y so the test data
+# rather not conflict with other data). Port counts equal each device's link degree; devices with
 # no links sit at the region origin. Two device pairs — (2, 15) and (5, 16) — carry parallel links,
 # represented here as repeated ``LinkSpec`` entries.
 DEVICES = [

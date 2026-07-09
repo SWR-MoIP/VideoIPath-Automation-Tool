@@ -49,11 +49,6 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.api import InspectAPI
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
-# Staged-entry kinds.
-_DEVICE = "device"
-_VERTEX = "vertex"
-_EDGE = "edge"
-
 
 class CommitResult(InspectFrozenModel):
     """Outcome of a successful commit ([ADR-0006]); a failed commit raises ``InspectCommitError``."""
@@ -69,46 +64,6 @@ class CommitResult(InspectFrozenModel):
     @property
     def validation(self) -> Any:
         return self.response.data.validation
-
-
-class _Staged(InspectInternalModel):
-    kind: str
-    entity_id: str
-    # The write-shape baseline (edit/edge form) as fetched at stage time; None for a raw remove.
-    baseline_form: Any | None = None
-    # JSON dump of the baseline at stage time, used for the compare-and-commit conflict check.
-    baseline_dump: dict[str, Any] | None = None
-    # Field-level intents (wire field names; dotted for one level of nesting, e.g. "descriptor.label").
-    intents: dict[str, Any] = Field(default_factory=dict)
-    remove: bool = False
-    is_new: bool = False
-
-
-def _device_of(entity_id: str) -> str:
-    """Owning device id of a vertex/port id (``device12.1.Ethernet1.out`` -> ``device12``)."""
-    return entity_id.split(".", 1)[0]
-
-
-def _reverse_vertex(vertex_id: str) -> str:
-    """Flip the trailing direction of an IP vertex id (``.out`` <-> ``.in``)."""
-    if vertex_id.endswith(".out"):
-        return vertex_id[: -len(".out")] + ".in"
-    if vertex_id.endswith(".in"):
-        return vertex_id[: -len(".in")] + ".out"
-    return vertex_id
-
-
-def _edge_key(from_id: str, to_id: str) -> str:
-    return f"{from_id}::{to_id}"
-
-
-def _apply_intents(form: Any, intents: dict[str, Any]) -> None:
-    for key, value in intents.items():
-        if "." in key:
-            head, tail = key.split(".", 1)
-            setattr(getattr(form, head), tail, value)
-        else:
-            setattr(form, key, value)
 
 
 class InspectTransaction:
@@ -526,6 +481,54 @@ class InspectTransaction:
             pair_ids=list(pair_ids),
             mark_paths_stale=True,
         )
+
+
+# --- Internal ---
+
+# Staged-entry kinds.
+_DEVICE = "device"
+_VERTEX = "vertex"
+_EDGE = "edge"
+
+
+class _Staged(InspectInternalModel):
+    kind: str
+    entity_id: str
+    # The write-shape baseline (edit/edge form) as fetched at stage time; None for a raw remove.
+    baseline_form: Any | None = None
+    # JSON dump of the baseline at stage time, used for the compare-and-commit conflict check.
+    baseline_dump: dict[str, Any] | None = None
+    # Field-level intents (wire field names; dotted for one level of nesting, e.g. "descriptor.label").
+    intents: dict[str, Any] = Field(default_factory=dict)
+    remove: bool = False
+    is_new: bool = False
+
+
+def _device_of(entity_id: str) -> str:
+    """Owning device id of a vertex/port id (``device12.1.Ethernet1.out`` -> ``device12``)."""
+    return entity_id.split(".", 1)[0]
+
+
+def _reverse_vertex(vertex_id: str) -> str:
+    """Flip the trailing direction of an IP vertex id (``.out`` <-> ``.in``)."""
+    if vertex_id.endswith(".out"):
+        return vertex_id[: -len(".out")] + ".in"
+    if vertex_id.endswith(".in"):
+        return vertex_id[: -len(".in")] + ".out"
+    return vertex_id
+
+
+def _edge_key(from_id: str, to_id: str) -> str:
+    return f"{from_id}::{to_id}"
+
+
+def _apply_intents(form: Any, intents: dict[str, Any]) -> None:
+    for key, value in intents.items():
+        if "." in key:
+            head, tail = key.split(".", 1)
+            setattr(getattr(form, head), tail, value)
+        else:
+            setattr(form, key, value)
 
 
 def _checkable(entry: _Staged) -> bool:

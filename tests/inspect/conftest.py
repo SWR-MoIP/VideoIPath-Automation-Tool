@@ -1,14 +1,18 @@
 """Shared fixtures for offline Inspect tests."""
 
+from __future__ import annotations
+
 import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "2025.4.9"
 
 
-def load_fixture(name: str) -> dict:
+def load_fixture(name: str) -> dict[str, Any]:
     with open(FIXTURE_DIR / name) as handle:
         return json.load(handle)
 
@@ -19,5 +23,5 @@ def fixtures_dir() -> Path:
 
 
 @pytest.fixture
-def load():
+def load() -> Callable[[str], dict[str, Any]]:
     return load_fixture

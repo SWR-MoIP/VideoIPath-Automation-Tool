@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from videoipath_automation_tool.apps.inspect.model.actions import *
 from videoipath_automation_tool.apps.inspect.model.collector import *
 from videoipath_automation_tool.apps.inspect.model.common import *

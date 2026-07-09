@@ -147,7 +147,7 @@ def test_full_vs_skeleton_equivalence(app: VideoIPathApp, topology_builder: Topo
     topology_builder.link(id_a, id_b)
     topology_builder.link(id_b, id_c)
 
-    def graph_view() -> dict:
+    def graph_view() -> dict[str, tuple[str | None, frozenset[str | None]]]:
         return {
             device_id: (
                 app.inspect.get_device(device_id).label,

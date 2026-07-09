@@ -10,14 +10,16 @@ from __future__ import annotations
 
 import logging
 from enum import IntEnum
-from typing import Iterable, Optional, Protocol, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Protocol, Union
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiAddDevicesItem,
     InspectApiLookupSyncInfoItem,
 )
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
+
+if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 
 class ConflictStrategy(IntEnum):

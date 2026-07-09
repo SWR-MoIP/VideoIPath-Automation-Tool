@@ -41,52 +41,10 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
     from videoipath_automation_tool.apps.inspect.api import InspectAPI
 
-_PRELOAD_WORKERS = 8
-
-_logger = logging.getLogger("videoipath_automation_tool_inspect_snapshot")
-
 
 class HydrationLevel(str, Enum):
     SKELETON = "skeleton"
     FULL = "full"
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-class _DeviceRecord(InspectInternalModel):
-    device_id: str
-    node: InspectApiNodeStatusItem
-    level: HydrationLevel
-    fetched_at: datetime = Field(default_factory=_now)
-
-    @property
-    def label(self) -> str | None:
-        return self.node.effective_label
-
-    @property
-    def pid(self) -> str | None:
-        return self.node.pid or self.node.deviceId
-
-
-class _IndexedPort(InspectFrozenModel):
-    device_id: str
-    module_id: str | None
-    port: InspectPortStatus
-
-
-class _IndexedEdge(InspectFrozenModel):
-    edge_id: str
-    pair_id: str
-    edge: InspectApiExternalEdgeStatus
-    pair_status: InspectApiExternalEdgeLiveStatus | None
-    primary_device_id: str | None
-    secondary_device_id: str | None
-    from_device_id: str | None
-    from_port_id: str | None
-    to_device_id: str | None
-    to_port_id: str | None
 
 
 class InspectSnapshot:
@@ -700,6 +658,51 @@ class InspectSnapshot:
         service = InspectService(snapshot=self, path_item=path_item)
         self._service_cache[booking_id] = service
         return service
+
+
+# --- Internal ---
+
+_PRELOAD_WORKERS = 8
+
+_logger = logging.getLogger("videoipath_automation_tool_inspect_snapshot")
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class _DeviceRecord(InspectInternalModel):
+    device_id: str
+    node: InspectApiNodeStatusItem
+    level: HydrationLevel
+    fetched_at: datetime = Field(default_factory=_now)
+
+    @property
+    def label(self) -> str | None:
+        return self.node.effective_label
+
+    @property
+    def pid(self) -> str | None:
+        return self.node.pid or self.node.deviceId
+
+
+class _IndexedPort(InspectFrozenModel):
+    device_id: str
+    module_id: str | None
+    port: InspectPortStatus
+
+
+class _IndexedEdge(InspectFrozenModel):
+    edge_id: str
+    pair_id: str
+    edge: InspectApiExternalEdgeStatus
+    pair_status: InspectApiExternalEdgeLiveStatus | None
+    primary_device_id: str | None
+    secondary_device_id: str | None
+    from_device_id: str | None
+    from_port_id: str | None
+    to_device_id: str | None
+    to_port_id: str | None
 
 
 # --- Module-level helpers (kept stable for the domain layer) ---

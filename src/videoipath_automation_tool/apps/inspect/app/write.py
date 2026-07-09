@@ -12,11 +12,13 @@ workflow never triggers an unnecessary topology read.
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 from videoipath_automation_tool.apps.inspect.transaction import CommitResult, InspectTransaction
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
+
+if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 
 class _HasInspectState(Protocol):
