@@ -33,29 +33,29 @@ Everything is read straight off `app.inspect`. Skeleton fields are available wit
 I/O:
 
 ```python
-dev = app.inspect.get_device("device10")
-dev = app.inspect.find_device_by_label("BORDERLEAF-26B")
+device = app.inspect.get_device("device10")
+device = app.inspect.find_device_by_label("BORDERLEAF-26B")
 
-print(dev.label, dev.coordinates, dev.status, dev.sync_severity, dev.tags)
+print(device.label, device.coordinates, device.status, device.sync_severity, device.tags)
 
-for dev in app.inspect.devices:     # all devices
-    print(dev.id, dev.label)
+for device in app.inspect.devices:     # all devices
+    print(device.id, device.label)
 ```
 
 The first access to a device's **ports** hydrates that one device (a single scoped read), then
 serves from local state:
 
 ```python
-for port in dev.ports:              # triggers one hydration fetch for this device
+for port in device.ports:              # triggers one hydration fetch for this device
     print(port.label, port.vertex_id, port.status, port.tags)
     edge = port.edge                # local edge-skeleton lookup, no I/O
     if edge:
         print("connected to", edge.to_device.label)
 
-for edge in dev.edges:              # local, no hydration
+for edge in device.edges:              # local, no hydration
     print(edge.from_port, "->", edge.to_port, edge.status)
 
-for other in dev.linked_devices:    # local graph walk
+for other in device.linked_devices:    # local graph walk
     print(other.label)
 
 for edge in app.inspect.edges:      # all external edges

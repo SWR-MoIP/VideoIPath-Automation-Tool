@@ -27,7 +27,6 @@ from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 
 from .helpers import E2E_TAG, create_mock_device, discover_router_vertices, edges_between
 
-
 pytestmark = pytest.mark.e2e
 
 
@@ -43,8 +42,7 @@ class LinkSpec(InspectFrozenModel):
     b: int  # device index
 
 
-# A full leaf-spine in its own map region (all coordinates shifted +3000 in y so the replica never
-# overlaps the live topology it mirrors). Port counts equal each device's link degree; devices with
+# A full leaf-spine in its own map region (all coordinates shifted +3000 in y so the test data rather not conflict with other data). Port counts equal each device's link degree; devices with
 # no links sit at the region origin. Two device pairs — (2, 15) and (5, 16) — carry parallel links,
 # represented here as repeated ``LinkSpec`` entries.
 DEVICES = [
