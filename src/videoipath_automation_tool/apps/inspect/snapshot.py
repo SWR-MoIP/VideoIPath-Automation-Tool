@@ -7,12 +7,13 @@ load once as a section. The snapshot is never a single point in time: each devic
 carries its own fetch timestamp. ``refresh()`` builds a *new* snapshot; state is never reused
 across snapshots.
 
-After a successful commit the change set calls the post-commit hooks here to update only the
+After a successful commit the transaction calls the post-commit hooks here to update only the
 touched entities via targeted scoped re-reads ([ADR-0010]) instead of a full reload.
 """
 
 from __future__ import annotations
 
+import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -38,9 +39,11 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
-    from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
+    from videoipath_automation_tool.apps.inspect.api import InspectAPI
 
 _PRELOAD_WORKERS = 8
+
+_logger = logging.getLogger("videoipath_automation_tool_inspect_snapshot")
 
 
 class HydrationLevel(str, Enum):
@@ -123,6 +126,10 @@ class InspectSnapshot:
         self._edge_cache: dict[str, "InspectEdge"] = {}
         self._service_cache: dict[str, "InspectService"] = {}
 
+        # Entities whose post-write re-fetch failed; re-fetched lazily on next access ([ADR-0010]).
+        self._stale_devices: set[str] = set()
+        self._stale_pairs: set[str] = set()
+
         for node in device_items or []:
             self._index_device(node, device_level)
         for pair in edge_items or []:
@@ -171,6 +178,7 @@ class InspectSnapshot:
     # --- Device reads ---
 
     def get_device(self, device_id: str) -> Optional["InspectDevice"]:
+        self._reconcile_stale_device(device_id)
         if device_id not in self._devices_by_id:
             return None
         return self._wrap_device(device_id)
@@ -199,6 +207,7 @@ class InspectSnapshot:
 
     def get_device_record(self, device_id: str) -> Optional[_DeviceRecord]:
         """Internal: return the (possibly hydrated) record for a device; used by domain objects."""
+        self._reconcile_stale_device(device_id)
         return self._devices_by_id.get(device_id)
 
     # --- Port reads (trigger hydration) ---
@@ -220,6 +229,7 @@ class InspectSnapshot:
 
     @property
     def edges(self) -> list["InspectEdge"]:
+        self._reconcile_stale_pairs()
         seen: set[str] = set()
         result: list["InspectEdge"] = []
         for indexed_edges in self._edges_by_device_id.values():
@@ -234,6 +244,7 @@ class InspectSnapshot:
         return self.edges
 
     def get_edges_for_device(self, device_id: str) -> list["InspectEdge"]:
+        self._reconcile_stale_pairs()
         seen: set[str] = set()
         result: list["InspectEdge"] = []
         for indexed in self._edges_by_device_id.get(device_id, []):
@@ -244,10 +255,12 @@ class InspectSnapshot:
         return result
 
     def get_edge_for_port(self, device_id: str, port_id: str) -> Optional["InspectEdge"]:
+        self._reconcile_stale_pairs()
         indexed = self._edge_by_port_key.get((device_id, port_id))
         return self._wrap_edge(indexed) if indexed else None
 
     def get_linked_devices(self, device_id: str) -> list["InspectDevice"]:
+        self._reconcile_stale_pairs()
         linked: set[str] = set()
         for indexed in self._edges_by_device_id.get(device_id, []):
             for candidate in (indexed.from_device_id, indexed.to_device_id):
@@ -314,23 +327,41 @@ class InspectSnapshot:
         mark_paths_stale: bool = True,
     ) -> None:
         """Targeted refresh after a successful commit: drop removed entities locally, re-fetch the
-        affected devices and edge pairs, and mark the services section stale."""
+        affected devices and edge pairs, and mark the services section stale.
+
+        Never raises: a failed re-fetch marks the entity stale (re-fetched lazily on next access)
+        and logs, so a post-commit hook cannot lose the caller's already-successful commit result.
+        """
         self._apply_removals(removed_ids or [])
         if self._fetcher is not None:
             for device_id in device_ids or []:
                 if device_id in self._devices_by_id:
-                    self._refresh_device(device_id)
+                    self._try_refresh_device(device_id)
             for pair_id in pair_ids or []:
-                self._refresh_edge_pair(pair_id)
+                self._try_refresh_edge_pair(pair_id)
         if mark_paths_stale:
-            with self._lock:
-                self._section_loaded["paths"] = False
-                self._paths_by_booking_id.clear()
-                self._services_by_device_id.clear()
+            self._mark_paths_stale()
+
+    def apply_network_refresh(self, device_ids: list[str]) -> None:
+        """Targeted refresh after a network action (addDevices / syncDevices): upsert the named
+        devices (new or restructured) and reconcile the edge pairs touching them, then mark the
+        services section stale. Never raises (same contract as :meth:`apply_post_commit`).
+
+        Unlike a commit, a network action does not report the exact touched entities and can create
+        pairs to previously-unconnected devices, so edges are reconciled from one cheap edge-skeleton
+        read scoped to pairs touching an affected device (per-device detail stays targeted)."""
+        if self._fetcher is None or not device_ids:
+            return
+        affected = set(device_ids)
+        for device_id in device_ids:
+            self._try_refresh_device(device_id)
+        self._reconcile_pairs_for_devices(affected)
+        self._mark_paths_stale()
 
     # --- Internal: hydration ---
 
     def _ensure_device_detail(self, device_id: str) -> None:
+        self._reconcile_stale_device(device_id)
         record = self._devices_by_id.get(device_id)
         if record is None or record.level is HydrationLevel.FULL or self._fetcher is None:
             return
@@ -349,23 +380,23 @@ class InspectSnapshot:
             current = self._devices_by_id.get(device_id)
             if current is None or current.level is HydrationLevel.FULL:
                 return
-            self._devices_by_id[device_id] = _DeviceRecord(device_id=device_id, node=detail, level=HydrationLevel.FULL)
-            self._device_cache.pop(device_id, None)
-            self._rebuild_device_ports(device_id, detail)
+            self._upsert_device(device_id, detail)
 
     def _refresh_device(self, device_id: str) -> None:
+        """Re-fetch one device's full detail and upsert it (adds it if newly present). May raise."""
         if self._fetcher is None:
             return
         record = self._devices_by_id.get(device_id)
         detail = self._fetcher.get_device_detail(record.node.id if record else device_id)
         if detail is None:
+            # Keep any existing record untouched (e.g. detail-less virtual devices); just clear stale.
+            self._stale_devices.discard(device_id)
             return
         with self._lock:
-            self._devices_by_id[device_id] = _DeviceRecord(device_id=device_id, node=detail, level=HydrationLevel.FULL)
-            self._device_cache.pop(device_id, None)
-            self._rebuild_device_ports(device_id, detail)
+            self._upsert_device(device_id, detail)
 
     def _refresh_edge_pair(self, pair_id: str) -> None:
+        """Re-fetch and re-index one external-edge device pair. May raise."""
         if self._fetcher is None:
             return
         pair = self._fetcher.get_edge_pair(pair_id)
@@ -373,6 +404,93 @@ class InspectSnapshot:
             self._drop_edge_pair(pair_id)
             if pair is not None:
                 self._index_edge_pair(pair)
+            self._stale_pairs.discard(pair_id)
+
+    # --- Internal: resilient refresh + lazy-stale self-heal (ADR-0010) ---
+
+    def _try_refresh_device(self, device_id: str) -> None:
+        """Re-fetch a device; on failure mark it stale (lazy self-heal on next access) and log."""
+        try:
+            self._refresh_device(device_id)
+        except Exception as exc:
+            self._stale_devices.add(device_id)
+            _logger.warning("Inspect snapshot: post-write re-fetch of device '%s' failed: %s", device_id, exc)
+
+    def _try_refresh_edge_pair(self, pair_id: str) -> None:
+        """Re-fetch an edge pair; on failure mark it stale (lazy self-heal on next access) and log."""
+        try:
+            self._refresh_edge_pair(pair_id)
+        except Exception as exc:
+            self._stale_pairs.add(pair_id)
+            _logger.warning("Inspect snapshot: post-write re-fetch of edge pair '%s' failed: %s", pair_id, exc)
+
+    def _reconcile_stale_device(self, device_id: str) -> None:
+        if device_id not in self._stale_devices:
+            return
+        try:
+            self._refresh_device(device_id)
+            self._stale_devices.discard(device_id)
+        except Exception as exc:
+            _logger.warning("Inspect snapshot: lazy re-fetch of stale device '%s' failed: %s", device_id, exc)
+
+    def _reconcile_stale_pairs(self) -> None:
+        for pair_id in list(self._stale_pairs):
+            try:
+                self._refresh_edge_pair(pair_id)
+            except Exception as exc:
+                _logger.warning("Inspect snapshot: lazy re-fetch of stale edge pair '%s' failed: %s", pair_id, exc)
+
+    def _reconcile_pairs_for_devices(self, device_ids: set[str]) -> None:
+        """Reconcile every edge pair touching an affected device from one fresh edge-skeleton read."""
+        if self._fetcher is None or not device_ids:
+            return
+        try:
+            pairs = self._fetcher.get_edge_skeleton()
+        except Exception as exc:
+            self._stale_pairs.update(
+                indexed.pair_id for d in device_ids for indexed in self._edges_by_device_id.get(d, [])
+            )
+            _logger.warning("Inspect snapshot: edge reconcile after network action failed: %s", exc)
+            return
+        with self._lock:
+            for pair_id in {indexed.pair_id for d in device_ids for indexed in self._edges_by_device_id.get(d, [])}:
+                self._drop_edge_pair(pair_id)
+            for pair in pairs:
+                if self._pair_touches(pair, device_ids):
+                    self._drop_edge_pair(pair.id)
+                    self._index_edge_pair(pair)
+
+    def _pair_touches(self, pair: InspectApiExternalEdgesByDeviceKeyItem, device_ids: set[str]) -> bool:
+        primary = self._resolve_device_id(pair.primary.devicePid)
+        secondary = self._resolve_device_id(pair.secondary.devicePid)
+        return primary in device_ids or secondary in device_ids
+
+    def _mark_paths_stale(self) -> None:
+        with self._lock:
+            self._section_loaded["paths"] = False
+            self._paths_by_booking_id.clear()
+            self._services_by_device_id.clear()
+
+    def _upsert_device(self, device_id: str, detail: InspectApiNodeStatusItem) -> None:
+        """Insert or replace a device record (FULL), keeping the label index and caches consistent."""
+        old = self._devices_by_id.get(device_id)
+        old_label = old.label if old is not None else None
+        record = _DeviceRecord(device_id=device_id, node=detail, level=HydrationLevel.FULL)
+        new_label = record.label
+        if old_label and old_label != new_label:
+            remaining = [d for d in self._devices_by_label.get(old_label, []) if d != device_id]
+            if remaining:
+                self._devices_by_label[old_label] = remaining
+            else:
+                self._devices_by_label.pop(old_label, None)
+        self._devices_by_id[device_id] = record
+        if new_label:
+            ids = self._devices_by_label.setdefault(new_label, [])
+            if device_id not in ids:
+                ids.append(device_id)
+        self._device_cache.pop(device_id, None)
+        self._rebuild_device_ports(device_id, detail)
+        self._stale_devices.discard(device_id)
 
     def _ensure_section_paths(self) -> None:
         if self._section_loaded.get("paths") or self._fetcher is None:

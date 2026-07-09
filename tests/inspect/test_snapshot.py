@@ -241,6 +241,47 @@ def test_post_commit_marks_paths_stale(snapshot):
     assert fetcher.section_calls == 2
 
 
+def test_post_commit_reindexes_changed_label(snapshot):
+    # Latent-bug guard: a committed label change must re-point the label index (ADR-0010).
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = _detail_node("leaf-a", "LEAF-A-RENAMED", ["leaf-a.dev.0.up1"])
+    snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
+    assert snap.find_device_by_label("LEAF-A-RENAMED").id == "leaf-a"
+    assert snap.find_device_by_label("LEAF-A") is None
+
+
+def test_post_commit_refetch_failure_does_not_raise_and_self_heals(snapshot):
+    snap, fetcher = snapshot
+    calls = {"n": 0}
+    real = fetcher.get_device_detail
+
+    def flaky(device_id):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("network blip")
+        return real(device_id)
+
+    fetcher.get_device_detail = flaky
+    # The refresh failure is swallowed (the commit result must survive); the device is marked stale.
+    snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
+    # Next access re-fetches (self-heal) and succeeds.
+    assert snap.get_device("leaf-a").label == "LEAF-A"
+    assert calls["n"] == 2
+
+
+def test_apply_network_refresh_adds_new_device_and_edge(snapshot):
+    snap, fetcher = snapshot
+    fetcher._details["leaf-b"] = _detail_node("leaf-b", "LEAF-B", ["leaf-b.dev.0.up1"])
+    fetcher.get_edge_skeleton = lambda: [
+        _edge_pair("leaf-a", "spine-a", "leaf-a.dev.0.up1", "spine-a.dev.0.swp1"),
+        _edge_pair("leaf-b", "spine-a", "leaf-b.dev.0.up1", "spine-a.dev.0.swp2"),
+    ]
+    snap.apply_network_refresh(["leaf-b"])
+    assert snap.get_device("leaf-b") is not None
+    assert snap.find_device_by_label("LEAF-B").id == "leaf-b"
+    assert {e.pair_id for e in snap.get_edges_for_device("leaf-b")} == {"leaf-b::spine-a"}
+
+
 def test_full_snapshot_is_hydrated_without_fetcher():
     fetcher = FakeFetcher()
     # Build a full snapshot manually (device_level=FULL, path_items provided)

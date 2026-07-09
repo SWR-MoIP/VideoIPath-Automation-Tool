@@ -1,4 +1,4 @@
-"""Change-set / transaction unit tests with a fake API (offline).
+"""Transaction unit tests with a fake API (offline).
 
 Covers staging + intent application, payload-shape assertions against the verified write forms,
 the three-flag commit result, conflict detection (compare-and-commit), the ``check_conflicts=False``
@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from videoipath_automation_tool.apps.inspect.changeset import InspectTransaction
+from videoipath_automation_tool.apps.inspect.transaction import InspectTransaction
 from videoipath_automation_tool.apps.inspect.errors import (
     InspectCommitConflictError,
     InspectCommitError,

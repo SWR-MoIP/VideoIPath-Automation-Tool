@@ -1,4 +1,4 @@
-"""Change set / transaction for Inspect topology writes ([ADR-0006]/[ADR-0009]/[ADR-0010]).
+"""Transaction for Inspect topology writes ([ADR-0006]/[ADR-0009]/[ADR-0010]).
 
 A transaction stages topology changes, captures a per-entity baseline via the lookup endpoints
 (the lookup forms *are* the ``updateTopology`` write shapes — [ADR-0009]), and applies them
@@ -46,7 +46,7 @@ from videoipath_automation_tool.apps.inspect.model.update_topology import (
 )
 
 if TYPE_CHECKING:
-    from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
+    from videoipath_automation_tool.apps.inspect.api import InspectAPI
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 # Staged-entry kinds.

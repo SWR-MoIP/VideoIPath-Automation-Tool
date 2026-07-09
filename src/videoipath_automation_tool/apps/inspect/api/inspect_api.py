@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
-from videoipath_automation_tool.apps.inspect import queries
+from . import queries
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiAddDevicesItem,
     InspectApiAddDevicesRequest,

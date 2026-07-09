@@ -1,7 +1,7 @@
 import logging
 from typing import Literal, Optional
 
-from videoipath_automation_tool.apps.inspect.inspect_app import InspectApp
+from videoipath_automation_tool.apps.inspect.app import InspectApp
 from videoipath_automation_tool.apps.inventory import InventoryApp
 from videoipath_automation_tool.apps.inventory.model.drivers import AVAILABLE_SCHEMA_VERSIONS, SELECTED_SCHEMA_VERSION
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp

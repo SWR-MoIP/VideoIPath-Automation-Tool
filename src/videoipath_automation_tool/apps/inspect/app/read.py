@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import TYPE_CHECKING, Literal, Optional, Protocol
 
-from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
+from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 if TYPE_CHECKING:

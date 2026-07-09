@@ -84,6 +84,23 @@ result is success (`res.ok` and `validation.result.ok`):
 A failed commit changes nothing server-side (reject-before-apply, verified) —
 the snapshot is left untouched.
 
+### Extensions
+
+- **Network actions** (`addDevices` / `syncDevices`) get the same automatic
+  update: on success they call `apply_network_refresh(device_ids)`, which
+  upserts the named devices (new **or** restructured) and reconciles the edge
+  pairs touching them. Unlike a commit, these actions do not report the exact
+  touched entities and can create pairs to previously-unconnected devices, so
+  edges are reconciled from **one** cheap edge-skeleton read scoped to pairs
+  touching an affected device (per-device detail stays targeted). As on the
+  write path, this only runs when a snapshot is already loaded.
+- **Refresh is resilient, never all-or-nothing.** A scoped re-fetch that fails
+  (network blip) marks just that entity stale (`_stale_devices` /
+  `_stale_pairs`) and logs; it never propagates, so a post-write hook cannot
+  lose the caller's already-successful result. Stale entities are re-fetched
+  lazily on the next access that touches them (the ADR-0007 hydration path),
+  making the snapshot self-healing without a full reload.
+
 ## Consequences
 
 - Post-commit cost is proportional to the **change set size**, not the network:

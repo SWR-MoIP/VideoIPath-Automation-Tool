@@ -2,7 +2,7 @@
 
 These wrap the ``actions/status/network/*`` and ``lookupSyncInfo`` endpoints used by the Inspect
 device-onboarding-into-topology workflows. Placement and connections themselves go through the
-change set ([ADR-0006]); these actions handle bringing a device's driver-reported topology into
+transaction ([ADR-0006]); these actions handle bringing a device's driver-reported topology into
 the graph and keeping it in sync.
 """
 
@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import logging
 from enum import IntEnum
-from typing import Iterable, Protocol, Union
+from typing import Iterable, Optional, Protocol, Union
 
-from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
+from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiAddDevicesItem,
     InspectApiLookupSyncInfoItem,
 )
+from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 
 class ConflictStrategy(IntEnum):
@@ -34,11 +35,13 @@ AddDeviceSpec = Union[str, tuple[str, float, float]]
 class _HasInspectApi(Protocol):
     _inspect_api: InspectAPI
     _logger: logging.Logger
+    _snapshot: Optional[InspectSnapshot]
 
 
 class InspectActionsMixin:
     _inspect_api: InspectAPI
     _logger: logging.Logger
+    _snapshot: Optional[InspectSnapshot]
 
     def get_sync_info(self: _HasInspectApi, device_ids: list[str]) -> dict[str, InspectApiLookupSyncInfoItem]:
         """Per-device sync differences (what would be added/removed/updated on the next sync)."""
@@ -59,7 +62,9 @@ class InspectActionsMixin:
         response = self._inspect_api.add_devices(items)
         if not response.data.ok:
             self._logger.warning(f"addDevices reported failure: {response.data.msg}")
-        return response.data.ok
+            return False
+        self._refresh_after_network_action([item.id for item in items])
+        return True
 
     def sync_devices(
         self: _HasInspectApi,
@@ -84,7 +89,17 @@ class InspectActionsMixin:
         )
         if not response.data.ok:
             self._logger.warning(f"syncDevices reported failure: {response.data.msg}")
-        return response.data.ok
+            return False
+        self._refresh_after_network_action(device_ids)
+        return True
+
+    def _refresh_after_network_action(self: _HasInspectApi, device_ids: list[str]) -> None:
+        """Update the internal snapshot for the affected devices after a successful network action.
+
+        Only refreshes when a snapshot is already loaded, so a pure-action workflow never triggers
+        an unnecessary topology read (mirrors the write path; [ADR-0010])."""
+        if self._snapshot is not None:
+            self._snapshot.apply_network_refresh(device_ids)
 
 
 def _to_add_item(spec: AddDeviceSpec) -> InspectApiAddDevicesItem:

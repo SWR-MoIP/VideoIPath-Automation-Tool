@@ -23,7 +23,7 @@ from typing import Iterator
 
 import pytest
 
-from videoipath_automation_tool.apps.inspect.inspect_app import _MIN_VERIFIED_VERSION, _parse_version
+from videoipath_automation_tool.apps.inspect.app.app import _MIN_VERIFIED_VERSION, _parse_version
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 from vipat_cli_scripts.project_env import load_project_env
 

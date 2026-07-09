@@ -2,7 +2,7 @@ import urllib.parse
 
 import pytest
 
-from videoipath_automation_tool.apps.inspect import queries
+from videoipath_automation_tool.apps.inspect.api import queries
 from videoipath_automation_tool.apps.inspect.errors import InspectQueryTooLongError
 
 

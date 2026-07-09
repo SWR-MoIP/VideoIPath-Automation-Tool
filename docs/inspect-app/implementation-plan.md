@@ -64,7 +64,7 @@ snapshot.fetched_at(entity_or_section)           # freshness introspection
 
 Contract (already documented in models.md): at most one hydration fetch per entity/section; getters can raise connector errors; snapshot is not a single point in time.
 
-### 2.3 Writes (change set, ADR-0006/0009/0010)
+### 2.3 Writes (transaction, ADR-0006/0009/0010)
 
 ```python
 # Convenience direct writes (auto-commit, one updateTopology each):
@@ -124,7 +124,7 @@ apps/inspect/
 │   ├── write.py                 # direct writes + transaction()
 │   └── actions.py               # add/sync devices, sync info
 ├── snapshot.py                  # InspectSnapshot: state, indexes, hydration, refresh hooks
-├── changeset.py                 # InspectTransaction, staging entries, baselines, commit
+├── transaction.py               # InspectTransaction, staging entries, baselines, commit
 ├── domain/                      # InspectDevice/Port/Edge/Service (extend existing)
 └── model/                       # InspectApi* DTOs (extend existing: collector.py, actions.py,
                                  #   update_topology.py, ngraph.py, common.py)
@@ -185,7 +185,7 @@ State per ADR-0007/0010:
 - `_ensure_device_detail(device_id)`: no-op if FULL; else `get_device_detail`, re-parse item, replace record, rebuild that device's port index entries, drop that device's cached domain wrappers, stamp `fetched_at`. Same pattern `_ensure_section("paths")`.
 - **Concurrency**: a `threading.Lock` around merge operations (preload uses a pool); document snapshot as not-thread-safe for general use, but hydration merges are internally consistent.
 - `preload(devices=None)`: ThreadPoolExecutor (bounded, e.g. 8) over `_ensure_device_detail` (ADR-0004).
-- **Post-commit hooks** (called by changeset, ADR-0010): `_apply_removals(ids)`, `_refresh_devices(ids)`, `_refresh_edge_pairs(pair_ids)`, `_mark_section_stale("paths")`.
+- **Post-commit hooks** (called by transaction, ADR-0010): `_apply_removals(ids)`, `_refresh_devices(ids)`, `_refresh_edge_pairs(pair_ids)`, `_mark_section_stale("paths")`.
 - Keep `raw_response` only for `load="full"` snapshots; skeleton snapshots expose `raw_skeleton` parts instead.
 
 ### 4.6 Domain objects (`domain/`)
@@ -202,7 +202,7 @@ Property → data-source mapping (drives which getter triggers hydration):
 
 Add `InspectDevice.is_hydrated` / `snapshot.fetched_at(...)` for introspection. Keep frozen-dataclass wrappers + snapshot back-reference pattern from the draft.
 
-### 4.7 `changeset.py` — transaction, baselines, commit
+### 4.7 `transaction.py` — transaction, baselines, commit
 
 - `_StagedEntry(kind: DEVICE|VERTEX|EDGE, id, baseline: DTO, intents: dict[field, value] | REMOVE)`.
 - **Staging**: first touch of an entity fetches baselines via *batched* lookups (`lookup_edges`, `lookup_vertices` accept lists; device lookup is per-id). Staging validates the entity exists (translate lookup miss → `InspectEntityNotFoundError`); vertices/devices cannot be *created* (update-only — enforced client-side with a clear message).
@@ -228,7 +228,7 @@ Add `InspectDevice.is_hydrated` / `snapshot.fetched_at(...)` for introspection. 
 1. **M1 – Connector + queries + API layer (read)**: connector changes, `queries.py`, `inspect_api.py` read methods, DTO gap-fill; offline fixture tests green.
 2. **M2 – Snapshot rework + domain (read path complete)**: hydration states, sections, preload, `from_full_response`; `app.inspect.get_snapshot()`; VideoIPathApp property; unit tests with fake fetcher (hydration counts, merge idempotency).
 3. **M3 – Lookups + actions**: lookup API methods + DTOs, `get_sync_info`, `add_devices_to_topology`, `sync_devices`.
-4. **M4 – Change set + writes**: `changeset.py`, direct write sugar, commit lifecycle incl. conflict check + targeted refresh; unit tests with mocked API (payload-shape assertions against the four updateTopology fixtures; conflict scenarios; refresh-hook calls).
+4. **M4 – Transaction + writes**: `transaction.py`, direct write sugar, commit lifecycle incl. conflict check + targeted refresh; unit tests with mocked API (payload-shape assertions against the four updateTopology fixtures; conflict scenarios; refresh-hook calls).
 5. **M5 – E2E suite** (below) + getting-started doc page (`docs/getting-started-guide/0X_Inspect.md`) + [models.md](./models.md)/README sync.
 
 ## 6. Testing
@@ -237,7 +237,7 @@ Add `InspectDevice.is_hydrated` / `snapshot.fetched_at(...)` for introspection. 
 
 - **Fixture contract tests** (`tests/inspect/test_models.py`): every fixture in `tests/inspect/fixtures/2025.4.9/` parses into its DTO; write-payload builders reproduce the fixture requests byte-for-byte (devices/vertices edit forms, edge form, no-op).
 - **Snapshot unit tests** (`tests/inspect/test_snapshot.py`): fake fetcher returning fixture payloads — skeleton indexes, exactly-one hydration fetch per device, section laziness, preload fan-out, post-commit hooks (removal drops indexes; refresh replaces records; stale section reloads).
-- **Changeset unit tests** (`tests/inspect/test_changeset.py`): staging→baseline capture, intent application, conflict detection (mutated baseline → error with field diffs), `check_conflicts=False` bypass, three-flag result evaluation incl. the captured failure fixtures, affected-set derivation.
+- **Transaction unit tests** (`tests/inspect/test_transaction.py`): staging→baseline capture, intent application, conflict detection (mutated baseline → error with field diffs), `check_conflicts=False` bypass, three-flag result evaluation incl. the captured failure fixtures, affected-set derivation.
 - **Query tests**: encoding, 414 length guard, projection constants stability.
 
 ### 6.2 E2E — live instance, topology replica (ADR-0005)

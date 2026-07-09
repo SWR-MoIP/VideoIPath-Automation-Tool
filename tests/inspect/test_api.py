@@ -3,7 +3,7 @@ endpoint, passes allow_projection for scoped reads, and parses responses into DT
 
 from types import SimpleNamespace
 
-from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
+from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.model.update_topology import InspectApiUpdateTopologyData
 
 

@@ -9,12 +9,13 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from videoipath_automation_tool.apps.inspect.app.actions import InspectActionsMixin
-from videoipath_automation_tool.apps.inspect.app.read import InspectReadMixin, LoadMode
-from videoipath_automation_tool.apps.inspect.app.write import InspectWriteMixin
-from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
+from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
+
+from .actions import InspectActionsMixin
+from .read import InspectReadMixin, LoadMode
+from .write import InspectWriteMixin
 
 # First VideoIPath version the Inspect collector surface was verified against.
 _MIN_VERIFIED_VERSION = (2025, 4)

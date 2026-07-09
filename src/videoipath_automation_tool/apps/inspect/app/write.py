@@ -14,8 +14,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional, Protocol
 
-from videoipath_automation_tool.apps.inspect.changeset import CommitResult, InspectTransaction
-from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
+from videoipath_automation_tool.apps.inspect.transaction import CommitResult, InspectTransaction
+from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 
@@ -31,7 +31,7 @@ class InspectWriteMixin:
     _snapshot: Optional[InspectSnapshot]
 
     def transaction(self: _HasInspectState) -> InspectTransaction:
-        """Open a batched, atomic change set bound to the app's internal snapshot."""
+        """Open a batched, atomic transaction bound to the app's internal snapshot."""
         return InspectTransaction(self._inspect_api, snapshot=self._snapshot, logger=self._logger)
 
     def place_device(self: _HasInspectState, device_id: str, x: float, y: float) -> CommitResult:
