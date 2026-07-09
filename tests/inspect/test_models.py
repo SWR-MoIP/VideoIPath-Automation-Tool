@@ -10,6 +10,7 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiExternalEdgesByDeviceKeyItem,
     InspectApiNodeStatusItem,
     InspectApiPathItem,
+    InspectPortStatus,
 )
 from videoipath_automation_tool.apps.inspect.model.update_topology import (
     InspectApiUpdateTopologyData,
@@ -117,3 +118,14 @@ def test_commit_success_and_failure_flags(load):
 
     fail_remove = InspectApiUpdateTopologyResponse.model_validate(load("update_topology_fail_remove.json"))
     assert fail_remove.committed is False
+
+
+def test_port_assigned_tags_from_tags_info():
+    port = InspectPortStatus.model_validate(
+        {
+            "_id": "device-a.1.p1",
+            "tagsInfo": {"assigned": {"all": ["Video~~T"], "inherited": {}, "local": {"Video~~T": {}}}},
+        }
+    )
+    assert port.assigned_tags == ["Video~~T"]
+    assert InspectPortStatus.model_validate({"_id": "device-a.1.p2"}).assigned_tags == []

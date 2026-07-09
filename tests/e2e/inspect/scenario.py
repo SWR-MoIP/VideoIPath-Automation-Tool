@@ -22,7 +22,9 @@ import json
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+import requests
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
@@ -31,6 +33,31 @@ E2E_PREFIX = "E2E-"
 E2E_TAG = "vipat-e2e"
 MOCK_DRIVER = "com.nevion.mock-0.1.0"
 TOPOLOGY_FILE = Path(__file__).parent / "leaf_spine_topology.json"
+
+# A test video tag, created via a simple API request in setup and assigned to a port via the inspect
+# app. Tag references are ``Category~~name`` ids; it lives in the existing "Video" format category.
+TEST_TAG_CATEGORY = "Video"
+TEST_TAG_NAME = "E2E-VIDEO-TAG"
+TEST_TAG_ID = f"{TEST_TAG_CATEGORY}~~{TEST_TAG_NAME}"
+
+
+def _raw_request(app: "VideoIPathApp", method: str, path: str, body: dict[str, Any]) -> requests.Response:
+    """A minimal authenticated REST call (for tag-catalog management, which the package's connector
+    allow-list intentionally does not cover)."""
+    rc = app._videoipath_connector.rest
+    response = getattr(requests, method)(
+        rc._build_url(path), json=body, auth=(rc._username, rc._password), verify=rc.verify_ssl_cert
+    )
+    response.raise_for_status()
+    return response
+
+
+def _tag_category(app: "VideoIPathApp", category: str) -> dict[str, Any] | None:
+    trees = app._videoipath_connector.rest.get("/rest/v2/data/config/tags/tagTrees/**")
+    for item in trees.data["config"]["tags"]["tagTrees"].get("_items", []):
+        if item.get("_id") == category:
+            return item
+    return None
 
 # The fixture coordinates are captured from the live topology, so the replica would sit right on top
 # of it. Shift the whole E2E topology into its own region of the map so it never overlaps.
@@ -98,6 +125,45 @@ class LeafSpineScenario:
         link = self.links[0]
         return self.devices[link.a].name, self.devices[link.b].name
 
+    # --- Test tag catalog (simple API requests) ---
+
+    def create_test_tag(self, app: "VideoIPathApp") -> None:
+        """Create the E2E test video tag in the catalog (idempotent)."""
+        category = _tag_category(app, TEST_TAG_CATEGORY)
+        if category is None:
+            raise RuntimeError(f"Tag category '{TEST_TAG_CATEGORY}' not found on the server.")
+        children = dict(category.get("children") or {})
+        children[TEST_TAG_NAME] = {"exclusive": False, "children": {}}
+        body = {
+            "actions": [
+                {
+                    "_action": "update",
+                    "_id": TEST_TAG_CATEGORY,
+                    "_rev": category["_rev"],
+                    "children": children,
+                    "type": category.get("type", "format"),
+                    "exclusive": category.get("exclusive", False),
+                    "formatTagLinks": category.get("formatTagLinks", {}),
+                    "locationTypes": category.get("locationTypes", []),
+                }
+            ]
+        }
+        _raw_request(app, "patch", "/rest/v2/data/config/tags/tagTrees", body)
+
+    def test_tag_exists(self, app: "VideoIPathApp") -> bool:
+        category = _tag_category(app, TEST_TAG_CATEGORY)
+        return category is not None and TEST_TAG_NAME in (category.get("children") or {})
+
+    def delete_test_tag(self, app: "VideoIPathApp") -> None:
+        """Force-delete the test tag (removes it and any port bindings) if it exists."""
+        if self.test_tag_exists(app):
+            _raw_request(
+                app,
+                "post",
+                "/rest/v2/actions/status/tags/forceDeleteTag",
+                {"header": {"id": 0}, "data": {"tagId": TEST_TAG_ID}},
+            )
+
     # --- Startup cleanup (removes any prior E2E state) ---
 
     def cleanup(self, app: "VideoIPathApp") -> None:
@@ -108,6 +174,7 @@ class LeafSpineScenario:
         label in **both** (catching orphans from an aborted run) and remove edges, the topology node,
         and the inventory entry.
         """
+        self.delete_test_tag(app)
         inventory_labels = app.inventory._inventory_api.fetch_devices_user_defined_labels_as_dict()
         inventory_ids = {i for i, label in inventory_labels.items() if (label or "").startswith(E2E_PREFIX)}
         app.inspect.refresh()
@@ -152,6 +219,8 @@ class LeafSpineScenario:
             tx.commit()
         self._discover_ports(app)
         self._connect(app)
+        # Create the test video tag so the port-tagging test can assign it.
+        self.create_test_tag(app)
 
     def _create_inventory_devices(self, app: "VideoIPathApp") -> None:
         for i, spec in enumerate(self.devices):

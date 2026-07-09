@@ -42,6 +42,12 @@ class InspectPort:
         return self.indexed.port.status
 
     @property
+    def tags(self) -> list[str]:
+        """Tags assigned to this port (as ``Category~~name`` ids). Assign them with
+        ``app.inspect.update_vertex(port.vertex_id, tags=[...])``."""
+        return self.indexed.port.assigned_tags
+
+    @property
     def vertex_id(self) -> str | None:
         return self._vertex_id_from(self.indexed.port)
 

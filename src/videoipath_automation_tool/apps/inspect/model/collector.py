@@ -115,10 +115,22 @@ class InspectPortStatus(InspectApiBaseModel):
     descriptor: InspectApiDescriptor | None = None
     label: str | None = None
     pid: str | None = None
+    relatedNodeTags: list[str] = Field(default_factory=list)
     resourceId: str | None = None
     status: InspectApiStatusSummary | None = None
+    tagsInfo: dict[str, Any] | None = None
     vertexInfo: InspectApiSingleVertexInfo | InspectApiDoubleVertexInfo | dict[str, Any] | None = None
     pathDescriptions: dict[str, InspectApiPathDescriptionItem] = Field(default_factory=dict)
+
+    @property
+    def assigned_tags(self) -> list[str]:
+        """Effective tags assigned to this port (from ``tagsInfo.assigned.all``)."""
+        if not self.tagsInfo:
+            return []
+        assigned = self.tagsInfo.get("assigned")
+        if isinstance(assigned, dict) and isinstance(assigned.get("all"), list):
+            return list(assigned["all"])
+        return []
 
     @property
     def effective_label(self) -> str | None:

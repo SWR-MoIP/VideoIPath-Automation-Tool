@@ -21,7 +21,7 @@ import pytest
 from videoipath_automation_tool.apps.inspect.errors import InspectCommitConflictError, InspectCommitError
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 
-from .scenario import LeafSpineScenario
+from .scenario import TEST_TAG_ID, LeafSpineScenario
 
 
 pytestmark = pytest.mark.e2e
@@ -158,6 +158,22 @@ def test_conflict_detection(app, scenario):
     tx.rebase()
     tx.commit()
     app.inspect.update_edge(edge_id, weight=1)  # revert
+
+
+def test_assign_tag_to_port(app, scenario):
+    # Inspect-only capability: assign a catalog tag to a port. The tag was created in setup.
+    assert scenario.test_tag_exists(app)
+    app.inspect.refresh()
+    name = scenario.a_link()[0]
+    device_id = scenario.device_id(name)
+    vertex_id = next(
+        p.vertex_id for p in app.inspect.get_device(device_id).ports if p.vertex_id and "Router In" in (p.label or "")
+    )
+    result = app.inspect.update_vertex(vertex_id, tags=[TEST_TAG_ID])
+    assert result.ok
+    app.inspect.refresh()
+    port = next(p for p in app.inspect.get_device(device_id).ports if p.vertex_id == vertex_id)
+    assert TEST_TAG_ID in port.tags
 
 
 def test_device_placement_roundtrip(app, scenario):

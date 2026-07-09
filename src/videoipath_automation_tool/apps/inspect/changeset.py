@@ -204,14 +204,20 @@ class InspectTransaction:
         label: Optional[str] = None,
         tags: Optional[list[str]] = None,
     ) -> "InspectTransaction":
-        """Edit a vertex (``replaceVertices``; update-only — vertices cannot be created here)."""
+        """Edit a vertex/port (``replaceVertices``; update-only — vertices cannot be created here).
+
+        ``tags`` assigns catalog tags to the port (as ``Category~~name`` ids); this is the
+        Inspect-only port-tagging capability, written to the vertex ``localAssignedTags``.
+        """
         entry = self._stage_vertex(vertex_id)
         if use_as_endpoint is not None:
             entry.intents["useAsEndpoint"] = use_as_endpoint
         if label is not None:
             entry.intents["label"] = label
         if tags is not None:
-            entry.intents["tags"] = list(tags)
+            # Port tag assignment is the vertex's localAssignedTags (verified 2025.4.9); the
+            # separate ``fields.tags`` list does not register as an assigned tag.
+            entry.intents["localAssignedTags"] = list(tags)
         return self
 
     # --- Staging: edges ---

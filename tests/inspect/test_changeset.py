@@ -200,6 +200,18 @@ def test_update_vertex_sets_endpoint():
     assert api.update_calls[0].replaceVertices[A_OUT].useAsEndpoint is True
 
 
+def test_update_vertex_assigns_tags_as_local():
+    # Port tag assignment goes to localAssignedTags, not the plain fields.tags list.
+    api = FakeAPI()
+    api.vertices[A_OUT] = _vertex_data()
+    with _txn(api) as tx:
+        tx.update_vertex(A_OUT, tags=["Video~~T"])
+        tx.commit()
+    form = api.update_calls[0].replaceVertices[A_OUT]
+    assert form.localAssignedTags == ["Video~~T"]
+    assert form.tags == []
+
+
 def test_remove_appends_to_remove_list():
     api = FakeAPI()
     with _txn(api) as tx:

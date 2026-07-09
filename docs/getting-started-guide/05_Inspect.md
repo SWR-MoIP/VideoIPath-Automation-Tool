@@ -47,7 +47,7 @@ serves from local state:
 
 ```python
 for port in dev.ports:              # triggers one hydration fetch for this device
-    print(port.label, port.vertex_id, port.status)
+    print(port.label, port.vertex_id, port.status, port.tags)
     edge = port.edge                # local edge-skeleton lookup, no I/O
     if edge:
         print("connected to", edge.to_device.label)
@@ -99,6 +99,10 @@ app.inspect.place_device("device12", x=1600, y=9050)
 app.inspect.update_device("device12", label="BU-LEAF-A", icon_type="ipSwitchRouter")
 app.inspect.update_vertex("device12.1.Ethernet1.out", use_as_endpoint=True)
 app.inspect.update_edge(edge_id, weight=10)
+
+# Assign catalog tags to a port (an Inspect-only capability). Tags are referenced by their
+# "Category~~name" id; read them back with port.tags.
+app.inspect.update_vertex("device12.1.Ethernet1.out", tags=["Video~~1080p50"])
 
 app.inspect.connect(
     "device12.1.Ethernet1.out",
