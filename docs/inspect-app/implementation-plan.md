@@ -240,33 +240,31 @@ Add `InspectDevice.is_hydrated` / `snapshot.fetched_at(...)` for introspection. 
 - **Changeset unit tests** (`tests/inspect/test_changeset.py`): staging→baseline capture, intent application, conflict detection (mutated baseline → error with field diffs), `check_conflicts=False` bypass, three-flag result evaluation incl. the captured failure fixtures, affected-set derivation.
 - **Query tests**: encoding, 414 length guard, projection constants stability.
 
-### 6.2 E2E — live instance, leaf-spine scenario (ADR-0005)
+### 6.2 E2E — live instance, topology replica (ADR-0005)
 
-Location `tests/e2e/inspect/`, pytest marker `e2e` (excluded by default via `addopts = -m "not e2e"`), gated on `VIPAT_E2E_ENABLED=1` in `tests/.env.test` **plus** a server-version allowlist check; every created element uses label prefix `E2E-` and tag `#vipat-e2e` so setup/teardown is idempotent and safe on a shared local instance.
+Location `tests/e2e/inspect/`, pytest marker `e2e` (excluded by default via `addopts = -m "not e2e"`), gated on `VIPAT_E2E_ENABLED=1` in `tests/.env.test` **plus** a server-version allowlist check. Every created element uses label prefix `E2E-` (in both inventory and inspect) and the `vipat-e2e` tag.
 
-**Scenario: `LeafSpineScenario` (module `tests/e2e/inspect/scenario.py`)** — a fixed dataclass-defined network modelled on the real rig (red/blue planes, leaf-spine, endpoints):
+**Namespace & lifecycle:** cleanup runs **at startup** (`scenario.cleanup(app)`), not on teardown — so after a run the built topology **persists** in VideoIPath for manual inspection, and the next run starts from a clean namespace. Mutating tests revert their own changes, so the persisted end state is the complete topology.
 
-| Role | Devices (virtual) | Ports (ip vertices, in/out pairs) |
-| ---- | ----------------- | -------------------------------- |
-| Spines | `E2E-SPINE-A`, `E2E-SPINE-B` | 4 × downlink (`swp1..4`) |
-| Leaves | `E2E-LEAF-A1`, `E2E-LEAF-A2` (red), `E2E-LEAF-B1`, `E2E-LEAF-B2` (blue) | 2 × uplink, 4 × host port |
-| Endpoints | `E2E-ENC-1`, `E2E-ENC-2`, `E2E-DEC-1`, `E2E-DEC-2` | `eth-a` (red), `eth-b` (blue) |
+**Scenario: `LeafSpineScenario` (module `tests/e2e/inspect/scenario.py`)** — an anonymized replica of the local instance's topology, captured to `leaf_spine_topology.json` (indices/coordinates/link-pairs only; no real names/ids). Built with **virtual (mock-driver) devices only** via the real user flow:
 
-Edge matrix (all bidirectional pairs): each leaf ↔ its plane's spine (uplinks, capacity 65535), each endpoint `eth-a` ↔ a red leaf host port and `eth-b` ↔ a blue leaf host port. Grid coordinates per role (spines y=0, leaves y=200, endpoints y=400).
+1. **Inventory** — `app.inventory.create_device(driver="com.nevion.mock-0.1.0")` with a router module sized to the device's degree (`num_router_ports`), then `add_device`. No hardware; the topology app is never used.
+2. **Inspect** — `add_devices_to_topology` (placement at the captured coordinates), `update_device(label=…, tags=[…])` to set the E2E display label + tag, then `connect` each link (ports discovered from `device.ports`).
 
-**Build path** (respects verified server semantics): virtual devices + their vertices are created via the *topology app* (`create_virtual_device()` + `update_device` — vertices cannot be created through `updateTopology`, and virtual devices need no hardware); everything Inspect *owns* is then done through `app.inspect`: placement, connect (paired edges), edits, removals. Scenario object exposes `build(app)`, `teardown(app)` (delete by tag/prefix — edges first, then devices), `assert_clean(app)`.
+`cleanup` removes edges, then the topology node (`remove_device_from_topology`), then the inventory entry — discovering E2E devices by label in **both** inventory and inspect (catches orphans from an aborted run).
 
-**Test list** (`test_e2e_leaf_spine.py`, ordered by dependency, session-scoped scenario fixture):
-1. `test_build_and_skeleton_read` — build; skeleton snapshot sees all 10 devices with labels/coordinates; edge count == matrix size; **no** hydration fetches occurred (spy counter).
-2. `test_lazy_hydration` — access `dev.ports` on one leaf → exactly one detail fetch; ports/vertex ids match scenario; other devices still skeleton.
-3. `test_connectivity_graph` — `linked_devices` of each endpoint == its two leaves; leaf ↔ spine adjacency matches the matrix; `port.edge.to_device` round-trips.
-4. `test_edge_pair_refresh` — `update_edge(weight=…)` on one uplink via direct write; assert commit result + snapshot pair record updated (targeted refresh) without full reload.
-5. `test_transaction_atomicity` — tx with one valid edge edit + one `remove` of a non-existent id → `InspectCommitError`, nothing applied (weight unchanged on server).
-6. `test_conflict_detection` — stage edit for edge E; mutate E out-of-band (second `VideoIPathApp` instance); `commit()` → `InspectCommitConflictError` listing the field; `rebase()` + commit succeeds.
-7. `test_device_placement_roundtrip` — `place_device` new coordinates; re-snapshot skeleton shows them; revert.
-8. `test_disconnect_connect_cycle` — disconnect one endpoint pair, assert gone from snapshot + collector; reconnect; assert identical to scenario matrix.
-9. `test_full_vs_skeleton_equivalence` — `load="full"` snapshot and skeleton+preload produce identical device/port/edge index contents for scenario entities.
-10. `test_teardown` — teardown; snapshot contains no `E2E-` devices/edges; runs also as autouse session-finalizer so aborted runs clean up.
+**Test list** (`test_e2e_leaf_spine.py`, session-scoped scenario fixture; all reads/writes via `app.inspect`):
+1. `test_all_devices_present` — every scenario device appears with its `E2E-` label.
+2. `test_skeleton_read_no_hydration` — scenario edge count == `expected_edge_count()`; **no** hydration fetches during the skeleton read (spy counter).
+3. `test_lazy_hydration` — `get_device(id).ports` → exactly one detail fetch, cached thereafter; hydration state flips; mock devices expose router ports.
+4. `test_connectivity_graph` — `linked_devices` of the busiest device == its fixture adjacency.
+5. `test_edge_pair_refresh` — `update_edge(weight=…)`; edge survives targeted refresh without a full reload; revert.
+6. `test_transaction_atomicity` — tx with a valid edge edit + a `remove` of a non-existent id → `InspectCommitError`, nothing applied.
+7. `test_conflict_detection` — edit an edge; mutate it out-of-band (second `VideoIPathApp`); `commit()` → `InspectCommitConflictError`; `rebase()` + commit succeeds; revert.
+8. `test_device_placement_roundtrip` — `place_device` new coordinates; verify; revert.
+9. `test_disconnect_reconnect_cycle` — disconnect a link's directed edges, assert gone, reconnect, assert restored.
+10. `test_full_vs_skeleton_equivalence` — `load="full"` and skeleton+preload resolve the same connectivity graph.
+11. `test_state_persists` — after the suite the complete topology (all devices + edges) remains.
 
 Never touched: non-`E2E-` devices, bookings/services (read-only asserts only), profiles/security sections.
 

@@ -1,25 +1,27 @@
-"""Fixed leaf-spine scenario for the Inspect E2E suite ([ADR-0005]).
+"""Topology scenario for the Inspect E2E suite ([ADR-0005]).
 
-Declaratively models a small, fully-flexed leaf-spine network (two planes, red/blue), modelled on
-the real local rig. Devices and their IP vertices are created through the **topology app** (vertices
-cannot be created via ``updateTopology`` — [ADR-0009]); placement, connections, edits and removals
-that Inspect owns are then driven through ``app.inspect``.
+Replicates the structure of the local VideoIPath instance (anonymized to indices/coordinates/links
+in ``leaf_spine_topology.json``) using **virtual (mock-driver) devices only**. The build path is the
+real user flow:
 
-Every created element is namespaced so a shared instance is safe:
-  * device/vertex labels start with ``E2E-``,
-  * every element carries the ``vipat-e2e`` tag.
+  1. **Inventory** — create each device with the ``com.nevion.mock`` driver (a simulated device with
+     configurable router ports) and ``add_device`` it. No real hardware is involved.
+  2. **Inspect** — add the devices to the topology graph, set their E2E display label + tag, then
+     connect their ports.
 
-Vertex ids are **discovered** from an Inspect snapshot after creation (each vertex is created with a
-unique descriptor label and looked up by ``port.label``), so the scenario does not depend on the
-server's vertex-id format.
+The topology app is never used.
 
-NOTE (developer-run): the exact virtual-device build calls exercise the *experimental* topology
-virtual-device API; confirm labels/ids on the first live run against your instance.
+Namespacing: every device carries the ``E2E-`` label prefix (in both inventory and inspect) and the
+``vipat-e2e`` tag. Cleanup runs at **startup** (``cleanup``), not on teardown — so the built
+topology persists in VideoIPath after a run for manual inspection, and the next run starts fresh.
 """
 
 from __future__ import annotations
 
+import json
+from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -27,189 +29,170 @@ if TYPE_CHECKING:
 
 E2E_PREFIX = "E2E-"
 E2E_TAG = "vipat-e2e"
+MOCK_DRIVER = "com.nevion.mock-0.1.0"
+TOPOLOGY_FILE = Path(__file__).parent / "leaf_spine_topology.json"
 
-# Grid coordinates per role tier.
-_Y_SPINE = 0.0
-_Y_LEAF = 200.0
-_Y_ENDPOINT = 400.0
-_X_STEP = 300.0
+# The fixture coordinates are captured from the live topology, so the replica would sit right on top
+# of it. Shift the whole E2E topology into its own region of the map so it never overlaps.
+POSITION_OFFSET_X = 0
+POSITION_OFFSET_Y = 3000
 
 
 @dataclass(frozen=True)
 class DeviceSpec:
-    label: str
-    icon_type: str
-    ports: tuple[str, ...]
-    x: float
-    y: float
+    name: str
+    x: int
+    y: int
+    ports: int
 
 
 @dataclass(frozen=True)
 class LinkSpec:
-    """A bidirectional connection between two ports (built as two directed edges)."""
-
-    from_device: str
-    from_port: str
-    to_device: str
-    to_port: str
+    a: int  # device index
+    b: int  # device index
+    count: int  # number of parallel bidirectional links
 
 
-def _vertex_token(device_label: str, port: str, direction: str) -> str:
-    """Unique descriptor label used to discover the created vertex on the Inspect surface."""
-    return f"{device_label}|{port}|{direction}"
-
-
-def _build_specs() -> tuple[list[DeviceSpec], list[LinkSpec]]:
-    spines = [
-        DeviceSpec("E2E-SPINE-A", "ipSwitchRouter", tuple(f"downlink{i}" for i in range(4)), 0 * _X_STEP, _Y_SPINE),
-        DeviceSpec("E2E-SPINE-B", "ipSwitchRouter", tuple(f"downlink{i}" for i in range(4)), 3 * _X_STEP, _Y_SPINE),
-    ]
-    leaf_ports = ("uplink0", "uplink1", "host0", "host1", "host2", "host3")
-    leaves = [
-        DeviceSpec("E2E-LEAF-A1", "ipSwitchRouter", leaf_ports, 0 * _X_STEP, _Y_LEAF),
-        DeviceSpec("E2E-LEAF-A2", "ipSwitchRouter", leaf_ports, 1 * _X_STEP, _Y_LEAF),
-        DeviceSpec("E2E-LEAF-B1", "ipSwitchRouter", leaf_ports, 2 * _X_STEP, _Y_LEAF),
-        DeviceSpec("E2E-LEAF-B2", "ipSwitchRouter", leaf_ports, 3 * _X_STEP, _Y_LEAF),
-    ]
-    endpoint_ports = ("eth-a", "eth-b")
-    endpoints = [
-        DeviceSpec("E2E-ENC-1", "encoder", endpoint_ports, 0 * _X_STEP, _Y_ENDPOINT),
-        DeviceSpec("E2E-ENC-2", "encoder", endpoint_ports, 1 * _X_STEP, _Y_ENDPOINT),
-        DeviceSpec("E2E-DEC-1", "decoder", endpoint_ports, 2 * _X_STEP, _Y_ENDPOINT),
-        DeviceSpec("E2E-DEC-2", "decoder", endpoint_ports, 3 * _X_STEP, _Y_ENDPOINT),
-    ]
-
-    links: list[LinkSpec] = [
-        # Uplinks: each leaf's uplink0 to a downlink on its plane's spine.
-        LinkSpec("E2E-LEAF-A1", "uplink0", "E2E-SPINE-A", "downlink0"),
-        LinkSpec("E2E-LEAF-A2", "uplink0", "E2E-SPINE-A", "downlink1"),
-        LinkSpec("E2E-LEAF-B1", "uplink0", "E2E-SPINE-B", "downlink0"),
-        LinkSpec("E2E-LEAF-B2", "uplink0", "E2E-SPINE-B", "downlink1"),
-        # Endpoint red-plane (eth-a) and blue-plane (eth-b) attachments.
-        LinkSpec("E2E-ENC-1", "eth-a", "E2E-LEAF-A1", "host0"),
-        LinkSpec("E2E-ENC-1", "eth-b", "E2E-LEAF-B1", "host0"),
-        LinkSpec("E2E-ENC-2", "eth-a", "E2E-LEAF-A1", "host1"),
-        LinkSpec("E2E-ENC-2", "eth-b", "E2E-LEAF-B1", "host1"),
-        LinkSpec("E2E-DEC-1", "eth-a", "E2E-LEAF-A2", "host0"),
-        LinkSpec("E2E-DEC-1", "eth-b", "E2E-LEAF-B2", "host0"),
-        LinkSpec("E2E-DEC-2", "eth-a", "E2E-LEAF-A2", "host1"),
-        LinkSpec("E2E-DEC-2", "eth-b", "E2E-LEAF-B2", "host1"),
-    ]
-    return [*spines, *leaves, *endpoints], links
+def _vertex_slot(vertex_id: str) -> int:
+    """Sort key: the trailing integer of a mock router vertex id (``device59.11.7`` -> 7)."""
+    return int(vertex_id.rsplit(".", 1)[-1])
 
 
 class LeafSpineScenario:
-    """Builds, inspects, and tears down the fixed leaf-spine network on a live instance."""
-
     def __init__(self) -> None:
-        self.devices, self.links = _build_specs()
-        # Resolved after build():
-        self.device_ids: dict[str, str] = {}  # label -> device id
-        self._vertex_ids: dict[str, str] = {}  # token -> inspect vertex id
+        data = json.loads(TOPOLOGY_FILE.read_text())
+        # Bake the offset into the specs so build placement and the placement-revert test agree.
+        self.devices = [
+            DeviceSpec(d["name"], d["x"] + POSITION_OFFSET_X, d["y"] + POSITION_OFFSET_Y, d["ports"])
+            for d in data["devices"]
+        ]
+        self.links = [LinkSpec(a, b, n) for a, b, n in data["links"]]
+        self.device_ids: dict[str, str] = {}  # E2E name -> VideoIPath device id
+        self._out: dict[str, list[str]] = {}  # name -> ordered out-vertex ids
+        self._in: dict[str, list[str]] = {}  # name -> ordered in-vertex ids
 
-    # --- Introspection helpers ---
+    # --- Introspection ---
 
     @property
-    def device_labels(self) -> list[str]:
-        return [d.label for d in self.devices]
+    def device_names(self) -> list[str]:
+        return [d.name for d in self.devices]
 
-    def device_id(self, label: str) -> str:
-        return self.device_ids[label]
+    def device_id(self, name: str) -> str:
+        return self.device_ids[name]
 
-    def out_vertex(self, label: str, port: str) -> str:
-        return self._vertex_ids[_vertex_token(label, port, "out")]
-
-    def in_vertex(self, label: str, port: str) -> str:
-        return self._vertex_ids[_vertex_token(label, port, "in")]
+    def adjacency(self) -> dict[str, set[str]]:
+        """Undirected neighbour set per device name (from the fixture)."""
+        adj: dict[str, set[str]] = {d.name: set() for d in self.devices}
+        for link in self.links:
+            na, nb = self.devices[link.a].name, self.devices[link.b].name
+            adj[na].add(nb)
+            adj[nb].add(na)
+        return adj
 
     def expected_edge_count(self) -> int:
         # Two directed edges per bidirectional link.
-        return len(self.links) * 2
+        return sum(link.count for link in self.links) * 2
 
-    # --- Build ---
+    def a_link(self) -> tuple[str, str]:
+        """A representative connected device pair (names)."""
+        link = self.links[0]
+        return self.devices[link.a].name, self.devices[link.b].name
 
-    def build(self, app: "VideoIPathApp") -> None:
-        for spec in self.devices:
-            device_id = self._create_device(app, spec)
-            self.device_ids[spec.label] = device_id
-        # Place the devices on the grid (they are already graph elements after creation).
-        with app.inspect.transaction() as tx:
-            for spec in self.devices:
-                tx.place_device(self.device_ids[spec.label], spec.x, spec.y)
-            tx.commit()
-        self._connect_links(app)
+    # --- Startup cleanup (removes any prior E2E state) ---
 
-    def _create_device(self, app: "VideoIPathApp", spec: DeviceSpec) -> str:
-        device = app.topology.create_virtual_device()
-        device.configuration.base_device.label = spec.label
-        device.configuration.base_device.tags = [E2E_TAG]
-        device.add_virtual_module()
-        for port in spec.ports:
-            for direction, api_dir in (("out", "Out"), ("in", "In")):
-                vertex = device.add_virtual_ip_vertex(vertex_direction=api_dir)
-                vertex.label = _vertex_token(spec.label, port, direction)
-                vertex.tags = [E2E_TAG]
-        app.topology.add_device_initially(device)
-        # add_device_initially assigns the next free virtual id onto the base device; read it
-        # directly rather than looking up by label (the label index is only eventually consistent).
-        device_id = device.configuration.base_device.id
-        if not device_id:
-            raise RuntimeError(f"Device '{spec.label}' has no id after creation.")
-        # Virtual-device vertices do not surface as ports in the Inspect nodeStatus, so capture
-        # their ids straight from the created graph elements (keyed by the descriptor label we set).
-        for vtx in device.configuration.ip_vertices:
-            self._vertex_ids[vtx.label] = vtx.id
-        return device_id
+    def cleanup(self, app: "VideoIPathApp") -> None:
+        """Remove every E2E device (and its edges) so a run starts from a clean namespace.
 
-    def _connect_links(self, app: "VideoIPathApp") -> None:
-        with app.inspect.transaction() as tx:
-            for link in self.links:
-                tx.connect(
-                    self.out_vertex(link.from_device, link.from_port),
-                    self.in_vertex(link.to_device, link.to_port),
-                    bidirectional=False,
-                )
-                tx.connect(
-                    self.out_vertex(link.to_device, link.to_port),
-                    self.in_vertex(link.from_device, link.from_port),
-                    bidirectional=False,
-                )
-            tx.commit()
-
-    # --- Teardown ---
-
-    def teardown(self, app: "VideoIPathApp") -> None:
-        """Remove all scenario edges then all scenario devices. Safe to call repeatedly.
-
-        Discovers the currently-present E2E devices and their edges from a live snapshot (by the
-        ``E2E-`` label prefix), so it also cleans up orphaned runs and never tries to remove an edge
-        that is already gone.
+        A device lives in two places — the inventory and the inspect topology graph — and removing
+        it from one does not remove it from the other. So we discover E2E devices by their ``E2E-``
+        label in **both** (catching orphans from an aborted run) and remove edges, the topology node,
+        and the inventory entry.
         """
+        inventory_labels = app.inventory._inventory_api.fetch_devices_user_defined_labels_as_dict()
+        inventory_ids = {i for i, label in inventory_labels.items() if (label or "").startswith(E2E_PREFIX)}
         app.inspect.refresh()
-        # Only touch devices that currently exist (discovered by label prefix), so teardown is
-        # idempotent — a second call finds nothing and is a no-op.
-        known_ids = {d.id for d in app.inspect.devices if (d.label or "").startswith(E2E_PREFIX)}
-        if not known_ids:
+        topology_ids = {d.id for d in app.inspect.devices if (d.label or "").startswith(E2E_PREFIX)}
+        all_ids = inventory_ids | topology_ids
+        if not all_ids:
             return
-        # Edges first (only the ones that actually exist).
+        # Edges first (only those that actually exist).
         edge_ids = [
             edge.id
             for edge in app.inspect.edges
-            if (edge.from_device and edge.from_device.id in known_ids)
-            or (edge.to_device and edge.to_device.id in known_ids)
+            if (edge.from_device and edge.from_device.id in all_ids)
+            or (edge.to_device and edge.to_device.id in all_ids)
         ]
         if edge_ids:
             with app.inspect.transaction() as tx:
                 for edge_id in edge_ids:
                     tx.remove(edge_id)
                 tx.commit(check_conflicts=False)
-        for device_id in known_ids:
+        # Remove the topology node, then the inventory entry.
+        for device_id in topology_ids:
             try:
-                app.topology.remove_device_by_id(device_id, ignore_affected_services=True)
-            except Exception:  # already gone / not an nGraphElement — best-effort cleanup
+                app.inspect.remove_device_from_topology(device_id)
+            except Exception:  # best-effort cleanup
+                pass
+        for device_id in inventory_ids:
+            try:
+                app.inventory.remove_device(device_id=device_id, check_remove=False)
+            except Exception:  # best-effort cleanup
                 pass
 
-    def assert_clean(self, app: "VideoIPathApp") -> None:
+    # --- Build ---
+
+    def build(self, app: "VideoIPathApp") -> None:
+        self._create_inventory_devices(app)
+        # Add to the inspect topology graph at their coordinates.
+        app.inspect.add_devices_to_topology([(self.device_ids[s.name], s.x, s.y) for s in self.devices])
+        # Configure them in inspect: E2E display label + tag.
+        with app.inspect.transaction() as tx:
+            for spec in self.devices:
+                tx.update_device(self.device_ids[spec.name], label=spec.name, tags=[E2E_TAG])
+            tx.commit()
+        self._discover_ports(app)
+        self._connect(app)
+
+    def _create_inventory_devices(self, app: "VideoIPathApp") -> None:
+        for i, spec in enumerate(self.devices):
+            device = app.inventory.create_device(driver=MOCK_DRIVER)
+            device.configuration.label = spec.name
+            device.configuration.address = f"10.99.{i // 256}.{i % 256}"
+            settings = device.configuration.custom_settings
+            settings.num_router_modules = 1
+            settings.num_router_ports = spec.ports
+            settings.num_codec_modules = 0
+            online = app.inventory.add_device(device=device, address_check=False)
+            self.device_ids[spec.name] = online.configuration.device_id
+
+    def _discover_ports(self, app: "VideoIPathApp") -> None:
         app.inspect.refresh()
-        leftover = [d.label for d in app.inspect.devices if (d.label or "").startswith(E2E_PREFIX)]
-        assert not leftover, f"E2E devices still present after teardown: {leftover}"
+        app.inspect.preload(list(self.device_ids.values()))
+        for spec in self.devices:
+            device = app.inspect.get_device(self.device_ids[spec.name])
+            outs: list[str] = []
+            ins: list[str] = []
+            for port in device.ports:
+                label = port.label or ""
+                if not port.vertex_id:
+                    continue
+                if "Router Out" in label:
+                    outs.append(port.vertex_id)
+                elif "Router In" in label:
+                    ins.append(port.vertex_id)
+            self._out[spec.name] = sorted(outs, key=_vertex_slot)
+            self._in[spec.name] = sorted(ins, key=_vertex_slot)
+
+    def _connect(self, app: "VideoIPathApp") -> None:
+        slot: dict[str, int] = defaultdict(int)
+        with app.inspect.transaction() as tx:
+            for link in self.links:
+                na, nb = self.devices[link.a].name, self.devices[link.b].name
+                for _ in range(link.count):
+                    ka, kb = slot[na], slot[nb]
+                    slot[na] += 1
+                    slot[nb] += 1
+                    # Bidirectional link between interface ka on A and kb on B.
+                    tx.connect(self._out[na][ka], self._in[nb][kb], bidirectional=False)
+                    tx.connect(self._out[nb][kb], self._in[na][ka], bidirectional=False)
+            tx.commit()
