@@ -55,6 +55,17 @@ get-videoipath-version
 list-videoipath-versions
 ```
 
+## Agent rules
+
+Global repo guidance lives in this file. Path-scoped Python rules are in `.claude/rules/`:
+
+- `python-style.md` — type hints, ruff formatting, naming, pathlib
+- `python-quality.md` — Pydantic, exceptions, lint gates, change scope
+- `python-testing.md` — pytest, fixtures, fakes, e2e gating
+- `agent-rules-layout.md` — how to add/remove rules and maintain `.cursor/rules/` symlinks
+
+Cursor reads the same content via symlinks in `.cursor/rules/*.mdc`. Canonical rule files live in `.claude/rules/`; see `agent-rules-layout.md` when creating or deleting rules. Python rules load when working on files under `src/` or `tests/`.
+
 ## Architecture
 
 ### Three-layer design
