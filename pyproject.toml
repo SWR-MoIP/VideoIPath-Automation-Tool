@@ -52,6 +52,7 @@ python-dotenv = "^1.1.0"
 addopts = "-x -p no:warnings --cov-report=term --cov-report=term-missing --no-cov-on-fail --cov=src --ignore=__intern -m \"not e2e\""
 markers = [
     "e2e: developer-run tests against a live VideoIPath instance (gated on VIPAT_E2E_ENABLED=1; excluded by default). Run with '-m e2e'.",
+    "incremental: sequential workflow steps; later steps are skipped when an earlier one fails.",
 ]
 
 [virtualenvs]

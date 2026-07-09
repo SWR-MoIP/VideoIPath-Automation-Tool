@@ -45,7 +45,7 @@ poetry run test
 
 # Single file or test (extra args pass through)
 poetry run test-unit tests/validators/test_device_id.py
-poetry run test-e2e tests/e2e/inspect/test_e2e_leaf_spine.py::test_name
+poetry run test-e2e tests/e2e/inspect/test_e2e_inspect.py::test_name
 
 # Bare pytest also runs unit tests only (e2e excluded via pyproject addopts)
 poetry run pytest

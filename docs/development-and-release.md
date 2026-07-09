@@ -80,7 +80,7 @@ poetry run test     # unit, then e2e (stops on first failure)
 
 # Single file or test — extra args pass through
 poetry run test-unit tests/validators/test_device_id.py
-poetry run test-e2e tests/e2e/inspect/test_e2e_leaf_spine.py::test_name
+poetry run test-e2e tests/e2e/inspect/test_e2e_inspect.py::test_name
 ```
 
 `poetry run pytest` also runs unit tests only (e2e is excluded via `addopts` in `pyproject.toml`). All default runs report coverage on `src/`.
