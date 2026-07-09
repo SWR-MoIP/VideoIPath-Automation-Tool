@@ -1,58 +1,75 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from videoipath_automation_tool.apps.inspect.model.common import InspectApiStatusSummary
-from videoipath_automation_tool.apps.inspect.snapshot import _DeviceRecord
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
-    from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
+    from videoipath_automation_tool.apps.inspect.snapshot import _DeviceRecord, InspectSnapshot
 
 
 @dataclass(frozen=True, slots=True)
 class InspectDevice:
-    snapshot: InspectSnapshot
-    record: _DeviceRecord
+    """A topology device/node. Skeleton fields (id, label, coordinates, status, sync, tags) are
+    available immediately; ``ports`` and ``services`` lazily hydrate from the server on first
+    access ([ADR-0007]). The record is resolved live from the snapshot, so a held reference sees
+    hydrated/refreshed data transparently."""
 
-    @property
-    def id(self) -> str:
-        return self.record.device_id
+    snapshot: InspectSnapshot
+    id: str
+
+    def _record(self) -> "_DeviceRecord":
+        record = self.snapshot.get_device_record(self.id)
+        if record is None:
+            raise KeyError(f"Device '{self.id}' is no longer present in the snapshot.")
+        return record
 
     @property
     def label(self) -> str | None:
-        return self.record.label
+        return self._record().label
 
     @property
     def pid(self) -> str | None:
-        return self.record.pid
+        return self._record().pid
+
+    @property
+    def is_virtual(self) -> bool | None:
+        meta = self._record().node.meta
+        return meta.isVirtual if meta is not None else None
+
+    @property
+    def icon_type(self) -> str | None:
+        meta = self._record().node.meta
+        return meta.iconType if meta is not None else None
 
     @property
     def status(self) -> InspectApiStatusSummary | None:
-        if self.record.node is None:
-            return None
-        return self.record.node.status
+        return self._record().node.status
 
     @property
     def sync_severity(self) -> int | str | None:
-        if self.record.node is None:
-            return None
-        return self.record.node.syncSeverity
+        return self._record().node.syncSeverity
 
     @property
     def tags(self) -> tuple[str, ...]:
-        if self.record.node is None:
-            return ()
-        return tuple(self.record.node.tags)
+        return tuple(self._record().node.tags)
 
     @property
     def coordinates(self) -> dict[str, float | int | str | None] | None:
-        if self.record.node is None or self.record.node.meta is None:
-            return None
-        return self.record.node.meta.coordinates
+        return self._record().node.coordinates
+
+    @property
+    def is_hydrated(self) -> bool:
+        return self.snapshot.is_device_hydrated(self.id)
+
+    @property
+    def fetched_at(self) -> datetime | None:
+        return self.snapshot.fetched_at(self.id)
 
     @property
     def ports(self) -> list[InspectPort]:

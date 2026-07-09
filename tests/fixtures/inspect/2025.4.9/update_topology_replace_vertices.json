@@ -1,0 +1,80 @@
+{
+  "request": {
+    "header": { "id": 0 },
+    "data": {
+      "replaceDevices": {},
+      "replaceVertices": {
+        "device-a.module-1.port-out-1.out": {
+          "active": true,
+          "controlProps": null,
+          "custom": {},
+          "desc": "",
+          "destinationMonitorLeader": false,
+          "extraAlertFilters": [],
+          "label": "",
+          "localAssignedTags": [],
+          "queueable": false,
+          "sipsMode": "NONE",
+          "tags": [],
+          "typeFields": {
+            "ipAddress": null,
+            "ipNetmask": null,
+            "public": false,
+            "supportsCpipeCfg": false,
+            "supportsIgmpCfg": false,
+            "supportsMacForwardingCfg": false,
+            "supportsNsoCfg": false,
+            "supportsOpenflowCfg": false,
+            "supportsStaticIgmpCfg": false,
+            "supportsVlanCfg": false,
+            "supportsVplsCfg": false,
+            "type": "ip",
+            "vlanId": null,
+            "vrfId": null
+          },
+          "useAsEndpoint": false
+        }
+      },
+      "replaceEdges": {},
+      "replaceResourceTransforms": {},
+      "addExternalEdges": [],
+      "remove": [],
+      "force": false
+    }
+  },
+  "response": {
+    "data": {
+      "items": [
+        {
+          "external": null,
+          "id": "device-a.module-1.port-out-1.out",
+          "idx": null,
+          "res": { "msg": [""], "ok": true }
+        }
+      ],
+      "res": { "msg": [], "ok": true },
+      "validation": {
+        "createIds": [],
+        "details": {},
+        "result": { "msg": [], "ok": true }
+      }
+    },
+    "header": { "ok": true, "code": "OK" }
+  },
+  "unknown_id_validation_failure": {
+    "note": "Committing a vertex id that does not exist in the graph passes schema conversion but fails validation — replaceVertices is update-only:",
+    "data": {
+      "items": [],
+      "res": { "msg": ["Validation failed"], "ok": false },
+      "validation": {
+        "createIds": [],
+        "details": {},
+        "result": {
+          "msg": ["Vertex with id device-a.module-9.new-port.out was not found in graph"],
+          "ok": false
+        }
+      }
+    },
+    "header": { "ok": true, "code": "OK" }
+  }
+}

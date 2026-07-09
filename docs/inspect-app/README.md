@@ -15,7 +15,13 @@ there is **no deprecation and no migration** planned.
 These docs are **living documents** — meant to be edited and refined as the
 design firms up and as the real Inspect API is reverse-engineered. The official
 [VideoIPath Public API 2025 LTS](https://documenter.getpostman.com/view/11222813/2sBXihpCS8#intro)
-reference is now a primary source. Nothing here is implemented yet; this is the plan.
+reference is now a primary source.
+
+> **Status: implemented.** The `app.inspect` surface described here is shipped
+> (`src/videoipath_automation_tool/apps/inspect/`), with offline unit tests under
+> `tests/inspect/` and a developer-run live E2E suite under `tests/e2e/inspect/`.
+> All ten ADRs are Accepted. For usage, see the
+> [Inspect getting-started page](../getting-started-guide/05_Inspect.md).
 
 ## Reading order
 
@@ -62,6 +68,7 @@ reference is now a primary source. Nothing here is implemented yet; this is the 
 - **Proposed / Accepted / Superseded** — for ADRs, see
   [the decisions index](./decisions/README.md).
 
-> ADRs currently capture **context and options only** — decisions are open.
-> Promote an ADR to **Accepted** once agreed, and tick off `[VERIFY]` items in
-> [concepts.md](./concepts.md) as they are confirmed.
+> All ADRs are **Accepted** and the `[VERIFY]` items in
+> [concepts.md](./concepts.md) / [endpoints.md](./endpoints.md) were confirmed
+> against VideoIPath 2025.4.9. The app is implemented; these docs are retained as
+> the design record.

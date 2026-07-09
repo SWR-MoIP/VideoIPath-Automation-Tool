@@ -1,6 +1,7 @@
 import logging
 from typing import Literal, Optional
 
+from videoipath_automation_tool.apps.inspect.inspect_app import InspectApp
 from videoipath_automation_tool.apps.inventory import InventoryApp
 from videoipath_automation_tool.apps.inventory.model.drivers import AVAILABLE_SCHEMA_VERSIONS, SELECTED_SCHEMA_VERSION
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
@@ -221,6 +222,7 @@ class VideoIPathApp:
         self._preferences = None
         self._profile = None
         self._security = None
+        self._inspect = None
 
         self._logger.info("VideoIPath Automation Tool initialized.")
 
@@ -230,6 +232,7 @@ class VideoIPathApp:
             self._topology_api = self.topology._topology_api
             self._preferences_api = self.preferences._preferences_api
             self._profile_api = self.profile._profile_api
+            self._inspect_api = self.inspect._inspect_api
 
     # --- Getters to enable lazy loading ---
     @property
@@ -266,6 +269,13 @@ class VideoIPathApp:
             self._logger.debug("SecurityApp first called. Initialize SecurityApp.")
             self._security = SecurityApp(vip_connector=self._videoipath_connector, logger=self._logger)
         return self._security
+
+    @property
+    def inspect(self):
+        if self._inspect is None:
+            self._logger.debug("InspectApp first called. Initialize InspectApp.")
+            self._inspect = InspectApp(vip_connector=self._videoipath_connector, logger=self._logger)
+        return self._inspect
 
     # --- Basic Methods ---
     def _determine_fallback_driver_schema_version(self) -> Optional[str]:

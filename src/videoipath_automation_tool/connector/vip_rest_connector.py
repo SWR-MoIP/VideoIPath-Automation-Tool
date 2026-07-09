@@ -13,7 +13,10 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         },
         "PATCH": {"PREFIXES": {"/rest/v2/data/config/"}, "EXACT_MATCHES": set()},
         "POST": {
-            "PREFIXES": {"/rest/v2/actions/status/collector/"},
+            "PREFIXES": {
+                "/rest/v2/actions/status/collector/",
+                "/rest/v2/actions/status/network/",
+            },
             "EXACT_MATCHES": {"/rest/v2/actions/status/pathman/validateTopologyUpdate"},
         },
     }
@@ -24,6 +27,7 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         auth_check: bool = True,
         node_check: bool = True,
         url_validation: bool = True,
+        allow_projection: bool = False,
         version: Literal["v2"] = "v2",
     ) -> ResponseV2Get:
         """
@@ -37,6 +41,11 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
             auth_check (bool, optional): If `True`, verifies authentication status in the response (default: `True`).
             node_check (bool, optional): If `True`, ensures that all expected nodes are present in the response data (default: `True`).
             url_validation (bool, optional): If `True`, validates the URL path (default: `True`).
+            allow_projection (bool, optional): If `True`, permits scoped projection paths that contain
+                `/.../` up-navigation segments (used by the Inspect collector queries). When `True`,
+                `node_check` is implicitly skipped because projected responses do not contain the full
+                node structure. Defaults to `False` (the `/...` wildcard is rejected, preserving the
+                behaviour of all existing callers).
             version (Literal["v2"], optional): The API version to use (default: "v2").
 
         Returns:
@@ -56,9 +65,13 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
         if url_validation:
             self._validate_url(url_path, "GET")
 
-        if "/..." in url_path:
+        if not allow_projection and "/..." in url_path:
             error_message = "Wildcard '/...' is not allowed in URL path."
             raise ValueError(error_message)
+
+        if allow_projection:
+            # Projected responses only carry the selected sub-tree, so the full-node check cannot pass.
+            node_check = False
 
         response = self._execute_request(
             method="GET",

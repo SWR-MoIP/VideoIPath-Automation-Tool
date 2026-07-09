@@ -75,10 +75,17 @@ between our read and our commit (lost update). What the server gives us
    - devices: `lookupInspectDevice` — editable device form (coordinates,
      descriptor, iconType, sdpStrategy, tags).
 
-   Edges come back in the persisted `replaceEdges` shape directly; for
-   devices and vertices the lookup returns the *edit form*, and the ACL maps
-   it to the persisted `replace*` shape (e.g. `coordinates` ↔ `maps[]`) — the
-   same mapping the UI performs. The baseline serves double duty: it is the
+   The lookup forms **are** the write shapes — no client-side mapping
+   (all three verified 2025.4.9 by live commit + byte-identical revert):
+   `replaceEdges` takes the persisted edge form exactly as
+   `lookupInspectEdgesByIds` returns it; `replaceDevices` takes exactly
+   `lookupInspectDevice`'s `fields` object (`coordinates`/`localAssignedTags`
+   mandatory; the raw persisted `baseDevice` element is rejected with HTTP
+   400 — the server maps `coordinates` → `maps[]` itself); `replaceVertices`
+   takes exactly `lookupInspectVertexById`'s `fields` object. Note
+   `replaceVertices` is **update-only**: an unknown vertex id fails
+   validation (*"Vertex … was not found in graph"*) — vertices originate from
+   device sync, not from commits. The baseline serves double duty: it is the
    basis for building the full `replace*` payload (caller mutations applied
    on top) *and* the reference for conflict detection, compared on the
    editable fields. For `remove` entries the baseline is the element's
@@ -119,7 +126,14 @@ between our read and our commit (lost update). What the server gives us
   snapshot is a read surface, not a write token
   ([ADR-0007](./0007-lazy-snapshot-loading.md),
   ADR-0010 for post-commit refresh).
-- The device/vertex lookups return *edit forms*, not raw persisted elements —
-  the ACL's edit-form ↔ `replace*`-shape mapping must be exact, or replaces
-  clobber unmapped fields. Fixture-test the round-trip per element kind
-  (edges need none; devices/vertices do).
+- The lookup→write round-trip is exact for devices **and vertices** (both
+  verified: commit + revert left the persisted element byte-identical except
+  `_rev`) and trivial for edges. One caveat, applying to devices and vertices
+  alike: the lookups (and the collector) return the **effective** label — the
+  persisted `descriptor` merged with the `fDescriptor` fallback.
+  `descriptor` is stored verbatim on commit, so a client that round-trips the
+  lookup unchanged pins the fallback label into `descriptor` (the label stops
+  tracking device-reported names). The persisted-vs-fallback distinction is
+  not observable on the Inspect surface; the UI has the same property.
+  Document it; don't touch `descriptor`/label fields unless the caller set
+  them.

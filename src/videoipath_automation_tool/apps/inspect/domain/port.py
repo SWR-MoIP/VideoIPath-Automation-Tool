@@ -27,7 +27,7 @@ class InspectPort:
 
     @property
     def label(self) -> str | None:
-        return self.indexed.port.label
+        return self.indexed.port.effective_label
 
     @property
     def device(self) -> InspectDevice | None:

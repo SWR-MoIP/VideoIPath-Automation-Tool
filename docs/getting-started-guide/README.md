@@ -1,6 +1,6 @@
 # Getting Started Guide
 
-This guide will help you get started with the VideoIPath Automation Tool. It will show you how to establish a connection to the VideoIPath server and how to manage devices in the inventory and topology. Also, it demonstrates how to configure multicast pools.
+This guide will help you get started with the VideoIPath Automation Tool. It will show you how to establish a connection to the VideoIPath server and how to manage devices in the inventory and topology. Also, it demonstrates how to configure multicast pools and read/write the topology through the Inspect app.
 
 ## Table of Contents
 
@@ -8,3 +8,4 @@ This guide will help you get started with the VideoIPath Automation Tool. It wil
 2. [Managing Devices in the Inventory](02_Inventory.md)
 3. [Managing Devices in the Topology](03_Topology.md)
 4. [Configuring Multicast Pools](04_Multicast_Pools.md)
+5. [Inspecting and Editing the Topology (Inspect App)](05_Inspect.md)

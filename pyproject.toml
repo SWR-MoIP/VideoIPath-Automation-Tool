@@ -49,10 +49,12 @@ pytest-cov = "^7.1.0"
 pytest-dotenv = "^0.5.2"
 
 [tool.pytest.ini_options]
-addopts = "-x -p no:warnings --cov-report=term --cov-report=term-missing --no-cov-on-fail --cov=src --ignore=__intern"
+addopts = "-x -p no:warnings --cov-report=term --cov-report=term-missing --no-cov-on-fail --cov=src --ignore=__intern -m \"not e2e\""
 env_override_existing_values = 0
 env_files = ["tests/.env.test"]
-
+markers = [
+    "e2e: developer-run tests against a live VideoIPath instance (gated on VIPAT_E2E_ENABLED=1; excluded by default). Run with '-m e2e'.",
+]
 
 [virtualenvs]
 in-project = true

@@ -51,9 +51,9 @@ arrays mean “no change” for that category:
 
 | Field | Shape | Purpose |
 | ----- | ----- | ------- |
-| `replaceDevices` | `Record<id, device>` | Upsert devices |
-| `replaceVertices` | `Record<id, vertex>` | Upsert vertices |
-| `replaceEdges` | `Record<"fromId::toId", edge>` | Upsert edges (composite key) |
+| `replaceDevices` | `Record<id, device edit form>` — the `lookupInspectDevice.fields` shape (`coordinates`, `localAssignedTags` mandatory; raw `baseDevice` element rejected — verified 2025.4.9) | Upsert devices |
+| `replaceVertices` | `Record<id, vertex edit form>` — the `lookupInspectVertexById.fields` shape (verified 2025.4.9); **update-only**: unknown ids fail validation | Update vertices |
+| `replaceEdges` | `Record<"fromId::toId", edge>` — raw persisted edge form (composite key) | Upsert edges |
 | `replaceResourceTransforms` | `Record<id, …>` | Upsert resource transforms |
 | `addExternalEdges` | `edge[]` | Add external edges |
 | `remove` | `string[]` | Remove entities by id |

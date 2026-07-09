@@ -415,19 +415,16 @@ Write consistency & post-commit refresh ([ADR-0009](./decisions/0009-write-consi
 - [x] UI edit/commit flows avoid `nGraphElements`: the Inspect UI bundle contains zero references; the edge edit flow calls `lookupInspectEdgesByIds` with both pair directions ([ADR-0008](./decisions/0008-collector-only-endpoints.md))
 - [x] Batched lookups for compare-and-commit baselines: `…ByIds` actions take id lists natively
 - [x] Direct edge-pair addressing for targeted refresh: `externalEdgesByDeviceKey/<deviceA::deviceB>/<projection>` returns the single pair item
-- [ ] Collector propagation delay: time between `updateTopology` OK and the change being visible in collector reads (drives the ADR-0010 retry window) — needs a live write test (coordinate nudge + revert)
+- [x] Collector propagation delay: measured via device coordinate commit + revert (three samples) — change visible on the **first poll ~25 ms after the POST returned**; no post-commit retry window needed ([ADR-0010](./decisions/0010-post-commit-snapshot-refresh.md))
+- [x] `replaceDevices` payload shape: the **edit form** (`lookupInspectDevice.fields`; `coordinates`/`localAssignedTags` mandatory) — the raw persisted `baseDevice` element is rejected with HTTP 400; round-trip verified byte-identical except `_rev` ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorupdatetopology))
+- [x] `replaceVertices` payload shape: the **vertex edit form** (`lookupInspectVertexById.fields`) — verified via desc round-trip on a live vertex (byte-identical revert). **Update-only**: an unknown vertex id fails validation with *"Vertex with id … was not found in graph"* — standalone vertices cannot be created via `updateTopology` (they originate from device sync / virtual-device definitions) ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorupdatetopology))
 - [ ] Re-check on every server upgrade: does `updateTopology` gain `_rev` enforcement (would allow replacing client-side compare-and-commit)
 
 ## 6. Open questions
 
 _All VERIFY items are resolved (results merged into
 [endpoints.md](./endpoints.md) and the §5.1 checklist) or documented as
-confirmed limitations / unregistered stubs — with one exception:_
-
-- **Collector propagation delay after a commit**
-  ([ADR-0010](./decisions/0010-post-commit-snapshot-refresh.md)) — requires a
-  live write test (coordinate nudge + revert) to size the post-commit retry
-  window.
+confirmed limitations / unregistered stubs._
 
 Remaining follow-up (only if a future server version registers new actions):
 

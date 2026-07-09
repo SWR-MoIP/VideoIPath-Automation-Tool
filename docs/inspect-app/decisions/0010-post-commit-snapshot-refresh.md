@@ -20,8 +20,9 @@ exists"), so the state must catch up — efficiently:
 - The change set knows precisely which entities it touched, and the commit
   response confirms them (`data.items[]` with per-item `res.ok`).
 - The collector is a **status-plane projection** of the config store the
-  commit writes to; the change may become visible only after a propagation
-  delay (**[VERIFY]** below).
+  commit writes to; measured on 2025.4.9, the projection updates effectively
+  synchronously with the commit (~25 ms to first-poll visibility — see
+  Decision, point 5).
 
 ## Options
 
@@ -73,12 +74,12 @@ result is success (`res.ok` and `validation.result.ok`):
    or other section-level data was loaded, mark it stale and let the next
    access re-load it (ADR-0007 lazy path). Commits change services only
    indirectly; eager re-reads here are usually wasted.
-5. **Propagation handling**: the re-fetch verifies the committed change is
-   visible (e.g. a replaced field has the committed value) and retries briefly
-   if the projection lags; give up after a small bounded window and surface
-   the staleness (log + fetch timestamp), never hang.
-   **[VERIFY]** the actual delay between `updateTopology` OK and collector
-   visibility on a real instance — if it is consistently ~0, drop the retry.
+5. **Propagation handling**: measured on 2025.4.9 (device coordinate commit,
+   three samples): the change was visible in collector reads on the **first
+   poll ~25 ms after the POST returned** — the projection updates effectively
+   synchronously with the commit. No retry window is needed; the targeted
+   re-fetch doubles as the verification read (log if the committed value is
+   unexpectedly absent, don't loop).
 
 A failed commit changes nothing server-side (reject-before-apply, verified) —
 the snapshot is left untouched.
@@ -93,8 +94,9 @@ the snapshot is left untouched.
 - The refresh step needs the affected-set derivation to be exact; the id
   conventions it relies on are already documented (concepts.md §3.1) and
   fixture-tested.
-- Remaining `[VERIFY]` (tracked in concepts.md §5.1): the collector
-  propagation delay after a commit — requires a live write test (coordinate
-  nudge + revert) to size the retry window.
+- All refresh mechanics are verified on 2025.4.9: direct pair addressing,
+  scoped single-device reads, and ~synchronous collector propagation
+  (~25 ms to first-poll visibility). Re-measure propagation if a future
+  server version decouples the collector projection from the commit path.
 - Together with ADR-0009: `commit()` = pre-commit conflict check → POST →
   result evaluation → targeted refresh. One documented lifecycle.

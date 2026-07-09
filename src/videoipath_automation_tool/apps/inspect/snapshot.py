@@ -1,10 +1,29 @@
+"""InspectSnapshot: skeleton-first, lazily-hydrated, accreting read state ([ADR-0007]).
+
+A snapshot is built from two scoped skeleton reads (all devices without module/port detail, all
+external-edge pairs). Detail is hydrated on demand — the first access to a device's ports fetches
+that one device's full nodeStatus sub-tree and merges it into the same internal indexes; services
+load once as a section. The snapshot is never a single point in time: each device and section
+carries its own fetch timestamp. ``refresh()`` builds a *new* snapshot; state is never reused
+across snapshots.
+
+After a successful commit the change set calls the post-commit hooks here to update only the
+touched entities via targeted scoped re-reads ([ADR-0010]) instead of a full reload.
+"""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Iterator
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Iterator, Optional
 
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiCollectorResponse,
+    InspectApiExternalEdgeLiveStatus,
+    InspectApiExternalEdgesByDeviceKeyItem,
     InspectApiExternalEdgeStatus,
     InspectApiModuleStatus,
     InspectApiNodeStatusItem,
@@ -17,14 +36,34 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
+    from videoipath_automation_tool.apps.inspect.inspect_api import InspectAPI
+
+_PRELOAD_WORKERS = 8
 
 
-@dataclass(frozen=True, slots=True)
+class HydrationLevel(str, Enum):
+    SKELETON = "skeleton"
+    FULL = "full"
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+@dataclass
 class _DeviceRecord:
     device_id: str
-    label: str | None
-    pid: str | None
-    node: InspectApiNodeStatusItem | None
+    node: InspectApiNodeStatusItem
+    level: HydrationLevel
+    fetched_at: datetime = field(default_factory=_now)
+
+    @property
+    def label(self) -> str | None:
+        return self.node.effective_label
+
+    @property
+    def pid(self) -> str | None:
+        return self.node.pid or self.node.deviceId
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +78,7 @@ class _IndexedEdge:
     edge_id: str
     pair_id: str
     edge: InspectApiExternalEdgeStatus
+    pair_status: InspectApiExternalEdgeLiveStatus | None
     primary_device_id: str | None
     secondary_device_id: str | None
     from_device_id: str | None
@@ -48,175 +88,486 @@ class _IndexedEdge:
 
 
 class InspectSnapshot:
-    def __init__(self, response: InspectApiCollectorResponse) -> None:
-        self._response = response
-        collector = response.data.status.collector
+    def __init__(
+        self,
+        fetcher: Optional["InspectAPI"] = None,
+        device_items: Optional[list[InspectApiNodeStatusItem]] = None,
+        edge_items: Optional[list[InspectApiExternalEdgesByDeviceKeyItem]] = None,
+        *,
+        device_level: HydrationLevel = HydrationLevel.SKELETON,
+        path_items: Optional[list[InspectApiPathItem]] = None,
+    ) -> None:
+        self._fetcher = fetcher
+        self._lock = threading.RLock()
+        self._created_at = _now()
 
-        self._node_status_items = collector.inspect.node_status_items
-        self._path_items = collector.inspect.path_items
-        self._external_edge_items = collector.external_edges_by_device_key_items
-
+        # Core indexes
         self._devices_by_id: dict[str, _DeviceRecord] = {}
         self._devices_by_label: dict[str, list[str]] = {}
-        self._paths_by_booking_id: dict[str, InspectApiPathItem] = {}
-        self._services_by_device_id: dict[str, list[str]] = {}
-        self._ports_by_device_id: dict[str, list[_IndexedPort]] = {}
-        self._port_by_key: dict[tuple[str, str], _IndexedPort] = {}
-        self._ports_by_pid: dict[str, list[_IndexedPort]] = {}
+        self._edge_pairs: dict[str, InspectApiExternalEdgesByDeviceKeyItem] = {}
         self._edges_by_device_id: dict[str, list[_IndexedEdge]] = {}
         self._edge_by_port_key: dict[tuple[str, str], _IndexedEdge] = {}
 
-        self._device_cache: dict[str, InspectDevice] = {}
-        self._port_cache: dict[tuple[str, str], InspectPort] = {}
-        self._edge_cache: dict[str, InspectEdge] = {}
-        self._service_cache: dict[str, InspectService] = {}
-        self._ports_for_device_cache: dict[str, list[InspectPort]] = {}
-        self._edges_for_device_cache: dict[str, list[InspectEdge]] = {}
-        self._services_for_device_cache: dict[str, list[InspectService]] = {}
+        # Per-device port indexes (populated on hydration)
+        self._ports_by_device_id: dict[str, list[_IndexedPort]] = {}
+        self._port_by_key: dict[tuple[str, str], _IndexedPort] = {}
+        self._ports_by_pid: dict[str, list[_IndexedPort]] = {}
 
-        self._build_device_indexes()
-        self._build_path_indexes()
-        self._build_port_indexes()
-        self._build_edge_indexes()
+        # Section: services / paths
+        self._paths_by_booking_id: dict[str, InspectApiPathItem] = {}
+        self._services_by_device_id: dict[str, list[str]] = {}
+        self._section_loaded: dict[str, bool] = {"paths": False}
+        self._section_fetched_at: dict[str, datetime] = {}
 
-    @property
-    def raw_response(self) -> InspectApiCollectorResponse:
-        return self._response
+        # Domain-object caches
+        self._device_cache: dict[str, "InspectDevice"] = {}
+        self._edge_cache: dict[str, "InspectEdge"] = {}
+        self._service_cache: dict[str, "InspectService"] = {}
+
+        for node in device_items or []:
+            self._index_device(node, device_level)
+        for pair in edge_items or []:
+            self._index_edge_pair(pair)
+        if path_items is not None:
+            self._index_paths(path_items)
+            self._section_loaded["paths"] = True
+            self._section_fetched_at["paths"] = self._created_at
+
+    # --- Construction ---
 
     @classmethod
-    def from_response(cls, response: InspectApiCollectorResponse) -> InspectSnapshot:
-        return cls(response)
+    def from_full_response(
+        cls, response: InspectApiCollectorResponse, fetcher: Optional["InspectAPI"] = None
+    ) -> "InspectSnapshot":
+        """Build a fully-hydrated snapshot from one full collector aggregate (eager / fallback mode)."""
+        collector = response.data.status.collector
+        return cls(
+            fetcher=fetcher,
+            device_items=collector.inspect.node_status_items,
+            edge_items=collector.external_edges_by_device_key_items,
+            device_level=HydrationLevel.FULL,
+            path_items=collector.inspect.path_items,
+        )
 
-    def get_device_by_id(self, device_id: str) -> InspectDevice | None:
+    # Backwards-compatible alias for the original draft API.
+    from_response = from_full_response
+
+    # --- Freshness / introspection ---
+
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
+
+    def fetched_at(self, device_id: str) -> datetime | None:
         record = self._devices_by_id.get(device_id)
-        if record is None:
+        return record.fetched_at if record else None
+
+    def section_fetched_at(self, section: str = "paths") -> datetime | None:
+        return self._section_fetched_at.get(section)
+
+    def is_device_hydrated(self, device_id: str) -> bool:
+        record = self._devices_by_id.get(device_id)
+        return record is not None and record.level is HydrationLevel.FULL
+
+    # --- Device reads ---
+
+    def get_device(self, device_id: str) -> Optional["InspectDevice"]:
+        if device_id not in self._devices_by_id:
             return None
-        return self._wrap_device(record)
+        return self._wrap_device(device_id)
 
-    def find_devices_by_name(self, label: str) -> list[InspectDevice]:
-        devices: list[InspectDevice] = []
-        for device_id in self._devices_by_label.get(label, []):
-            device = self.get_device_by_id(device_id)
-            if device is not None:
-                devices.append(device)
-        return devices
+    # Backwards-compatible alias.
+    get_device_by_id = get_device
 
-    def get_devices(self) -> list[InspectDevice]:
-        return [self._wrap_device(record) for record in self._devices_by_id.values()]
+    def find_device_by_label(self, label: str) -> Optional["InspectDevice"]:
+        ids = self._devices_by_label.get(label, [])
+        return self._wrap_device(ids[0]) if ids else None
 
-    def get_service_by_booking_id(self, booking_id: str) -> InspectService | None:
-        path_item = self._paths_by_booking_id.get(booking_id)
-        if path_item is None:
-            return None
-        return self._wrap_service(path_item)
+    def find_devices_by_label(self, label: str) -> list["InspectDevice"]:
+        return [self._wrap_device(device_id) for device_id in self._devices_by_label.get(label, [])]
 
-    def get_services(self) -> list[InspectService]:
-        return [self._wrap_service(item) for item in self._path_items]
+    # Backwards-compatible alias.
+    find_devices_by_name = find_devices_by_label
 
-    def get_port(self, device_id: str, port_id: str) -> InspectPort | None:
+    @property
+    def devices(self) -> list["InspectDevice"]:
+        return [self._wrap_device(device_id) for device_id in self._devices_by_id]
+
+    def get_devices(self, detail: bool = False) -> list["InspectDevice"]:
+        if detail:
+            self.preload()
+        return self.devices
+
+    def get_device_record(self, device_id: str) -> Optional[_DeviceRecord]:
+        """Internal: return the (possibly hydrated) record for a device; used by domain objects."""
+        return self._devices_by_id.get(device_id)
+
+    # --- Port reads (trigger hydration) ---
+
+    def get_ports_for_device(self, device_id: str) -> list["InspectPort"]:
+        self._ensure_device_detail(device_id)
+        return [self._wrap_port(indexed) for indexed in self._ports_by_device_id.get(device_id, [])]
+
+    def get_port(self, device_id: str, port_id: str) -> Optional["InspectPort"]:
+        self._ensure_device_detail(device_id)
         indexed = self._port_by_key.get((device_id, port_id))
-        if indexed is None:
-            return None
-        return self._wrap_port(indexed)
+        return self._wrap_port(indexed) if indexed else None
 
-    def find_port_by_id(self, port_id: str) -> InspectPort | None:
-        indexed_ports = self._ports_by_pid.get(port_id)
-        if not indexed_ports:
-            return None
-        return self._wrap_port(indexed_ports[0])
+    def find_port_by_id(self, port_id: str) -> Optional["InspectPort"]:
+        indexed = self._ports_by_pid.get(port_id)
+        return self._wrap_port(indexed[0]) if indexed else None
 
-    def get_ports_for_device(self, device_id: str) -> list[InspectPort]:
-        cached = self._ports_for_device_cache.get(device_id)
-        if cached is not None:
-            return cached
-        ports = [self._wrap_port(indexed) for indexed in self._ports_by_device_id.get(device_id, [])]
-        self._ports_for_device_cache[device_id] = ports
-        return ports
+    # --- Edge reads (no hydration) ---
 
-    def get_edge_for_port(self, device_id: str, port_id: str) -> InspectEdge | None:
-        indexed = self._edge_by_port_key.get((device_id, port_id))
-        if indexed is None:
-            return None
-        return self._wrap_edge(indexed)
-
-    def get_edges(self) -> list[InspectEdge]:
+    @property
+    def edges(self) -> list["InspectEdge"]:
         seen: set[str] = set()
-        edges: list[InspectEdge] = []
+        result: list["InspectEdge"] = []
         for indexed_edges in self._edges_by_device_id.values():
             for indexed in indexed_edges:
                 if indexed.edge_id in seen:
                     continue
                 seen.add(indexed.edge_id)
-                edges.append(self._wrap_edge(indexed))
-        return edges
+                result.append(self._wrap_edge(indexed))
+        return result
 
-    def get_edges_for_device(self, device_id: str) -> list[InspectEdge]:
-        cached = self._edges_for_device_cache.get(device_id)
-        if cached is not None:
-            return cached
+    def get_edges(self) -> list["InspectEdge"]:
+        return self.edges
+
+    def get_edges_for_device(self, device_id: str) -> list["InspectEdge"]:
         seen: set[str] = set()
-        edges: list[InspectEdge] = []
+        result: list["InspectEdge"] = []
         for indexed in self._edges_by_device_id.get(device_id, []):
             if indexed.edge_id in seen:
                 continue
             seen.add(indexed.edge_id)
-            edges.append(self._wrap_edge(indexed))
-        self._edges_for_device_cache[device_id] = edges
-        return edges
+            result.append(self._wrap_edge(indexed))
+        return result
 
-    def get_services_for_device(self, device_id: str) -> list[InspectService]:
-        cached = self._services_for_device_cache.get(device_id)
-        if cached is not None:
-            return cached
-        services: list[InspectService] = []
-        for booking_id in self._services_by_device_id.get(device_id, []):
-            service = self.get_service_by_booking_id(booking_id)
-            if service is not None:
-                services.append(service)
-        self._services_for_device_cache[device_id] = services
-        return services
+    def get_edge_for_port(self, device_id: str, port_id: str) -> Optional["InspectEdge"]:
+        indexed = self._edge_by_port_key.get((device_id, port_id))
+        return self._wrap_edge(indexed) if indexed else None
 
-    def get_linked_devices(self, device_id: str) -> list[InspectDevice]:
+    def get_linked_devices(self, device_id: str) -> list["InspectDevice"]:
         linked: set[str] = set()
         for indexed in self._edges_by_device_id.get(device_id, []):
             for candidate in (indexed.from_device_id, indexed.to_device_id):
                 if candidate and candidate != device_id:
                     linked.add(candidate)
-        for booking_id in self._services_by_device_id.get(device_id, []):
-            path_item = self._paths_by_booking_id.get(booking_id)
-            if path_item is None:
-                continue
-            for segment in path_item.path:
-                structure = segment.structure
-                if structure and structure.deviceId and structure.deviceId != device_id:
-                    linked.add(structure.deviceId)
-        return [device for linked_id in sorted(linked) if (device := self.get_device_by_id(linked_id)) is not None]
+        return [d for lid in sorted(linked) if (d := self.get_device(lid)) is not None]
 
-    def _wrap_device(self, record: _DeviceRecord) -> InspectDevice:
+    # --- Service reads (section, trigger section load) ---
+
+    @property
+    def services(self) -> list["InspectService"]:
+        self._ensure_section_paths()
+        return [self._wrap_service(item) for item in self._paths_by_booking_id.values()]
+
+    def get_services(self) -> list["InspectService"]:
+        return self.services
+
+    def get_service_by_booking_id(self, booking_id: str) -> Optional["InspectService"]:
+        self._ensure_section_paths()
+        item = self._paths_by_booking_id.get(booking_id)
+        return self._wrap_service(item) if item else None
+
+    def get_services_for_device(self, device_id: str) -> list["InspectService"]:
+        self._ensure_section_paths()
+        result: list["InspectService"] = []
+        for booking_id in self._services_by_device_id.get(device_id, []):
+            item = self._paths_by_booking_id.get(booking_id)
+            if item is not None:
+                result.append(self._wrap_service(item))
+        return result
+
+    # --- Bulk preload (ADR-0004) ---
+
+    def preload(self, devices: Optional[list[str]] = None) -> None:
+        """Hydrate multiple devices in parallel to avoid N+1 when detail is needed for many."""
+        target = devices if devices is not None else list(self._devices_by_id)
+        pending = [d for d in target if not self.is_device_hydrated(d)]
+        if not pending or self._fetcher is None:
+            for device_id in pending:
+                self._ensure_device_detail(device_id)
+            return
+        with ThreadPoolExecutor(max_workers=min(_PRELOAD_WORKERS, len(pending))) as pool:
+            list(pool.map(self._ensure_device_detail, pending))
+
+    # --- Refresh ---
+
+    def refresh(self) -> "InspectSnapshot":
+        """Return a *new* snapshot from a fresh skeleton read (never mutates this one)."""
+        if self._fetcher is None:
+            raise RuntimeError("This snapshot has no fetcher and cannot be refreshed; build a new snapshot instead.")
+        return InspectSnapshot(
+            fetcher=self._fetcher,
+            device_items=self._fetcher.get_device_skeleton(),
+            edge_items=self._fetcher.get_edge_skeleton(),
+        )
+
+    # --- Post-commit hooks (ADR-0010) ---
+
+    def apply_post_commit(
+        self,
+        removed_ids: Optional[list[str]] = None,
+        device_ids: Optional[list[str]] = None,
+        pair_ids: Optional[list[str]] = None,
+        mark_paths_stale: bool = True,
+    ) -> None:
+        """Targeted refresh after a successful commit: drop removed entities locally, re-fetch the
+        affected devices and edge pairs, and mark the services section stale."""
+        self._apply_removals(removed_ids or [])
+        if self._fetcher is not None:
+            for device_id in device_ids or []:
+                if device_id in self._devices_by_id:
+                    self._refresh_device(device_id)
+            for pair_id in pair_ids or []:
+                self._refresh_edge_pair(pair_id)
+        if mark_paths_stale:
+            with self._lock:
+                self._section_loaded["paths"] = False
+                self._paths_by_booking_id.clear()
+                self._services_by_device_id.clear()
+
+    # --- Internal: hydration ---
+
+    def _ensure_device_detail(self, device_id: str) -> None:
+        record = self._devices_by_id.get(device_id)
+        if record is None or record.level is HydrationLevel.FULL or self._fetcher is None:
+            return
+        # The collector keys nodeStatus by the item's own id (dash form for virtual devices,
+        # e.g. 'virtual-2'), which differs from the public device id ('virtual.2'). Use it here.
+        detail = self._fetcher.get_device_detail(record.node.id or device_id)
+        if detail is None:
+            # No further detail to load (e.g. virtual devices expose no modules); mark hydrated
+            # so we honour the at-most-one-fetch contract instead of re-fetching on every access.
+            with self._lock:
+                current = self._devices_by_id.get(device_id)
+                if current is not None and current.level is not HydrationLevel.FULL:
+                    current.level = HydrationLevel.FULL
+            return
+        with self._lock:
+            current = self._devices_by_id.get(device_id)
+            if current is None or current.level is HydrationLevel.FULL:
+                return
+            self._devices_by_id[device_id] = _DeviceRecord(
+                device_id=device_id, node=detail, level=HydrationLevel.FULL
+            )
+            self._device_cache.pop(device_id, None)
+            self._rebuild_device_ports(device_id, detail)
+
+    def _refresh_device(self, device_id: str) -> None:
+        if self._fetcher is None:
+            return
+        record = self._devices_by_id.get(device_id)
+        detail = self._fetcher.get_device_detail(record.node.id if record else device_id)
+        if detail is None:
+            return
+        with self._lock:
+            self._devices_by_id[device_id] = _DeviceRecord(
+                device_id=device_id, node=detail, level=HydrationLevel.FULL
+            )
+            self._device_cache.pop(device_id, None)
+            self._rebuild_device_ports(device_id, detail)
+
+    def _refresh_edge_pair(self, pair_id: str) -> None:
+        if self._fetcher is None:
+            return
+        pair = self._fetcher.get_edge_pair(pair_id)
+        with self._lock:
+            self._drop_edge_pair(pair_id)
+            if pair is not None:
+                self._index_edge_pair(pair)
+
+    def _ensure_section_paths(self) -> None:
+        if self._section_loaded.get("paths") or self._fetcher is None:
+            return
+        items = self._fetcher.get_paths_section()
+        with self._lock:
+            if self._section_loaded.get("paths"):
+                return
+            self._index_paths(items)
+            self._section_loaded["paths"] = True
+            self._section_fetched_at["paths"] = _now()
+            self._service_cache.clear()
+
+    # --- Internal: indexing ---
+
+    def _index_device(self, node: InspectApiNodeStatusItem, level: HydrationLevel) -> None:
+        device_id = node.deviceId or node.id
+        if not device_id:
+            return
+        record = _DeviceRecord(device_id=device_id, node=node, level=level)
+        self._devices_by_id[device_id] = record
+        label = record.label
+        if label:
+            ids = self._devices_by_label.setdefault(label, [])
+            if device_id not in ids:
+                ids.append(device_id)
+        if level is HydrationLevel.FULL:
+            self._rebuild_device_ports(device_id, node)
+
+    def _rebuild_device_ports(self, device_id: str, node: InspectApiNodeStatusItem) -> None:
+        # Drop existing port index entries for this device
+        old = self._ports_by_device_id.pop(device_id, [])
+        for indexed in old:
+            port_id = _port_id_from_status(indexed.port)
+            if port_id is not None:
+                self._port_by_key.pop((device_id, port_id), None)
+                remaining = [p for p in self._ports_by_pid.get(port_id, []) if p.device_id != device_id]
+                if remaining:
+                    self._ports_by_pid[port_id] = remaining
+                else:
+                    self._ports_by_pid.pop(port_id, None)
+        # Rebuild
+        entries: list[_IndexedPort] = []
+        for module in _iter_modules(node.modules):
+            module_id = module.pid or module.id
+            for port in _iter_ports(module.ports):
+                indexed = _IndexedPort(device_id=device_id, module_id=module_id, port=port)
+                entries.append(indexed)
+                port_id = _port_id_from_status(port)
+                if port_id is None:
+                    continue
+                self._port_by_key[(device_id, port_id)] = indexed
+                self._ports_by_pid.setdefault(port_id, []).append(indexed)
+        self._ports_by_device_id[device_id] = entries
+
+    def _resolve_device_id(self, pid: str | None) -> str | None:
+        """Map an edge ``devicePid`` to the canonical device id.
+
+        For physical devices the pid equals the device id. For virtual devices the collector reports
+        the pid in dash-encoded form (``virtual-2``) while the device id is dot form (``virtual.2``);
+        reconcile the two so edges index under the same key the device is stored under.
+        """
+        if not pid or pid in self._devices_by_id:
+            return pid
+        dotted = pid.replace("-", ".")
+        return dotted if dotted in self._devices_by_id else pid
+
+    def _index_edge_pair(self, pair_item: InspectApiExternalEdgesByDeviceKeyItem) -> None:
+        self._edge_pairs[pair_item.id] = pair_item
+        primary_device_id = self._resolve_device_id(pair_item.primary.devicePid)
+        secondary_device_id = self._resolve_device_id(pair_item.secondary.devicePid)
+        for side, device_id in (
+            (pair_item.primary, primary_device_id),
+            (pair_item.secondary, secondary_device_id),
+        ):
+            if not device_id:
+                continue
+            for edge in side.data.values():
+                from_device_id = (
+                    self._resolve_device_id(_device_id_from_context(edge.fromStatus.context if edge.fromStatus else None))
+                    or primary_device_id
+                )
+                from_port_id = _port_id_from_endpoint(edge.fromStatus)
+                to_device_id = (
+                    self._resolve_device_id(_device_id_from_context(edge.toStatus.context if edge.toStatus else None))
+                    or secondary_device_id
+                )
+                to_port_id = _port_id_from_endpoint(edge.toStatus)
+                indexed = _IndexedEdge(
+                    edge_id=edge.id,
+                    pair_id=pair_item.id,
+                    edge=edge,
+                    pair_status=pair_item.status,
+                    primary_device_id=primary_device_id,
+                    secondary_device_id=secondary_device_id,
+                    from_device_id=from_device_id,
+                    from_port_id=from_port_id,
+                    to_device_id=to_device_id,
+                    to_port_id=to_port_id,
+                )
+                self._edges_by_device_id.setdefault(device_id, []).append(indexed)
+                for endpoint_device_id, port_id in (
+                    (from_device_id, from_port_id),
+                    (to_device_id, to_port_id),
+                ):
+                    if endpoint_device_id and port_id:
+                        self._edge_by_port_key[(endpoint_device_id, port_id)] = indexed
+
+    def _drop_edge_pair(self, pair_id: str) -> None:
+        self._edge_pairs.pop(pair_id, None)
+        for device_id, edges in list(self._edges_by_device_id.items()):
+            kept = [e for e in edges if e.pair_id != pair_id]
+            if kept:
+                self._edges_by_device_id[device_id] = kept
+            else:
+                self._edges_by_device_id.pop(device_id, None)
+        for key, indexed in list(self._edge_by_port_key.items()):
+            if indexed.pair_id == pair_id:
+                self._edge_by_port_key.pop(key, None)
+        for edge_id, edge in list(self._edge_cache.items()):
+            if edge.pair_id == pair_id:
+                self._edge_cache.pop(edge_id, None)
+
+    def _index_paths(self, path_items: list[InspectApiPathItem]) -> None:
+        for item in path_items:
+            booking_id = item.serviceFields.bid
+            self._paths_by_booking_id[booking_id] = item
+            device_ids: set[str] = set()
+            for segment in item.path:
+                structure = segment.structure
+                if structure and structure.deviceId:
+                    device_ids.add(structure.deviceId)
+            for device_id in device_ids:
+                ids = self._services_by_device_id.setdefault(device_id, [])
+                if booking_id not in ids:
+                    ids.append(booking_id)
+
+    def _apply_removals(self, removed_ids: list[str]) -> None:
+        if not removed_ids:
+            return
+        with self._lock:
+            for removed in removed_ids:
+                # Device removal
+                record = self._devices_by_id.pop(removed, None)
+                if record is not None:
+                    label = record.label
+                    if label and label in self._devices_by_label:
+                        self._devices_by_label[label] = [
+                            d for d in self._devices_by_label[label] if d != removed
+                        ]
+                        if not self._devices_by_label[label]:
+                            self._devices_by_label.pop(label, None)
+                    self._device_cache.pop(removed, None)
+                    self._ports_by_device_id.pop(removed, None)
+                    self._edges_by_device_id.pop(removed, None)
+                # Edge removal by edge id or pair id
+                if "::" in removed:
+                    self._drop_edge_id(removed)
+
+    def _drop_edge_id(self, edge_or_pair_id: str) -> None:
+        for device_id, edges in list(self._edges_by_device_id.items()):
+            kept = [e for e in edges if e.edge_id != edge_or_pair_id and e.pair_id != edge_or_pair_id]
+            if kept != edges:
+                if kept:
+                    self._edges_by_device_id[device_id] = kept
+                else:
+                    self._edges_by_device_id.pop(device_id, None)
+        for key, indexed in list(self._edge_by_port_key.items()):
+            if indexed.edge_id == edge_or_pair_id or indexed.pair_id == edge_or_pair_id:
+                self._edge_by_port_key.pop(key, None)
+        self._edge_cache.pop(edge_or_pair_id, None)
+
+    # --- Internal: domain wrappers (cached) ---
+
+    def _wrap_device(self, device_id: str) -> "InspectDevice":
         from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
 
-        cached = self._device_cache.get(record.device_id)
+        cached = self._device_cache.get(device_id)
         if cached is not None:
             return cached
-        device = InspectDevice(snapshot=self, record=record)
-        self._device_cache[record.device_id] = device
+        device = InspectDevice(snapshot=self, id=device_id)
+        self._device_cache[device_id] = device
         return device
 
-    def _wrap_port(self, indexed: _IndexedPort) -> InspectPort:
+    def _wrap_port(self, indexed: _IndexedPort) -> "InspectPort":
         from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
 
-        port_id = _port_id_from_status(indexed.port)
-        if port_id is not None:
-            key = (indexed.device_id, port_id)
-            cached = self._port_cache.get(key)
-            if cached is not None:
-                return cached
-            port = InspectPort(snapshot=self, indexed=indexed)
-            self._port_cache[key] = port
-            return port
         return InspectPort(snapshot=self, indexed=indexed)
 
-    def _wrap_edge(self, indexed: _IndexedEdge) -> InspectEdge:
+    def _wrap_edge(self, indexed: _IndexedEdge) -> "InspectEdge":
         from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
 
         cached = self._edge_cache.get(indexed.edge_id)
@@ -226,7 +577,7 @@ class InspectSnapshot:
         self._edge_cache[indexed.edge_id] = edge
         return edge
 
-    def _wrap_service(self, path_item: InspectApiPathItem) -> InspectService:
+    def _wrap_service(self, path_item: InspectApiPathItem) -> "InspectService":
         from videoipath_automation_tool.apps.inspect.domain.service import InspectService
 
         booking_id = path_item.serviceFields.bid
@@ -237,127 +588,8 @@ class InspectSnapshot:
         self._service_cache[booking_id] = service
         return service
 
-    def _build_device_indexes(self) -> None:
-        for node in self._node_status_items:
-            device_id = node.deviceId or node.pid or node.id
-            if not device_id:
-                continue
-            self._upsert_device_record(
-                _DeviceRecord(
-                    device_id=device_id,
-                    label=node.label,
-                    pid=node.pid,
-                    node=node,
-                )
-            )
 
-        for path_item in self._path_items:
-            for segment in path_item.path:
-                structure = segment.structure
-                if structure is None or not structure.deviceId:
-                    continue
-                existing = self._devices_by_id.get(structure.deviceId)
-                if existing is not None and existing.node is not None:
-                    continue
-                self._upsert_device_record(
-                    _DeviceRecord(
-                        device_id=structure.deviceId,
-                        label=structure.deviceLabel,
-                        pid=structure.devicePid,
-                        node=existing.node if existing else None,
-                    )
-                )
-
-    def _upsert_device_record(self, record: _DeviceRecord) -> None:
-        existing = self._devices_by_id.get(record.device_id)
-        if existing is not None and existing.node is not None and record.node is None:
-            merged = existing
-        elif existing is not None and record.node is not None:
-            merged = _DeviceRecord(
-                device_id=record.device_id,
-                label=record.label or existing.label,
-                pid=record.pid or existing.pid,
-                node=record.node,
-            )
-        else:
-            merged = record
-
-        self._devices_by_id[merged.device_id] = merged
-        if merged.label:
-            labels = self._devices_by_label.setdefault(merged.label, [])
-            if merged.device_id not in labels:
-                labels.append(merged.device_id)
-
-    def _build_path_indexes(self) -> None:
-        for path_item in self._path_items:
-            booking_id = path_item.serviceFields.bid
-            self._paths_by_booking_id[booking_id] = path_item
-            device_ids: set[str] = set()
-            for segment in path_item.path:
-                structure = segment.structure
-                if structure and structure.deviceId:
-                    device_ids.add(structure.deviceId)
-            for device_id in device_ids:
-                booking_ids = self._services_by_device_id.setdefault(device_id, [])
-                if booking_id not in booking_ids:
-                    booking_ids.append(booking_id)
-
-    def _build_port_indexes(self) -> None:
-        for node in self._node_status_items:
-            device_id = node.deviceId or node.pid or node.id
-            if not device_id:
-                continue
-            for module in _iter_modules(node.modules):
-                module_id = module.pid or module.id
-                for port in _iter_ports(module.ports):
-                    indexed = _IndexedPort(device_id=device_id, module_id=module_id, port=port)
-                    self._ports_by_device_id.setdefault(device_id, []).append(indexed)
-                    port_id = _port_id_from_status(port)
-                    if port_id is None:
-                        continue
-                    key = (device_id, port_id)
-                    self._port_by_key[key] = indexed
-                    self._ports_by_pid.setdefault(port_id, []).append(indexed)
-
-    def _build_edge_indexes(self) -> None:
-        for pair_item in self._external_edge_items:
-            primary_device_id = pair_item.primary.devicePid
-            secondary_device_id = pair_item.secondary.devicePid
-            for side, device_id in (
-                (pair_item.primary, primary_device_id),
-                (pair_item.secondary, secondary_device_id),
-            ):
-                if not device_id:
-                    continue
-                for edge in side.data.values():
-                    from_device_id = (
-                        _device_id_from_context(edge.fromStatus.context if edge.fromStatus else None)
-                        or primary_device_id
-                    )
-                    from_port_id = _port_id_from_endpoint(edge.fromStatus)
-                    to_device_id = (
-                        _device_id_from_context(edge.toStatus.context if edge.toStatus else None)
-                        or secondary_device_id
-                    )
-                    to_port_id = _port_id_from_endpoint(edge.toStatus)
-                    indexed = _IndexedEdge(
-                        edge_id=edge.id,
-                        pair_id=pair_item.id,
-                        edge=edge,
-                        primary_device_id=primary_device_id,
-                        secondary_device_id=secondary_device_id,
-                        from_device_id=from_device_id,
-                        from_port_id=from_port_id,
-                        to_device_id=to_device_id,
-                        to_port_id=to_port_id,
-                    )
-                    self._edges_by_device_id.setdefault(device_id, []).append(indexed)
-                    for endpoint_device_id, port_id in (
-                        (from_device_id, from_port_id),
-                        (to_device_id, to_port_id),
-                    ):
-                        if endpoint_device_id and port_id:
-                            self._edge_by_port_key[(endpoint_device_id, port_id)] = indexed
+# --- Module-level helpers (kept stable for the domain layer) ---
 
 
 def _device_id_from_context(context: Any) -> str | None:
@@ -394,15 +626,26 @@ def _port_id_from_status(port: InspectPortStatus) -> str | None:
     return port_id if port_id else None
 
 
-def _iter_modules(modules: dict[str, InspectApiModuleStatus] | list[InspectApiModuleStatus]) -> Iterator[InspectApiModuleStatus]:
+def _iter_modules(
+    modules: dict[str, InspectApiModuleStatus] | list[InspectApiModuleStatus] | None,
+) -> Iterator[InspectApiModuleStatus]:
+    if not modules:
+        return
     if isinstance(modules, dict):
         yield from modules.values()
         return
     yield from modules
 
 
-def _iter_ports(ports: dict[str, InspectPortStatus] | list[InspectPortStatus]) -> Iterator[InspectPortStatus]:
+def _iter_ports(
+    ports: dict[str, InspectPortStatus] | list[InspectPortStatus] | None,
+) -> Iterator[InspectPortStatus]:
+    if not ports:
+        return
     if isinstance(ports, dict):
         yield from ports.values()
         return
     yield from ports
+
+
+__all__ = ["InspectSnapshot", "HydrationLevel"]

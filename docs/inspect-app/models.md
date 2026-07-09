@@ -13,6 +13,11 @@ The implementation uses two layers:
   `InspectEdge`, and `InspectService`. They are built from an `InspectSnapshot`
   and resolve relations from internal indexes instead of making extra HTTP calls.
 
+`InspectSnapshot` is an **internal** component: `InspectApp` owns a single instance,
+builds it lazily on the first read, and keeps it current across writes. Users never
+construct or hold it — all reads and writes go through `app.inspect` (`get_device`,
+`devices`, `edges`, `services`, `refresh`, …), the same way as the other apps.
+
 Wire-shape examples and endpoint references live in
 [endpoints.md](./endpoints.md). All examples below are anonymized.
 
@@ -41,8 +46,7 @@ internal state. The concrete queries are documented in
 Typical read flow:
 
 ```python
-snapshot = app.inspect.get_snapshot()          # skeleton fetch (devices + edges)
-device = snapshot.get_device_by_id("device-a") # local: skeleton-backed
+device = app.inspect.get_device("device-a")    # loads the internal view lazily; skeleton-backed
 ports = device.ports          # first access: hydrates device-a, then local
 edges = device.edges          # local: edge skeleton
 services = device.services    # first access: loads the paths section, then local
@@ -178,8 +182,8 @@ Represents one topology device/node with status, sync hints, and relations.
 Lookup:
 
 ```python
-device = snapshot.get_device_by_id("device-a")
-matches = snapshot.find_devices_by_name("Example Device A")
+device = app.inspect.get_device("device-a")
+matches = app.inspect.find_devices_by_label("Example Device A")
 ```
 
 ### `InspectPort`
@@ -614,41 +618,52 @@ In Python these shapes live in `ngraph.py`.
 valid no-op. Non-empty maps upsert graph elements by ID, `addExternalEdges` adds
 edge objects, and `remove` deletes graph elements by ID.
 
+The per-kind payload shapes differ (all verified 2025.4.9,
+[endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorupdatetopology)):
+**devices use the edit form** (`lookupInspectDevice.fields`; `coordinates` and
+`localAssignedTags` are mandatory — the raw persisted `baseDevice` element is
+rejected), **vertices use the edit form** (`lookupInspectVertexById.fields`)
+and are **update-only** (unknown ids fail validation — vertices come from
+device sync, not commits), and **edges use the raw persisted edge form**
+(`lookupInspectEdgesByIds` returns it directly).
+
 ```json
 {
   "header": { "id": 0 },
   "data": {
     "replaceDevices": {
       "device-a": {
-        "_id": "device-a",
-        "_vid": "device-a",
-        "type": "baseDevice",
-        "descriptor": { "label": "Example Device A", "desc": "" },
-        "fDescriptor": { "label": "Example Device A", "desc": "" },
-        "tags": []
-      }
-    },
-    "replaceVertices": {
-      "vertex-a-out": {
-        "_id": "vertex-a-out",
-        "_vid": "vertex-a-out",
-        "type": "ipVertex",
-        "deviceId": "device-a",
-        "descriptor": { "label": "Output Vertex", "desc": "" },
-        "fDescriptor": { "label": "Output Vertex", "desc": "" },
-        "tags": []
-      }
-    },
-    "replaceEdges": {
-      "vertex-a-out::vertex-b-in": {
-        "_id": "edge-a-b-0001",
-        "_vid": "edge-a-b-0001",
-        "type": "unidirectionalEdge",
-        "fromId": "vertex-a-out",
-        "toId": "vertex-b-in",
+        "coordinates": { "x": 1600.0, "y": 9050.0 },
         "descriptor": { "label": "", "desc": "" },
+        "iconSize": "medium",
+        "iconType": "default",
+        "localAssignedTags": [],
+        "sdpStrategy": "always",
+        "siteId": null,
+        "tags": [],
+        "virtualDeviceFields": null
+      }
+    },
+    "replaceVertices": {},
+    "replaceEdges": {
+      "device-a.module-1.port-out-1.out::device-b.module-1.port-in-1.in": {
+        "active": true,
+        "bandwidth": -1.0,
+        "capacity": 65535,
+        "conflictPri": 0,
+        "descriptor": { "label": "", "desc": "" },
+        "excludeFormats": [],
         "fDescriptor": { "label": "", "desc": "" },
-        "tags": []
+        "fromId": "device-a.module-1.port-out-1.out",
+        "includeFormats": [],
+        "redundancyMode": "Any",
+        "tags": [],
+        "toId": "device-b.module-1.port-in-1.in",
+        "weight": 1,
+        "weightFactors": {
+          "bandwidth": { "weight": 0 },
+          "service": { "max": 100, "weight": 0 }
+        }
       }
     },
     "replaceResourceTransforms": {},
@@ -707,8 +722,9 @@ catches up with **targeted scoped re-reads**
   fetch timestamps;
 - loaded sections (e.g. services) are marked stale and re-load lazily on next
   access;
-- the refresh verifies the committed values are visible and retries briefly if
-  the collector projection lags the config store.
+- the collector projection updates effectively synchronously with the commit
+  (measured ~25 ms to visibility on 2025.4.9), so the targeted re-read doubles
+  as the verification — no retry loop.
 
 A failed commit changes nothing server-side (reject-before-apply), so the
 snapshot is left untouched.

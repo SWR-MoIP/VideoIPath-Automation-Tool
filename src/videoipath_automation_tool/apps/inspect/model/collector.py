@@ -10,6 +10,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiDescriptor,
     InspectApiEndpointStatus,
     InspectApiRestV2Header,
+    InspectApiStatusContext,
     InspectServiceStatus,
     InspectApiStatusSummary,
 )
@@ -66,6 +67,14 @@ class InspectApiPathItem(InspectApiBaseModel):
 
 class InspectApiNodeMeta(InspectApiBaseModel):
     coordinates: dict[str, float | int | str | None] | None = None
+    hwPanelType: str | None = None
+    iconSize: str | None = None
+    iconType: str | None = None
+    isCore: bool | None = None
+    isVirtual: bool | None = None
+    sdpStrategy: str | None = None
+    siteId: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
 
 class InspectApiVertexInfoFields(InspectApiBaseModel):
@@ -102,16 +111,27 @@ class InspectApiPathDescriptionItem(InspectApiBaseModel):
 class InspectPortStatus(InspectApiBaseModel):
     id: str | None = Field(default=None, alias="_id")
     vid: str | None = Field(default=None, alias="_vid")
+    context: InspectApiStatusContext | None = None
+    descriptor: InspectApiDescriptor | None = None
     label: str | None = None
     pid: str | None = None
+    resourceId: str | None = None
     status: InspectApiStatusSummary | None = None
     vertexInfo: InspectApiSingleVertexInfo | InspectApiDoubleVertexInfo | dict[str, Any] | None = None
     pathDescriptions: dict[str, InspectApiPathDescriptionItem] = Field(default_factory=dict)
+
+    @property
+    def effective_label(self) -> str | None:
+        if self.descriptor is not None and self.descriptor.label:
+            return self.descriptor.label
+        return self.label
 
 
 class InspectApiModuleStatus(InspectApiBaseModel):
     id: str | None = Field(default=None, alias="_id")
     vid: str | None = Field(default=None, alias="_vid")
+    context: InspectApiStatusContext | None = None
+    descriptor: InspectApiDescriptor | None = None
     label: str | None = None
     pid: str | None = None
     ports: dict[str, InspectPortStatus] | list[InspectPortStatus] = Field(default_factory=dict)
@@ -121,7 +141,10 @@ class InspectApiModuleStatus(InspectApiBaseModel):
 class InspectApiNodeStatusItem(InspectApiBaseModel):
     id: str = Field(alias="_id")
     vid: str | None = Field(default=None, alias="_vid")
+    context: InspectApiStatusContext | None = None
+    descriptor: InspectApiDescriptor | None = None
     deviceId: str | None = None
+    fDescriptor: InspectApiDescriptor | None = None
     hasEndpoints: bool | None = None
     label: str | None = None
     meta: InspectApiNodeMeta | None = None
@@ -129,9 +152,26 @@ class InspectApiNodeStatusItem(InspectApiBaseModel):
     pathDescriptions: dict[str, InspectApiPathDescriptionItem] = Field(default_factory=dict)
     pid: str | None = None
     ptpDeviceStatus: dict[str, Any] | None = None
+    relatedNodeTags: list[str] = Field(default_factory=list)
+    resourceId: str | None = None
     status: InspectApiStatusSummary | None = None
     syncSeverity: int | str | None = None
     tags: list[str] = Field(default_factory=list)
+    tagsInfo: dict[str, Any] | None = None
+
+    @property
+    def effective_label(self) -> str | None:
+        """The label the UI shows: user ``descriptor.label``, falling back to the device-reported
+        ``fDescriptor.label`` (and finally the legacy top-level ``label`` field, if present)."""
+        if self.descriptor is not None and self.descriptor.label:
+            return self.descriptor.label
+        if self.fDescriptor is not None and self.fDescriptor.label:
+            return self.fDescriptor.label
+        return self.label
+
+    @property
+    def coordinates(self) -> dict[str, float | int | str | None] | None:
+        return self.meta.coordinates if self.meta is not None else None
 
 
 class InspectApiExternalEdgeLiveStatus(InspectApiBaseModel):

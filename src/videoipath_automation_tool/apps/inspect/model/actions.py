@@ -46,6 +46,116 @@ class InspectApiLookupInspectDeviceResponse(InspectApiBaseModel):
     header: InspectApiRestV2Header
 
 
+# --- Vertex lookup / edit form (also the replaceVertices write shape, verified 2025.4.9) ---
+
+
+class InspectApiVertexTypeFields(InspectApiBaseModel):
+    ipAddress: str | None = None
+    ipNetmask: str | None = None
+    public: bool | None = None
+    supportsCpipeCfg: bool | None = None
+    supportsIgmpCfg: bool | None = None
+    supportsMacForwardingCfg: bool | None = None
+    supportsNsoCfg: bool | None = None
+    supportsOpenflowCfg: bool | None = None
+    supportsStaticIgmpCfg: bool | None = None
+    supportsVlanCfg: bool | None = None
+    supportsVplsCfg: bool | None = None
+    type: str | None = None
+    vlanId: str | None = None
+    vrfId: str | None = None
+
+
+class InspectApiVertexEditForm(InspectApiBaseModel):
+    """The vertex ``fields`` object returned by ``lookupInspectVertexById`` — this exact shape is
+    what ``replaceVertices`` accepts (update-only; verified 2025.4.9)."""
+
+    active: bool | None = None
+    controlProps: Any | None = None
+    custom: dict[str, Any] = Field(default_factory=dict)
+    desc: str = ""
+    destinationMonitorLeader: bool | None = None
+    extraAlertFilters: list[Any] = Field(default_factory=list)
+    label: str = ""
+    localAssignedTags: list[str] = Field(default_factory=list)
+    queueable: bool | None = None
+    sipsMode: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    typeFields: InspectApiVertexTypeFields | None = None
+    useAsEndpoint: bool | None = None
+
+
+class InspectApiLookupVertexRequest(InspectApiBaseModel):
+    header: InspectApiPostRequestHeader = Field(default_factory=InspectApiPostRequestHeader)
+    data: str
+
+
+class InspectApiLookupVerticesRequest(InspectApiBaseModel):
+    header: InspectApiPostRequestHeader = Field(default_factory=InspectApiPostRequestHeader)
+    data: list[str]
+
+
+class InspectApiLookupVertexResponseData(InspectApiBaseModel):
+    assignedTags: InspectApiAssignedTags | None = None
+    context: dict[str, Any] | None = None
+    customSchemas: dict[str, Any] = Field(default_factory=dict)
+    fields: InspectApiVertexEditForm
+    id: str
+    isVirtual: bool | None = None
+    vertexType: str | None = None
+
+
+class InspectApiLookupVertexResponse(InspectApiBaseModel):
+    data: InspectApiLookupVertexResponseData
+    header: InspectApiRestV2Header
+
+
+class InspectApiLookupVerticesResponse(InspectApiBaseModel):
+    data: dict[str, InspectApiLookupVertexResponseData]
+    header: InspectApiRestV2Header
+
+
+# --- Edge lookup (also the replaceEdges write shape, verified 2025.4.9) ---
+
+
+class InspectApiEdgeForm(InspectApiBaseModel):
+    """The persisted edge object returned by ``lookupInspectEdgesByIds`` — this exact shape is what
+    ``replaceEdges`` accepts (verified 2025.4.9). No ``_id`` / ``_rev`` / ``type`` in the write form."""
+
+    active: bool = True
+    bandwidth: float | int = -1.0
+    capacity: int = 65535
+    conflictPri: int | str = 0
+    descriptor: InspectApiDescriptor = Field(default_factory=InspectApiDescriptor)
+    excludeFormats: list[str] = Field(default_factory=list)
+    fDescriptor: InspectApiDescriptor = Field(default_factory=InspectApiDescriptor)
+    fromId: str
+    includeFormats: list[str] = Field(default_factory=list)
+    redundancyMode: str = "Any"
+    tags: list[str] = Field(default_factory=list)
+    toId: str
+    weight: int = 1
+    weightFactors: dict[str, Any] = Field(
+        default_factory=lambda: {"bandwidth": {"weight": 0}, "service": {"max": 100, "weight": 0}}
+    )
+
+
+class InspectApiLookupEdgesRequest(InspectApiBaseModel):
+    header: InspectApiPostRequestHeader = Field(default_factory=InspectApiPostRequestHeader)
+    data: list[str]
+
+
+class InspectApiLookupEdgeResponseItem(InspectApiBaseModel):
+    edge: InspectApiEdgeForm
+    fromDevice: str | None = None
+    toDevice: str | None = None
+
+
+class InspectApiLookupEdgesResponse(InspectApiBaseModel):
+    data: dict[str, InspectApiLookupEdgeResponseItem]
+    header: InspectApiRestV2Header
+
+
 class InspectApiLookupSyncInfoRequest(InspectApiBaseModel):
     header: InspectApiPostRequestHeader = Field(default_factory=InspectApiPostRequestHeader)
     data: list[str]
@@ -90,6 +200,10 @@ __all__ = [
     "InspectApiAddDevicesItem",
     "InspectApiAddDevicesRequest",
     "InspectApiAssignedTags",
+    "InspectApiEdgeForm",
+    "InspectApiLookupEdgeResponseItem",
+    "InspectApiLookupEdgesRequest",
+    "InspectApiLookupEdgesResponse",
     "InspectApiLookupInspectDeviceFields",
     "InspectApiLookupInspectDeviceRequest",
     "InspectApiLookupInspectDeviceResponse",
@@ -97,6 +211,13 @@ __all__ = [
     "InspectApiLookupSyncInfoItem",
     "InspectApiLookupSyncInfoRequest",
     "InspectApiLookupSyncInfoResponse",
+    "InspectApiLookupVerticesRequest",
+    "InspectApiLookupVerticesResponse",
+    "InspectApiLookupVertexRequest",
+    "InspectApiLookupVertexResponse",
+    "InspectApiLookupVertexResponseData",
     "InspectApiSyncDevicesRequest",
     "InspectApiSyncDevicesRequestData",
+    "InspectApiVertexEditForm",
+    "InspectApiVertexTypeFields",
 ]

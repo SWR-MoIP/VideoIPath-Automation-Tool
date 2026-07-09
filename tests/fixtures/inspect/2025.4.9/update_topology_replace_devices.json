@@ -1,0 +1,72 @@
+{
+  "request": {
+    "header": { "id": 0 },
+    "data": {
+      "replaceDevices": {
+        "device-a": {
+          "coordinates": { "x": 1600.0, "y": 9050.0 },
+          "descriptor": { "desc": "", "label": "" },
+          "iconSize": "medium",
+          "iconType": "default",
+          "localAssignedTags": [],
+          "sdpStrategy": "always",
+          "siteId": null,
+          "tags": [],
+          "virtualDeviceFields": null
+        }
+      },
+      "replaceVertices": {},
+      "replaceEdges": {},
+      "replaceResourceTransforms": {},
+      "addExternalEdges": [],
+      "remove": [],
+      "force": false
+    }
+  },
+  "response": {
+    "data": {
+      "items": [
+        {
+          "external": null,
+          "id": "device-a",
+          "idx": null,
+          "res": { "msg": [""], "ok": true }
+        }
+      ],
+      "res": { "msg": [], "ok": true },
+      "validation": {
+        "createIds": [],
+        "details": {},
+        "result": { "msg": [], "ok": true }
+      }
+    },
+    "header": { "ok": true, "code": "OK" }
+  },
+  "rejected_request_error": {
+    "note": "Sending the raw persisted baseDevice element (maps[], fDescriptor, type) instead of the edit form is rejected:",
+    "header": {
+      "auth": true,
+      "caption": "Invalid Request",
+      "code": "INVALID_REQUEST",
+      "errorDetails": [
+        {
+          "msg": "Mandatory field 'localAssignedTags' not present in input",
+          "path": ["replaceDevices", "device-a", "localAssignedTags"],
+          "type": "conversionError"
+        },
+        {
+          "msg": "Mandatory field 'coordinates' not present in input",
+          "path": ["replaceDevices", "device-a", "coordinates"],
+          "type": "conversionError"
+        }
+      ],
+      "id": "0",
+      "msg": [
+        "Mandatory field 'localAssignedTags' not present in input",
+        "Mandatory field 'coordinates' not present in input"
+      ],
+      "ok": false,
+      "user": "api-user"
+    }
+  }
+}

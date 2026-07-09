@@ -4,32 +4,39 @@ from typing import Any
 
 from pydantic import Field
 
+from videoipath_automation_tool.apps.inspect.model.actions import (
+    InspectApiEdgeForm,
+    InspectApiLookupInspectDeviceFields,
+    InspectApiVertexEditForm,
+)
 from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiBaseModel,
     InspectApiPostRequestHeader,
     InspectApiRestV2Header,
 )
 from videoipath_automation_tool.apps.inspect.model.ngraph import (
-    InspectApiBaseDevice,
-    InspectApiCodecVertex,
-    InspectApiGenericVertex,
-    InspectApiIpVertex,
     InspectApiNGraphResourceTransform,
-    InspectApiUnidirectionalEdge,
 )
 
 
-InspectApiReplaceVertex = InspectApiIpVertex | InspectApiCodecVertex | InspectApiGenericVertex | dict[str, Any]
-InspectApiReplaceDevice = InspectApiBaseDevice | dict[str, Any]
+# The verified per-kind write shapes (2025.4.9):
+# - replaceDevices takes the device *edit form* (lookupInspectDevice.fields); the raw baseDevice
+#   element is rejected (coordinates + localAssignedTags are mandatory).
+# - replaceVertices takes the vertex *edit form* (lookupInspectVertexById.fields); update-only.
+# - replaceEdges takes the raw persisted edge form (lookupInspectEdgesByIds).
+# dict fallbacks keep the models permissive for hand-built payloads.
+InspectApiReplaceDevice = InspectApiLookupInspectDeviceFields | dict[str, Any]
+InspectApiReplaceVertex = InspectApiVertexEditForm | dict[str, Any]
+InspectApiReplaceEdge = InspectApiEdgeForm | dict[str, Any]
 InspectApiReplaceResourceTransform = InspectApiNGraphResourceTransform | dict[str, Any]
 
 
 class InspectApiUpdateTopologyData(InspectApiBaseModel):
     replaceDevices: dict[str, InspectApiReplaceDevice] = Field(default_factory=dict)
     replaceVertices: dict[str, InspectApiReplaceVertex] = Field(default_factory=dict)
-    replaceEdges: dict[str, InspectApiUnidirectionalEdge] = Field(default_factory=dict)
+    replaceEdges: dict[str, InspectApiReplaceEdge] = Field(default_factory=dict)
     replaceResourceTransforms: dict[str, InspectApiReplaceResourceTransform] = Field(default_factory=dict)
-    addExternalEdges: list[InspectApiUnidirectionalEdge] = Field(default_factory=list)
+    addExternalEdges: list[InspectApiEdgeForm | dict[str, Any]] = Field(default_factory=list)
     remove: list[str] = Field(default_factory=list)
     force: bool = False
 
@@ -76,6 +83,7 @@ class InspectApiUpdateTopologyResponse(InspectApiBaseModel):
 
 __all__ = [
     "InspectApiReplaceDevice",
+    "InspectApiReplaceEdge",
     "InspectApiReplaceResourceTransform",
     "InspectApiReplaceVertex",
     "InspectApiUpdateTopologyData",

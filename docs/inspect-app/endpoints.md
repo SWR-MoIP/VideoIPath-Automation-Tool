@@ -918,6 +918,13 @@ Response (single form; `…ByIds` nests this per id):
 
 Fixture: `tests/fixtures/inspect/2025.4.9/lookup_inspect_vertex_by_id.json`.
 
+The `fields` object is **exactly the accepted `replaceVertices` payload shape**
+(verified 2025.4.9 — see
+[`updateTopology`](#post-restv2actionsstatuscollectorupdatetopology);
+update-only). The same effective-label caveat as `lookupInspectDevice`
+applies: `label` here can carry the `fDescriptor` fallback while the persisted
+`descriptor.label` is empty.
+
 ### `POST /rest/v2/actions/status/collector/lookupNodeInfo` / `…/lookupEdgeInfo` / `…/lookupDeviceVertices`
 
 **Verified 2025.4.9 — display-oriented**, not baselines. `lookupNodeInfo`
@@ -997,6 +1004,13 @@ Model coverage:
 - `InspectApiLookupInspectDeviceResponse`
 - `InspectApiAssignedTags`
 - `InspectApiLookupInspectDeviceFields`
+
+The `fields` object is **exactly the accepted `replaceDevices` payload shape**
+(verified 2025.4.9 — see
+[`updateTopology`](#post-restv2actionsstatuscollectorupdatetopology)). Note
+that `descriptor` here carries the *effective* label (persisted `descriptor`
+merged with the `fDescriptor` fallback); committing it verbatim pins the
+fallback label into the persisted `descriptor`.
 
 Invalid object-style request example:
 
@@ -1399,11 +1413,57 @@ Failure modes (verified 2025.4.9):
   in one commit fails entirely (`items: []`) — reject-before-apply.
 - **`force: true` does not bypass apply-gate errors** (`res.ok` stays `false`
   for non-existent remove keys).
+- **`replaceDevices` takes the edit form, not the persisted element**
+  (verified 2025.4.9 via a device coordinate commit + revert): sending the raw
+  `baseDevice` element (`maps[]`, `fDescriptor`, `type`, …) is rejected with
+  HTTP 400 conversion errors — `coordinates` and `localAssignedTags` are
+  **mandatory**. The accepted shape is exactly `lookupInspectDevice`'s
+  `fields` object; the server maps `coordinates` → `maps[]` itself:
+
+  ```json
+  {
+    "replaceDevices": {
+      "device-a": {
+        "coordinates": { "x": 1600.0, "y": 9050.0 },
+        "descriptor": { "desc": "", "label": "" },
+        "iconSize": "medium",
+        "iconType": "default",
+        "localAssignedTags": [],
+        "sdpStrategy": "always",
+        "siteId": null,
+        "tags": [],
+        "virtualDeviceFields": null
+      }
+    }
+  }
+  ```
+
+  `descriptor` is stored **verbatim** (an empty persisted descriptor stayed
+  empty across commit + revert; the element round-tripped byte-identical
+  except `_rev`). Caveat: the lookups return the *effective* label (persisted
+  `descriptor` merged with the `fDescriptor` fallback) — a client that
+  round-trips them unchanged pins the fallback label into `descriptor`.
+  `replaceEdges` takes the raw persisted edge form (captured UI commit +
+  verified apply).
+- **`replaceVertices` takes the vertex edit form and is update-only**
+  (verified 2025.4.9 via a `desc` round-trip on a live vertex, byte-identical
+  revert): the accepted shape is exactly `lookupInspectVertexById`'s `fields`
+  object. Committing a **new** vertex id passes schema conversion but fails
+  validation with *"Vertex with id … was not found in graph"* — standalone
+  vertices cannot be created through `updateTopology`; they originate from
+  device sync (`syncDevices`) or virtual-device definitions.
+- **Collector propagation**: a committed change is visible in collector reads
+  ~25 ms after the POST returns (three samples, first poll each time) — the
+  projection updates synchronously with the commit for practical purposes.
 - Writes appear in `nGraphElements` under the composite `fromId::toId` key with
   a bumped `_rev`; a parallel UUID-keyed document may also exist for the same
   edge.
 - `resolvable: true` has not been observed on 2025.4.9.
 - Fixtures: `tests/fixtures/inspect/2025.4.9/update_topology_success.json`,
+  `…/update_topology_replace_devices.json` (edit-form request, success
+  response, and the raw-element rejection error),
+  `…/update_topology_replace_vertices.json` (vertex edit-form request,
+  success response, and the update-only validation failure),
   `…/update_topology_fail_remove.json`, `…/update_topology_fail_booking.json`.
 
 Applied-change response (verified on 2025.4.9 — edge `weight` change):

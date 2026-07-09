@@ -60,7 +60,9 @@ class InspectEdge:
 
     @property
     def status(self) -> InspectApiExternalEdgeLiveStatus | None:
-        return self.indexed.edge.status
+        """Live status for this edge. In the lean skeleton only the pair-level status is present;
+        the per-edge status (per direction) appears in the full edge shape."""
+        return self.indexed.edge.status or self.indexed.pair_status
 
     @property
     def services(self) -> list[InspectService]:
