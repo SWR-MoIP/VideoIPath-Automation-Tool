@@ -7,6 +7,7 @@ from collections.abc import Iterator
 
 import pytest
 
+from videoipath_automation_tool.apps.inspect.model.actions import InspectApiLookupVerticesResponse
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiExternalEdgesByDeviceKeyItem,
     InspectApiNodeStatusItem,
@@ -29,6 +30,11 @@ def test_skeleton_indexes_devices_and_edges(snapshot: tuple[InspectSnapshot, Fak
 def test_find_by_label(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
     snap, _ = snapshot
     assert snap.find_device_by_label("SPINE-A").id == "spine-a"
+
+
+def test_device_description_from_descriptor(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    assert snap.get_device("leaf-a").description == "LEAF-A description"
 
 
 def test_ports_trigger_exactly_one_hydration(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -179,6 +185,89 @@ def test_full_snapshot_is_hydrated_without_fetcher() -> None:
         snap.refresh()
 
 
+def test_port_exposes_direction_flags_and_factory_label(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
+    assert port.label == "up1"  # descriptor override
+    assert port.factory_label == "up1-factory"
+    assert port.vertex_type == "Out"
+    assert port.is_bidirectional is False
+    assert port.vertex_ids == ("leaf-a.0.up1",)
+    assert port.is_active is True
+    assert port.is_controlled is True
+    assert port.is_endpoint is False
+    assert fetcher.vertex_lookup_calls == []  # all of the above is offline
+
+
+def test_port_vertex_details_fetches_once_and_caches(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
+    details = port.vertex_details
+    assert details is not None
+    assert details.fields.typeFields is not None and details.fields.typeFields.type == "ip"
+    assert port.vertex_kind == "ip"
+    _ = port.vertex_details  # second access → cached
+    assert fetcher.vertex_lookup_calls == [["leaf-a.0.up1"]]
+
+
+def test_vertex_details_invalidated_by_post_commit_device_refresh(
+    snapshot: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, fetcher = snapshot
+    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_details
+    assert len(fetcher.vertex_lookup_calls) == 1
+    snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
+    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_details
+    assert len(fetcher.vertex_lookup_calls) == 2  # cache was invalidated by the refresh
+
+
+def test_vertex_details_without_fetcher_returns_none() -> None:
+    fetcher = FakeFetcher()
+    snap = InspectSnapshot(
+        fetcher=None,
+        device_items=[fetcher._details["leaf-a"]],
+        device_level=HydrationLevel.FULL,
+    )
+    port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
+    assert port.vertex_details is None
+    assert port.vertex_kind is None
+
+
+def test_filter_ports_by_module_and_direction(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = _filter_detail_node("leaf-a", "LEAF-A")
+    leaf = snap.get_device("leaf-a")
+    assert {p.label for p in leaf.filter_ports(module_id="leaf-a.dev.0")} == {"up1", "host1"}
+    assert {p.label for p in leaf.filter_ports(vertex_type="Out")} == {"up1"}
+    assert {p.label for p in leaf.filter_ports(vertex_type="BiDirectional")} == {"bidi1"}
+    assert {p.label for p in leaf.filter_ports(module_id="leaf-a.dev.1", vertex_type="BiDirectional")} == {"bidi1"}
+    assert fetcher.vertex_lookup_calls == []
+
+
+def test_filter_ports_by_flags(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = _filter_detail_node("leaf-a", "LEAF-A")
+    leaf = snap.get_device("leaf-a")
+    assert {p.label for p in leaf.filter_ports(active=True)} == {"up1", "bidi1"}
+    assert {p.label for p in leaf.filter_ports(active=False)} == {"host1"}  # mgmt1 (unknown) never matches
+    assert {p.label for p in leaf.filter_ports(endpoint=True)} == {"host1", "bidi1"}
+    assert {p.label for p in leaf.filter_ports(controlled=True)} == {"up1"}
+    assert {p.label for p in leaf.filter_ports(active=True, endpoint=True)} == {"bidi1"}
+    assert fetcher.vertex_lookup_calls == []
+
+
+def test_filter_ports_by_kind_uses_one_batched_lookup(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = _filter_detail_node("leaf-a", "LEAF-A")
+    leaf = snap.get_device("leaf-a")
+    ports = leaf.filter_ports(kind="ip")
+    assert {p.label for p in ports} == {"up1", "host1", "bidi1"}  # mgmt1 has no vertex → excluded
+    assert len(fetcher.vertex_lookup_calls) == 1  # one batched call for all uncached vertices
+    assert set(fetcher.vertex_lookup_calls[0]) == {"leaf-a.0.up1", "leaf-a.0.host1", "leaf-a.1.bidi1.out"}
+    _ = leaf.filter_ports(kind="ip")  # cached → no further lookups
+    assert len(fetcher.vertex_lookup_calls) == 1
+
+
 # --- Internal ---
 
 
@@ -194,7 +283,7 @@ def _skeleton_node(
             "_id": device_id,
             "_vid": device_id,
             "deviceId": device_id,
-            "descriptor": {"desc": "", "label": label},
+            "descriptor": {"desc": f"{label} description", "label": label},
             "meta": {"coordinates": {"x": x, "y": y}, "isVirtual": True, "iconType": "switch"},
             "status": {"sa": 0, "severity": 0},
             "syncSeverity": sync,
@@ -209,8 +298,11 @@ def _detail_node(device_id: str, label: str, port_pids: list[str]) -> InspectApi
         pid: {
             "pid": pid,
             "descriptor": {"label": pid.split(".")[-1]},
+            "label": f"{pid.split('.')[-1]}-factory",
             "status": {"sa": 0, "severity": 0},
-            "vertexInfo": {"type": "single", "id": pid.replace(".dev.", "."), "vertexType": "Out"},
+            "vertexInfo": _single_vertex_info(
+                pid.replace(".dev.", "."), "Out", active=True, controlled=True, endpoint=False
+            ),
         }
         for pid in port_pids
     }
@@ -224,6 +316,72 @@ def _detail_node(device_id: str, label: str, port_pids: list[str]) -> InspectApi
             "status": {"sa": 0, "severity": 0},
             "syncSeverity": 0,
             "modules": {f"{device_id}.dev.0": {"pid": f"{device_id}.dev.0", "ports": ports}},
+        }
+    )
+
+
+def _single_vertex_info(vertex_id: str, vertex_type: str, *, active: bool, controlled: bool, endpoint: bool) -> dict:
+    return {
+        "type": "single",
+        "id": vertex_id,
+        "vertexType": vertex_type,
+        "fields": {"isActive": active, "isControlled": controlled, "isEndpoint": endpoint},
+    }
+
+
+def _filter_detail_node(device_id: str, label: str) -> InspectApiNodeStatusItem:
+    """A hydrated device with port variety for filter tests: two single vertices (Out active
+    controlled / In inactive endpoint), one double (bidirectional endpoint), one without vertexInfo."""
+
+    def port(module: str, name: str, vertex_info: dict | None) -> dict:
+        entry: dict = {"pid": f"{device_id}.dev.{module}.{name}", "descriptor": {"label": name}}
+        if vertex_info is not None:
+            entry["vertexInfo"] = vertex_info
+        return entry
+
+    modules = {
+        f"{device_id}.dev.0": {
+            "pid": f"{device_id}.dev.0",
+            "ports": {
+                f"{device_id}.dev.0.up1": port(
+                    "0",
+                    "up1",
+                    _single_vertex_info(f"{device_id}.0.up1", "Out", active=True, controlled=True, endpoint=False),
+                ),
+                f"{device_id}.dev.0.host1": port(
+                    "0",
+                    "host1",
+                    _single_vertex_info(f"{device_id}.0.host1", "In", active=False, controlled=False, endpoint=True),
+                ),
+            },
+        },
+        f"{device_id}.dev.1": {
+            "pid": f"{device_id}.dev.1",
+            "ports": {
+                f"{device_id}.dev.1.bidi1": port(
+                    "1",
+                    "bidi1",
+                    {
+                        "type": "double",
+                        "in": _single_vertex_info(
+                            f"{device_id}.1.bidi1.in", "In", active=True, controlled=False, endpoint=True
+                        ),
+                        "out": _single_vertex_info(
+                            f"{device_id}.1.bidi1.out", "Out", active=True, controlled=False, endpoint=True
+                        ),
+                    },
+                ),
+                f"{device_id}.dev.1.mgmt1": port("1", "mgmt1", None),
+            },
+        },
+    }
+    return InspectApiNodeStatusItem.model_validate(
+        {
+            "_id": device_id,
+            "_vid": device_id,
+            "deviceId": device_id,
+            "descriptor": {"desc": "", "label": label},
+            "modules": modules,
         }
     )
 
@@ -271,6 +429,7 @@ class FakeFetcher:
     def __init__(self) -> None:
         self.device_detail_calls: list[str] = []
         self.edge_pair_calls: list[str] = []
+        self.vertex_lookup_calls: list[list[str]] = []
         self.section_calls = 0
         self.skeleton_calls = 0
         self._details = {
@@ -298,6 +457,34 @@ class FakeFetcher:
     def get_paths_section(self) -> list[InspectApiPathItem]:
         self.section_calls += 1
         return self._paths
+
+    def lookup_vertices(self, vertex_ids: list[str]) -> InspectApiLookupVerticesResponse:
+        self.vertex_lookup_calls.append(list(vertex_ids))
+        data = {
+            vertex_id: {
+                "id": vertex_id,
+                "isVirtual": False,
+                "vertexType": "Out",
+                "fields": {"label": vertex_id, "active": True, "useAsEndpoint": False, "typeFields": {"type": "ip"}},
+            }
+            for vertex_id in vertex_ids
+        }
+        return InspectApiLookupVerticesResponse.model_validate(
+            {
+                "data": data,
+                "header": {
+                    "auth": True,
+                    "caption": "Operation Successful",
+                    "code": "OK",
+                    "errorCodes": [],
+                    "errorDetails": [],
+                    "id": "0",
+                    "msg": [],
+                    "ok": True,
+                    "user": "api-user",
+                },
+            }
+        )
 
 
 @pytest.fixture

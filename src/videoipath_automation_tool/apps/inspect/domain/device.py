@@ -3,7 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from videoipath_automation_tool.apps.inspect.model.common import InspectApiStatusSummary, InspectFrozenModel
+from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectApiStatusSummary,
+    InspectFrozenModel,
+    InspectIconType,
+    InspectVertexKind,
+    InspectVertexType,
+)
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 if TYPE_CHECKING:
@@ -27,6 +33,10 @@ class InspectDevice(InspectFrozenModel):
         return self._record().label
 
     @property
+    def description(self) -> str | None:
+        return self._record().node.effective_description
+
+    @property
     def pid(self) -> str | None:
         return self._record().pid
 
@@ -36,7 +46,7 @@ class InspectDevice(InspectFrozenModel):
         return meta.isVirtual if meta is not None else None
 
     @property
-    def icon_type(self) -> str | None:
+    def icon_type(self) -> InspectIconType | str | None:
         meta = self._record().node.meta
         return meta.iconType if meta is not None else None
 
@@ -67,6 +77,43 @@ class InspectDevice(InspectFrozenModel):
     @property
     def ports(self) -> list[InspectPort]:
         return self.snapshot.get_ports_for_device(self.id)
+
+    def filter_ports(
+        self,
+        *,
+        module_id: str | None = None,
+        vertex_type: InspectVertexType | str | None = None,
+        kind: InspectVertexKind | str | None = None,
+        active: bool | None = None,
+        controlled: bool | None = None,
+        endpoint: bool | None = None,
+    ) -> list[InspectPort]:
+        """Filter this device's ports/vertices.
+
+        All filters except ``kind`` are evaluated from already-hydrated data (at most the one lazy
+        device-detail fetch that ``ports`` itself triggers). ``kind`` (``"generic"`` / ``"ip"`` /
+        ``"codec"`` / ``"router"``) requires the vertex edit form: uncached vertices are resolved
+        with a single batched ``lookupInspectVertexByIds`` call. A port whose value for an explicit
+        filter is unknown never matches.
+        """
+        result: list[InspectPort] = []
+        for port in self.ports:
+            if module_id is not None and port.module_id != module_id:
+                continue
+            if vertex_type is not None and port.vertex_type != vertex_type:
+                continue
+            if active is not None and port.is_active is not active:
+                continue
+            if controlled is not None and port.is_controlled is not controlled:
+                continue
+            if endpoint is not None and port.is_endpoint is not endpoint:
+                continue
+            result.append(port)
+
+        if kind is not None:
+            self.snapshot.get_vertex_details_many([p.vertex_id for p in result if p.vertex_id])
+            result = [p for p in result if p.vertex_kind == kind]
+        return result
 
     @property
     def edges(self) -> list[InspectEdge]:

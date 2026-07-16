@@ -39,7 +39,11 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiLookupInspectDeviceFields,
     InspectApiVertexEditForm,
 )
-from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, InspectInternalModel
+from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectFrozenModel,
+    InspectIconType,
+    InspectInternalModel,
+)
 from videoipath_automation_tool.apps.inspect.model.update_topology import (
     InspectApiUpdateTopologyData,
     InspectApiUpdateTopologyResponse,
@@ -126,7 +130,7 @@ class InspectTransaction:
         device_id: str,
         *,
         label: Optional[str] = None,
-        icon_type: Optional[str] = None,
+        icon_type: Optional[InspectIconType | str] = None,
         sdp_strategy: Optional[str] = None,
         tags: Optional[list[str]] = None,
         coordinates: Optional[dict[str, float]] = None,

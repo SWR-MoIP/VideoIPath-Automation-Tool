@@ -66,12 +66,19 @@ class InspectApiVertexTypeFields(InspectApiBaseModel):
     vrfId: str | None = None
 
 
+class InspectApiVertexControlProps(InspectApiBaseModel):
+    """Control properties of a controlled vertex (verified against a live 2025.4.9 server)."""
+
+    configPriority: str | None = None
+    onlyInitial: bool | None = None
+
+
 class InspectApiVertexEditForm(InspectApiBaseModel):
     """The vertex ``fields`` object returned by ``lookupInspectVertexById`` — this exact shape is
     what ``replaceVertices`` accepts (update-only; verified 2025.4.9)."""
 
     active: bool | None = None
-    controlProps: Any | None = None
+    controlProps: InspectApiVertexControlProps | None = None
     custom: dict[str, Any] = Field(default_factory=dict)
     desc: str = ""
     destinationMonitorLeader: bool | None = None
@@ -218,6 +225,7 @@ __all__ = [
     "InspectApiLookupVertexResponseData",
     "InspectApiSyncDevicesRequest",
     "InspectApiSyncDevicesRequestData",
+    "InspectApiVertexControlProps",
     "InspectApiVertexEditForm",
     "InspectApiVertexTypeFields",
 ]

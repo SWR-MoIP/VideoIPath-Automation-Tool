@@ -1,8 +1,40 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+# The icon types selectable in the VideoIPath UI (mirrors the topology app's ``IconType``; live data
+# may contain further values, so read/write surfaces use the permissive ``InspectIconType | str``).
+InspectIconType = Literal[
+    "default",
+    "none",
+    "device",
+    "camera",
+    "monitor",
+    "encoder",
+    "decoder",
+    "audioMixer",
+    "videoMixer",
+    "processingDevice",
+    "transportStreamProcessor",
+    "mediaDevice",
+    "server",
+    "gateway",
+    "ipSwitchRouter",
+    "vlanCloud",
+    "videoAudioRouterMatrix",
+    "encoderDecoder",
+]
+
+# Vertex direction as reported in ``vertexInfo.vertexType`` (a "double" vertexInfo is the
+# bidirectional case and is surfaced as "BiDirectional").
+InspectVertexType = Literal["BiDirectional", "In", "Internal", "Out", "Undecided"]
+
+# Vertex kind from the vertex edit form's ``typeFields.type``. "ip", "codec" and "router" are
+# verified against a live 2025.4.9 server; "generic" is inferred from the nGraph element types.
+# Read surfaces use the permissive ``InspectVertexKind | str`` for unknown future kinds.
+InspectVertexKind = Literal["generic", "ip", "codec", "router"]
 
 
 class InspectApiBaseModel(BaseModel):
@@ -94,4 +126,7 @@ __all__ = [
     "InspectApiSimpleActionResult",
     "InspectApiStatusContext",
     "InspectApiStatusSummary",
+    "InspectIconType",
+    "InspectVertexKind",
+    "InspectVertexType",
 ]

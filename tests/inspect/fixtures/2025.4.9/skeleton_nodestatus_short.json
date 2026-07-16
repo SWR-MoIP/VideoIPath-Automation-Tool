@@ -9,6 +9,7 @@
                 "_id": "device-h",
                 "_vid": "device-h",
                 "descriptor": {
+                  "desc": "Example device description",
                   "label": "Example Device A"
                 },
                 "deviceId": "device-h",

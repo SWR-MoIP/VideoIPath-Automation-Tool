@@ -30,6 +30,7 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiModuleStatus,
     InspectApiNodeStatusItem,
     InspectApiPathItem,
+    InspectApiSingleVertexInfo,
     InspectPortStatus,
 )
 from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, InspectInternalModel
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
     from videoipath_automation_tool.apps.inspect.api import InspectAPI
+    from videoipath_automation_tool.apps.inspect.model.actions import InspectApiLookupVertexResponseData
 
 
 class HydrationLevel(str, Enum):
@@ -72,6 +74,10 @@ class InspectSnapshot:
         self._ports_by_device_id: dict[str, list[_IndexedPort]] = {}
         self._port_by_key: dict[tuple[str, str], _IndexedPort] = {}
         self._ports_by_pid: dict[str, list[_IndexedPort]] = {}
+
+        # Vertex edit-form details, fetched lazily per vertex ([ADR-0007]) and invalidated when the
+        # owning device's ports are rebuilt after a refresh/commit.
+        self._vertex_details: dict[str, "InspectApiLookupVertexResponseData"] = {}
 
         # Section: services / paths
         self._paths_by_booking_id: dict[str, InspectApiPathItem] = {}
@@ -182,6 +188,23 @@ class InspectSnapshot:
     def find_port_by_id(self, port_id: str) -> Optional["InspectPort"]:
         indexed = self._ports_by_pid.get(port_id)
         return self._wrap_port(indexed[0]) if indexed else None
+
+    # --- Vertex detail reads (trigger lookup) ---
+
+    def get_vertex_details(self, vertex_id: str) -> Optional["InspectApiLookupVertexResponseData"]:
+        return self.get_vertex_details_many([vertex_id]).get(vertex_id)
+
+    def get_vertex_details_many(self, vertex_ids: list[str]) -> dict[str, "InspectApiLookupVertexResponseData"]:
+        """Batched, cached vertex edit-form lookup (``lookupInspectVertexByIds``). Only uncached ids
+        are fetched, in a single call; without a fetcher only cached entries are returned."""
+        missing = [vertex_id for vertex_id in vertex_ids if vertex_id not in self._vertex_details]
+        if missing and self._fetcher is not None:
+            response = self._fetcher.lookup_vertices(missing)
+            with self._lock:
+                self._vertex_details.update(response.data)
+        return {
+            vertex_id: detail for vertex_id in vertex_ids if (detail := self._vertex_details.get(vertex_id)) is not None
+        }
 
     # --- Edge reads (no hydration) ---
 
@@ -482,6 +505,8 @@ class InspectSnapshot:
         # Drop existing port index entries for this device
         old = self._ports_by_device_id.pop(device_id, [])
         for indexed in old:
+            for vertex_id in _vertex_ids_from_status(indexed.port):
+                self._vertex_details.pop(vertex_id, None)
             port_id = _port_id_from_status(indexed.port)
             if port_id is not None:
                 self._port_by_key.pop((device_id, port_id), None)
@@ -602,7 +627,9 @@ class InspectSnapshot:
                         if not self._devices_by_label[label]:
                             self._devices_by_label.pop(label, None)
                     self._device_cache.pop(removed, None)
-                    self._ports_by_device_id.pop(removed, None)
+                    for indexed in self._ports_by_device_id.pop(removed, []):
+                        for vertex_id in _vertex_ids_from_status(indexed.port):
+                            self._vertex_details.pop(vertex_id, None)
                     self._edges_by_device_id.pop(removed, None)
                 # Edge removal by edge id or pair id
                 if "::" in removed:
@@ -740,6 +767,16 @@ def _port_id_from_endpoint(endpoint: Any) -> str | None:
 def _port_id_from_status(port: InspectPortStatus) -> str | None:
     port_id = port.pid or port.id
     return port_id if port_id else None
+
+
+def _vertex_ids_from_status(port: InspectPortStatus) -> tuple[str, ...]:
+    """All vertex ids carried by a port's ``vertexInfo`` (one for single, out+in for double)."""
+    info = port.parsed_vertex_info
+    if info is None:
+        return ()
+    if isinstance(info, InspectApiSingleVertexInfo):
+        return (info.id,) if info.id else ()
+    return tuple(side.id for side in (info.out, info.in_) if side is not None and side.id)
 
 
 def _iter_modules(

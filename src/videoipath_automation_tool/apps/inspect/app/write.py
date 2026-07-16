@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 from videoipath_automation_tool.apps.inspect.transaction import CommitResult, InspectTransaction
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
+from videoipath_automation_tool.apps.inspect.model.common import InspectIconType
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
@@ -47,7 +48,7 @@ class InspectWriteMixin:
         device_id: str,
         *,
         label: Optional[str] = None,
-        icon_type: Optional[str] = None,
+        icon_type: Optional[InspectIconType | str] = None,
         sdp_strategy: Optional[str] = None,
         tags: Optional[list[str]] = None,
         coordinates: Optional[dict[str, float]] = None,

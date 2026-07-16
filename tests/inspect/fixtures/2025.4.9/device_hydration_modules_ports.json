@@ -13,9 +13,54 @@
                     "ports": {
                       "device-a.dev.module-1.port-out-1": {
                         "descriptor": {
+                          "desc": "Example port description",
                           "label": "port-out-1 (out)"
                         },
-                        "pid": "device-a.dev.module-1.port-out-1"
+                        "label": "port-out-1",
+                        "pid": "device-a.dev.module-1.port-out-1",
+                        "vertexInfo": {
+                          "type": "single",
+                          "id": "device-a.module-1.port-out-1.out",
+                          "label": "port-out-1 (out)",
+                          "vertexType": "Out",
+                          "fields": {
+                            "isActive": true,
+                            "isControlled": true,
+                            "isEndpoint": false
+                          }
+                        }
+                      },
+                      "device-a.dev.module-1.port-bidi-1": {
+                        "descriptor": {
+                          "label": "port-bidi-1"
+                        },
+                        "label": "port-bidi-1",
+                        "pid": "device-a.dev.module-1.port-bidi-1",
+                        "vertexInfo": {
+                          "type": "double",
+                          "in": {
+                            "type": "single",
+                            "id": "device-a.module-1.port-bidi-1.in",
+                            "label": "port-bidi-1 (in)",
+                            "vertexType": "In",
+                            "fields": {
+                              "isActive": true,
+                              "isControlled": false,
+                              "isEndpoint": true
+                            }
+                          },
+                          "out": {
+                            "type": "single",
+                            "id": "device-a.module-1.port-bidi-1.out",
+                            "label": "port-bidi-1 (out)",
+                            "vertexType": "Out",
+                            "fields": {
+                              "isActive": true,
+                              "isControlled": false,
+                              "isEndpoint": true
+                            }
+                          }
+                        }
                       }
                     }
                   },

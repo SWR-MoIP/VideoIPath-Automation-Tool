@@ -138,6 +138,30 @@ class InspectPortStatus(InspectApiBaseModel):
             return self.descriptor.label
         return self.label
 
+    @property
+    def effective_description(self) -> str | None:
+        """The user-set port description (``descriptor.desc``), if any."""
+        if self.descriptor is not None and self.descriptor.desc:
+            return self.descriptor.desc
+        return None
+
+    @property
+    def parsed_vertex_info(self) -> InspectApiSingleVertexInfo | InspectApiDoubleVertexInfo | None:
+        """``vertexInfo`` coerced to its typed form (handles the raw-dict fallback branch)."""
+        vertex_info = self.vertexInfo
+        if isinstance(vertex_info, (InspectApiSingleVertexInfo, InspectApiDoubleVertexInfo)):
+            return vertex_info
+        if isinstance(vertex_info, dict):
+            model = {"single": InspectApiSingleVertexInfo, "double": InspectApiDoubleVertexInfo}.get(
+                vertex_info.get("type", "")
+            )
+            if model is not None:
+                try:
+                    return model.model_validate(vertex_info)
+                except ValueError:
+                    return None
+        return None
+
 
 class InspectApiModuleStatus(InspectApiBaseModel):
     id: str | None = Field(default=None, alias="_id")
@@ -180,6 +204,16 @@ class InspectApiNodeStatusItem(InspectApiBaseModel):
         if self.fDescriptor is not None and self.fDescriptor.label:
             return self.fDescriptor.label
         return self.label
+
+    @property
+    def effective_description(self) -> str | None:
+        """The description the UI shows: user ``descriptor.desc``, falling back to the
+        device-reported ``fDescriptor.desc``."""
+        if self.descriptor is not None and self.descriptor.desc:
+            return self.descriptor.desc
+        if self.fDescriptor is not None and self.fDescriptor.desc:
+            return self.fDescriptor.desc
+        return None
 
     @property
     def coordinates(self) -> dict[str, float | int | str | None] | None:
