@@ -3,7 +3,7 @@ so star imports stay well-defined (no namespace pollution)."""
 
 from __future__ import annotations
 
-import videoipath_automation_tool.apps
+from videoipath_automation_tool import apps
 from videoipath_automation_tool.apps import inspect
 from videoipath_automation_tool.apps.inspect import model
 from videoipath_automation_tool.apps.inspect.model import actions, collector, common, ngraph, update_topology
@@ -33,5 +33,5 @@ def test_inspect_package_all_names_resolve() -> None:
 
 
 def test_apps_star_import_is_clean() -> None:
-    assert videoipath_automation_tool.apps.inspect is inspect
+    assert apps.inspect is inspect
     assert hasattr(inspect, "__all__")
