@@ -9,7 +9,7 @@
     "context": {
       "devicePid": "device-a",
       "modulePid": "device-a.dev.module-1",
-      "portPid": "device-a.dev.module-1.port-out-1"
+      "portPid": "device-a.dev.module-1.port-in-1"
     },
     "customSchemas": {},
     "fields": {
@@ -19,33 +19,20 @@
       "desc": "",
       "destinationMonitorLeader": false,
       "extraAlertFilters": [],
-      "label": "Port A (out)",
+      "label": "Router In 11.1",
       "localAssignedTags": [],
       "queueable": false,
       "sipsMode": "NONE",
       "tags": [],
       "typeFields": {
-        "ipAddress": null,
-        "ipNetmask": null,
-        "parkPort": null,
-        "public": false,
-        "supportsCpipeCfg": false,
-        "supportsIgmpCfg": false,
-        "supportsMacForwardingCfg": false,
-        "supportsNsoCfg": false,
-        "supportsOpenflowCfg": false,
-        "supportsStaticIgmpCfg": false,
-        "supportsVlanCfg": false,
-        "supportsVplsCfg": false,
-        "type": "ip",
-        "vlanId": null,
-        "vrfId": null
+        "parkPort": 42,
+        "type": "router"
       },
       "useAsEndpoint": false
     },
-    "id": "device-a.module-1.port-out-1.out",
+    "id": "device-a.module-1.port-in-1.in",
     "isVirtual": false,
-    "vertexType": "Out"
+    "vertexType": "In"
   },
   "header": {
     "auth": true,

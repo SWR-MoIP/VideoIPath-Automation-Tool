@@ -140,6 +140,13 @@ def test_lookup_vertex_edit_form(load: Callable[[str], dict[str, Any]]) -> None:
     assert resp.data.vertexType in ("In", "Out", "Internal", None)
 
 
+def test_lookup_router_vertex_exposes_park_port(load: Callable[[str], dict[str, Any]]) -> None:
+    resp = InspectApiLookupVertexResponse.model_validate(load("lookup_inspect_router_vertex_by_id.json"))
+    assert resp.data.fields.typeFields is not None
+    assert resp.data.fields.typeFields.type == "router"
+    assert resp.data.fields.typeFields.parkPort == 42
+
+
 def test_lookup_device_fields() -> None:
     resp = InspectApiLookupInspectDeviceResponse.model_validate(_device_lookup_fixture())
     assert resp.data.fields.coordinates is not None

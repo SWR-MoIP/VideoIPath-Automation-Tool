@@ -142,6 +142,64 @@ def test_update_vertex_assigns_tags_as_local() -> None:
     assert form.tags == []
 
 
+def test_update_vertex_sets_description() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _vertex_data()
+    with _txn(api) as tx:
+        tx.update_vertex(A_OUT, description="Router input")
+        tx.commit()
+    assert api.update_calls[0].replaceVertices[A_OUT].desc == "Router input"
+
+
+def test_update_vertex_sets_active_and_sips_mode() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _vertex_data()
+    with _txn(api) as tx:
+        tx.update_vertex(A_OUT, active=False, sips_mode="SIPSAuto")
+        tx.commit()
+    form = api.update_calls[0].replaceVertices[A_OUT]
+    assert form.active is False
+    assert form.sipsMode == "SIPSAuto"
+
+
+def test_update_vertex_sets_control_props_from_dict() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _vertex_data()
+    with _txn(api) as tx:
+        tx.update_vertex(A_OUT, control_props={"configPriority": "high", "onlyInitial": True})
+        tx.commit()
+    form = api.update_calls[0].replaceVertices[A_OUT]
+    assert form.controlProps is not None
+    assert form.controlProps.configPriority == "high"
+    assert form.controlProps.onlyInitial is True
+
+
+def test_update_vertex_sets_extra_alert_filters_and_custom() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _vertex_data()
+    with _txn(api) as tx:
+        tx.update_vertex(
+            A_OUT,
+            extra_alert_filters=["alarm-point-a"],
+            custom={"param-a": "value-a"},
+        )
+        tx.commit()
+    form = api.update_calls[0].replaceVertices[A_OUT]
+    assert form.extraAlertFilters == ["alarm-point-a"]
+    assert form.custom == {"param-a": "value-a"}
+
+
+def test_update_vertex_sets_park_port() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _router_vertex_data()
+    with _txn(api) as tx:
+        tx.update_vertex(A_OUT, park_port=99)
+        tx.commit()
+    form = api.update_calls[0].replaceVertices[A_OUT]
+    assert form.typeFields is not None
+    assert form.typeFields.parkPort == 99
+
+
 def test_remove_appends_to_remove_list() -> None:
     api = FakeAPI()
     with _txn(api) as tx:
@@ -321,6 +379,11 @@ def _device_response(
 
 def _vertex_data() -> InspectApiLookupVertexResponseData:
     fixture = load_fixture("lookup_inspect_vertex_by_id.json")
+    return InspectApiLookupVertexResponseData.model_validate(fixture["data"])
+
+
+def _router_vertex_data() -> InspectApiLookupVertexResponseData:
+    fixture = load_fixture("lookup_inspect_router_vertex_by_id.json")
     return InspectApiLookupVertexResponseData.model_validate(fixture["data"])
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiDoubleVertexInfo,
@@ -12,17 +12,22 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectVertexKind,
     InspectVertexType,
 )
+
+if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
+    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+    from videoipath_automation_tool.apps.inspect.model.actions import (
+        InspectApiLookupVertexResponseData,
+        InspectApiVertexControlProps,
+        InspectApiVertexEditForm,
+        InspectApiVertexTypeFields,
+    )
 from videoipath_automation_tool.apps.inspect.snapshot import (
     InspectSnapshot,
     _IndexedPort,
     _port_id_from_status,
     _vertex_ids_from_status,
 )
-
-if TYPE_CHECKING:
-    from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
-    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
-    from videoipath_automation_tool.apps.inspect.model.actions import InspectApiLookupVertexResponseData
 
 
 class InspectPort(InspectFrozenModel):
@@ -111,24 +116,57 @@ class InspectPort(InspectFrozenModel):
         return _vertex_ids_from_status(self.indexed.port)
 
     @property
-    def vertex_details(self) -> InspectApiLookupVertexResponseData | None:
-        """Full vertex edit-form data (``lookupInspectVertexByIds``): active, useAsEndpoint,
-        sipsMode, controlProps, typeFields (ip address, vlan, …) and more. First access per vertex
-        triggers one server lookup; results are cached on the snapshot and invalidated when the
-        owning device is refreshed after a commit."""
-        vertex_id = self.vertex_id
-        if not vertex_id:
-            return None
-        return self.snapshot.get_vertex_details(vertex_id)
-
-    @property
     def vertex_kind(self) -> InspectVertexKind | str | None:
         """Vertex kind: ``"generic"`` / ``"ip"`` / ``"codec"`` / ``"router"`` — from the vertex edit
-        form's ``typeFields.type`` (triggers the lazy ``vertex_details`` lookup on first access)."""
-        details = self.vertex_details
-        if details is None or details.fields.typeFields is None:
-            return None
-        return details.fields.typeFields.type
+        form's ``typeFields.type`` (triggers a lazy vertex lookup on first access)."""
+        type_fields = self.type_fields
+        return type_fields.type if type_fields is not None else None
+
+    @property
+    def type_fields(self) -> InspectApiVertexTypeFields | None:
+        form = self._edit_form()
+        return form.typeFields if form else None
+
+    @property
+    def sips_mode(self) -> str | None:
+        form = self._edit_form()
+        return form.sipsMode if form else None
+
+    @property
+    def control_props(self) -> InspectApiVertexControlProps | None:
+        form = self._edit_form()
+        return form.controlProps if form else None
+
+    @property
+    def extra_alert_filters(self) -> list[Any]:
+        form = self._edit_form()
+        return list(form.extraAlertFilters) if form else []
+
+    @property
+    def custom(self) -> dict[str, Any]:
+        form = self._edit_form()
+        return dict(form.custom) if form else {}
+
+    @property
+    def custom_schemas(self) -> dict[str, Any]:
+        lookup = self._vertex_lookup()
+        return dict(lookup.customSchemas) if lookup else {}
+
+    @property
+    def queueable(self) -> bool | None:
+        form = self._edit_form()
+        return form.queueable if form else None
+
+    @property
+    def destination_monitor_leader(self) -> bool | None:
+        form = self._edit_form()
+        return form.destinationMonitorLeader if form else None
+
+    @property
+    def park_port(self) -> int | None:
+        """Park port (router vertices): ``typeFields.parkPort`` from the vertex edit form."""
+        type_fields = self.type_fields
+        return type_fields.parkPort if type_fields is not None else None
 
     @property
     def edge(self) -> InspectEdge | None:
@@ -136,6 +174,16 @@ class InspectPort(InspectFrozenModel):
         if not port_id:
             return None
         return self.snapshot.get_edge_for_port(self.indexed.device_id, port_id)
+
+    def _vertex_lookup(self) -> InspectApiLookupVertexResponseData | None:
+        vertex_id = self.vertex_id
+        if not vertex_id:
+            return None
+        return self.snapshot.get_vertex_details(vertex_id)
+
+    def _edit_form(self) -> InspectApiVertexEditForm | None:
+        lookup = self._vertex_lookup()
+        return lookup.fields if lookup else None
 
     def _vertex_flag(self, name: str) -> bool | None:
         """Resolve a ``vertexInfo.fields`` flag; for double vertices: True if either side is True,

@@ -199,29 +199,35 @@ def test_port_exposes_direction_flags_and_factory_label(snapshot: tuple[InspectS
     assert fetcher.vertex_lookup_calls == []  # all of the above is offline
 
 
-def test_port_vertex_details_fetches_once_and_caches(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+def test_port_vertex_attrs_fetches_once_and_caches(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
     snap, fetcher = snapshot
     port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
-    details = port.vertex_details
-    assert details is not None
-    assert details.fields.typeFields is not None and details.fields.typeFields.type == "ip"
+    assert port.type_fields is not None and port.type_fields.type == "ip"
     assert port.vertex_kind == "ip"
-    _ = port.vertex_details  # second access → cached
+    assert port.sips_mode == "NONE"
+    assert port.control_props is not None and port.control_props.configPriority == "off"
+    assert port.extra_alert_filters == []
+    assert port.custom == {}
+    assert port.custom_schemas == {}
+    assert port.queueable is False
+    assert port.destination_monitor_leader is False
+    assert port.park_port is None
+    _ = port.vertex_kind  # second access → cached
     assert fetcher.vertex_lookup_calls == [["leaf-a.0.up1"]]
 
 
-def test_vertex_details_invalidated_by_post_commit_device_refresh(
+def test_vertex_lookup_invalidated_by_post_commit_device_refresh(
     snapshot: tuple[InspectSnapshot, FakeFetcher],
 ) -> None:
     snap, fetcher = snapshot
-    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_details
+    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_kind
     assert len(fetcher.vertex_lookup_calls) == 1
     snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
-    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_details
-    assert len(fetcher.vertex_lookup_calls) == 2  # cache was invalidated by the refresh
+    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_kind
+    assert len(fetcher.vertex_lookup_calls) == 2
 
 
-def test_vertex_details_without_fetcher_returns_none() -> None:
+def test_vertex_attrs_without_fetcher_returns_none() -> None:
     fetcher = FakeFetcher()
     snap = InspectSnapshot(
         fetcher=None,
@@ -229,8 +235,10 @@ def test_vertex_details_without_fetcher_returns_none() -> None:
         device_level=HydrationLevel.FULL,
     )
     port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
-    assert port.vertex_details is None
     assert port.vertex_kind is None
+    assert port.sips_mode is None
+    assert port.control_props is None
+    assert port.park_port is None
 
 
 def test_filter_ports_by_module_and_direction(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -465,7 +473,22 @@ class FakeFetcher:
                 "id": vertex_id,
                 "isVirtual": False,
                 "vertexType": "Out",
-                "fields": {"label": vertex_id, "active": True, "useAsEndpoint": False, "typeFields": {"type": "ip"}},
+                "customSchemas": {},
+                "fields": {
+                    "active": True,
+                    "controlProps": {"configPriority": "off", "onlyInitial": False},
+                    "custom": {},
+                    "desc": "",
+                    "destinationMonitorLeader": False,
+                    "extraAlertFilters": [],
+                    "label": vertex_id,
+                    "localAssignedTags": [],
+                    "queueable": False,
+                    "sipsMode": "NONE",
+                    "tags": [],
+                    "typeFields": {"type": "ip"},
+                    "useAsEndpoint": False,
+                },
             }
             for vertex_id in vertex_ids
         }

@@ -72,10 +72,29 @@ class InspectWriteMixin:
         use_as_endpoint: Optional[bool] = None,
         label: Optional[str] = None,
         tags: Optional[list[str]] = None,
+        description: Optional[str] = None,
+        active: Optional[bool] = None,
+        sips_mode: Optional[str] = None,
+        control_props: Optional[Any] = None,
+        extra_alert_filters: Optional[list[Any]] = None,
+        custom: Optional[dict[str, Any]] = None,
+        park_port: Optional[int] = None,
     ) -> CommitResult:
         """Edit a vertex (single auto-committed change; update-only)."""
         with self.transaction() as tx:
-            tx.update_vertex(vertex_id, use_as_endpoint=use_as_endpoint, label=label, tags=tags)
+            tx.update_vertex(
+                vertex_id,
+                use_as_endpoint=use_as_endpoint,
+                label=label,
+                tags=tags,
+                description=description,
+                active=active,
+                sips_mode=sips_mode,
+                control_props=control_props,
+                extra_alert_filters=extra_alert_filters,
+                custom=custom,
+                park_port=park_port,
+            )
             return tx.commit()
 
     def update_edge(

@@ -118,6 +118,45 @@ def test_assign_tag_to_port(app: VideoIPathApp, topology_builder: TopologyBuilde
         delete_test_tag(app)  # also removes the port binding
 
 
+def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
+    """Write every editable vertex UI field and read it back via InspectPort attributes."""
+    (device_id,) = topology_builder.add_devices([("VTX-A", 2)])
+    app.inspect.refresh()
+    vertex_id = next(
+        p.vertex_id for p in app.inspect.get_device(device_id).ports if p.vertex_id and "Router In" in (p.label or "")
+    )
+    alert_filter = "0:*:e2e-alarm:*"
+    result = app.inspect.update_vertex(
+        vertex_id,
+        label="E2E Router In",
+        description="E2E vertex description",
+        use_as_endpoint=True,
+        active=True,
+        sips_mode="SIPSAuto",
+        control_props={"configPriority": "high", "onlyInitial": True},
+        extra_alert_filters=[alert_filter],
+        custom={"e2e-param": "e2e-value"},
+        park_port=7,
+    )
+    assert result.ok
+
+    app.inspect.refresh()
+    port = next(p for p in app.inspect.get_device(device_id).ports if p.vertex_id == vertex_id)
+    assert port.label == "E2E Router In"
+    assert port.description == "E2E vertex description"
+    assert port.is_endpoint is True
+    assert port.is_active is True
+    assert port.sips_mode == "SIPSAuto"
+    assert port.control_props is not None
+    assert port.control_props.configPriority == "high"
+    assert port.control_props.onlyInitial is True
+    assert alert_filter in port.extra_alert_filters
+    assert port.custom.get("e2e-param") == "e2e-value"
+    assert port.park_port == 7
+    assert port.vertex_kind == "router"
+    assert port.type_fields is not None and port.type_fields.type == "router"
+
+
 def test_device_placement(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
     (device_id,) = topology_builder.add_devices([("PLACE-A", 2)])
     app.inspect.place_device(device_id, 4200, 4200)

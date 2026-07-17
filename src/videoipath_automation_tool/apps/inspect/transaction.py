@@ -37,6 +37,7 @@ from videoipath_automation_tool.apps.inspect.errors import (
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiEdgeForm,
     InspectApiLookupInspectDeviceFields,
+    InspectApiVertexControlProps,
     InspectApiVertexEditForm,
 )
 from videoipath_automation_tool.apps.inspect.model.common import (
@@ -162,6 +163,13 @@ class InspectTransaction:
         use_as_endpoint: Optional[bool] = None,
         label: Optional[str] = None,
         tags: Optional[list[str]] = None,
+        description: Optional[str] = None,
+        active: Optional[bool] = None,
+        sips_mode: Optional[str] = None,
+        control_props: Optional[Any] = None,
+        extra_alert_filters: Optional[list[Any]] = None,
+        custom: Optional[dict[str, Any]] = None,
+        park_port: Optional[int] = None,
     ) -> "InspectTransaction":
         """Edit a vertex/port (``replaceVertices``; update-only — vertices cannot be created here).
 
@@ -177,6 +185,23 @@ class InspectTransaction:
             # Port tag assignment is the vertex's localAssignedTags (verified 2025.4.9); the
             # separate ``fields.tags`` list does not register as an assigned tag.
             entry.intents["localAssignedTags"] = list(tags)
+        if description is not None:
+            entry.intents["desc"] = description
+        if active is not None:
+            entry.intents["active"] = active
+        if sips_mode is not None:
+            entry.intents["sipsMode"] = sips_mode
+        if control_props is not None:
+            if isinstance(control_props, dict):
+                entry.intents["controlProps"] = InspectApiVertexControlProps.model_validate(control_props)
+            else:
+                entry.intents["controlProps"] = control_props
+        if extra_alert_filters is not None:
+            entry.intents["extraAlertFilters"] = list(extra_alert_filters)
+        if custom is not None:
+            entry.intents["custom"] = dict(custom)
+        if park_port is not None:
+            entry.intents["typeFields.parkPort"] = park_port
         return self
 
     # --- Staging: edges ---

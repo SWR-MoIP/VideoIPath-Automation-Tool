@@ -52,6 +52,7 @@ class InspectApiLookupInspectDeviceResponse(InspectApiBaseModel):
 class InspectApiVertexTypeFields(InspectApiBaseModel):
     ipAddress: str | None = None
     ipNetmask: str | None = None
+    parkPort: int | None = None
     public: bool | None = None
     supportsCpipeCfg: bool | None = None
     supportsIgmpCfg: bool | None = None
