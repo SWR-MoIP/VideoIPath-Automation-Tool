@@ -23,6 +23,7 @@ Verified server facts encoded here (2025.4.9):
 
 from __future__ import annotations
 
+import copy
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -41,9 +42,14 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiVertexEditForm,
 )
 from videoipath_automation_tool.apps.inspect.model.common import (
+    CONFLICT_PRIORITY_TO_INT,
+    InspectConfigPriority,
     InspectFrozenModel,
+    InspectIconSize,
     InspectIconType,
     InspectInternalModel,
+    InspectRedundancyMode,
+    InspectSdpStrategy,
 )
 from videoipath_automation_tool.apps.inspect.model.update_topology import (
     InspectApiUpdateTopologyData,
@@ -131,23 +137,34 @@ class InspectTransaction:
         device_id: str,
         *,
         label: Optional[str] = None,
+        description: Optional[str] = None,
         icon_type: Optional[InspectIconType | str] = None,
-        sdp_strategy: Optional[str] = None,
+        icon_size: Optional[InspectIconSize | str] = None,
+        sdp_strategy: Optional[InspectSdpStrategy | str] = None,
+        site_id: Optional[str] = None,
         tags: Optional[list[str]] = None,
         coordinates: Optional[dict[str, float]] = None,
     ) -> "InspectTransaction":
-        """Edit a device's placement/appearance fields (``replaceDevices``).
+        """Edit a device's edit-dialog fields (``replaceDevices``).
 
-        ``descriptor`` is always round-tripped from the baseline (it is mandatory server-side);
-        ``label`` is applied to ``descriptor.label`` only when set here.
+        Covers the Inspect UI "Edit Device" dialog: ``label`` / ``description`` (the persisted
+        ``descriptor``), ``tags``, ``site_id``, ``icon_size``, ``icon_type`` and ``sdp_strategy``,
+        plus ``coordinates`` for placement. ``descriptor`` is always round-tripped from the baseline
+        (it is mandatory server-side); ``label`` / ``description`` are applied to it only when set here.
         """
         entry = self._stage_device(device_id)
         if label is not None:
             entry.intents["descriptor.label"] = label
+        if description is not None:
+            entry.intents["descriptor.desc"] = description
         if icon_type is not None:
             entry.intents["iconType"] = icon_type
+        if icon_size is not None:
+            entry.intents["iconSize"] = icon_size
         if sdp_strategy is not None:
             entry.intents["sdpStrategy"] = sdp_strategy
+        if site_id is not None:
+            entry.intents["siteId"] = site_id
         if tags is not None:
             entry.intents["tags"] = list(tags)
         if coordinates is not None:
@@ -170,11 +187,27 @@ class InspectTransaction:
         extra_alert_filters: Optional[list[Any]] = None,
         custom: Optional[dict[str, Any]] = None,
         park_port: Optional[int] = None,
+        # IP-vertex ``typeFields`` (only meaningful on IP vertices):
+        ip_address: Optional[str] = None,
+        ip_netmask: Optional[str] = None,
+        public: Optional[bool] = None,
+        vlan_id: Optional[str] = None,
+        vrf_id: Optional[str] = None,
+        supports_cpipe: Optional[bool] = None,
+        supports_igmp: Optional[bool] = None,
+        supports_mac_forwarding: Optional[bool] = None,
+        supports_nso: Optional[bool] = None,
+        supports_openflow: Optional[bool] = None,
+        supports_static_igmp: Optional[bool] = None,
+        supports_vlan: Optional[bool] = None,
+        supports_vpls: Optional[bool] = None,
     ) -> "InspectTransaction":
         """Edit a vertex/port (``replaceVertices``; update-only — vertices cannot be created here).
 
-        ``tags`` assigns catalog tags to the port (as ``Category~~name`` ids); this is the
-        Inspect-only port-tagging capability, written to the vertex ``localAssignedTags``.
+        Covers the "Edit vertex" / bulk-edit dialogs: base fields plus the IP-vertex ``typeFields``
+        (address, netmask, VLAN, VRF, public, and the "Config supports" flags). ``tags`` assigns
+        catalog tags to the port (as ``Category~~name`` ids), written to the vertex
+        ``localAssignedTags``.
         """
         entry = self._stage_vertex(vertex_id)
         if use_as_endpoint is not None:
@@ -200,8 +233,27 @@ class InspectTransaction:
             entry.intents["extraAlertFilters"] = list(extra_alert_filters)
         if custom is not None:
             entry.intents["custom"] = dict(custom)
-        if park_port is not None:
-            entry.intents["typeFields.parkPort"] = park_port
+
+        # IP-vertex typeFields, applied as one-level dotted intents (require a populated typeFields
+        # baseline, which IP/router/codec vertices have from the lookup edit form).
+        for value, wire_field in (
+            (park_port, "parkPort"),
+            (ip_address, "ipAddress"),
+            (ip_netmask, "ipNetmask"),
+            (public, "public"),
+            (vlan_id, "vlanId"),
+            (vrf_id, "vrfId"),
+            (supports_cpipe, "supportsCpipeCfg"),
+            (supports_igmp, "supportsIgmpCfg"),
+            (supports_mac_forwarding, "supportsMacForwardingCfg"),
+            (supports_nso, "supportsNsoCfg"),
+            (supports_openflow, "supportsOpenflowCfg"),
+            (supports_static_igmp, "supportsStaticIgmpCfg"),
+            (supports_vlan, "supportsVlanCfg"),
+            (supports_vpls, "supportsVplsCfg"),
+        ):
+            if value is not None:
+                entry.intents[f"typeFields.{wire_field}"] = value
         return self
 
     # --- Staging: edges ---
@@ -210,28 +262,80 @@ class InspectTransaction:
         self,
         edge_id: str,
         *,
+        label: Optional[str] = None,
+        description: Optional[str] = None,
         weight: Optional[int] = None,
         capacity: Optional[int] = None,
         bandwidth: Optional[float] = None,
-        redundancy_mode: Optional[str] = None,
+        redundancy_mode: Optional[InspectRedundancyMode | str] = None,
+        conflict_priority: Optional[InspectConfigPriority | int | str] = None,
+        include_formats: Optional[list[str]] = None,
+        exclude_formats: Optional[list[str]] = None,
+        bandwidth_weight_factor: Optional[int] = None,
+        weight_per_service: Optional[int] = None,
         active: Optional[bool] = None,
         tags: Optional[list[str]] = None,
+        also_opposite: bool = False,
     ) -> "InspectTransaction":
-        """Edit an existing edge (``replaceEdges``)."""
-        entry = self._stage_edge(edge_id)
-        if weight is not None:
-            entry.intents["weight"] = weight
-        if capacity is not None:
-            entry.intents["capacity"] = capacity
-        if bandwidth is not None:
-            entry.intents["bandwidth"] = bandwidth
-        if redundancy_mode is not None:
-            entry.intents["redundancyMode"] = redundancy_mode
-        if active is not None:
-            entry.intents["active"] = active
-        if tags is not None:
-            entry.intents["tags"] = list(tags)
+        """Edit an existing edge's "Edit Edge" dialog fields (``replaceEdges``).
+
+        With ``also_opposite`` the same changes are staged on the opposite directed edge (the reverse
+        ``.out`` <-> ``.in`` edge, as the Inspect UI's "apply changes to opposite directed edge"
+        option does); raises ``InspectEntityNotFoundError`` if that opposite edge does not exist.
+        """
+        fields = dict(
+            label=label,
+            description=description,
+            weight=weight,
+            capacity=capacity,
+            bandwidth=bandwidth,
+            redundancy_mode=redundancy_mode,
+            conflict_priority=conflict_priority,
+            include_formats=include_formats,
+            exclude_formats=exclude_formats,
+            bandwidth_weight_factor=bandwidth_weight_factor,
+            weight_per_service=weight_per_service,
+            active=active,
+            tags=tags,
+        )
+        self._apply_edge_update(edge_id, fields)
+        if also_opposite:
+            opposite_id = _opposite_edge_id(edge_id)
+            if self._lookup_edge_form(opposite_id) is None:
+                raise InspectEntityNotFoundError(opposite_id, kind="edge")
+            self._apply_edge_update(opposite_id, fields)
         return self
+
+    def _apply_edge_update(self, edge_id: str, fields: dict[str, Any]) -> None:
+        entry = self._stage_edge(edge_id)
+        if fields["label"] is not None:
+            entry.intents["descriptor.label"] = fields["label"]
+        if fields["description"] is not None:
+            entry.intents["descriptor.desc"] = fields["description"]
+        if fields["weight"] is not None:
+            entry.intents["weight"] = fields["weight"]
+        if fields["capacity"] is not None:
+            entry.intents["capacity"] = fields["capacity"]
+        if fields["bandwidth"] is not None:
+            entry.intents["bandwidth"] = fields["bandwidth"]
+        if fields["redundancy_mode"] is not None:
+            entry.intents["redundancyMode"] = fields["redundancy_mode"]
+        if fields["conflict_priority"] is not None:
+            entry.intents["conflictPri"] = _conflict_priority_to_wire(fields["conflict_priority"])
+        if fields["include_formats"] is not None:
+            entry.intents["includeFormats"] = list(fields["include_formats"])
+        if fields["exclude_formats"] is not None:
+            entry.intents["excludeFormats"] = list(fields["exclude_formats"])
+        if fields["active"] is not None:
+            entry.intents["active"] = fields["active"]
+        if fields["tags"] is not None:
+            entry.intents["tags"] = list(fields["tags"])
+        if fields["bandwidth_weight_factor"] is not None or fields["weight_per_service"] is not None:
+            entry.intents["weightFactors"] = _merged_weight_factors(
+                entry.baseline_form.weightFactors,
+                fields["bandwidth_weight_factor"],
+                fields["weight_per_service"],
+            )
 
     def connect(
         self,
@@ -267,7 +371,7 @@ class InspectTransaction:
     def remove(self, entity_id: str) -> "InspectTransaction":
         """Remove any entity by id (device / vertex / edge key). Last-writer-wins (no conflict check)."""
         self._ensure_open()
-        kind = _EDGE if "::" in entity_id else (_VERTEX if "." in entity_id else _DEVICE)
+        kind = _entity_kind(entity_id)
         self._entries[(kind, entity_id)] = _Staged(kind=kind, entity_id=entity_id, remove=True)
         return self
 
@@ -534,8 +638,27 @@ class _Staged(InspectInternalModel):
 
 
 def _device_of(entity_id: str) -> str:
-    """Owning device id of a vertex/port id (``device12.1.Ethernet1.out`` -> ``device12``)."""
+    """Owning device id of a vertex/port id (``device12.1.Ethernet1.out`` -> ``device12``,
+    ``virtual.2.0.1`` -> ``virtual.2``)."""
+    if entity_id.startswith("virtual."):
+        parts = entity_id.split(".")
+        if len(parts) >= 2:
+            return f"{parts[0]}.{parts[1]}"
     return entity_id.split(".", 1)[0]
+
+
+def _entity_kind(entity_id: str) -> str:
+    """Classify an entity id as device, vertex, or edge for staging."""
+    if "::" in entity_id:
+        return _EDGE
+    if "." not in entity_id:
+        return _DEVICE
+    # ``virtual.N`` is a device id (dotted); ``virtual.N.module.vertex`` is a vertex.
+    if entity_id.startswith("virtual."):
+        parts = entity_id.split(".")
+        if len(parts) == 2 and parts[1].isdigit():
+            return _DEVICE
+    return _VERTEX
 
 
 def _reverse_vertex(vertex_id: str) -> str:
@@ -549,6 +672,36 @@ def _reverse_vertex(vertex_id: str) -> str:
 
 def _edge_key(from_id: str, to_id: str) -> str:
     return f"{from_id}::{to_id}"
+
+
+def _opposite_edge_id(edge_id: str) -> str:
+    """The opposite directed edge of ``fromId::toId`` — ``reverse(toId)::reverse(fromId)`` with the
+    trailing ``.out`` <-> ``.in`` direction flipped on each vertex."""
+    from_id, to_id = edge_id.split("::", 1)
+    return _edge_key(_reverse_vertex(to_id), _reverse_vertex(from_id))
+
+
+def _conflict_priority_to_wire(value: InspectConfigPriority | int | str) -> int | str:
+    """Map a friendly conflict-priority name (off/high/normal/low) to the on-wire int; pass ints and
+    unknown values through unchanged."""
+    if isinstance(value, str):
+        return CONFLICT_PRIORITY_TO_INT.get(value, value)
+    return value
+
+
+def _merged_weight_factors(
+    baseline: Any, bandwidth_weight_factor: Optional[int], weight_per_service: Optional[int]
+) -> dict[str, Any]:
+    """Merge the requested weight-factor changes onto a deep copy of the baseline ``weightFactors``
+    (a nested dict), preserving untouched sub-values (e.g. ``service.max``)."""
+    merged: dict[str, Any] = copy.deepcopy(baseline) if isinstance(baseline, dict) else {}
+    merged.setdefault("bandwidth", {})
+    merged.setdefault("service", {})
+    if bandwidth_weight_factor is not None:
+        merged["bandwidth"]["weight"] = bandwidth_weight_factor
+    if weight_per_service is not None:
+        merged["service"]["weight"] = weight_per_service
+    return merged
 
 
 def _apply_intents(form: Any, intents: dict[str, Any]) -> None:

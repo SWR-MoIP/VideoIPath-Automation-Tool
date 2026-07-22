@@ -7,13 +7,18 @@ from collections.abc import Iterator
 
 import pytest
 
-from videoipath_automation_tool.apps.inspect.model.actions import InspectApiLookupVerticesResponse
+from videoipath_automation_tool.apps.inspect.model.actions import (
+    InspectApiLookupEdgesResponse,
+    InspectApiLookupVerticesResponse,
+)
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiExternalEdgesByDeviceKeyItem,
     InspectApiNodeStatusItem,
     InspectApiPathItem,
 )
 from videoipath_automation_tool.apps.inspect.snapshot import HydrationLevel, InspectSnapshot
+
+from .conftest import load_fixture
 
 
 def test_skeleton_indexes_devices_and_edges(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -185,34 +190,51 @@ def test_full_snapshot_is_hydrated_without_fetcher() -> None:
         snap.refresh()
 
 
-def test_port_exposes_direction_flags_and_factory_label(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
-    snap, fetcher = snapshot
+def test_port_is_lean_and_vertex_carries_flags(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
     port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
+    # Port keeps only the module-level attributes.
     assert port.label == "up1"  # descriptor override
     assert port.factory_label == "up1-factory"
-    assert port.vertex_type == "Out"
+    assert not hasattr(port, "is_active")  # vertex-specific fields live on the vertex now
+    assert not hasattr(port, "edge")  # edges are accessed via the collection now
+    # The direction/status flags live on the vertex.
     assert port.is_bidirectional is False
-    assert port.vertex_ids == ("leaf-a.0.up1",)
-    assert port.is_active is True
-    assert port.is_controlled is True
-    assert port.is_endpoint is False
-    assert fetcher.vertex_lookup_calls == []  # all of the above is offline
+    assert port.vertex_out is not None
+    assert port.vertex_out.id == "leaf-a.0.up1"
+    assert port.vertex_out.vertex_type == "Out"
+    assert port.vertex_out.is_active is True
+    assert port.vertex_out.is_controlled is True
+    assert port.vertex_out.is_endpoint is False
+    assert port.vertex_in is None
 
 
-def test_port_vertex_attrs_fetches_once_and_caches(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+def test_bidirectional_port_vertex_accessors(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
     snap, fetcher = snapshot
-    port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
-    assert port.type_fields is not None and port.type_fields.type == "ip"
-    assert port.vertex_kind == "ip"
-    assert port.sips_mode == "NONE"
-    assert port.control_props is not None and port.control_props.configPriority == "off"
-    assert port.extra_alert_filters == []
-    assert port.custom == {}
-    assert port.custom_schemas == {}
-    assert port.queueable is False
-    assert port.destination_monitor_leader is False
-    assert port.park_port is None
-    _ = port.vertex_kind  # second access → cached
+    fetcher._details["leaf-a"] = _filter_detail_node("leaf-a", "LEAF-A")
+    port = snap.get_port("leaf-a", "leaf-a.dev.1.bidi1")
+    assert port.is_bidirectional is True
+    assert port.vertex_out is not None and port.vertex_out.vertex_type == "Out"
+    assert port.vertex_in is not None and port.vertex_in.vertex_type == "In"
+    assert port.vertex_out.id == "leaf-a.1.bidi1.out"
+    assert port.vertex_in.id == "leaf-a.1.bidi1.in"
+
+
+def test_vertex_config_attrs_fetch_once_and_cache(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    vertex = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_out
+    assert vertex is not None
+    assert vertex.type_fields is not None and vertex.type_fields.type == "ip"
+    assert vertex.vertex_kind == "ip"
+    assert vertex.sips_mode == "NONE"
+    assert vertex.control_props is not None and vertex.control_props.configPriority == "off"
+    assert vertex.extra_alert_filters == []
+    assert vertex.custom == {}
+    assert vertex.custom_schemas == {}
+    assert vertex.queueable is False
+    assert vertex.destination_monitor_leader is False
+    assert vertex.park_port is None
+    _ = vertex.vertex_kind  # second access → cached
     assert fetcher.vertex_lookup_calls == [["leaf-a.0.up1"]]
 
 
@@ -220,25 +242,28 @@ def test_vertex_lookup_invalidated_by_post_commit_device_refresh(
     snapshot: tuple[InspectSnapshot, FakeFetcher],
 ) -> None:
     snap, fetcher = snapshot
-    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_kind
+    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_out.vertex_kind
     assert len(fetcher.vertex_lookup_calls) == 1
     snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
-    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_kind
+    _ = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_out.vertex_kind
     assert len(fetcher.vertex_lookup_calls) == 2
 
 
-def test_vertex_attrs_without_fetcher_returns_none() -> None:
+def test_vertex_flags_offline_but_config_none_without_fetcher() -> None:
     fetcher = FakeFetcher()
     snap = InspectSnapshot(
         fetcher=None,
         device_items=[fetcher._details["leaf-a"]],
         device_level=HydrationLevel.FULL,
     )
-    port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
-    assert port.vertex_kind is None
-    assert port.sips_mode is None
-    assert port.control_props is None
-    assert port.park_port is None
+    vertex = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_out
+    assert vertex is not None
+    assert vertex.vertex_type == "Out"  # offline from the port's vertexInfo
+    assert vertex.is_active is True  # offline
+    assert vertex.vertex_kind is None  # needs a lookup; no fetcher
+    assert vertex.sips_mode is None
+    assert vertex.control_props is None
+    assert vertex.park_port is None
 
 
 def test_filter_ports_by_module_and_direction(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -323,7 +348,13 @@ def _detail_node(device_id: str, label: str, port_pids: list[str]) -> InspectApi
             "meta": {"coordinates": {"x": 0, "y": 0}},
             "status": {"sa": 0, "severity": 0},
             "syncSeverity": 0,
-            "modules": {f"{device_id}.dev.0": {"pid": f"{device_id}.dev.0", "ports": ports}},
+            "modules": {
+                f"{device_id}.dev.0": {
+                    "pid": f"{device_id}.dev.0",
+                    "descriptor": {"label": "Slot 0"},
+                    "ports": ports,
+                }
+            },
         }
     )
 
@@ -350,6 +381,7 @@ def _filter_detail_node(device_id: str, label: str) -> InspectApiNodeStatusItem:
     modules = {
         f"{device_id}.dev.0": {
             "pid": f"{device_id}.dev.0",
+            "descriptor": {"label": "Slot 0"},
             "ports": {
                 f"{device_id}.dev.0.up1": port(
                     "0",
@@ -365,6 +397,7 @@ def _filter_detail_node(device_id: str, label: str) -> InspectApiNodeStatusItem:
         },
         f"{device_id}.dev.1": {
             "pid": f"{device_id}.dev.1",
+            "descriptor": {"label": "Slot 1"},
             "ports": {
                 f"{device_id}.dev.1.bidi1": port(
                     "1",
@@ -438,6 +471,7 @@ class FakeFetcher:
         self.device_detail_calls: list[str] = []
         self.edge_pair_calls: list[str] = []
         self.vertex_lookup_calls: list[list[str]] = []
+        self.edge_lookup_calls: list[list[str]] = []
         self.section_calls = 0
         self.skeleton_calls = 0
         self._details = {
@@ -468,46 +502,137 @@ class FakeFetcher:
 
     def lookup_vertices(self, vertex_ids: list[str]) -> InspectApiLookupVerticesResponse:
         self.vertex_lookup_calls.append(list(vertex_ids))
+        data = {vertex_id: _vertex_lookup_item(vertex_id) for vertex_id in vertex_ids}
+        return InspectApiLookupVerticesResponse.model_validate({"data": data, "header": _fetcher_ok_header()})
+
+    def lookup_edges(self, edge_ids: list[str]) -> InspectApiLookupEdgesResponse:
+        self.edge_lookup_calls.append(list(edge_ids))
         data = {
-            vertex_id: {
-                "id": vertex_id,
-                "isVirtual": False,
-                "vertexType": "Out",
-                "customSchemas": {},
-                "fields": {
-                    "active": True,
-                    "controlProps": {"configPriority": "off", "onlyInitial": False},
-                    "custom": {},
-                    "desc": "",
-                    "destinationMonitorLeader": False,
-                    "extraAlertFilters": [],
-                    "label": vertex_id,
-                    "localAssignedTags": [],
-                    "queueable": False,
-                    "sipsMode": "NONE",
-                    "tags": [],
-                    "typeFields": {"type": "ip"},
-                    "useAsEndpoint": False,
-                },
+            edge_id: {
+                "edge": {"fromId": edge_id.split("::")[0], "toId": edge_id.split("::")[-1]},
+                "fromDevice": None,
+                "toDevice": None,
             }
-            for vertex_id in vertex_ids
+            for edge_id in edge_ids
         }
-        return InspectApiLookupVerticesResponse.model_validate(
-            {
-                "data": data,
-                "header": {
-                    "auth": True,
-                    "caption": "Operation Successful",
-                    "code": "OK",
-                    "errorCodes": [],
-                    "errorDetails": [],
-                    "id": "0",
-                    "msg": [],
-                    "ok": True,
-                    "user": "api-user",
-                },
-            }
-        )
+        return InspectApiLookupEdgesResponse.model_validate({"data": data, "header": _fetcher_ok_header()})
+
+
+def _fetcher_ok_header() -> dict[str, object]:
+    return {
+        "auth": True,
+        "caption": "Operation Successful",
+        "code": "OK",
+        "errorCodes": [],
+        "errorDetails": [],
+        "id": "0",
+        "msg": [],
+        "ok": True,
+        "user": "api-user",
+    }
+
+
+def _vertex_lookup_item(vertex_id: str) -> dict[str, object]:
+    """An IP-vertex lookup item; codec ids (containing 'codec') return the codec fixture's data."""
+    if "codec" in vertex_id:
+        item = dict(load_fixture("lookup_inspect_codec_vertex_by_id.json")["data"])
+        item["id"] = vertex_id
+        return item
+    return {
+        "id": vertex_id,
+        "isVirtual": False,
+        "vertexType": "Out",
+        "customSchemas": {},
+        "fields": {
+            "active": True,
+            "controlProps": {"configPriority": "off", "onlyInitial": False},
+            "custom": {},
+            "desc": "",
+            "destinationMonitorLeader": False,
+            "extraAlertFilters": [],
+            "label": vertex_id,
+            "localAssignedTags": [],
+            "queueable": False,
+            "sipsMode": "NONE",
+            "tags": [],
+            "typeFields": {"type": "ip", "ipAddress": "10.0.0.1", "vlanId": "100"},
+            "useAsEndpoint": False,
+        },
+    }
+
+
+# --- Typed vertices + edge config (new field coverage) ---
+
+
+def test_get_vertex_returns_typed_ip_vertex(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectIpVertex
+
+    snap, _ = snapshot
+    vertex = snap.get_vertex("leaf-a.0.up1")
+    assert isinstance(vertex, InspectIpVertex)
+    assert vertex.vertex_kind == "ip"
+    assert vertex.vertex_type == "Out"
+    assert vertex.ip_address == "10.0.0.1"
+    assert vertex.vlan_id == "100"
+
+
+def test_get_vertex_returns_typed_codec_vertex(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectCodecVertex
+
+    snap, _ = snapshot
+    vertex = snap.get_vertex("device-a.1.codec-out-1.out")
+    assert isinstance(vertex, InspectCodecVertex)
+    assert vertex.vertex_kind == "codec"
+    assert vertex.codec_format == "Video"
+    assert vertex.is_igmp_source is False
+    assert vertex.sdp_support is True
+    assert vertex.main_dst_info == {"ip": "10.0.0.1", "mac": None, "port": 5000, "vlan": None}
+
+
+def test_edge_config_props_and_detail_cache(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    edge = snap.edges[0]
+    assert edge.redundancy_mode == "Any"
+    assert edge.fixed_weight == 1
+    assert edge.conflict_priority == "off"  # on-wire 0 -> "off"
+    assert edge.services_capacity == 65535
+    assert edge.bandwidth_weight_factor == 0
+    _ = edge.label  # further access is served from the cache
+    assert fetcher.edge_lookup_calls == [[edge.id]]
+
+
+# --- Modules ---
+
+
+def test_device_modules_group_ports(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    leaf = snap.get_device("leaf-a")
+    modules = leaf.modules
+    assert len(modules) == 1
+    module = modules[0]
+    assert module.id == "leaf-a.dev.0"
+    assert module.label == "Slot 0"
+    assert {p.label for p in module.ports} == {"up1", "host1"}
+    # module.ports == device.ports grouped by module, and every port links back to its module
+    assert {p.id for p in module.ports} == {
+        p.id for p in leaf.ports if p.module is not None and p.module.id == "leaf-a.dev.0"
+    }
+    assert all(p.module is not None for p in leaf.ports)
+    assert all(p.module is not None and p.module.id == module.id for p in module.ports)
+    # flattened convenience: one vertex per (single-vertex) port
+    assert len(module.vertices) == 2
+    assert leaf.get_module("leaf-a.dev.0").id == "leaf-a.dev.0"
+    assert leaf.get_module("no-such-module") is None
+
+
+def test_device_exposes_multiple_modules(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = _filter_detail_node("leaf-a", "LEAF-A")
+    leaf = snap.get_device("leaf-a")
+    modules = {m.label: m for m in leaf.modules}
+    assert set(modules) == {"Slot 0", "Slot 1"}
+    assert {p.label for p in modules["Slot 0"].ports} == {"up1", "host1"}
+    assert {p.label for p in modules["Slot 1"].ports} == {"bidi1", "mgmt1"}
 
 
 @pytest.fixture

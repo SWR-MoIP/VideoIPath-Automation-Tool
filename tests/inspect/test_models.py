@@ -147,6 +147,16 @@ def test_lookup_router_vertex_exposes_park_port(load: Callable[[str], dict[str, 
     assert resp.data.fields.typeFields.parkPort == 42
 
 
+def test_lookup_codec_vertex_preserves_generic_specific(load: Callable[[str], dict[str, Any]]) -> None:
+    fixture = load("lookup_inspect_codec_vertex_by_id.json")
+    resp = InspectApiLookupVertexResponse.model_validate(fixture)
+    type_fields = resp.data.fields.typeFields
+    assert type_fields is not None and type_fields.type == "codec"
+    # generic/specific are preserved losslessly via extra="allow" and re-serialize byte-for-byte.
+    built = resp.data.fields.model_dump(mode="json", by_alias=True)
+    assert built["typeFields"] == fixture["data"]["fields"]["typeFields"]
+
+
 def test_lookup_device_fields() -> None:
     resp = InspectApiLookupInspectDeviceResponse.model_validate(_device_lookup_fixture())
     assert resp.data.fields.coordinates is not None

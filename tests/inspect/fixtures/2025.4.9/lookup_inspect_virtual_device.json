@@ -1,0 +1,48 @@
+{
+  "data": {
+    "assignedTags": {
+      "all": [],
+      "inherited": {},
+      "inheritedConflict": false,
+      "local": {}
+    },
+    "fields": {
+      "coordinates": null,
+      "descriptor": {
+        "desc": "",
+        "label": "Virtual Device 1"
+      },
+      "iconSize": "medium",
+      "iconType": "default",
+      "localAssignedTags": [],
+      "sdpStrategy": "always",
+      "siteId": null,
+      "tags": [],
+      "virtualDeviceFields": {
+        "dynamic": [
+          {
+            "moduleNumber": 0,
+            "vertices": [
+              {
+                "count": 1,
+                "templateId": "generic_bidir"
+              }
+            ]
+          }
+        ],
+        "manual": []
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

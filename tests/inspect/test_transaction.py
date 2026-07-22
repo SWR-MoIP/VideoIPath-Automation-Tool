@@ -92,6 +92,51 @@ def test_update_edge_missing_raises_not_found() -> None:
             tx.update_edge(EDGE_ID, weight=42)
 
 
+def test_update_edge_sets_all_config_fields() -> None:
+    api = FakeAPI()
+    api.edges[EDGE_ID] = _edge_item()
+    with _txn(api) as tx:
+        tx.update_edge(
+            EDGE_ID,
+            label="A -> B",
+            description="link",
+            include_formats=["fmt-a"],
+            exclude_formats=["fmt-b"],
+            conflict_priority="high",
+            bandwidth_weight_factor=5,
+            weight_per_service=3,
+        )
+        tx.commit()
+    form = api.update_calls[0].replaceEdges[EDGE_ID]
+    assert form.descriptor.label == "A -> B" and form.descriptor.desc == "link"
+    assert form.includeFormats == ["fmt-a"] and form.excludeFormats == ["fmt-b"]
+    assert form.conflictPri == 1  # "high" mapped to the on-wire int
+    assert form.weightFactors["bandwidth"]["weight"] == 5
+    assert form.weightFactors["service"]["weight"] == 3
+    assert form.weightFactors["service"]["max"] == 100  # untouched sub-value preserved
+
+
+def test_update_edge_also_opposite_stages_reverse() -> None:
+    opposite_id = "device7.0.swp1.out::device12.1.Ethernet1.in"
+    api = FakeAPI()
+    api.edges[EDGE_ID] = _edge_item()
+    api.edges[opposite_id] = _edge_item()
+    with _txn(api) as tx:
+        tx.update_edge(EDGE_ID, weight=7, also_opposite=True)
+        tx.commit()
+    replaced = api.update_calls[0].replaceEdges
+    assert set(replaced) == {EDGE_ID, opposite_id}
+    assert replaced[EDGE_ID].weight == 7 and replaced[opposite_id].weight == 7
+
+
+def test_update_edge_also_opposite_missing_raises() -> None:
+    api = FakeAPI()
+    api.edges[EDGE_ID] = _edge_item()
+    with _txn(api) as tx:
+        with pytest.raises(InspectEntityNotFoundError):
+            tx.update_edge(EDGE_ID, weight=7, also_opposite=True)
+
+
 def test_update_device_only_changes_label_when_set() -> None:
     api = FakeAPI()
     api.devices["device12"] = _device_response(label="Original", icon_type="switch")
@@ -110,6 +155,19 @@ def test_update_device_sets_label() -> None:
         tx.update_device("device12", label="BU-LEAF-A")
         tx.commit()
     assert api.update_calls[0].replaceDevices["device12"].descriptor.label == "BU-LEAF-A"
+
+
+def test_update_device_sets_all_edit_fields() -> None:
+    api = FakeAPI()
+    api.devices["device12"] = _device_response(label="Original")
+    with _txn(api) as tx:
+        tx.update_device("device12", description="Spine A", site_id="site-a", icon_size="large")
+        tx.commit()
+    form = api.update_calls[0].replaceDevices["device12"]
+    assert form.descriptor.desc == "Spine A"
+    assert form.siteId == "site-a"
+    assert form.iconSize == "large"
+    assert form.descriptor.label == "Original"  # untouched
 
 
 def test_place_device_sets_coordinates() -> None:
@@ -200,12 +258,44 @@ def test_update_vertex_sets_park_port() -> None:
     assert form.typeFields.parkPort == 99
 
 
+def test_update_vertex_sets_ip_typefields() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _vertex_data()  # the IP vertex fixture (typeFields populated)
+    with _txn(api) as tx:
+        tx.update_vertex(A_OUT, ip_address="10.0.0.1", vlan_id="100", public=True, supports_igmp=False)
+        tx.commit()
+    form = api.update_calls[0].replaceVertices[A_OUT]
+    assert form.typeFields is not None
+    assert form.typeFields.ipAddress == "10.0.0.1"
+    assert form.typeFields.vlanId == "100"
+    assert form.typeFields.public is True
+    assert form.typeFields.supportsIgmpCfg is False
+
+
 def test_remove_appends_to_remove_list() -> None:
     api = FakeAPI()
     with _txn(api) as tx:
         tx.remove(EDGE_ID)
         tx.commit()
     assert api.update_calls[0].remove == [EDGE_ID]
+
+
+def test_remove_virtual_device_id_classified_as_device() -> None:
+    from videoipath_automation_tool.apps.inspect.transaction import _DEVICE, _EDGE, _VERTEX, _device_of, _entity_kind
+
+    assert _entity_kind("virtual.2") == _DEVICE
+    assert _entity_kind("virtual.2.0.1") == _VERTEX
+    assert _entity_kind("device12") == _DEVICE
+    assert _entity_kind("device12.1.Ethernet1.out") == _VERTEX
+    assert _entity_kind(EDGE_ID) == _EDGE
+    assert _device_of("virtual.2.0.1") == "virtual.2"
+    assert _device_of("device12.1.Ethernet1.out") == "device12"
+
+    api = FakeAPI()
+    with _txn(api) as tx:
+        tx.remove("virtual.2")
+        tx.commit()
+    assert api.update_calls[0].remove == ["virtual.2"]
 
 
 def test_disconnect_removes_both_directions() -> None:

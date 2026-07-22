@@ -1,36 +1,83 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Mapping, Self
+
+from pydantic import Field, model_validator
 
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiDoubleVertexInfo,
     InspectApiSingleVertexInfo,
 )
-from videoipath_automation_tool.apps.inspect.model.common import (
-    InspectApiStatusSummary,
-    InspectFrozenModel,
-    InspectVertexKind,
-    InspectVertexType,
+from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel
+from videoipath_automation_tool.apps.inspect.model.virtual import (
+    InspectApiVirtualPortFromTemplate,
+    InspectApiVirtualTemplateItem,
+)
+from videoipath_automation_tool.apps.inspect.snapshot import (
+    InspectSnapshot,
+    _IndexedPort,
+    _port_id_from_status,
 )
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
-    from videoipath_automation_tool.apps.inspect.model.actions import (
-        InspectApiLookupVertexResponseData,
-        InspectApiVertexControlProps,
-        InspectApiVertexEditForm,
-        InspectApiVertexTypeFields,
-    )
-from videoipath_automation_tool.apps.inspect.snapshot import (
-    InspectSnapshot,
-    _IndexedPort,
-    _port_id_from_status,
-    _vertex_ids_from_status,
-)
+    from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
+    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
+    from videoipath_automation_tool.apps.inspect.model.common import InspectApiStatusSummary
+
+
+class PortFromTemplate(InspectFrozenModel):
+    """One port (or set of ports) instantiated from a port template (virtual-device create)."""
+
+    template_id: str
+    count: int = 1
+
+    @model_validator(mode="after")
+    def _validate_count(self) -> Self:
+        if not self.template_id:
+            raise ValueError("template_id must not be empty.")
+        if self.count < 1:
+            raise ValueError("count must be at least 1.")
+        return self
+
+    def to_wire(self) -> InspectApiVirtualPortFromTemplate:
+        return InspectApiVirtualPortFromTemplate(templateId=self.template_id, count=self.count)
+
+
+class InspectPortTemplate(InspectFrozenModel):
+    """A port template (UI term; API: virtual template)."""
+
+    id: str
+    label: str
+    kind: str | None = None
+    direction: str | None = None
+    codec_format: str | None = None
+    vertex: dict[str, Any] = Field(default_factory=dict)
+
+    @classmethod
+    def from_wire(cls, wire: InspectApiVirtualTemplateItem) -> InspectPortTemplate:
+        vertex = wire.vertex.model_dump(mode="json", exclude_none=False)
+        return cls(
+            id=wire.id,
+            label=wire.label,
+            kind=wire.vertex.type,
+            direction=wire.vertex.vertexType,
+            codec_format=wire.vertex.codecFormat,
+            vertex=vertex,
+        )
 
 
 class InspectPort(InspectFrozenModel):
+    """A port (the Inspect UI's "Module" edit modal): a lean container that owns one or more vertices.
+
+    Its own editable attributes are ``label``, ``description`` and ``tags``; ``id``, ``status`` and
+    ``factory_label`` are read-only. Navigate to the owning module via :attr:`module` (use
+    ``port.module.id``). All vertex-specific configuration (direction, active/controlled/endpoint,
+    IP/codec fields, SIPS, control, …) lives on the vertices reachable via :attr:`vertex_out` /
+    :attr:`vertex_in`.
+    """
+
     snapshot: InspectSnapshot
     indexed: _IndexedPort
 
@@ -54,149 +101,98 @@ class InspectPort(InspectFrozenModel):
         return self.indexed.port.effective_description
 
     @property
-    def device(self) -> InspectDevice | None:
-        return self.snapshot.get_device_by_id(self.indexed.device_id)
-
-    @property
-    def module_id(self) -> str | None:
-        return self.indexed.module_id
-
-    @property
     def status(self) -> InspectApiStatusSummary | None:
         return self.indexed.port.status
 
     @property
     def tags(self) -> list[str]:
         """Tags assigned to this port (as ``Category~~name`` ids). Assign them with
-        ``app.inspect.update_vertex(port.vertex_id, tags=[...])``."""
+        ``app.inspect.update_vertex(v.id, tags=[...])`` for a vertex ``v`` from
+        :attr:`vertex_out` / :attr:`vertex_in`."""
         return self.indexed.port.assigned_tags
 
     @property
-    def vertex_info(self) -> InspectApiSingleVertexInfo | InspectApiDoubleVertexInfo | None:
-        """The port's raw (typed) ``vertexInfo`` from the collector."""
-        return self.indexed.port.parsed_vertex_info
+    def device(self) -> InspectDevice | None:
+        return self.snapshot.get_device_by_id(self.indexed.device_id)
 
     @property
-    def vertex_type(self) -> InspectVertexType | str | None:
-        """Vertex direction: ``"In"`` / ``"Out"`` / ``"Internal"`` / …; ``"BiDirectional"`` when the
-        port carries a double (in+out) vertexInfo."""
-        info = self.vertex_info
-        if info is None:
+    def module(self) -> InspectModule | None:
+        """The module / slot this port belongs to."""
+        module_id = self.indexed.module_id
+        if module_id is None:
             return None
-        if isinstance(info, InspectApiDoubleVertexInfo):
-            return "BiDirectional"
-        return info.vertexType
+        return self.snapshot.get_module(self.indexed.device_id, module_id)
 
     @property
-    def is_bidirectional(self) -> bool | None:
-        info = self.vertex_info
-        return isinstance(info, InspectApiDoubleVertexInfo) if info is not None else None
+    def is_bidirectional(self) -> bool:
+        """True when this port carries a ``double`` ``vertexInfo`` (separate out and in vertices)."""
+        return isinstance(self.indexed.port.parsed_vertex_info, InspectApiDoubleVertexInfo)
 
     @property
-    def is_active(self) -> bool | None:
-        return self._vertex_flag("isActive")
+    def vertex_out(self) -> InspectVertex | None:
+        """The ``Out`` vertex, if this port has one; ``None`` otherwise."""
+        return self._vertex_by_type("Out")
 
     @property
-    def is_controlled(self) -> bool | None:
-        return self._vertex_flag("isControlled")
+    def vertex_in(self) -> InspectVertex | None:
+        """The ``In`` vertex, if this port has one; ``None`` otherwise."""
+        return self._vertex_by_type("In")
 
     @property
-    def is_endpoint(self) -> bool | None:
-        """Whether the vertex is usable as a service endpoint ("use as endpoint" in the UI)."""
-        return self._vertex_flag("isEndpoint")
-
-    @property
-    def vertex_id(self) -> str | None:
-        vertex_ids = self.vertex_ids
-        return vertex_ids[0] if vertex_ids else None
-
-    @property
-    def vertex_ids(self) -> tuple[str, ...]:
-        """All vertex ids of this port: one for a single vertex, (out, in) for a bidirectional."""
-        return _vertex_ids_from_status(self.indexed.port)
-
-    @property
-    def vertex_kind(self) -> InspectVertexKind | str | None:
-        """Vertex kind: ``"generic"`` / ``"ip"`` / ``"codec"`` / ``"router"`` — from the vertex edit
-        form's ``typeFields.type`` (triggers a lazy vertex lookup on first access)."""
-        type_fields = self.type_fields
-        return type_fields.type if type_fields is not None else None
-
-    @property
-    def type_fields(self) -> InspectApiVertexTypeFields | None:
-        form = self._edit_form()
-        return form.typeFields if form else None
-
-    @property
-    def sips_mode(self) -> str | None:
-        form = self._edit_form()
-        return form.sipsMode if form else None
-
-    @property
-    def control_props(self) -> InspectApiVertexControlProps | None:
-        form = self._edit_form()
-        return form.controlProps if form else None
-
-    @property
-    def extra_alert_filters(self) -> list[Any]:
-        form = self._edit_form()
-        return list(form.extraAlertFilters) if form else []
-
-    @property
-    def custom(self) -> dict[str, Any]:
-        form = self._edit_form()
-        return dict(form.custom) if form else {}
-
-    @property
-    def custom_schemas(self) -> dict[str, Any]:
-        lookup = self._vertex_lookup()
-        return dict(lookup.customSchemas) if lookup else {}
-
-    @property
-    def queueable(self) -> bool | None:
-        form = self._edit_form()
-        return form.queueable if form else None
-
-    @property
-    def destination_monitor_leader(self) -> bool | None:
-        form = self._edit_form()
-        return form.destinationMonitorLeader if form else None
-
-    @property
-    def park_port(self) -> int | None:
-        """Park port (router vertices): ``typeFields.parkPort`` from the vertex edit form."""
-        type_fields = self.type_fields
-        return type_fields.parkPort if type_fields is not None else None
-
-    @property
-    def edge(self) -> InspectEdge | None:
+    def edges(self) -> list[InspectEdge]:
+        """The edges incident on this port. The Inspect read view (``externalEdgesByDeviceKey``) keys
+        edge endpoints by *port* — with a UUID edge id and only a direction hint in the endpoint label
+        — so edges are exposed at the port level here, not per vertex."""
         port_id = self.id
         if not port_id:
-            return None
-        return self.snapshot.get_edge_for_port(self.indexed.device_id, port_id)
+            return []
+        return self.snapshot.get_edges_for_port(self.indexed.device_id, port_id)
 
-    def _vertex_lookup(self) -> InspectApiLookupVertexResponseData | None:
-        vertex_id = self.vertex_id
-        if not vertex_id:
-            return None
-        return self.snapshot.get_vertex_details(vertex_id)
-
-    def _edit_form(self) -> InspectApiVertexEditForm | None:
-        lookup = self._vertex_lookup()
-        return lookup.fields if lookup else None
-
-    def _vertex_flag(self, name: str) -> bool | None:
-        """Resolve a ``vertexInfo.fields`` flag; for double vertices: True if either side is True,
-        False only if all sides are known False, else None."""
-        info = self.vertex_info
-        if info is None:
-            return None
-        sides = (info,) if isinstance(info, InspectApiSingleVertexInfo) else (info.out, info.in_)
-        values = [
-            getattr(side.fields, name) if side is not None and side.fields is not None else None for side in sides
-        ]
-        if any(value is True for value in values):
-            return True
-        if values and all(value is False for value in values):
-            return False
+    def _vertex_by_type(self, vertex_type: str) -> InspectVertex | None:
+        for vid, side in self._vertex_sides():
+            if side.vertexType == vertex_type:
+                return self.snapshot.get_vertex(vid, vertex_info=side)
         return None
+
+    def _vertices(self) -> list[InspectVertex]:
+        """All typed vertex views this port carries (including Internal/Undecided). Prefer
+        :attr:`vertex_out` / :attr:`vertex_in` for the public API."""
+        return [self.snapshot.get_vertex(vid, vertex_info=side) for vid, side in self._vertex_sides()]
+
+    def _vertex_sides(self) -> list[tuple[str, InspectApiSingleVertexInfo]]:
+        """(vertex id, its offline ``vertexInfo`` side) for each vertex the port carries."""
+        info = self.indexed.port.parsed_vertex_info
+        if info is None:
+            return []
+        if isinstance(info, InspectApiSingleVertexInfo):
+            return [(info.id, info)] if info.id else []
+        return [(side.id, side) for side in (info.out, info.in_) if side is not None and side.id]
+
+    def _offline_vertices(self) -> list[InspectVertex]:
+        """Base vertex views built purely from the offline ``vertexInfo`` (no lookup). Used for
+        offline filtering; direction/active/controlled/endpoint resolve without a fetch."""
+        from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
+
+        return [InspectVertex(snapshot=self.snapshot, id=vid, vertex_info=side) for vid, side in self._vertex_sides()]
+
+
+def _ports_to_count_by_template(
+    ports: Mapping[str, int] | list[PortFromTemplate],
+) -> dict[str, int]:
+    """Normalize port specs to the ``countByVertexTemplate`` wire map."""
+    result: dict[str, int]
+    if isinstance(ports, Mapping):
+        result = {template_id: count for template_id, count in ports.items()}
+    else:
+        result = {}
+        for port in ports:
+            result[port.template_id] = result.get(port.template_id, 0) + port.count
+    for template_id, count in result.items():
+        if not template_id:
+            raise ValueError("template_id must not be empty.")
+        if count < 1:
+            raise ValueError(f"count for template {template_id!r} must be at least 1.")
+    return result
+
+
+__all__ = ["InspectPort", "InspectPortTemplate", "PortFromTemplate"]

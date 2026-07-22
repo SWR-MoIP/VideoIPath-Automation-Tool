@@ -105,25 +105,31 @@ def test_assign_tag_to_port(app: VideoIPathApp, topology_builder: TopologyBuilde
     try:
         app.inspect.refresh()
         vertex_id = next(
-            p.vertex_id
+            p.vertex_in.id
             for p in app.inspect.get_device(device_id).ports
-            if p.vertex_id and "Router In" in (p.label or "")
+            if p.vertex_in is not None and "Router In" in (p.label or "")
         )
         result = app.inspect.update_vertex(vertex_id, tags=[TEST_TAG_ID])
         assert result.ok
         app.inspect.refresh()
-        port = next(p for p in app.inspect.get_device(device_id).ports if p.vertex_id == vertex_id)
+        port = next(
+            p
+            for p in app.inspect.get_device(device_id).ports
+            if p.vertex_in is not None and p.vertex_in.id == vertex_id
+        )
         assert TEST_TAG_ID in port.tags
     finally:
         delete_test_tag(app)  # also removes the port binding
 
 
 def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
-    """Write every editable vertex UI field and read it back via InspectPort attributes."""
+    """Write every editable vertex UI field and read it back via the typed InspectVertex."""
     (device_id,) = topology_builder.add_devices([("VTX-A", 2)])
     app.inspect.refresh()
     vertex_id = next(
-        p.vertex_id for p in app.inspect.get_device(device_id).ports if p.vertex_id and "Router In" in (p.label or "")
+        p.vertex_in.id
+        for p in app.inspect.get_device(device_id).ports
+        if p.vertex_in is not None and "Router In" in (p.label or "")
     )
     alert_filter = "0:*:e2e-alarm:*"
     result = app.inspect.update_vertex(
@@ -141,20 +147,24 @@ def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuil
     assert result.ok
 
     app.inspect.refresh()
-    port = next(p for p in app.inspect.get_device(device_id).ports if p.vertex_id == vertex_id)
-    assert port.label == "E2E Router In"
-    assert port.description == "E2E vertex description"
-    assert port.is_endpoint is True
-    assert port.is_active is True
-    assert port.sips_mode == "SIPSAuto"
-    assert port.control_props is not None
-    assert port.control_props.configPriority == "high"
-    assert port.control_props.onlyInitial is True
-    assert alert_filter in port.extra_alert_filters
-    assert port.custom.get("e2e-param") == "e2e-value"
-    assert port.park_port == 7
-    assert port.vertex_kind == "router"
-    assert port.type_fields is not None and port.type_fields.type == "router"
+    port = next(
+        p for p in app.inspect.get_device(device_id).ports if p.vertex_in is not None and p.vertex_in.id == vertex_id
+    )
+    vertex = port.vertex_in
+    assert vertex is not None
+    assert vertex.label == "E2E Router In"
+    assert vertex.description == "E2E vertex description"
+    assert vertex.use_as_endpoint is True
+    assert vertex.active is True
+    assert vertex.sips_mode == "SIPSAuto"
+    assert vertex.control_props is not None
+    assert vertex.control_props.configPriority == "high"
+    assert vertex.control_props.onlyInitial is True
+    assert alert_filter in vertex.extra_alert_filters
+    assert vertex.custom.get("e2e-param") == "e2e-value"
+    assert vertex.park_port == 7
+    assert vertex.vertex_kind == "router"
+    assert vertex.type_fields is not None and vertex.type_fields.type == "router"
 
 
 def test_device_placement(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:

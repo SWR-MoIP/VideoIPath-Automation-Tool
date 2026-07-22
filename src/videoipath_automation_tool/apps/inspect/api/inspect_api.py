@@ -1,8 +1,8 @@
 """Raw Inspect API layer: one method per verified endpoint, typed responses, no business logic.
 
 All reads use the collector namespace only ([ADR-0008]); scoped queries come from
-``queries.py`` ([ADR-0007]). Writes go through ``updateTopology`` and the ``addDevices`` /
-``syncDevices`` network actions.
+``queries.py`` ([ADR-0007]). Writes go through ``updateTopology`` and the network
+actions (``addDevices``, ``syncDevices``, virtual-device actions).
 """
 
 from __future__ import annotations
@@ -38,6 +38,17 @@ from videoipath_automation_tool.apps.inspect.model.update_topology import (
     InspectApiUpdateTopologyData,
     InspectApiUpdateTopologyRequest,
     InspectApiUpdateTopologyResponse,
+)
+from videoipath_automation_tool.apps.inspect.model.virtual import (
+    InspectApiAddVirtualTopologyData,
+    InspectApiAddVirtualTopologyRequest,
+    InspectApiUpdateVirtualInstancesData,
+    InspectApiUpdateVirtualInstancesRequest,
+    InspectApiUpdateVirtualInstancesResponse,
+    InspectApiUpdateVirtualTemplatesData,
+    InspectApiUpdateVirtualTemplatesRequest,
+    InspectApiVirtualDeviceInstance,
+    InspectApiVirtualTemplateItem,
 )
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
@@ -90,6 +101,20 @@ class InspectAPI:
         response = self.vip_connector.rest.get(queries.collector_full(), allow_projection=True)
         return InspectApiCollectorResponse.model_validate({"data": response.data, "header": _header_dict(response)})
 
+    # --- Virtual device / port-template reads ---
+
+    def get_virtual_templates(self) -> list[InspectApiVirtualTemplateItem]:
+        """All port templates (UI: Manage port templates)."""
+        response = self.vip_connector.rest.get(queries.virtual_templates(), allow_projection=True)
+        items = _extract_items(response.data, "status", "network", "virtualTemplates")
+        return [InspectApiVirtualTemplateItem.model_validate(item) for item in items]
+
+    def get_virtual_devices(self) -> list[InspectApiVirtualDeviceInstance]:
+        """All virtual device module/port definitions."""
+        response = self.vip_connector.rest.get(queries.virtual_devices(), allow_projection=True)
+        items = _extract_items(response.data, "status", "network", "virtualDevices")
+        return [InspectApiVirtualDeviceInstance.model_validate(item) for item in items]
+
     # --- Lookups (baselines for compare-and-commit, ADR-0009) ---
 
     def lookup_inspect_device(self, device_id: str) -> InspectApiLookupInspectDeviceResponse:
@@ -131,6 +156,26 @@ class InspectAPI:
             data=InspectApiSyncDevicesRequestData(ids=device_ids, addOnly=add_only, conflictStrategy=conflict_strategy)
         )
         response = self.vip_connector.rest.post("/rest/v2/actions/status/network/syncDevices", request)
+        return InspectApiSimpleActionResponse.model_validate(_post_envelope(response))
+
+    def update_virtual_instances(
+        self, data: InspectApiUpdateVirtualInstancesData
+    ) -> InspectApiUpdateVirtualInstancesResponse:
+        """Create virtual devices (UI: Create virtual devices); wire also supports update/remove."""
+        request = InspectApiUpdateVirtualInstancesRequest(data=data)
+        response = self.vip_connector.rest.post("/rest/v2/actions/status/network/updateVirtualInstances", request)
+        return InspectApiUpdateVirtualInstancesResponse.model_validate(_post_envelope(response))
+
+    def update_virtual_templates(self, data: InspectApiUpdateVirtualTemplatesData) -> InspectApiSimpleActionResponse:
+        """Add or remove port templates (UI: Manage port templates)."""
+        request = InspectApiUpdateVirtualTemplatesRequest(data=data)
+        response = self.vip_connector.rest.post("/rest/v2/actions/status/network/updateVirtualTemplates", request)
+        return InspectApiSimpleActionResponse.model_validate(_post_envelope(response))
+
+    def add_virtual_topology(self, data: InspectApiAddVirtualTopologyData) -> InspectApiSimpleActionResponse:
+        """Add ports from templates to an existing virtual-device module."""
+        request = InspectApiAddVirtualTopologyRequest(data=data)
+        response = self.vip_connector.rest.post("/rest/v2/actions/status/network/addVirtualTopology", request)
         return InspectApiSimpleActionResponse.model_validate(_post_envelope(response))
 
 

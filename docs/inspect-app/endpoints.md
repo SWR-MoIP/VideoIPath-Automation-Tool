@@ -1325,7 +1325,218 @@ Non-empty request against a disposable, non-driver device ID returned:
 }
 ```
 
+## Virtual devices and port templates (verified 2025.4.9)
+
+Topology virtual devices (`virtual.N`) behave like normal Inspect devices after
+creation: placement, labels, tags, icons, edges, vertex edits, and removal all
+use the same `updateTopology` / write-mixin / transaction path as physical
+devices. `InspectDevice.is_virtual` distinguishes them. **Create** is the only
+dedicated public op (`create_virtual_device(s)` → `updateVirtualInstances` add);
+port-template management and adding ports from templates are the other build
+helpers.
+
+Verified 2025.4.9: `updateTopology` with `remove: ["virtual.N"]` fully removes
+the node and the `virtualDevices` definition (no special delete routing).
+
+UI naming uses **port templates**; the API uses `virtualTemplates` /
+`templateId`.
+
+### `GET /rest/v2/data/status/network/virtualTemplates/**`
+
+Purpose: list port templates available in the Create Virtual Devices dialog.
+
+Response example (anonymized):
+
+```json
+{
+  "data": {
+    "status": {
+      "network": {
+        "virtualTemplates": {
+          "_items": [
+            {
+              "_id": "generic_bidir",
+              "_vid": "generic_bidir",
+              "label": "Generic bidir",
+              "vertex": {
+                "type": "genericVertex",
+                "vertexType": "BiDirectional",
+                "isVirtual": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "header": { "ok": true, "code": "OK" }
+}
+```
+
+Fixture: `tests/inspect/fixtures/2025.4.9/virtual_templates.json`.
+
+### `GET /rest/v2/data/status/network/virtualDevices/**`
+
+Purpose: list virtual device module/port definitions (wire/status). The Inspect
+package does not wrap this as a domain list — after create, use
+``InspectDevice`` (and ``lookupInspectDevice.fields.virtualDeviceFields`` when
+needed). Available on ``InspectAPI.get_virtual_devices`` for low-level access.
+
+Response example (anonymized):
+
+```json
+{
+  "data": {
+    "status": {
+      "network": {
+        "virtualDevices": {
+          "_items": [
+            {
+              "_id": "virtual.1",
+              "_vid": "virtual.1",
+              "modules": [
+                {
+                  "moduleNumber": 0,
+                  "vertices": [
+                    { "count": 1, "templateId": "ip_in" },
+                    { "count": 1, "templateId": "ip_out" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "header": { "ok": true, "code": "OK" }
+}
+```
+
+Fixture: `tests/inspect/fixtures/2025.4.9/virtual_devices.json`.
+
+### `POST /rest/v2/actions/status/network/updateVirtualInstances`
+
+Purpose: create (and, at the wire level, update/remove) virtual device
+definitions (UI: Create Virtual Devices). The Inspect package's public surface
+uses this action for **create** only; metadata edits and removal go through
+`updateTopology` like any other device. Server allocates `virtual.N` ids and
+labels.
+
+Request:
+
+```json
+{
+  "header": { "id": 0 },
+  "data": {
+    "add": [
+      {
+        "modules": [
+          {
+            "moduleNumber": null,
+            "vertices": [{ "templateId": "generic_bidir", "count": 1 }]
+          }
+        ]
+      }
+    ],
+    "update": {},
+    "remove": [],
+    "force": false
+  }
+}
+```
+
+Success response:
+
+```json
+{
+  "data": {
+    "addedDeviceLabels": { "virtual.1": "Virtual Device 1" },
+    "res": { "msg": [], "ok": true },
+    "validation": {
+      "createIds": [],
+      "details": {},
+      "result": { "msg": [], "ok": true }
+    }
+  },
+  "header": { "ok": true, "code": "OK" }
+}
+```
+
+Update uses `update: { "virtual.1": { "modules": [...] } }`. Remove uses
+`remove: ["virtual.1"]` (typically with `force: true`). The Inspect package
+exposes **create** via this action only; metadata edits and device removal use
+`updateTopology`. Created devices start with `coordinates: null` until placed
+via `place_device` / `update_device`.
+
+Fixture: `tests/inspect/fixtures/2025.4.9/update_virtual_instances_create.json`.
+
+`lookupInspectDevice` for a virtual device exposes the same module list under
+`fields.virtualDeviceFields`:
+
+```json
+{
+  "virtualDeviceFields": {
+    "dynamic": [
+      {
+        "moduleNumber": 0,
+        "vertices": [{ "count": 1, "templateId": "generic_bidir" }]
+      }
+    ],
+    "manual": []
+  }
+}
+```
+
+Fixture: `tests/inspect/fixtures/2025.4.9/lookup_inspect_virtual_device.json`.
+
+### `POST /rest/v2/actions/status/network/updateVirtualTemplates`
+
+Purpose: add or remove port templates (UI: Manage port templates). Template ids
+are client-chosen map keys.
+
+Request:
+
+```json
+{
+  "header": { "id": 0 },
+  "data": {
+    "add": {
+      "example_tpl": {
+        "label": "Example template",
+        "vertex": { "type": "genericVertex", "vertexType": "BiDirectional" }
+      }
+    },
+    "remove": [],
+    "force": false
+  }
+}
+```
+
+Response uses the simple action shape (`data.ok` / `data.msg`).
+
+### `POST /rest/v2/actions/status/network/addVirtualTopology`
+
+Purpose: add ports from templates onto an existing virtual-device module
+(UI: Add ports on a virtual device).
+
+Request:
+
+```json
+{
+  "header": { "id": 0 },
+  "data": {
+    "deviceId": "virtual.1",
+    "moduleId": 0,
+    "countByVertexTemplate": { "ip_out": 1 }
+  }
+}
+```
+
+Response uses the simple action shape (`data.ok` / `data.msg`).
+
 ## `POST /rest/v2/actions/status/collector/updateTopology`
+
 
 Purpose: Inspect commit endpoint. The client sends a full change set; empty
 maps/lists mean no changes in that category. Staging is client-side until this
@@ -1600,5 +1811,7 @@ further payload probing is warranted unless a future version registers them
 Cross-check against the UI bundle (`/assets/index-*.js`, 2025.4.9): it
 references `updateTopology`, `addDevices`, `syncDevices`, `lookupSyncInfo`,
 `lookupInspectEdgesByIds`, `lookupInspectVertexByIds`, `lookupEdgeInfo`,
-`lookupNodeInfo`, and `lookupConfigDesc` — and contains **zero references to
-`nGraphElements`** ([ADR-0008](./decisions/0008-collector-only-endpoints.md)).
+`lookupNodeInfo`, `lookupConfigDesc`, `updateVirtualInstances`,
+`updateVirtualTemplates`, and `addVirtualTopology` — and contains **zero
+references to `nGraphElements`**
+([ADR-0008](./decisions/0008-collector-only-endpoints.md)).

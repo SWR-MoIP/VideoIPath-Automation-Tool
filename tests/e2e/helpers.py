@@ -70,12 +70,13 @@ def discover_router_vertices(app: "VideoIPathApp", device_ids: list[str]) -> dic
         ins: list[str] = []
         for port in device.ports:
             label = port.label or ""
-            if not port.vertex_id:
+            vertex = port.vertex_out or port.vertex_in
+            if vertex is None:
                 continue
             if "Router Out" in label:
-                outs.append(port.vertex_id)
+                outs.append(vertex.id)
             elif "Router In" in label:
-                ins.append(port.vertex_id)
+                ins.append(vertex.id)
         vertices[device_id] = (sorted(outs, key=_vertex_slot), sorted(ins, key=_vertex_slot))
     return vertices
 

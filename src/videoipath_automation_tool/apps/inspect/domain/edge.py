@@ -3,13 +3,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiExternalEdgeLiveStatus
-from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel
+from videoipath_automation_tool.apps.inspect.model.common import (
+    CONFLICT_PRIORITY_BY_INT,
+    InspectConfigPriority,
+    InspectFrozenModel,
+    InspectRedundancyMode,
+)
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _IndexedEdge
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
+    from videoipath_automation_tool.apps.inspect.model.actions import InspectApiEdgeForm
 
 
 class InspectEdge(InspectFrozenModel):
@@ -75,3 +81,90 @@ class InspectEdge(InspectFrozenModel):
                 seen_booking_ids.add(service.booking_id)
                 services.append(service)
         return services
+
+    # --- Config (the "Edit Edge" dialog fields; lazily fetched via lookupInspectEdgesByIds) ---
+
+    @property
+    def label(self) -> str | None:
+        """Manual edge label ("Label" in the Edit Edge dialog)."""
+        form = self._edit_form()
+        return form.descriptor.label if form else None
+
+    @property
+    def description(self) -> str | None:
+        """Edge description ("Description" in the Edit Edge dialog)."""
+        form = self._edit_form()
+        return form.descriptor.desc if form else None
+
+    @property
+    def tags(self) -> list[str]:
+        form = self._edit_form()
+        return list(form.tags) if form else []
+
+    @property
+    def active(self) -> bool | None:
+        form = self._edit_form()
+        return form.active if form else None
+
+    @property
+    def include_formats(self) -> list[str]:
+        form = self._edit_form()
+        return list(form.includeFormats) if form else []
+
+    @property
+    def exclude_formats(self) -> list[str]:
+        form = self._edit_form()
+        return list(form.excludeFormats) if form else []
+
+    @property
+    def conflict_priority(self) -> InspectConfigPriority | int | str | None:
+        """Conflict priority ("Conflict priority" in the UI): ``"off"`` / ``"high"`` / ``"normal"`` /
+        ``"low"`` (mapped from the on-wire int), or the raw value if unrecognized."""
+        form = self._edit_form()
+        if form is None:
+            return None
+        raw = form.conflictPri
+        return CONFLICT_PRIORITY_BY_INT.get(raw, raw) if isinstance(raw, int) else raw
+
+    @property
+    def redundancy_mode(self) -> InspectRedundancyMode | str | None:
+        form = self._edit_form()
+        return form.redundancyMode if form else None
+
+    @property
+    def fixed_weight(self) -> int | None:
+        """Fixed routing weight/cost ("Fixed weight" in the UI)."""
+        form = self._edit_form()
+        return form.weight if form else None
+
+    @property
+    def bandwidth_capacity(self) -> float | int | None:
+        """Configured max bandwidth in Mbit/s ("Bandwidth capacity" in the UI); ``-1.0`` = disabled.
+        Distinct from :attr:`bandwidth`, which is the live status value."""
+        form = self._edit_form()
+        return form.bandwidth if form else None
+
+    @property
+    def services_capacity(self) -> int | None:
+        """Max number of simultaneous services ("Services capacity" in the UI); ``65535`` = unlimited."""
+        form = self._edit_form()
+        return form.capacity if form else None
+
+    @property
+    def bandwidth_weight_factor(self) -> int | None:
+        """Bandwidth-based weight factor ("Bandwidth weight factor" in the UI)."""
+        form = self._edit_form()
+        if form is None:
+            return None
+        return (form.weightFactors.get("bandwidth") or {}).get("weight")
+
+    @property
+    def weight_per_service(self) -> int | None:
+        """Service-based weight factor ("Weight per service" in the UI)."""
+        form = self._edit_form()
+        if form is None:
+            return None
+        return (form.weightFactors.get("service") or {}).get("weight")
+
+    def _edit_form(self) -> InspectApiEdgeForm | None:
+        return self.snapshot.get_edge_details(self.id)

@@ -27,6 +27,13 @@ InspectIconType = Literal[
     "encoderDecoder",
 ]
 
+# Device icon size selectable in the UI (mirrors the topology app's ``IconSize``).
+InspectIconSize = Literal["auto", "large", "medium", "small"]
+
+# SDP polling strategy: "always" (Continuous), "once" (Fetch and Confirm), "video" (Continuous
+# Video, Confirm Others). Mirrors the topology app's ``SdpStrategy``.
+InspectSdpStrategy = Literal["always", "once", "video"]
+
 # Vertex direction as reported in ``vertexInfo.vertexType`` (a "double" vertexInfo is the
 # bidirectional case and is surfaced as "BiDirectional").
 InspectVertexType = Literal["BiDirectional", "In", "Internal", "Out", "Undecided"]
@@ -35,6 +42,16 @@ InspectVertexType = Literal["BiDirectional", "In", "Internal", "Out", "Undecided
 # verified against a live 2025.4.9 server; "generic" is inferred from the nGraph element types.
 # Read surfaces use the permissive ``InspectVertexKind | str`` for unknown future kinds.
 InspectVertexKind = Literal["generic", "ip", "codec", "router"]
+
+# Edge redundancy mode (mirrors the topology app's ``RedundancyMode``).
+InspectRedundancyMode = Literal["Any", "OnlyMain", "OnlySpare"]
+
+# Conflict priority for edges (``conflictPri``) and vertex control (``controlProps.configPriority``).
+# The UI labels are off/high/normal/low; the edge form carries the priority as an int on the wire
+# (verified 2025.4.9), so read/write surfaces convert with the mappings below.
+InspectConfigPriority = Literal["off", "high", "normal", "low"]
+CONFLICT_PRIORITY_TO_INT: dict[str, int] = {"off": 0, "high": 1, "normal": 2, "low": 3}
+CONFLICT_PRIORITY_BY_INT: dict[int, str] = {value: name for name, value in CONFLICT_PRIORITY_TO_INT.items()}
 
 
 class InspectApiBaseModel(BaseModel):
@@ -126,7 +143,11 @@ __all__ = [
     "InspectApiSimpleActionResult",
     "InspectApiStatusContext",
     "InspectApiStatusSummary",
+    "InspectConfigPriority",
+    "InspectIconSize",
     "InspectIconType",
+    "InspectRedundancyMode",
+    "InspectSdpStrategy",
     "InspectVertexKind",
     "InspectVertexType",
 ]

@@ -10,6 +10,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiPostRequestHeader,
     InspectApiRestV2Header,
 )
+from videoipath_automation_tool.apps.inspect.model.virtual import InspectApiVirtualDeviceFields
 
 
 class InspectApiLookupInspectDeviceRequest(InspectApiBaseModel):
@@ -33,7 +34,7 @@ class InspectApiLookupInspectDeviceFields(InspectApiBaseModel):
     sdpStrategy: str | None = None
     siteId: str | None = None
     tags: list[str] = Field(default_factory=list)
-    virtualDeviceFields: dict[str, Any] | None = None
+    virtualDeviceFields: InspectApiVirtualDeviceFields | None = None
 
 
 class InspectApiLookupInspectDeviceResponseData(InspectApiBaseModel):
@@ -47,6 +48,31 @@ class InspectApiLookupInspectDeviceResponse(InspectApiBaseModel):
 
 
 # --- Vertex lookup / edit form (also the replaceVertices write shape, verified 2025.4.9) ---
+
+
+class InspectApiCodecGeneric(InspectApiBaseModel):
+    """The ``typeFields.generic`` block of a codec vertex edit form (verified 2025.4.9). Nested
+    endpoint blocks are kept as dicts for lossless round-tripping (``extra="allow"`` on the base)."""
+
+    bidirPartnerId: str | None = None
+    codecFormat: str | None = None
+    extraFormats: list[Any] = Field(default_factory=list)
+    mainDstInfo: dict[str, Any] | None = None
+    mainSrcInfo: dict[str, Any] | None = None
+    multiplicity: int | None = None
+    partnerConfig: Any | None = None
+    public: bool | None = None
+    serviceId: Any | None = None
+    spareDstInfo: dict[str, Any] | None = None
+    spareSrcInfo: dict[str, Any] | None = None
+
+
+class InspectApiCodecSpecific(InspectApiBaseModel):
+    """The ``typeFields.specific`` block of a codec vertex edit form (verified 2025.4.9)."""
+
+    isIgmpSource: bool | None = None
+    sdpSupport: bool | None = None
+    type: str | None = None
 
 
 class InspectApiVertexTypeFields(InspectApiBaseModel):
@@ -65,6 +91,10 @@ class InspectApiVertexTypeFields(InspectApiBaseModel):
     type: str | None = None
     vlanId: str | None = None
     vrfId: str | None = None
+    # Codec vertices additionally carry ``generic`` / ``specific`` blocks here; they are preserved
+    # losslessly by ``extra="allow"`` (declaring them would emit ``null`` on non-codec vertices and
+    # break the byte-for-byte ``replaceVertices`` round-trip) and read back typed via
+    # ``InspectApiCodecGeneric`` / ``InspectApiCodecSpecific`` in the codec vertex view.
 
 
 class InspectApiVertexControlProps(InspectApiBaseModel):
@@ -208,6 +238,8 @@ __all__ = [
     "InspectApiAddDevicesItem",
     "InspectApiAddDevicesRequest",
     "InspectApiAssignedTags",
+    "InspectApiCodecGeneric",
+    "InspectApiCodecSpecific",
     "InspectApiEdgeForm",
     "InspectApiLookupEdgeResponseItem",
     "InspectApiLookupEdgesRequest",

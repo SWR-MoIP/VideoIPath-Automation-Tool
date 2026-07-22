@@ -172,6 +172,30 @@ class InspectApiModuleStatus(InspectApiBaseModel):
     pid: str | None = None
     ports: dict[str, InspectPortStatus] | list[InspectPortStatus] = Field(default_factory=dict)
     status: InspectApiStatusSummary | None = None
+    tagsInfo: dict[str, Any] | None = None
+
+    @property
+    def assigned_tags(self) -> list[str]:
+        """Effective tags assigned to this module (from ``tagsInfo.assigned.all``)."""
+        if not self.tagsInfo:
+            return []
+        assigned = self.tagsInfo.get("assigned")
+        if isinstance(assigned, dict) and isinstance(assigned.get("all"), list):
+            return list(assigned["all"])
+        return []
+
+    @property
+    def effective_label(self) -> str | None:
+        if self.descriptor is not None and self.descriptor.label:
+            return self.descriptor.label
+        return self.label
+
+    @property
+    def effective_description(self) -> str | None:
+        """The user-set module description (``descriptor.desc``), if any."""
+        if self.descriptor is not None and self.descriptor.desc:
+            return self.descriptor.desc
+        return None
 
 
 class InspectApiNodeStatusItem(InspectApiBaseModel):

@@ -16,7 +16,13 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 from videoipath_automation_tool.apps.inspect.transaction import CommitResult, InspectTransaction
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
-from videoipath_automation_tool.apps.inspect.model.common import InspectIconType
+from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectConfigPriority,
+    InspectIconSize,
+    InspectIconType,
+    InspectRedundancyMode,
+    InspectSdpStrategy,
+)
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
@@ -48,18 +54,24 @@ class InspectWriteMixin:
         device_id: str,
         *,
         label: Optional[str] = None,
+        description: Optional[str] = None,
         icon_type: Optional[InspectIconType | str] = None,
-        sdp_strategy: Optional[str] = None,
+        icon_size: Optional[InspectIconSize | str] = None,
+        sdp_strategy: Optional[InspectSdpStrategy | str] = None,
+        site_id: Optional[str] = None,
         tags: Optional[list[str]] = None,
         coordinates: Optional[dict[str, float]] = None,
     ) -> CommitResult:
-        """Edit a device's placement/appearance fields (single auto-committed change)."""
+        """Edit a device's "Edit Device" dialog fields (single auto-committed change)."""
         with self.transaction() as tx:
             tx.update_device(
                 device_id,
                 label=label,
+                description=description,
                 icon_type=icon_type,
+                icon_size=icon_size,
                 sdp_strategy=sdp_strategy,
+                site_id=site_id,
                 tags=tags,
                 coordinates=coordinates,
             )
@@ -79,6 +91,19 @@ class InspectWriteMixin:
         extra_alert_filters: Optional[list[Any]] = None,
         custom: Optional[dict[str, Any]] = None,
         park_port: Optional[int] = None,
+        ip_address: Optional[str] = None,
+        ip_netmask: Optional[str] = None,
+        public: Optional[bool] = None,
+        vlan_id: Optional[str] = None,
+        vrf_id: Optional[str] = None,
+        supports_cpipe: Optional[bool] = None,
+        supports_igmp: Optional[bool] = None,
+        supports_mac_forwarding: Optional[bool] = None,
+        supports_nso: Optional[bool] = None,
+        supports_openflow: Optional[bool] = None,
+        supports_static_igmp: Optional[bool] = None,
+        supports_vlan: Optional[bool] = None,
+        supports_vpls: Optional[bool] = None,
     ) -> CommitResult:
         """Edit a vertex (single auto-committed change; update-only)."""
         with self.transaction() as tx:
@@ -94,6 +119,19 @@ class InspectWriteMixin:
                 extra_alert_filters=extra_alert_filters,
                 custom=custom,
                 park_port=park_port,
+                ip_address=ip_address,
+                ip_netmask=ip_netmask,
+                public=public,
+                vlan_id=vlan_id,
+                vrf_id=vrf_id,
+                supports_cpipe=supports_cpipe,
+                supports_igmp=supports_igmp,
+                supports_mac_forwarding=supports_mac_forwarding,
+                supports_nso=supports_nso,
+                supports_openflow=supports_openflow,
+                supports_static_igmp=supports_static_igmp,
+                supports_vlan=supports_vlan,
+                supports_vpls=supports_vpls,
             )
             return tx.commit()
 
@@ -101,23 +139,42 @@ class InspectWriteMixin:
         self: _HasInspectState,
         edge_id: str,
         *,
+        label: Optional[str] = None,
+        description: Optional[str] = None,
         weight: Optional[int] = None,
         capacity: Optional[int] = None,
         bandwidth: Optional[float] = None,
-        redundancy_mode: Optional[str] = None,
+        redundancy_mode: Optional[InspectRedundancyMode | str] = None,
+        conflict_priority: Optional[InspectConfigPriority | int | str] = None,
+        include_formats: Optional[list[str]] = None,
+        exclude_formats: Optional[list[str]] = None,
+        bandwidth_weight_factor: Optional[int] = None,
+        weight_per_service: Optional[int] = None,
         active: Optional[bool] = None,
         tags: Optional[list[str]] = None,
+        also_opposite: bool = False,
     ) -> CommitResult:
-        """Edit an existing edge (single auto-committed change)."""
+        """Edit an existing edge's "Edit Edge" dialog fields (single auto-committed change).
+
+        With ``also_opposite`` the same changes are applied to the opposite directed edge too.
+        """
         with self.transaction() as tx:
             tx.update_edge(
                 edge_id,
+                label=label,
+                description=description,
                 weight=weight,
                 capacity=capacity,
                 bandwidth=bandwidth,
                 redundancy_mode=redundancy_mode,
+                conflict_priority=conflict_priority,
+                include_formats=include_formats,
+                exclude_formats=exclude_formats,
+                bandwidth_weight_factor=bandwidth_weight_factor,
+                weight_per_service=weight_per_service,
                 active=active,
                 tags=tags,
+                also_opposite=also_opposite,
             )
             return tx.commit()
 
@@ -148,7 +205,10 @@ class InspectWriteMixin:
             return tx.commit()
 
     def remove_device_from_topology(self: _HasInspectState, device_id: str) -> CommitResult:
-        """Remove a device (its baseDevice element) from the topology graph."""
+        """Remove a device (its baseDevice element) from the topology graph.
+
+        Works for both physical and virtual (``virtual.N``) devices via ``updateTopology``.
+        """
         with self.transaction() as tx:
             tx.remove_device(device_id)
             return tx.commit()

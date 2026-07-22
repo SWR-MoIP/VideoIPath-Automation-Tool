@@ -38,10 +38,15 @@ from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenMo
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+    from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
+    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
     from videoipath_automation_tool.apps.inspect.api import InspectAPI
-    from videoipath_automation_tool.apps.inspect.model.actions import InspectApiLookupVertexResponseData
+    from videoipath_automation_tool.apps.inspect.model.actions import (
+        InspectApiEdgeForm,
+        InspectApiLookupVertexResponseData,
+    )
 
 
 class HydrationLevel(str, Enum):
@@ -70,14 +75,19 @@ class InspectSnapshot:
         self._edges_by_device_id: dict[str, list[_IndexedEdge]] = {}
         self._edge_by_port_key: dict[tuple[str, str], _IndexedEdge] = {}
 
-        # Per-device port indexes (populated on hydration)
+        # Per-device port + module indexes (populated on hydration)
         self._ports_by_device_id: dict[str, list[_IndexedPort]] = {}
         self._port_by_key: dict[tuple[str, str], _IndexedPort] = {}
         self._ports_by_pid: dict[str, list[_IndexedPort]] = {}
+        self._modules_by_device_id: dict[str, dict[str, InspectApiModuleStatus]] = {}
 
         # Vertex edit-form details, fetched lazily per vertex ([ADR-0007]) and invalidated when the
         # owning device's ports are rebuilt after a refresh/commit.
         self._vertex_details: dict[str, "InspectApiLookupVertexResponseData"] = {}
+
+        # Edge edit-form details, fetched lazily per edge ([ADR-0007]) and invalidated when the
+        # owning edge pair is dropped/re-indexed after a refresh/commit.
+        self._edge_details: dict[str, "InspectApiEdgeForm"] = {}
 
         # Section: services / paths
         self._paths_by_booking_id: dict[str, InspectApiPathItem] = {}
@@ -87,6 +97,7 @@ class InspectSnapshot:
 
         # Domain-object caches
         self._device_cache: dict[str, "InspectDevice"] = {}
+        self._module_cache: dict[tuple[str, str], "InspectModule"] = {}
         self._edge_cache: dict[str, "InspectEdge"] = {}
         self._service_cache: dict[str, "InspectService"] = {}
 
@@ -174,11 +185,33 @@ class InspectSnapshot:
         self._reconcile_stale_device(device_id)
         return self._devices_by_id.get(device_id)
 
-    # --- Port reads (trigger hydration) ---
+    # --- Module + port reads (trigger hydration) ---
+
+    def get_modules_for_device(self, device_id: str) -> list["InspectModule"]:
+        self._ensure_device_detail(device_id)
+        return [self._wrap_module(device_id, module_id) for module_id in self._modules_by_device_id.get(device_id, {})]
+
+    def get_module(self, device_id: str, module_id: str) -> Optional["InspectModule"]:
+        self._ensure_device_detail(device_id)
+        if module_id not in self._modules_by_device_id.get(device_id, {}):
+            return None
+        return self._wrap_module(device_id, module_id)
+
+    def get_module_status(self, device_id: str, module_id: str) -> Optional[InspectApiModuleStatus]:
+        """The raw module status (for domain objects to resolve live); None if the module is gone."""
+        return self._modules_by_device_id.get(device_id, {}).get(module_id)
 
     def get_ports_for_device(self, device_id: str) -> list["InspectPort"]:
         self._ensure_device_detail(device_id)
         return [self._wrap_port(indexed) for indexed in self._ports_by_device_id.get(device_id, [])]
+
+    def get_ports_for_module(self, device_id: str, module_id: str) -> list["InspectPort"]:
+        self._ensure_device_detail(device_id)
+        return [
+            self._wrap_port(indexed)
+            for indexed in self._ports_by_device_id.get(device_id, [])
+            if indexed.module_id == module_id
+        ]
 
     def get_port(self, device_id: str, port_id: str) -> Optional["InspectPort"]:
         self._ensure_device_detail(device_id)
@@ -205,6 +238,23 @@ class InspectSnapshot:
         return {
             vertex_id: detail for vertex_id in vertex_ids if (detail := self._vertex_details.get(vertex_id)) is not None
         }
+
+    def get_vertex(
+        self, vertex_id: str, vertex_info: Optional["InspectApiSingleVertexInfo"] = None
+    ) -> Optional["InspectVertex"]:
+        """Typed vertex view for ``vertex_id`` (triggers a cached ``lookupInspectVertexById``); the
+        concrete subclass is chosen from the edit form's ``typeFields.type``. ``vertex_info`` (the
+        owning port's offline ``vertexInfo`` side) supplies the direction/status flags: when it is
+        given a base vertex is still returned even if the edit form is unavailable; without it, an
+        unknown vertex returns None."""
+        lookup = self.get_vertex_details(vertex_id)
+        if lookup is None and vertex_info is None:
+            return None
+        type_fields = lookup.fields.typeFields if lookup is not None else None
+        kind = type_fields.type if type_fields is not None else None
+        from videoipath_automation_tool.apps.inspect.domain.vertex import build_vertex
+
+        return build_vertex(self, vertex_id, kind, vertex_info)
 
     # --- Edge reads (no hydration) ---
 
@@ -235,10 +285,40 @@ class InspectSnapshot:
             result.append(self._wrap_edge(indexed))
         return result
 
+    def get_edges_for_port(self, device_id: str, port_id: str) -> list["InspectEdge"]:
+        """All edges incident on a port. The read view (``externalEdgesByDeviceKey``) keys edge
+        endpoints by *port* (not vertex), so edges are grouped at the port level."""
+        self._reconcile_stale_pairs()
+        seen: set[str] = set()
+        result: list["InspectEdge"] = []
+        for indexed in self._edges_by_device_id.get(device_id, []):
+            on_port = (indexed.from_device_id == device_id and indexed.from_port_id == port_id) or (
+                indexed.to_device_id == device_id and indexed.to_port_id == port_id
+            )
+            if not on_port or indexed.edge_id in seen:
+                continue
+            seen.add(indexed.edge_id)
+            result.append(self._wrap_edge(indexed))
+        return result
+
     def get_edge_for_port(self, device_id: str, port_id: str) -> Optional["InspectEdge"]:
         self._reconcile_stale_pairs()
         indexed = self._edge_by_port_key.get((device_id, port_id))
         return self._wrap_edge(indexed) if indexed else None
+
+    def get_edge_details(self, edge_id: str) -> Optional["InspectApiEdgeForm"]:
+        return self.get_edge_details_many([edge_id]).get(edge_id)
+
+    def get_edge_details_many(self, edge_ids: list[str]) -> dict[str, "InspectApiEdgeForm"]:
+        """Batched, cached edge edit-form lookup (``lookupInspectEdgesByIds``). Only uncached ids are
+        fetched, in a single call; without a fetcher only cached entries are returned."""
+        missing = [edge_id for edge_id in edge_ids if edge_id not in self._edge_details]
+        if missing and self._fetcher is not None:
+            response = self._fetcher.lookup_edges(missing)
+            with self._lock:
+                for edge_id, item in response.data.items():
+                    self._edge_details[edge_id] = item.edge
+        return {edge_id: detail for edge_id in edge_ids if (detail := self._edge_details.get(edge_id)) is not None}
 
     def get_linked_devices(self, device_id: str) -> list["InspectDevice"]:
         self._reconcile_stale_pairs()
@@ -338,6 +418,36 @@ class InspectSnapshot:
             self._try_refresh_device(device_id)
         self._reconcile_pairs_for_devices(affected)
         self._mark_paths_stale()
+
+    def upsert_devices_from_skeleton(self, device_ids: list[str]) -> None:
+        """Insert or refresh named devices from one device-skeleton read.
+
+        Used after creating virtual devices: per-device detail fetches often miss brand-new
+        ``virtual.N`` nodes (detail-less / dash-vs-dot id form), while the skeleton indexes them
+        under the public ``deviceId`` (``virtual.N``) that ``addedDeviceLabels`` returns.
+        Never raises (same contract as :meth:`apply_network_refresh`).
+        """
+        if self._fetcher is None or not device_ids:
+            return
+        wanted = set(device_ids)
+        try:
+            nodes = self._fetcher.get_device_skeleton()
+        except Exception as exc:
+            for device_id in device_ids:
+                self._stale_devices.add(device_id)
+            _logger.warning(
+                "Inspect snapshot: skeleton upsert for %s failed: %s",
+                sorted(wanted),
+                exc,
+            )
+            return
+        with self._lock:
+            for node in nodes:
+                device_id = node.deviceId or node.id
+                if device_id not in wanted:
+                    continue
+                self._index_device(node, HydrationLevel.SKELETON)
+                self._stale_devices.discard(device_id)
 
     # --- Internal: hydration ---
 
@@ -515,10 +625,16 @@ class InspectSnapshot:
                     self._ports_by_pid[port_id] = remaining
                 else:
                     self._ports_by_pid.pop(port_id, None)
+        # Drop the device's module index + wrappers
+        for module_id in self._modules_by_device_id.pop(device_id, {}):
+            self._module_cache.pop((device_id, module_id), None)
         # Rebuild
         entries: list[_IndexedPort] = []
+        modules: dict[str, InspectApiModuleStatus] = {}
         for module in _iter_modules(node.modules):
             module_id = module.pid or module.id
+            if module_id is not None:
+                modules[module_id] = module
             for port in _iter_ports(module.ports):
                 indexed = _IndexedPort(device_id=device_id, module_id=module_id, port=port)
                 entries.append(indexed)
@@ -528,6 +644,7 @@ class InspectSnapshot:
                 self._port_by_key[(device_id, port_id)] = indexed
                 self._ports_by_pid.setdefault(port_id, []).append(indexed)
         self._ports_by_device_id[device_id] = entries
+        self._modules_by_device_id[device_id] = modules
 
     def _resolve_device_id(self, pid: str | None) -> str | None:
         """Map an edge ``devicePid`` to the canonical device id.
@@ -586,6 +703,10 @@ class InspectSnapshot:
 
     def _drop_edge_pair(self, pair_id: str) -> None:
         self._edge_pairs.pop(pair_id, None)
+        for edges in self._edges_by_device_id.values():
+            for edge in edges:
+                if edge.pair_id == pair_id:
+                    self._edge_details.pop(edge.edge_id, None)
         for device_id, edges in list(self._edges_by_device_id.items()):
             kept = [e for e in edges if e.pair_id != pair_id]
             if kept:
@@ -630,6 +751,8 @@ class InspectSnapshot:
                     for indexed in self._ports_by_device_id.pop(removed, []):
                         for vertex_id in _vertex_ids_from_status(indexed.port):
                             self._vertex_details.pop(vertex_id, None)
+                    for module_id in self._modules_by_device_id.pop(removed, {}):
+                        self._module_cache.pop((removed, module_id), None)
                     self._edges_by_device_id.pop(removed, None)
                 # Edge removal by edge id or pair id
                 if "::" in removed:
@@ -647,6 +770,7 @@ class InspectSnapshot:
             if indexed.edge_id == edge_or_pair_id or indexed.pair_id == edge_or_pair_id:
                 self._edge_by_port_key.pop(key, None)
         self._edge_cache.pop(edge_or_pair_id, None)
+        self._edge_details.pop(edge_or_pair_id, None)
 
     # --- Internal: domain wrappers (cached) ---
 
@@ -659,6 +783,16 @@ class InspectSnapshot:
         device = InspectDevice(snapshot=self, id=device_id)
         self._device_cache[device_id] = device
         return device
+
+    def _wrap_module(self, device_id: str, module_id: str) -> "InspectModule":
+        from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
+
+        cached = self._module_cache.get((device_id, module_id))
+        if cached is not None:
+            return cached
+        module = InspectModule(snapshot=self, device_id=device_id, module_id=module_id)
+        self._module_cache[(device_id, module_id)] = module
+        return module
 
     def _wrap_port(self, indexed: _IndexedPort) -> "InspectPort":
         from videoipath_automation_tool.apps.inspect.domain.port import InspectPort

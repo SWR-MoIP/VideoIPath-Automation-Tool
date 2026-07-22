@@ -65,6 +65,16 @@ def collector_full() -> str:
     return _build(_COLLECTOR_FULL)
 
 
+def virtual_templates() -> str:
+    """GET path for all port templates (``status/network/virtualTemplates``)."""
+    return _build(_VIRTUAL_TEMPLATES)
+
+
+def virtual_devices() -> str:
+    """GET path for all virtual device definitions (``status/network/virtualDevices``)."""
+    return _build(_VIRTUAL_DEVICES)
+
+
 # --- Internal ---
 
 # Characters that are meaningful in the projection grammar and must survive encoding.
@@ -111,6 +121,10 @@ _PATHS_SECTION = (
 # Full aggregate (eager / fallback mode).
 _COLLECTOR_FULL = "/status/collector/**"
 
+# Virtual device / port-template definitions (network status, not collector).
+_VIRTUAL_TEMPLATES = "/status/network/virtualTemplates/**"
+_VIRTUAL_DEVICES = "/status/network/virtualDevices/**"
+
 
 def _build(path: str) -> str:
     encoded = encode(_DATA + path)
@@ -128,4 +142,6 @@ __all__ = [
     "edge_pair",
     "paths_section",
     "collector_full",
+    "virtual_templates",
+    "virtual_devices",
 ]

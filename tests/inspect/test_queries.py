@@ -9,10 +9,27 @@ from videoipath_automation_tool.apps.inspect.errors import InspectQueryTooLongEr
 
 
 def test_all_queries_within_length_limit() -> None:
-    for build in (queries.device_skeleton, queries.edge_skeleton, queries.paths_section, queries.collector_full):
+    for build in (
+        queries.device_skeleton,
+        queries.edge_skeleton,
+        queries.paths_section,
+        queries.collector_full,
+        queries.virtual_templates,
+        queries.virtual_devices,
+    ):
         path = build()
         assert len(path) < queries.MAX_QUERY_LENGTH
-        assert path.startswith("/rest/v2/data/status/collector/")
+        assert path.startswith("/rest/v2/data/status/")
+
+
+def test_collector_queries_use_collector_namespace() -> None:
+    for build in (queries.device_skeleton, queries.edge_skeleton, queries.paths_section, queries.collector_full):
+        assert build().startswith("/rest/v2/data/status/collector/")
+
+
+def test_virtual_queries_use_network_namespace() -> None:
+    assert "/status/network/virtualTemplates/**" in queries.virtual_templates()
+    assert "/status/network/virtualDevices/**" in queries.virtual_devices()
 
 
 def test_device_skeleton_suppresses_modules_and_selects_skeleton_fields() -> None:

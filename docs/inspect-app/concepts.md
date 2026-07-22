@@ -221,7 +221,7 @@ workflows:
 | Config | `app.topology`, `app.inventory`, **Inspect (effective store)** | `GET …/data/config/…` | `PATCH …/data/config/…` (revisioned) or RPC |
 | Status | Inventory status reads, Inspect status reads | `GET …/data/status/…` | — |
 | Collector (facade) | `app.inspect` | Scoped queries on `…/data/status/collector/…` (skeleton + hydration, ADR-0007); `GET …/**` as eager/fallback | `POST …/actions/status/collector/updateTopology` → `nGraphElements` |
-| Network actions | `app.inspect` device topology workflows | — | `POST …/actions/status/network/addDevices`, `POST …/actions/status/network/syncDevices` |
+| Network actions | `app.inspect` device topology workflows | `GET …/data/status/network/virtualDevices/**`, `…/virtualTemplates/**` | `POST …/actions/status/network/addDevices`, `…/syncDevices`, `…/updateVirtualInstances` (**create** virtual devices), `…/updateVirtualTemplates`, `…/addVirtualTopology`. After create, virtual devices use the same `updateTopology` / write methods as physical devices (`InspectDevice.is_virtual`). |
 
 So Inspect's read aggregate is status-namespace and net-new in shape, but its
 writes are commit-time-validated bulk actions that land in the revisioned
@@ -231,7 +231,8 @@ id for the verified `updateTopology` flow.
 
 **Endpoint policy** ([ADR-0008](./decisions/0008-collector-only-endpoints.md)):
 the Inspect package calls **only** the Inspect surface — collector data reads,
-collector actions, and the `addDevices`/`syncDevices` network actions. The
+collector actions, and the network actions (`addDevices`, `syncDevices`,
+virtual-device / port-template actions). The
 config-plane row above is context, not a call path: the package never issues
 `GET`/`PATCH …/config/network/nGraphElements` (that stays `app.topology`'s
 surface). Consequence: no `_rev` is available to Inspect, and since
@@ -402,7 +403,8 @@ REST:
 - [x] Import / Export (preview): **unregistered** on 2025.4.9 — empty data namespaces; GET action schema empty; POST → `No action node in request`
 - [x] Write/action endpoint: `/rest/v2/actions/status/collector/updateTopology`
 - [x] Collector action payloads captured and modelled: `/rest/v2/actions/status/collector/lookupInspectDevice`, `/rest/v2/actions/status/collector/lookupSyncInfo`
-- [x] Network action request shapes, normal action responses, and validation-error responses captured: `/rest/v2/actions/status/network/addDevices`, `/rest/v2/actions/status/network/syncDevices`
+- [x] Network action request shapes, normal action responses, and validation-error responses captured: `/rest/v2/actions/status/network/addDevices`, `/rest/v2/actions/status/network/syncDevices`, `/rest/v2/actions/status/network/updateVirtualInstances`, `/rest/v2/actions/status/network/updateVirtualTemplates`, `/rest/v2/actions/status/network/addVirtualTopology`
+- [x] Virtual device / port-template status reads: `GET …/status/network/virtualDevices/**`, `GET …/status/network/virtualTemplates/**`; `lookupInspectDevice.fields.virtualDeviceFields` typed as `{dynamic, manual}` module lists
 - [x] Config store / write target: `updateTopology` lands in `GET /rest/v2/data/config/network/nGraphElements/**` (`_items[]`, `_rev`, `type` ∈ `baseDevice` / `codecVertex` / `ipVertex` / `unidirectionalEdge`); model with standalone `InspectApi*` DTOs (§3.3)
 - [x] `_rev` handling on commit: last-writer-wins; `_rev` in `replaceEdges` payload is ignored
 - [x] Version gating: collector read/write and `updateTopology` verified on **2025.4.9**
