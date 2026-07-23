@@ -1,5 +1,7 @@
 """Focused Inspect app suite: read/write capabilities against a live instance.
 
+Skipped when the live VideoIPath major year is less than 2025 (see e2e conftest).
+
 Every test builds its **own** minimal topology (1–3 mock devices) via the ``topology_builder``
 fixture — unique labels/addresses per test. Assertions are scoped to the test's own device ids so
 other suites on a shared instance never interfere. ``E2E-`` artifacts persist until the next e2e

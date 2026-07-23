@@ -2,8 +2,11 @@
 
 These tests are excluded by default (``-m "not e2e"`` in ``pyproject.toml``) and only run when:
   * you invoke an e2e entry point (``poetry run test-e2e``, ``poetry run test``, or VS Code **E2E Tests**), **and**
-  * connection vars are set in the project root ``.env`` (copy from ``.env.template``), **and**
-  * the target server is a verified version (>= 2025.4).
+  * connection vars are set in the project root ``.env`` (copy from ``.env.template``).
+
+Version gates (by VideoIPath major year):
+  * Topology e2e (``apps/test_topology.py``) is skipped when major > 2025.
+  * Inspect e2e (``apps/test_inspect.py`` and ``workflows/``) is skipped when major < 2025.
 
 E2e entry points load ``.env`` and enable the suite automatically. E2e runs never collect coverage
 (``--no-cov``).
@@ -23,11 +26,12 @@ from __future__ import annotations
 
 import os
 from itertools import count
-from typing import Iterator
+from pathlib import Path
+from typing import Iterator, Optional
 
 import pytest
 
-from videoipath_automation_tool.apps.inspect.app.app import _MIN_VERIFIED_VERSION, _parse_version
+from videoipath_automation_tool.apps.inspect.app.app import _parse_version
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 from vipat_cli_scripts.project_env import load_project_env
 
@@ -37,26 +41,49 @@ load_project_env()
 
 _STEP_FAILED_KEY = pytest.StashKey[str]()
 
+# TopologyApp is unsupported above this major year; InspectApp is the replacement.
+_TOPOLOGY_MAX_MAJOR = 2025
+# Inspect e2e requires this major year or newer.
+_INSPECT_MIN_MAJOR = 2025
+
 
 def _e2e_enabled() -> bool:
     return os.environ.get("VIPAT_E2E_ENABLED", "").strip() == "1"
 
 
+def _server_major(app: VideoIPathApp) -> Optional[int]:
+    parsed = _parse_version(app._videoipath_connector.videoipath_version)
+    return parsed[0] if parsed is not None else None
+
+
 @pytest.fixture(scope="session")
 def app() -> VideoIPathApp:
-    """A live ``VideoIPathApp`` built from the project ``.env``; skips unless E2E is enabled + verified."""
+    """A live ``VideoIPathApp`` built from the project ``.env``; skips unless E2E is enabled."""
     load_project_env()
     if not _e2e_enabled():
         pytest.skip("E2E disabled (use poetry run test-e2e, poetry run test, or the VS Code E2E launch config).")
-    application = VideoIPathApp()
-    version = application._videoipath_connector.videoipath_version
-    parsed = _parse_version(version)
-    if parsed is None or parsed < _MIN_VERIFIED_VERSION:
+    return VideoIPathApp()
+
+
+@pytest.fixture(autouse=True)
+def _gate_topology_and_inspect_e2e(request: pytest.FixtureRequest, app: VideoIPathApp) -> None:
+    """Skip Topology/Inspect suites when the live server major year is out of range."""
+    path = Path(str(request.path))
+    major = _server_major(app)
+    if major is None:
+        return
+
+    is_topology = path.name == "test_topology.py"
+    is_inspect = path.name == "test_inspect.py" or "workflows" in path.parts
+    version = app._videoipath_connector.videoipath_version
+
+    if is_topology and major > _TOPOLOGY_MAX_MAJOR:
         pytest.skip(
-            f"Server version '{version}' is below the verified Inspect baseline "
-            f"{_MIN_VERIFIED_VERSION[0]}.{_MIN_VERIFIED_VERSION[1]}."
+            f"Topology e2e skipped on VideoIPath {version} (major > {_TOPOLOGY_MAX_MAJOR}). "
+            "Use InspectApp (app.inspect) instead."
         )
-    return application
+    if is_inspect and major < _INSPECT_MIN_MAJOR:
+        pytest.skip(f"Inspect e2e skipped on VideoIPath {version} (major < {_INSPECT_MIN_MAJOR}).")
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -7,6 +7,7 @@ from videoipath_automation_tool.apps.inventory.model.drivers import AVAILABLE_SC
 from videoipath_automation_tool.apps.preferences.preferences_app import PreferencesApp
 from videoipath_automation_tool.apps.profile.profile_app import ProfileApp
 from videoipath_automation_tool.apps.security.security_app import SecurityApp
+from videoipath_automation_tool.apps.topology.errors import TopologyUnsupportedError
 from videoipath_automation_tool.apps.topology.topology_app import TopologyApp
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.settings import Settings
@@ -229,7 +230,11 @@ class VideoIPathApp:
         # --- For Development Environment, load the APIs directly and map them to the VideoIPathApp for easier access ---
         if environment == "DEV":
             self._inventory_api = self.inventory._inventory_api
-            self._topology_api = self.topology._topology_api
+            try:
+                self._topology_api = self.topology._topology_api
+            except TopologyUnsupportedError as exc:
+                self._logger.warning(str(exc))
+                self._topology_api = None
             self._preferences_api = self.preferences._preferences_api
             self._profile_api = self.profile._profile_api
             self._inspect_api = self.inspect._inspect_api

@@ -1,8 +1,9 @@
-"""Focused Topology app suite (legacy path), skipped on VideoIPath 2026.x+.
+"""Focused Topology app suite (legacy path), skipped when VideoIPath major > 2025.
 
 Builds a device via Inspect (``topology_builder``), then exercises the classic Topology API:
 ``get_device``, ``find_device_id_by_label``, and a label / position round-trip. TopologyApp is
-deprecated on 2025.x and raises ``TopologyUnsupportedError`` on 2026.x — prefer Inspect elsewhere.
+deprecated on 2025.x and unsupported above 2025 — prefer Inspect elsewhere. The e2e conftest
+skips this module when the live server major year is greater than 2025.
 
 Run with::
 
