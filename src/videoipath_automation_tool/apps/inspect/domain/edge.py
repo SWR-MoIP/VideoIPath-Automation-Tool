@@ -9,6 +9,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectConfigPriority,
     InspectEditableModel,
     InspectRedundancyMode,
+    format_repr,
 )
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _IndexedEdge
 
@@ -255,6 +256,16 @@ class InspectEdge(InspectEditableModel):
     @weight_per_service.setter
     def weight_per_service(self, value: int) -> None:
         self._stage("weightFactors.service.weight", value)
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            id=self.id,
+            from_device=self.indexed.from_device_id,
+            to_device=self.indexed.to_device_id,
+        )
+
+    __str__ = __repr__
 
     def _edit_form(self) -> InspectApiEdgeForm | None:
         return self.snapshot.get_edge_details(self.id)

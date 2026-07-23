@@ -32,6 +32,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectVertexKind,
     InspectVertexType,
     _STAGED_MISSING,
+    format_repr,
 )
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
@@ -255,6 +256,15 @@ class InspectVertex(InspectEditableModel):
     @property
     def type_fields(self) -> InspectApiVertexTypeFields | None:
         return self._form_get("typeFields")
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            id=self.id,
+            type=self.vertex_info.vertexType if self.vertex_info is not None else None,
+        )
+
+    __str__ = __repr__
 
     # --- Internal ---
 

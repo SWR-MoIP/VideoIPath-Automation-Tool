@@ -17,6 +17,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectSeverity,
     InspectVertexKind,
     InspectVertexType,
+    format_repr,
 )
 from videoipath_automation_tool.apps.inspect.model.virtual import InspectApiVirtualDeviceWriteBody
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
@@ -321,6 +322,16 @@ class InspectDevice(InspectEditableModel):
     def linked_devices(self) -> list[InspectDevice]:
         return self.snapshot.get_linked_devices(self.id)
 
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            id=self.id,
+            label=lambda: self._record().label,
+            virtual=True if is_virtual_device_id(self.id) else None,
+        )
+
+    __str__ = __repr__
+
     def _record(self) -> "_DeviceRecord":
         record = self.snapshot.get_device_record(self.id)
         if record is None:
@@ -373,6 +384,11 @@ class VirtualDeviceSpec(InspectInternalModel):
 
     def to_wire(self) -> InspectApiVirtualDeviceWriteBody:
         return InspectApiVirtualDeviceWriteBody(modules=[module.to_wire() for module in self.modules])
+
+    def __repr__(self) -> str:
+        return format_repr(self, modules=len(self.modules))
+
+    __str__ = __repr__
 
     @classmethod
     def from_ports(cls, *ports: PortFromTemplate | tuple[str, int] | str) -> VirtualDeviceSpec:

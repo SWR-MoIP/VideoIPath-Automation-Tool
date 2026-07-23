@@ -113,6 +113,22 @@ InspectCodecFormat = Literal["Video", "Audio", "ASI", "Ancillary"]
 InspectMapCType = Literal["Topology", "Geo"]
 
 
+def format_repr(obj: object, /, **fields: Any) -> str:
+    """Concise ``ClassName(k=v, ...)`` repr. Callable values are evaluated defensively
+    (skipped on error); None values are omitted. Never raises."""
+    parts: list[str] = []
+    for key, value in fields.items():
+        if callable(value):
+            try:
+                value = value()
+            except Exception:
+                continue
+        if value is None:
+            continue
+        parts.append(f"{key}={value!r}")
+    return f"{type(obj).__name__}({', '.join(parts)})"
+
+
 class InspectApiBaseModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_assignment=True, extra="allow")
 
@@ -276,6 +292,7 @@ __all__ = [
     "InspectSipsMode",
     "InspectVertexKind",
     "InspectVertexType",
+    "format_repr",
     "map_severity",
     "_STAGED_MISSING",
 ]

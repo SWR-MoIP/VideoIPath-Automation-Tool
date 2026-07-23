@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiPathItem, InspectServiceStatus
-from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel
+from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, format_repr
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _port_id_from_endpoint
 
 if TYPE_CHECKING:
@@ -106,6 +106,11 @@ class InspectService(InspectFrozenModel):
                     ports.append(port)
                     seen.add(key)
         return ports
+
+    def __repr__(self) -> str:
+        return format_repr(self, booking_id=self.booking_id, label=self.label)
+
+    __str__ = __repr__
 
     def _resolve_endpoint_port(self, port_id: str | None) -> InspectPort | None:
         if not port_id:

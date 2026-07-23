@@ -9,6 +9,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiStatusSummary,
     InspectEditableModel,
     InspectInternalModel,
+    format_repr,
 )
 from videoipath_automation_tool.apps.inspect.model.virtual import InspectApiVirtualModule
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _STAGED_MISSING
@@ -32,6 +33,11 @@ class VirtualModuleSpec(InspectInternalModel):
             moduleNumber=self.module_number,
             vertices=[port.to_wire() for port in self.ports],
         )
+
+    def __repr__(self) -> str:
+        return format_repr(self, ports=len(self.ports), module_number=self.module_number)
+
+    __str__ = __repr__
 
 
 class InspectModule(InspectEditableModel):
@@ -112,6 +118,16 @@ class InspectModule(InspectEditableModel):
         """Every vertex across the module's ports (triggers a lazy vertex lookup per port for the
         typed kind)."""
         return [vertex for port in self.ports for vertex in port._vertices()]
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            id=self.id,
+            device=self.device_id,
+            label=lambda: status.effective_label if (status := self._status()) is not None else None,
+        )
+
+    __str__ = __repr__
 
     def _status(self) -> InspectApiModuleStatus | None:
         return self.snapshot.get_module_status(self.device_id, self.module_id)

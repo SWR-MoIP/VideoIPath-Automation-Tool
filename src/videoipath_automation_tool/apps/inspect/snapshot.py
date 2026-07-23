@@ -39,6 +39,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectInternalModel,
     InspectSeverity,
     _STAGED_MISSING,
+    format_repr,
 )
 
 if TYPE_CHECKING:
@@ -134,6 +135,15 @@ class InspectSnapshot:
             self._index_alarms(alarm_items)
             self._section_loaded["alarms"] = True
             self._section_fetched_at["alarms"] = self._created_at
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            devices=len(self._devices_by_id),
+            edge_pairs=len(self._edge_pairs),
+        )
+
+    __str__ = __repr__
 
     # --- Construction ---
 
@@ -1018,11 +1028,26 @@ class _DeviceRecord(InspectInternalModel):
     def pid(self) -> str | None:
         return self.node.pid or self.node.deviceId
 
+    def __repr__(self) -> str:
+        return format_repr(self, device_id=self.device_id, level=self.level)
+
+    __str__ = __repr__
+
 
 class _IndexedPort(InspectFrozenModel):
     device_id: str
     module_id: str | None
     port: InspectPortStatus
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            device_id=self.device_id,
+            module_id=self.module_id,
+            port_id=_port_id_from_status(self.port),
+        )
+
+    __str__ = __repr__
 
 
 class _IndexedEdge(InspectFrozenModel):
@@ -1036,6 +1061,16 @@ class _IndexedEdge(InspectFrozenModel):
     from_port_id: str | None
     to_device_id: str | None
     to_port_id: str | None
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            edge_id=self.edge_id,
+            from_device_id=self.from_device_id,
+            to_device_id=self.to_device_id,
+        )
+
+    __str__ = __repr__
 
 
 # --- Module-level helpers (kept stable for the domain layer) ---

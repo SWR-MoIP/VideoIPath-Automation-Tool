@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
-from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, InspectSeverity
+from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, InspectSeverity, format_repr
+
+_ALARM_MESSAGE_REPR_LIMIT = 60
 
 
 class InspectAlarm(InspectFrozenModel):
@@ -67,6 +69,14 @@ class InspectAlarm(InspectFrozenModel):
         if desc is None:
             return []
         return [entry.label for entry in desc.pointId if entry.label]
+
+    def __repr__(self) -> str:
+        message = self.message
+        if message is not None and len(message) > _ALARM_MESSAGE_REPR_LIMIT:
+            message = message[:_ALARM_MESSAGE_REPR_LIMIT] + "…"
+        return format_repr(self, id=self.id, severity=self.severity, message=message)
+
+    __str__ = __repr__
 
 
 __all__ = ["InspectAlarm"]

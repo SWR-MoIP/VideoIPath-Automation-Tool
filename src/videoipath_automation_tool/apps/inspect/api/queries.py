@@ -127,11 +127,7 @@ _PATHS_SECTION = (
 # Verified 2026.2.0: two `/.../` pops after each selected sub-tree (same grammar as the collector
 # skeleton); three pops omit ``info``.
 _ALARMS_SECTION = (
-    "/status/alarms/current/*"
-    "/acked,hidden"
-    "/.../id/**"
-    "/.../.../desc/**"
-    "/.../.../info/details,severity,sa,headSeverity,time"
+    "/status/alarms/current/*/acked,hidden/.../id/**/.../.../desc/**/.../.../info/details,severity,sa,headSeverity,time"
 )
 
 # Full aggregate (eager / fallback mode).

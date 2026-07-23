@@ -12,6 +12,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectCodecFormat,
     InspectFrozenModel,
     InspectVertexType,
+    format_repr,
 )
 from videoipath_automation_tool.apps.inspect.model.ngraph import InspectApiNGraphElementType
 from videoipath_automation_tool.apps.inspect.model.virtual import (
@@ -50,6 +51,11 @@ class PortFromTemplate(InspectFrozenModel):
     def to_wire(self) -> InspectApiVirtualPortFromTemplate:
         return InspectApiVirtualPortFromTemplate(templateId=self.template_id, count=self.count)
 
+    def __repr__(self) -> str:
+        return format_repr(self, template_id=self.template_id, count=self.count)
+
+    __str__ = __repr__
+
 
 class InspectPortTemplate(InspectFrozenModel):
     """A port template (UI term; API: virtual template)."""
@@ -72,6 +78,17 @@ class InspectPortTemplate(InspectFrozenModel):
             codec_format=wire.vertex.codecFormat,
             vertex=vertex,
         )
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            id=self.id,
+            label=self.label,
+            kind=self.kind,
+            direction=self.direction,
+        )
+
+    __str__ = __repr__
 
 
 class InspectPort(InspectFrozenModel):
@@ -158,6 +175,16 @@ class InspectPort(InspectFrozenModel):
         if not port_id:
             return []
         return self.snapshot.get_edges_for_port(self.indexed.device_id, port_id)
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            id=self.id,
+            label=self.label,
+            device=self.indexed.device_id,
+        )
+
+    __str__ = __repr__
 
     def _vertex_by_type(self, vertex_type: str) -> InspectVertex | None:
         for vid, side in self._vertex_sides():

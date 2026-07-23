@@ -55,6 +55,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectRedundancyMode,
     InspectSdpStrategy,
     InspectSipsMode,
+    format_repr,
 )
 from videoipath_automation_tool.apps.inspect.model.tags import module_resource_id
 from videoipath_automation_tool.apps.inspect.model.update_topology import (
@@ -93,6 +94,15 @@ class CommitResult(InspectFrozenModel):
     @property
     def validation(self) -> Any:
         return self.response.data.validation if self.response is not None else None
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            applied=len(self.applied_ids),
+            created=len(self.created_ids),
+        )
+
+    __str__ = __repr__
 
 
 class InspectTransaction:
@@ -142,6 +152,16 @@ class InspectTransaction:
 
     def __len__(self) -> int:
         return len(self._entries)
+
+    def __repr__(self) -> str:
+        return format_repr(
+            self,
+            staged=len(self._entries),
+            committed=self._committed or None,
+            discarded=self._discarded or None,
+        )
+
+    __str__ = __repr__
 
     # --- Staging: domain objects ---
 
