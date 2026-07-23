@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional
 
 from pydantic import Field
 
+from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiCollectorResponse,
     InspectApiExternalEdgeLiveStatus,
@@ -36,10 +37,12 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
 from videoipath_automation_tool.apps.inspect.model.common import (
     InspectFrozenModel,
     InspectInternalModel,
+    InspectSeverity,
     _STAGED_MISSING,
 )
 
 if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
     from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
@@ -67,6 +70,7 @@ class InspectSnapshot:
         *,
         device_level: HydrationLevel = HydrationLevel.SKELETON,
         path_items: Optional[list[InspectApiPathItem]] = None,
+        alarm_items: Optional[list[InspectApiAlarmItem]] = None,
     ) -> None:
         self._fetcher = fetcher
         self._lock = threading.RLock()
@@ -96,8 +100,13 @@ class InspectSnapshot:
         # Section: services / paths
         self._paths_by_booking_id: dict[str, InspectApiPathItem] = {}
         self._services_by_device_id: dict[str, list[str]] = {}
-        self._section_loaded: dict[str, bool] = {"paths": False}
+        self._section_loaded: dict[str, bool] = {"paths": False, "alarms": False}
         self._section_fetched_at: dict[str, datetime] = {}
+
+        # Section: current alarms (status/alarms/current), indexed by resource key
+        self._alarms: list[InspectApiAlarmItem] = []
+        self._alarms_by_device_id: dict[str, list[InspectApiAlarmItem]] = {}
+        self._alarms_by_resource_key: dict[str, list[InspectApiAlarmItem]] = {}
 
         # Domain-object caches
         self._device_cache: dict[str, "InspectDevice"] = {}
@@ -121,6 +130,10 @@ class InspectSnapshot:
             self._index_paths(path_items)
             self._section_loaded["paths"] = True
             self._section_fetched_at["paths"] = self._created_at
+        if alarm_items is not None:
+            self._index_alarms(alarm_items)
+            self._section_loaded["alarms"] = True
+            self._section_fetched_at["alarms"] = self._created_at
 
     # --- Construction ---
 
@@ -366,6 +379,38 @@ class InspectSnapshot:
                 result.append(self._wrap_service(item))
         return result
 
+    # --- Alarm reads (section, trigger section load) ---
+
+    def get_alarms_for_device(self, device_id: str) -> list["InspectAlarm"]:
+        self._ensure_section_alarms()
+        return _sorted_alarms(self._alarms_by_device_id.get(device_id, []))
+
+    def get_alarms_for_resource(self, resource_key: str) -> list["InspectAlarm"]:
+        """Alarms whose joined ``pointId`` equals ``resource_key`` (module/port pid, edge id, …)."""
+        self._ensure_section_alarms()
+        return _sorted_alarms(self._alarms_by_resource_key.get(resource_key, []))
+
+    def get_alarms_for_module(self, device_id: str, module_id: str) -> list["InspectAlarm"]:
+        """Alarms whose joined ``pointId`` equals the module pid (device_id reserved for callers)."""
+        _ = device_id
+        return self.get_alarms_for_resource(module_id)
+
+    def get_alarms_for_port(self, port_id: str | None, *, device_id: str | None = None) -> list["InspectAlarm"]:
+        _ = device_id
+        if not port_id:
+            return []
+        return self.get_alarms_for_resource(port_id)
+
+    def get_alarms_for_edge(self, edge_id: str, *, pair_id: str | None = None) -> list["InspectAlarm"]:
+        self._ensure_section_alarms()
+        items = list(self._alarms_by_resource_key.get(edge_id, []))
+        if pair_id and pair_id != edge_id:
+            items.extend(self._alarms_by_resource_key.get(pair_id, []))
+        return _sorted_alarms(items)
+
+    def get_alarms_for_service(self, booking_id: str) -> list["InspectAlarm"]:
+        return self.get_alarms_for_resource(booking_id)
+
     # --- Bulk preload (ADR-0004) ---
 
     def preload(self, devices: Optional[list[str]] = None) -> None:
@@ -472,6 +517,7 @@ class InspectSnapshot:
                 self._try_refresh_edge_pair(pair_id)
         if mark_paths_stale:
             self._mark_paths_stale()
+            self._mark_alarms_stale()
 
     def apply_network_refresh(self, device_ids: list[str]) -> None:
         """Targeted refresh after a network action (addDevices / syncDevices): upsert the named
@@ -488,6 +534,7 @@ class InspectSnapshot:
             self._try_refresh_device(device_id)
         self._reconcile_pairs_for_devices(affected)
         self._mark_paths_stale()
+        self._mark_alarms_stale()
 
     def upsert_devices_from_skeleton(self, device_ids: list[str]) -> None:
         """Insert or refresh named devices from one device-skeleton read.
@@ -632,6 +679,13 @@ class InspectSnapshot:
             self._paths_by_booking_id.clear()
             self._services_by_device_id.clear()
 
+    def _mark_alarms_stale(self) -> None:
+        with self._lock:
+            self._section_loaded["alarms"] = False
+            self._alarms.clear()
+            self._alarms_by_device_id.clear()
+            self._alarms_by_resource_key.clear()
+
     def _upsert_device(self, device_id: str, detail: InspectApiNodeStatusItem) -> None:
         """Insert or replace a device record (FULL), keeping the label index and caches consistent."""
         old = self._devices_by_id.get(device_id)
@@ -664,6 +718,17 @@ class InspectSnapshot:
             self._section_loaded["paths"] = True
             self._section_fetched_at["paths"] = _now()
             self._service_cache.clear()
+
+    def _ensure_section_alarms(self) -> None:
+        if self._section_loaded.get("alarms") or self._fetcher is None:
+            return
+        items = self._fetcher.get_alarms_section()
+        with self._lock:
+            if self._section_loaded.get("alarms"):
+                return
+            self._index_alarms(items)
+            self._section_loaded["alarms"] = True
+            self._section_fetched_at["alarms"] = _now()
 
     # --- Internal: indexing ---
 
@@ -804,6 +869,23 @@ class InspectSnapshot:
                 if booking_id not in ids:
                     ids.append(booking_id)
 
+    def _index_alarms(self, alarm_items: list[InspectApiAlarmItem]) -> None:
+        self._alarms = list(alarm_items)
+        self._alarms_by_device_id.clear()
+        self._alarms_by_resource_key.clear()
+        for item in alarm_items:
+            point_id = list(item.id.pointId) if item.id is not None else []
+            if not point_id:
+                continue
+            device_id = point_id[0]
+            self._alarms_by_device_id.setdefault(device_id, []).append(item)
+            resource_key = ".".join(point_id)
+            self._alarms_by_resource_key.setdefault(resource_key, []).append(item)
+            # Edge pair / directed edge keys appear as a single pointId element containing "::".
+            for part in point_id:
+                if "::" in part:
+                    self._alarms_by_resource_key.setdefault(part, []).append(item)
+
     def _apply_removals(self, removed_ids: list[str]) -> None:
         if not removed_ids:
             return
@@ -900,6 +982,26 @@ _logger = logging.getLogger("videoipath_automation_tool_inspect_snapshot")
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _severity_rank(value: Any) -> int:
+    """Sort key: higher severity first; unknown / missing treated as lowest."""
+    if isinstance(value, InspectSeverity):
+        return int(value)
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    return -1
+
+
+def _sorted_alarms(items: list[InspectApiAlarmItem]) -> list["InspectAlarm"]:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
+
+    ordered = sorted(
+        items,
+        key=lambda item: _severity_rank(item.info.severity if item.info is not None else None),
+        reverse=True,
+    )
+    return [InspectAlarm(item=item) for item in ordered]
 
 
 class _DeviceRecord(InspectInternalModel):

@@ -151,6 +151,7 @@ hydrated and when it was fetched.
 | Edge connectivity, endpoint ports/labels, status severities | Edge skeleton query | Snapshot construction |
 | Device `ports` (modules, port status, `vertexInfo`, port `tagsInfo`, PTP), port-level path drill-down | Per-device `nodeStatus` subtree (`modules/*` projection) | First access on that device |
 | `services`, service path structures | `inspect/paths` section query | First access to any service data |
+| Active alarms (`.alarms`, `status_message`) | `status/alarms/current` section query | First access to any alarm data |
 | Maintenance bookings, super profiles, tag info | Section queries | First access, if exposed |
 | Edge bandwidth values, edge `pathDescriptions` | Full per-pair edge shape | Not in the skeleton; loaded with the owning section/entity detail |
 
@@ -162,6 +163,46 @@ lazy loading inert.
 
 These are the classes package users should prefer for read-side workflows.
 
+### Status severity (`InspectSeverity`)
+
+Status and alarm severity fields (`status.severity`, `status.sa`, `sync_severity`,
+edge live `alarm` / `ptp` / `maintenance` / `bandwidth`) are mapped to
+`InspectSeverity`, an `IntEnum` so both the label and the wire int remain usable:
+
+| Value | Label |
+| --- | --- |
+| `0` | None |
+| `1` | OK |
+| `2` | Notice |
+| `3` | Warning |
+| `4` | Minor |
+| `5` | Major |
+| `6` | Critical |
+
+```python
+device.status.severity          # InspectSeverity.OK
+str(device.status.severity)      # "OK"
+int(device.status.severity)      # 1
+device.status.severity == 1      # True
+```
+
+Unknown wire codes pass through as raw `int` / `str` (never crash).
+
+### Active alarms (`InspectAlarm`)
+
+Per-resource alarm messages come from `status/alarms/current` (loaded lazily as a
+snapshot section). Each of `device` / `module` / `port` / `edge` / `service` exposes
+`.alarms` — a list of `InspectAlarm` sorted worst-severity first. Device also has
+`status_message` (the worst alarm's text).
+
+| Field / property | Meaning |
+| --- | --- |
+| `message` | Alarm text (e.g. `"Mock driver in use"`, `"Loss of protection"`) |
+| `severity` / `sa` | Mapped `InspectSeverity` |
+| `acknowledged` / `hidden` | Alarm acknowledgement flags |
+| `point_labels` | Human labels for the alarm's point path |
+| `alert_id` / `component` | Alarm identity |
+
 ### `InspectDevice`
 
 Represents one topology device/node with status, sync hints, and relations.
@@ -170,8 +211,10 @@ Represents one topology device/node with status, sync hints, and relations.
 | --- | --- |
 | `id` | Device identifier, for example `device-a` |
 | `label` | Display label |
-| `status` | Device status summary |
-| `sync_severity` | Sync severity from node status |
+| `status` | Device status summary (`sa` / `severity` as `InspectSeverity`) |
+| `sync_severity` | Sync severity from node status (`InspectSeverity`) |
+| `alarms` | Active alarms on this device (worst first) |
+| `status_message` | Message of the worst active alarm, if any |
 | `tags` | Assigned tags |
 | `coordinates` | Topology map position when available |
 | `ports` | Ports on this device |
@@ -184,6 +227,9 @@ Lookup:
 ```python
 device = app.inspect.get_device("device-a")
 matches = app.inspect.find_devices_by_label("Example Device A")
+print(device.status.severity, device.status_message)
+for alarm in device.alarms:
+    print(alarm.severity, alarm.message)
 ```
 
 ### `InspectPort`
@@ -197,7 +243,8 @@ external edge to another device.
 | `label` | Display label |
 | `device` | Owning `InspectDevice` |
 | `module_id` | Owning module |
-| `status` | Port status summary |
+| `status` | Port status summary (`InspectSeverity` fields) |
+| `alarms` | Active alarms correlated to this port |
 | `vertex_id` | Linked topology vertex when available |
 | `tags` | Vertex tag bindings when hydrated (`tagsInfo` from `nodeStatus`) |
 | `edge` | External edge when this port connects to another device; otherwise `None` |
@@ -212,7 +259,8 @@ Represents one external edge status entry between two endpoint devices/ports.
 | `from_device` / `to_device` | Endpoint devices |
 | `from_port` / `to_port` | Endpoint ports |
 | `bandwidth` / `max_bandwidth` | Bandwidth values |
-| `status` | Alarm, bandwidth, maintenance, and PTP summary |
+| `status` | Alarm, bandwidth, maintenance, and PTP summary (`InspectSeverity`) |
+| `alarms` | Active alarms correlated to this edge / pair |
 | `services` | Services touching either endpoint device |
 
 ### `InspectService`
@@ -226,7 +274,8 @@ Represents one service/booking path across devices and ports.
 | `source` / `destination` | Endpoint labels |
 | `source_device` / `destination_device` | Endpoint devices |
 | `source_port` / `destination_port` | Endpoint ports |
-| `status` | Service status summary |
+| `status` | Service status summary (`InspectSeverity` fields) |
+| `alarms` | Active alarms correlated to this booking |
 | `path_devices` | Ordered devices in the path |
 | `path_ports` | Ports encountered in the path |
 

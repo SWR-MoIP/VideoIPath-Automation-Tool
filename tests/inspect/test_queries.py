@@ -13,6 +13,7 @@ def test_all_queries_within_length_limit() -> None:
         queries.device_skeleton,
         queries.edge_skeleton,
         queries.paths_section,
+        queries.alarms_section,
         queries.collector_full,
         queries.virtual_templates,
         queries.virtual_devices,
@@ -25,6 +26,13 @@ def test_all_queries_within_length_limit() -> None:
 def test_collector_queries_use_collector_namespace() -> None:
     for build in (queries.device_skeleton, queries.edge_skeleton, queries.paths_section, queries.collector_full):
         assert build().startswith("/rest/v2/data/status/collector/")
+
+
+def test_alarms_query_uses_alarms_namespace() -> None:
+    path = urllib.parse.unquote(queries.alarms_section())
+    assert path.startswith("/rest/v2/data/status/alarms/current/")
+    for field in ("acked", "hidden", "id", "desc", "info"):
+        assert field in path
 
 
 def test_virtual_queries_use_network_namespace() -> None:

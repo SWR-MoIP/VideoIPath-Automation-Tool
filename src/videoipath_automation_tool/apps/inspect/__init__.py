@@ -4,6 +4,7 @@ from videoipath_automation_tool.apps.inspect import model as _model
 from videoipath_automation_tool.apps.inspect.app.actions import ConflictStrategy as ConflictStrategy
 from videoipath_automation_tool.apps.inspect.transaction import CommitResult as CommitResult
 from videoipath_automation_tool.apps.inspect.transaction import InspectTransaction as InspectTransaction
+from videoipath_automation_tool.apps.inspect.domain import InspectAlarm as InspectAlarm
 from videoipath_automation_tool.apps.inspect.domain import InspectDevice as InspectDevice
 from videoipath_automation_tool.apps.inspect.domain import InspectEdge as InspectEdge
 from videoipath_automation_tool.apps.inspect.domain import InspectModule as InspectModule
@@ -28,6 +29,7 @@ from videoipath_automation_tool.apps.inspect.model import *
 __all__ = [
     "CommitResult",
     "ConflictStrategy",
+    "InspectAlarm",
     "InspectApp",
     "InspectCommitConflictError",
     "InspectCommitError",

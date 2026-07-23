@@ -60,6 +60,11 @@ def paths_section() -> str:
     return _build(_PATHS_SECTION)
 
 
+def alarms_section() -> str:
+    """GET path for the current-alarms section (``status/alarms/current``)."""
+    return _build(_ALARMS_SECTION)
+
+
 def collector_full() -> str:
     """GET path for the full collector aggregate (eager / fallback mode)."""
     return _build(_COLLECTOR_FULL)
@@ -118,6 +123,17 @@ _PATHS_SECTION = (
     "/.../inputStatus,outputStatus/label,pid"
 )
 
+# Current alarms: lean projection of identity, acknowledgement, point labels, and severity/message.
+# Verified 2026.2.0: two `/.../` pops after each selected sub-tree (same grammar as the collector
+# skeleton); three pops omit ``info``.
+_ALARMS_SECTION = (
+    "/status/alarms/current/*"
+    "/acked,hidden"
+    "/.../id/**"
+    "/.../.../desc/**"
+    "/.../.../info/details,severity,sa,headSeverity,time"
+)
+
 # Full aggregate (eager / fallback mode).
 _COLLECTOR_FULL = "/status/collector/**"
 
@@ -141,6 +157,7 @@ __all__ = [
     "edge_skeleton",
     "edge_pair",
     "paths_section",
+    "alarms_section",
     "collector_full",
     "virtual_templates",
     "virtual_devices",

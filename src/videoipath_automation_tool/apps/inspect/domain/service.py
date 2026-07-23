@@ -7,6 +7,7 @@ from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenMo
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _port_id_from_endpoint
 
 if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
 
@@ -65,6 +66,11 @@ class InspectService(InspectFrozenModel):
     @property
     def status(self) -> InspectServiceStatus | None:
         return self.path_item.serviceFields.serviceStatus
+
+    @property
+    def alarms(self) -> list[InspectAlarm]:
+        """Active alarms correlated to this service/booking (worst severity first)."""
+        return self.snapshot.get_alarms_for_service(self.booking_id)
 
     @property
     def path_devices(self) -> list[InspectDevice]:

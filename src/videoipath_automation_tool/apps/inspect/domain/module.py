@@ -14,6 +14,7 @@ from videoipath_automation_tool.apps.inspect.model.virtual import InspectApiVirt
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _STAGED_MISSING
 
 if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
@@ -74,6 +75,11 @@ class InspectModule(InspectEditableModel):
     def status(self) -> InspectApiStatusSummary | None:
         status = self._status()
         return status.status if status is not None else None
+
+    @property
+    def alarms(self) -> list[InspectAlarm]:
+        """Active alarms correlated to this module (worst severity first)."""
+        return self.snapshot.get_alarms_for_module(self.device_id, self.module_id)
 
     @property
     def tags(self) -> list[str]:

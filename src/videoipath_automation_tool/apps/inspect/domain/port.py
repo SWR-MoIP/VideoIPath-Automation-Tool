@@ -25,6 +25,7 @@ from videoipath_automation_tool.apps.inspect.snapshot import (
 )
 
 if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
     from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
@@ -108,6 +109,11 @@ class InspectPort(InspectFrozenModel):
     @property
     def status(self) -> InspectApiStatusSummary | None:
         return self.indexed.port.status
+
+    @property
+    def alarms(self) -> list[InspectAlarm]:
+        """Active alarms correlated to this port (worst severity first)."""
+        return self.snapshot.get_alarms_for_port(self.id, device_id=self.indexed.device_id)
 
     @property
     def tags(self) -> list[str]:

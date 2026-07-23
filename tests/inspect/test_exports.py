@@ -8,6 +8,7 @@ from videoipath_automation_tool.apps import inspect
 from videoipath_automation_tool.apps.inspect import model
 from videoipath_automation_tool.apps.inspect.model import (
     actions,
+    alarms,
     collector,
     common,
     ngraph,
@@ -20,6 +21,7 @@ from videoipath_automation_tool.apps.inspect.model import (
 def test_model_package_all_aggregates_submodules() -> None:
     expected = {
         *actions.__all__,
+        *alarms.__all__,
         *collector.__all__,
         *common.__all__,
         *ngraph.__all__,

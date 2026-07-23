@@ -18,6 +18,7 @@ import pytest
 
 from videoipath_automation_tool.apps.inspect import VirtualDeviceSpec
 from videoipath_automation_tool.apps.inspect.errors import InspectCommitConflictError, InspectCommitError
+from videoipath_automation_tool.apps.inspect.model.common import InspectSeverity
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 
 from ..helpers import (
@@ -34,6 +35,46 @@ from ..helpers import (
 )
 
 pytestmark = pytest.mark.e2e
+
+
+def test_status_severity_enums_and_device_alarms(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
+    """Live severities parse to InspectSeverity; mock-driver alarms correlate onto their device."""
+    (device_id,) = topology_builder.add_devices([("STATUS-A", 2)])
+    app.inspect.refresh()
+    device = app.inspect.get_device(device_id)
+    assert device is not None
+
+    known = set(InspectSeverity)
+    if device.status is not None:
+        if device.status.severity is not None:
+            assert device.status.severity in known, f"unmapped severity: {device.status.severity!r}"
+        if device.status.sa is not None:
+            assert device.status.sa in known, f"unmapped sa: {device.status.sa!r}"
+    if device.sync_severity is not None:
+        assert device.sync_severity in known, f"unmapped sync_severity: {device.sync_severity!r}"
+
+    for edge in app.inspect.edges[:20]:
+        status = edge.status
+        if status is None:
+            continue
+        for value in (status.alarm, status.ptp, status.maintenance, status.bandwidth):
+            if value is None:
+                continue
+            assert value in known, f"unmapped edge status value: {value!r}"
+
+    # Newly onboarded mocks may not have raised their driver notice yet; correlate against any
+    # device that currently carries the Mock alarm (verified shape on this server).
+    mock_carrier = None
+    for candidate in app.inspect.devices:
+        matches = [alarm for alarm in candidate.alarms if alarm.message == "Mock driver in use"]
+        if matches:
+            mock_carrier = (candidate, matches[0])
+            break
+    if mock_carrier is None:
+        pytest.skip("No active 'Mock driver in use' alarm on this server right now.")
+    carrier, alarm = mock_carrier
+    assert alarm.severity is InspectSeverity.NOTICE
+    assert carrier.status_message == "Mock driver in use"
 
 
 def test_skeleton_read_no_hydration(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:

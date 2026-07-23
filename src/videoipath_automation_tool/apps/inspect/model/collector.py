@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiBaseModel,
@@ -16,7 +16,9 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectSdpStrategy,
     InspectServiceStatus,
     InspectApiStatusSummary,
+    InspectSeverity,
     InspectVertexType,
+    map_severity,
 )
 
 
@@ -232,9 +234,14 @@ class InspectApiNodeStatusItem(InspectApiBaseModel):
     relatedNodeTags: list[str] = Field(default_factory=list)
     resourceId: str | None = None
     status: InspectApiStatusSummary | None = None
-    syncSeverity: int | str | None = None
+    syncSeverity: InspectSeverity | int | str | None = None
     tags: list[str] = Field(default_factory=list)
     tagsInfo: dict[str, Any] | None = None
+
+    @field_validator("syncSeverity", mode="before")
+    @classmethod
+    def _map_sync_severity(cls, value: Any) -> Any:
+        return map_severity(value)
 
     @property
     def effective_label(self) -> str | None:
@@ -262,10 +269,15 @@ class InspectApiNodeStatusItem(InspectApiBaseModel):
 
 
 class InspectApiExternalEdgeLiveStatus(InspectApiBaseModel):
-    alarm: int | str | None = None
-    bandwidth: int | float | str | None = None
-    maintenance: int | str | None = None
-    ptp: int | str | None = None
+    alarm: InspectSeverity | int | str | None = None
+    bandwidth: InspectSeverity | int | float | str | None = None
+    maintenance: InspectSeverity | int | str | None = None
+    ptp: InspectSeverity | int | str | None = None
+
+    @field_validator("alarm", "bandwidth", "maintenance", "ptp", mode="before")
+    @classmethod
+    def _map_severity_fields(cls, value: Any) -> Any:
+        return map_severity(value)
 
 
 class InspectApiExternalEdgeStatus(InspectApiBaseModel):

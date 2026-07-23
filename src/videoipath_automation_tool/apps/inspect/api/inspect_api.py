@@ -25,6 +25,7 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiSyncDevicesRequest,
     InspectApiSyncDevicesRequestData,
 )
+from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiCollectorResponse,
     InspectApiExternalEdgesByDeviceKeyItem,
@@ -99,6 +100,12 @@ class InspectAPI:
         response = self.vip_connector.rest.get(queries.paths_section(), allow_projection=True)
         items = _extract_items(response.data, "status", "collector", "inspect", "paths")
         return [InspectApiPathItem.model_validate(item) for item in items]
+
+    def get_alarms_section(self) -> list[InspectApiAlarmItem]:
+        """The current-alarms section (``status/alarms/current``)."""
+        response = self.vip_connector.rest.get(queries.alarms_section(), allow_projection=True)
+        items = _extract_items(response.data, "status", "alarms", "current")
+        return [InspectApiAlarmItem.model_validate(item) for item in items]
 
     def get_collector_full(self) -> InspectApiCollectorResponse:
         """The full collector aggregate (eager / fallback mode)."""

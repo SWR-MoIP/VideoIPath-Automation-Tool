@@ -11,11 +11,13 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiLookupEdgesResponse,
     InspectApiLookupVerticesResponse,
 )
+from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiExternalEdgesByDeviceKeyItem,
     InspectApiNodeStatusItem,
     InspectApiPathItem,
 )
+from videoipath_automation_tool.apps.inspect.model.common import InspectSeverity
 from videoipath_automation_tool.apps.inspect.snapshot import HydrationLevel, InspectSnapshot
 
 from .conftest import load_fixture
@@ -82,6 +84,57 @@ def test_services_section_is_lazy(snapshot: tuple[InspectSnapshot, FakeFetcher])
     _ = snap.services  # second access
     assert fetcher.section_calls == 1
     assert {d.id for d in snap.get_services_for_device("leaf-a")[0].path_devices} == {"leaf-a", "spine-a"}
+
+
+def test_alarms_section_is_lazy_and_correlates(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    fetcher._alarms = [
+        InspectApiAlarmItem.model_validate(raw)
+        for raw in load_fixture("alarms_current.json")["data"]["status"]["alarms"]["current"]["_items"]
+    ]
+    # Remap fixture device-a alarms onto leaf-a for this snapshot's devices.
+    for item in fetcher._alarms:
+        assert item.id is not None
+        item.id.pointId = ["leaf-a", *item.id.pointId[1:]]
+
+    assert fetcher.alarm_section_calls == 0
+    device = snap.get_device("leaf-a")
+    alarms = device.alarms
+    assert fetcher.alarm_section_calls == 1
+    assert len(alarms) == 3
+    assert alarms[0].severity == InspectSeverity.MAJOR  # worst first
+    assert alarms[0].message == "Loss of protection"
+    assert device.status_message == "Loss of protection"
+    _ = device.alarms
+    assert fetcher.alarm_section_calls == 1
+
+    module_alarms = snap.get_alarms_for_module("leaf-a", "leaf-a.dev.module-1")
+    assert len(module_alarms) == 1
+    assert module_alarms[0].message == "Loss of protection"
+
+    port_alarms = snap.get_alarms_for_port("leaf-a.dev.module-1.port-out-1")
+    assert len(port_alarms) == 1
+    assert port_alarms[0].message == "Loss of disjunctivity"
+    assert port_alarms[0].severity == InspectSeverity.MINOR
+
+
+def test_post_commit_marks_alarms_stale(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    fetcher._alarms = [
+        InspectApiAlarmItem.model_validate(
+            {
+                "_id": "1:leaf-a.dev:Mock",
+                "acked": False,
+                "id": {"alertId": "Mock", "component": 1, "pointId": ["leaf-a", "dev"]},
+                "info": {"details": "Mock driver in use", "severity": 2, "sa": 2},
+            }
+        )
+    ]
+    assert len(snap.get_device("leaf-a").alarms) == 1
+    assert fetcher.alarm_section_calls == 1
+    snap.apply_post_commit(mark_paths_stale=True)
+    assert len(snap.get_device("leaf-a").alarms) == 1
+    assert fetcher.alarm_section_calls == 2
 
 
 def test_linked_devices_from_edges(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -473,12 +526,14 @@ class FakeFetcher:
         self.vertex_lookup_calls: list[list[str]] = []
         self.edge_lookup_calls: list[list[str]] = []
         self.section_calls = 0
+        self.alarm_section_calls = 0
         self.skeleton_calls = 0
         self._details = {
             "spine-a": _detail_node("spine-a", "SPINE-A", ["spine-a.dev.0.swp1", "spine-a.dev.0.swp2"]),
             "leaf-a": _detail_node("leaf-a", "LEAF-A", ["leaf-a.dev.0.up1", "leaf-a.dev.0.host1"]),
         }
         self._paths = [_path_item("1001", "leaf-a", "spine-a")]
+        self._alarms: list[InspectApiAlarmItem] = []
 
     def get_device_skeleton(self) -> list[InspectApiNodeStatusItem]:
         self.skeleton_calls += 1
@@ -499,6 +554,10 @@ class FakeFetcher:
     def get_paths_section(self) -> list[InspectApiPathItem]:
         self.section_calls += 1
         return self._paths
+
+    def get_alarms_section(self) -> list[InspectApiAlarmItem]:
+        self.alarm_section_calls += 1
+        return list(self._alarms)
 
     def lookup_vertices(self, vertex_ids: list[str]) -> InspectApiLookupVerticesResponse:
         self.vertex_lookup_calls.append(list(vertex_ids))

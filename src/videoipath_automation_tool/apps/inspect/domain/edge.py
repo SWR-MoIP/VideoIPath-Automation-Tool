@@ -13,6 +13,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _IndexedEdge
 
 if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
@@ -78,6 +79,11 @@ class InspectEdge(InspectEditableModel):
         """Live status for this edge. In the lean skeleton only the pair-level status is present;
         the per-edge status (per direction) appears in the full edge shape."""
         return self.indexed.edge.status or self.indexed.pair_status
+
+    @property
+    def alarms(self) -> list[InspectAlarm]:
+        """Active alarms correlated to this edge or its pair (worst severity first)."""
+        return self.snapshot.get_alarms_for_edge(self.id, pair_id=self.pair_id)
 
     @property
     def services(self) -> list[InspectService]:

@@ -14,6 +14,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectIconType,
     InspectInternalModel,
     InspectSdpStrategy,
+    InspectSeverity,
     InspectVertexKind,
     InspectVertexType,
 )
@@ -22,6 +23,7 @@ from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 from videoipath_automation_tool.validators.virtual_device_id import is_virtual_device_id
 
 if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
     from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
@@ -131,8 +133,19 @@ class InspectDevice(InspectEditableModel):
         return self._record().node.status
 
     @property
-    def sync_severity(self) -> int | str | None:
+    def sync_severity(self) -> InspectSeverity | int | str | None:
         return self._record().node.syncSeverity
+
+    @property
+    def alarms(self) -> list[InspectAlarm]:
+        """Active alarms correlated to this device (worst severity first)."""
+        return self.snapshot.get_alarms_for_device(self.id)
+
+    @property
+    def status_message(self) -> str | None:
+        """Message of the worst active alarm on this device, if any."""
+        alarms = self.alarms
+        return alarms[0].message if alarms else None
 
     @property
     def tags(self) -> list[str]:

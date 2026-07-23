@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from enum import IntEnum
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
@@ -14,6 +15,41 @@ if TYPE_CHECKING:
 _STAGED_MISSING: Any = object()
 
 _T = TypeVar("_T")
+
+
+class InspectSeverity(IntEnum):
+    """VideoIPath status/alarm severity. Int-valued so ``== N``, ``int(x)``, and ordering still
+    work; ``str(x)`` / ``.label`` give the human label. Unknown wire codes are kept as raw ints
+    by the model validators (never crash).
+
+    Scale derived from VideoIPath 2026.2.0 (built-in correlation templates + live alarms + sync
+    info); higher is worse.
+    """
+
+    NONE = 0
+    OK = 1
+    NOTICE = 2
+    WARNING = 3
+    MINOR = 4
+    MAJOR = 5
+    CRITICAL = 6
+
+    def __str__(self) -> str:
+        return self.label
+
+    @property
+    def label(self) -> str:
+        return _SEVERITY_LABELS[self]
+
+
+def map_severity(raw: Any) -> InspectSeverity | int | str | None:
+    """Known int → :class:`InspectSeverity`; ``None`` / str / unknown int pass through unchanged."""
+    if isinstance(raw, InspectSeverity):
+        return raw
+    if isinstance(raw, int) and not isinstance(raw, bool) and raw in _SEVERITY_LABELS:
+        return InspectSeverity(raw)
+    return raw
+
 
 # The icon types selectable in the VideoIPath UI (mirrors the topology app's ``IconType``; live data
 # may contain further values, so read/write surfaces use the permissive ``InspectIconType | str``).
@@ -140,8 +176,13 @@ class InspectApiCollection(InspectApiBaseModel):
 
 
 class InspectApiStatusSummary(InspectApiBaseModel):
-    sa: int | str | None = None
-    severity: int | str | None = None
+    sa: InspectSeverity | int | str | None = None
+    severity: InspectSeverity | int | str | None = None
+
+    @field_validator("sa", "severity", mode="before")
+    @classmethod
+    def _map_severity_fields(cls, value: Any) -> Any:
+        return map_severity(value)
 
 
 class InspectApiStatusContext(InspectApiBaseModel):
@@ -192,6 +233,19 @@ class InspectApiActionValidationErrorResponse(InspectApiBaseModel):
     header: InspectApiRestV2Header
 
 
+# --- Internal ---
+
+_SEVERITY_LABELS: dict[InspectSeverity, str] = {
+    InspectSeverity.NONE: "None",
+    InspectSeverity.OK: "OK",
+    InspectSeverity.NOTICE: "Notice",
+    InspectSeverity.WARNING: "Warning",
+    InspectSeverity.MINOR: "Minor",
+    InspectSeverity.MAJOR: "Major",
+    InspectSeverity.CRITICAL: "Critical",
+}
+
+
 __all__ = [
     "InspectApiActionValidationErrorResponse",
     "InspectApiBaseModel",
@@ -218,8 +272,10 @@ __all__ = [
     "InspectMapCType",
     "InspectRedundancyMode",
     "InspectSdpStrategy",
+    "InspectSeverity",
     "InspectSipsMode",
     "InspectVertexKind",
     "InspectVertexType",
+    "map_severity",
     "_STAGED_MISSING",
 ]

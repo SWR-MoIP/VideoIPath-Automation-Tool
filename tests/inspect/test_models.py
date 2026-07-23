@@ -12,13 +12,20 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiLookupVertexResponse,
     InspectApiLookupVerticesResponse,
 )
+from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiDoubleVertexInfo,
+    InspectApiExternalEdgeLiveStatus,
     InspectApiExternalEdgesByDeviceKeyItem,
     InspectApiNodeStatusItem,
     InspectApiPathItem,
     InspectApiSingleVertexInfo,
     InspectPortStatus,
+)
+from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectApiStatusSummary,
+    InspectSeverity,
+    map_severity,
 )
 from videoipath_automation_tool.apps.inspect.model.update_topology import (
     InspectApiUpdateTopologyData,
@@ -230,6 +237,63 @@ def test_port_assigned_tags_from_tags_info() -> None:
     )
     assert port.assigned_tags == ["Video~~T"]
     assert InspectPortStatus.model_validate({"_id": "device-a.1.p2"}).assigned_tags == []
+
+
+def test_inspect_severity_labels_and_int_compat() -> None:
+    assert InspectSeverity.OK == 1
+    assert int(InspectSeverity.CRITICAL) == 6
+    assert str(InspectSeverity.NOTICE) == "Notice"
+    assert InspectSeverity.MAJOR.label == "Major"
+    assert InspectSeverity.NONE < InspectSeverity.OK < InspectSeverity.CRITICAL
+
+
+def test_map_severity_known_unknown_and_passthrough() -> None:
+    assert map_severity(0) is InspectSeverity.NONE
+    assert map_severity(6) is InspectSeverity.CRITICAL
+    assert map_severity(99) == 99
+    assert map_severity("ok") == "ok"
+    assert map_severity(None) is None
+    assert map_severity(InspectSeverity.MINOR) is InspectSeverity.MINOR
+
+
+def test_status_summary_maps_severity_fields() -> None:
+    summary = InspectApiStatusSummary.model_validate({"sa": 0, "severity": 1})
+    assert summary.sa is InspectSeverity.NONE
+    assert summary.severity is InspectSeverity.OK
+    assert summary.severity == 1
+
+    unknown = InspectApiStatusSummary.model_validate({"sa": 99, "severity": None})
+    assert unknown.sa == 99
+    assert unknown.severity is None
+
+
+def test_edge_live_status_and_sync_severity_map() -> None:
+    live = InspectApiExternalEdgeLiveStatus.model_validate(
+        {"alarm": 1, "bandwidth": None, "maintenance": None, "ptp": 1}
+    )
+    assert live.alarm is InspectSeverity.OK
+    assert live.ptp is InspectSeverity.OK
+    assert live.bandwidth is None
+
+    node = InspectApiNodeStatusItem.model_validate({"_id": "device-a", "syncSeverity": 2})
+    assert node.syncSeverity is InspectSeverity.NOTICE
+
+
+def test_alarm_item_parses_and_maps_severity(load: Callable[[str], dict[str, Any]]) -> None:
+    items = load("alarms_current.json")["data"]["status"]["alarms"]["current"]["_items"]
+    alarm = InspectApiAlarmItem.model_validate(items[0])
+    assert alarm.id_field == "1:device-a.dev:Mock"
+    assert alarm.id is not None and alarm.id.pointId == ["device-a", "dev"]
+    assert alarm.info is not None
+    assert alarm.info.details == "Mock driver in use"
+    assert alarm.info.severity is InspectSeverity.NOTICE
+    assert alarm.info.sa is InspectSeverity.NOTICE
+    assert alarm.acked is False
+
+    major = InspectApiAlarmItem.model_validate(items[1])
+    assert major.info is not None
+    assert major.info.severity is InspectSeverity.MAJOR
+    assert major.info.details == "Loss of protection"
 
 
 # --- Internal ---

@@ -1,0 +1,135 @@
+{
+  "data": {
+    "status": {
+      "alarms": {
+        "current": {
+          "_items": [
+            {
+              "_id": "1:device-a.dev:Mock",
+              "_vid": "_:1:device-a.dev:Mock",
+              "acked": false,
+              "desc": {
+                "alertId": {
+                  "desc": "",
+                  "label": ""
+                },
+                "pointId": [
+                  {
+                    "desc": "Type: mock\nIP: 10.0.0.1",
+                    "label": "Mock device 'device-a' [10.0.0.1]"
+                  },
+                  {
+                    "desc": "",
+                    "label": ""
+                  }
+                ]
+              },
+              "hidden": false,
+              "history": [],
+              "id": {
+                "alertId": "Mock",
+                "component": 1,
+                "pointId": ["device-a", "dev"]
+              },
+              "info": {
+                "details": "Mock driver in use",
+                "evtType": 1,
+                "headSeverity": 2,
+                "sa": 2,
+                "severity": 2,
+                "time": 1700000000000
+              }
+            },
+            {
+              "_id": "1:device-a.dev.module-1:PortAlarm",
+              "_vid": "_:1:device-a.dev.module-1:PortAlarm",
+              "acked": true,
+              "desc": {
+                "alertId": {
+                  "desc": "",
+                  "label": "Port Alarm"
+                },
+                "pointId": [
+                  {
+                    "desc": "",
+                    "label": "device-a"
+                  },
+                  {
+                    "desc": "",
+                    "label": "module-1"
+                  }
+                ]
+              },
+              "hidden": false,
+              "history": [],
+              "id": {
+                "alertId": "PortAlarm",
+                "component": 1,
+                "pointId": ["device-a", "dev", "module-1"]
+              },
+              "info": {
+                "details": "Loss of protection",
+                "evtType": 1,
+                "headSeverity": 5,
+                "sa": 1,
+                "severity": 5,
+                "time": 1700000001000
+              }
+            },
+            {
+              "_id": "1:device-a.dev.module-1.port-out-1:Signal",
+              "_vid": "_:1:device-a.dev.module-1.port-out-1:Signal",
+              "acked": false,
+              "desc": {
+                "alertId": {
+                  "desc": "",
+                  "label": "Signal"
+                },
+                "pointId": [
+                  {
+                    "desc": "",
+                    "label": "device-a"
+                  },
+                  {
+                    "desc": "",
+                    "label": "module-1"
+                  },
+                  {
+                    "desc": "",
+                    "label": "port-out-1"
+                  }
+                ]
+              },
+              "hidden": false,
+              "history": [],
+              "id": {
+                "alertId": "Signal",
+                "component": 1,
+                "pointId": ["device-a", "dev", "module-1", "port-out-1"]
+              },
+              "info": {
+                "details": "Loss of disjunctivity",
+                "evtType": 1,
+                "headSeverity": 4,
+                "sa": 0,
+                "severity": 4,
+                "time": 1700000002000
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "OK",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "alarms-fixture",
+    "msg": [],
+    "ok": true,
+    "user": "test-user"
+  }
+}

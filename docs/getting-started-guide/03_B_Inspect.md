@@ -49,7 +49,12 @@ without any per-device I/O:
 device = app.inspect.get_device("device10")
 device = app.inspect.find_device_by_label("BORDERLEAF-26B")
 
-print(device.label, device.coordinates, device.status, device.sync_severity, device.tags)
+print(device.label, device.coordinates, device.tags)
+print(device.status.severity if device.status else None, device.sync_severity)
+# InspectSeverity is an IntEnum: str(...) → "OK" / "Notice" / …; int(...) / == N still work.
+print(device.status_message)           # worst active alarm text, if any
+for alarm in device.alarms:            # lazy section load of status/alarms/current
+    print(alarm.severity, alarm.message)
 
 for device in app.inspect.devices:     # all devices
     print(device.id, device.label)
@@ -67,6 +72,8 @@ for port in device.ports:              # triggers one hydration fetch for this d
 
 for edge in device.edges:              # local, no hydration
     print(edge.from_port, "->", edge.to_port, edge.status)
+    if edge.status:
+        print(edge.status.alarm, edge.status.ptp)  # InspectSeverity labels
 
 for other in device.linked_devices:    # local graph walk
     print(other.label)
