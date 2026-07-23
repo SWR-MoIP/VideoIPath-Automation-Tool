@@ -1,11 +1,11 @@
-"""Independent Inspect capability tests against a live instance.
+"""Focused Inspect app suite: read/write capabilities against a live instance.
 
 Every test builds its **own** minimal topology (1–3 mock devices) via the ``topology_builder``
-fixture — unique labels/addresses per test, guaranteed teardown (edges → topology node → inventory
-entry) even on failure. All assertions are scoped to the test's own device ids, so the persisted
-workflow topology or any other state on a shared instance never interferes.
+fixture — unique labels/addresses per test. Assertions are scoped to the test's own device ids so
+other suites on a shared instance never interfere. ``E2E-`` artifacts persist until the next e2e
+session-start sweep.
 
-Developer-run only (see ``tests/e2e/conftest.py``). Run with::
+Run with::
 
     poetry run test-e2e
 """
@@ -14,21 +14,22 @@ from __future__ import annotations
 
 import pytest
 
+from videoipath_automation_tool.apps.inspect import VirtualDeviceSpec
 from videoipath_automation_tool.apps.inspect.errors import InspectCommitConflictError, InspectCommitError
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 
 from ..helpers import (
+    E2E_TAG,
     MODULE_TEST_TAG_ID,
     TEST_TAG_ID,
     FetchSpy,
     TopologyBuilder,
     create_module_test_tag,
     create_test_tag,
-    delete_module_test_tag,
-    delete_test_tag,
     edges_between,
+    router_ports,
+    unique_label,
 )
-
 
 pytestmark = pytest.mark.e2e
 
@@ -39,7 +40,7 @@ def test_skeleton_read_no_hydration(app: VideoIPathApp, topology_builder: Topolo
     app.inspect.refresh()
     with FetchSpy(app.inspect._inspect_api) as spy:
         assert len(edges_between(app, id_a, id_b)) == 2
-    assert spy.count == 0  # skeleton read triggers no per-device hydration
+    assert spy.count == 0
 
 
 def test_lazy_hydration(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
@@ -47,11 +48,11 @@ def test_lazy_hydration(app: VideoIPathApp, topology_builder: TopologyBuilder) -
     app.inspect.refresh()
     assert not app.inspect.is_device_hydrated(id_a)
     with FetchSpy(app.inspect._inspect_api) as spy:
-        ports = app.inspect.get_device(id_a).ports  # one detail fetch
+        ports = app.inspect.get_device(id_a).ports
         assert spy.count == 1
-        _ = app.inspect.get_device(id_a).ports  # cached
+        _ = app.inspect.get_device(id_a).ports
         assert spy.count == 1
-    assert len(ports) > 0  # mock devices expose router ports
+    assert len(ports) > 0
     assert app.inspect.is_device_hydrated(id_a)
     assert not app.inspect.is_device_hydrated(id_b)
 
@@ -61,7 +62,7 @@ def test_connectivity_graph(app: VideoIPathApp, topology_builder: TopologyBuilde
     topology_builder.link(hub, id_b)
     topology_builder.link(hub, id_c)
     app.inspect.refresh()
-    linked = {d.label for d in app.inspect.get_device(hub).linked_devices}
+    linked = {device.label for device in app.inspect.get_device(hub).linked_devices}
     assert linked == {topology_builder.labels[id_b], topology_builder.labels[id_c]}
 
 
@@ -72,8 +73,7 @@ def test_edge_pair_refresh(app: VideoIPathApp, topology_builder: TopologyBuilder
     edge_id = edges_between(app, id_a, id_b)[0].id
     result = app.inspect.update_edge(edge_id, weight=7)
     assert result.ok
-    # Survives the targeted post-commit refresh without a full reload.
-    assert any(e.id == edge_id for e in app.inspect.edges)
+    assert any(edge.id == edge_id for edge in app.inspect.edges)
 
 
 def test_transaction_atomicity(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
@@ -86,9 +86,8 @@ def test_transaction_atomicity(app: VideoIPathApp, topology_builder: TopologyBui
             tx.update_edge(edge_id, weight=13)
             tx.remove("does-not-exist::also-not-real")
             tx.commit()
-    # Nothing applied: the edge is still present.
     app.inspect.refresh()
-    assert any(e.id == edge_id for e in app.inspect.edges)
+    assert any(edge.id == edge_id for edge in app.inspect.edges)
 
 
 def test_conflict_detection(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
@@ -98,82 +97,68 @@ def test_conflict_detection(app: VideoIPathApp, topology_builder: TopologyBuilde
     edge_id = edges_between(app, id_a, id_b)[0].id
     tx = app.inspect.transaction()
     tx.update_edge(edge_id, weight=21)
-    # Out-of-band change via a second app instance.
     other = VideoIPathApp()
     other.inspect.update_edge(edge_id, weight=9)
     with pytest.raises(InspectCommitConflictError) as exc:
         tx.commit()
-    assert any(c.entity_id == edge_id for c in exc.value.conflicts)
+    assert any(conflict.entity_id == edge_id for conflict in exc.value.conflicts)
     tx.rebase()
     tx.commit()
 
 
 def test_assign_tag_to_port(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
-    # Inspect-only capability: assign a catalog tag to a port.
     (device_id,) = topology_builder.add_devices([("TAG-A", 2)])
     create_test_tag(app)
-    try:
-        app.inspect.refresh()
-        vertex_id = next(
-            p.vertex_in.id
-            for p in app.inspect.get_device(device_id).ports
-            if p.vertex_in is not None and "Router In" in (p.label or "")
-        )
-        result = app.inspect.update_vertex(vertex_id, tags=[TEST_TAG_ID])
-        assert result.ok
-        app.inspect.refresh()
-        port = next(
-            p
-            for p in app.inspect.get_device(device_id).ports
-            if p.vertex_in is not None and p.vertex_in.id == vertex_id
-        )
-        assert TEST_TAG_ID in port.tags
-    finally:
-        delete_test_tag(app)  # also removes the port binding
+    app.inspect.refresh()
+    device = app.inspect.get_device(device_id)
+    assert device is not None
+    _out, in_vertex = router_ports(device)[0]
+    result = app.inspect.update_vertex(in_vertex, tags=[TEST_TAG_ID])
+    assert result.ok
+    app.inspect.refresh()
+    port = next(
+        port
+        for port in app.inspect.get_device(device_id).ports
+        if port.vertex_in is not None and port.vertex_in.id == in_vertex
+    )
+    assert TEST_TAG_ID in port.tags
 
 
 def test_assign_and_unassign_module_tag(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
-    """Create a dedicated catalog tag, assign it to a module, then unassign it."""
     (device_id,) = topology_builder.add_devices([("MOD-TAG-A", 2)])
     create_module_test_tag(app)
-    try:
-        app.inspect.refresh()
-        device = app.inspect.get_device(device_id)
-        assert device is not None
-        assert device.modules, "mock device should expose at least one module"
-        module = device.modules[0]
-        module_id = module.id
+    app.inspect.refresh()
+    device = app.inspect.get_device(device_id)
+    assert device is not None
+    assert device.modules
+    module = device.modules[0]
+    module_id = module.id
 
-        module.tags = [MODULE_TEST_TAG_ID]
-        result = app.inspect.update(module)
-        assert result.ok
+    module.tags = [MODULE_TEST_TAG_ID]
+    result = app.inspect.update(module)
+    assert result.ok
 
-        app.inspect.refresh()
-        module = app.inspect.get_device(device_id).get_module(module_id)
-        assert module is not None
-        assert MODULE_TEST_TAG_ID in module.tags
+    app.inspect.refresh()
+    module = app.inspect.get_device(device_id).get_module(module_id)
+    assert module is not None
+    assert MODULE_TEST_TAG_ID in module.tags
 
-        module.tags = []
-        result = app.inspect.update(module)
-        assert result.ok
+    module.tags = []
+    result = app.inspect.update(module)
+    assert result.ok
 
-        app.inspect.refresh()
-        module = app.inspect.get_device(device_id).get_module(module_id)
-        assert module is not None
-        assert MODULE_TEST_TAG_ID not in module.tags
-    finally:
-        delete_module_test_tag(app)
+    app.inspect.refresh()
+    module = app.inspect.get_device(device_id).get_module(module_id)
+    assert module is not None
+    assert MODULE_TEST_TAG_ID not in module.tags
 
 
 def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
-    """Write every editable vertex UI field and read it back via the typed InspectVertex."""
     (device_id,) = topology_builder.add_devices([("VTX-A", 2)])
     app.inspect.refresh()
-    vertex_id = next(
-        p.vertex_in.id
-        for p in app.inspect.get_device(device_id).ports
-        if p.vertex_in is not None and "Router In" in (p.label or "")
-    )
+    device = app.inspect.get_device(device_id)
+    assert device is not None
+    _out, vertex_id = router_ports(device)[0]
     alert_filter = "0:*:e2e-alarm:*"
     result = app.inspect.update_vertex(
         vertex_id,
@@ -191,7 +176,9 @@ def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuil
 
     app.inspect.refresh()
     port = next(
-        p for p in app.inspect.get_device(device_id).ports if p.vertex_in is not None and p.vertex_in.id == vertex_id
+        port
+        for port in app.inspect.get_device(device_id).ports
+        if port.vertex_in is not None and port.vertex_in.id == vertex_id
     )
     vertex = port.vertex_in
     assert vertex is not None
@@ -212,17 +199,18 @@ def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuil
 
 def test_device_placement(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
     (device_id,) = topology_builder.add_devices([("PLACE-A", 2)])
-    app.inspect.place_device(device_id, 4200, 4200)
+    x, y = topology_builder.origin[0] + 150, topology_builder.origin[1] + 150
+    app.inspect.place_device(device_id, x, y)
     app.inspect.refresh()
     coords = app.inspect.get_device(device_id).coordinates
-    assert coords is not None and coords["x"] == 4200 and coords["y"] == 4200
+    assert coords is not None and coords["x"] == x and coords["y"] == y
 
 
 def test_disconnect_reconnect_cycle(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
     id_a, id_b = topology_builder.add_devices([("CYC-A", 2), ("CYC-B", 2)])
     topology_builder.link(id_a, id_b)
     app.inspect.refresh()
-    directed = [tuple(e.id.split("::", 1)) for e in edges_between(app, id_a, id_b)]
+    directed = [tuple(edge.id.split("::", 1)) for edge in edges_between(app, id_a, id_b)]
     assert directed
     for from_vertex, to_vertex in directed:
         app.inspect.disconnect(from_vertex, to_vertex, bidirectional=False)
@@ -243,7 +231,7 @@ def test_full_vs_skeleton_equivalence(app: VideoIPathApp, topology_builder: Topo
         return {
             device_id: (
                 app.inspect.get_device(device_id).label,
-                frozenset(d.label for d in app.inspect.get_device(device_id).linked_devices),
+                frozenset(device.label for device in app.inspect.get_device(device_id).linked_devices),
             )
             for device_id in (id_a, id_b, id_c)
         }
@@ -256,4 +244,33 @@ def test_full_vs_skeleton_equivalence(app: VideoIPathApp, topology_builder: Topo
         full = graph_view()
         assert skeleton == full
     finally:
-        app.inspect.refresh(load="skeleton")  # restore default load mode
+        app.inspect.refresh(load="skeleton")
+
+
+def test_create_virtual_device(app: VideoIPathApp, e2e_map_origins) -> None:
+    templates = app.inspect.list_port_templates()
+    if not templates:
+        pytest.skip("No port templates available on this server.")
+    by_id = {template.id: template for template in templates}
+    # Prefer a known pair from the docs example; otherwise pick any two templates.
+    if "ip_in" in by_id and "ip_out" in by_id:
+        spec = VirtualDeviceSpec.from_ports(("ip_in", 1), ("ip_out", 1))
+    else:
+        first = templates[0]
+        second = templates[1] if len(templates) > 1 else templates[0]
+        spec = VirtualDeviceSpec.from_ports((first.id, 1), (second.id, 1))
+
+    device = app.inspect.create_virtual_device(spec)
+    assert device.is_virtual is True
+    label = unique_label("VIRTUAL")
+    device.label = label
+    device.tags = [E2E_TAG, "virtual"]
+    app.inspect.update(device)
+    x, y = next(e2e_map_origins)
+    app.inspect.place_device(device.id, x=x, y=y)
+    app.inspect.refresh()
+    loaded = app.inspect.get_device(device.id)
+    assert loaded is not None
+    assert loaded.label == label
+    assert loaded.coordinates is not None
+    assert loaded.coordinates["x"] == x and loaded.coordinates["y"] == y

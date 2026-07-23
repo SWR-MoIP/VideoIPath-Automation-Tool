@@ -6,7 +6,15 @@ from __future__ import annotations
 from videoipath_automation_tool import apps
 from videoipath_automation_tool.apps import inspect
 from videoipath_automation_tool.apps.inspect import model
-from videoipath_automation_tool.apps.inspect.model import actions, collector, common, ngraph, update_topology, virtual
+from videoipath_automation_tool.apps.inspect.model import (
+    actions,
+    collector,
+    common,
+    ngraph,
+    tags,
+    update_topology,
+    virtual,
+)
 
 
 def test_model_package_all_aggregates_submodules() -> None:
@@ -15,6 +23,7 @@ def test_model_package_all_aggregates_submodules() -> None:
         *collector.__all__,
         *common.__all__,
         *ngraph.__all__,
+        *tags.__all__,
         *update_topology.__all__,
         *virtual.__all__,
     }

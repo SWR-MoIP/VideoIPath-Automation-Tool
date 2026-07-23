@@ -8,11 +8,15 @@ These tests are excluded by default (``-m "not e2e"`` in ``pyproject.toml``) and
 E2e entry points load ``.env`` and enable the suite automatically. E2e runs never collect coverage
 (``--no-cov``).
 
+Layout of the suite:
+  * ``workflows/`` — general, ordered "build the scenario step by step" suites: the generic
+    network-builder (one suite per :mod:`networks` architecture) and the cross-app onboarding pipeline.
+  * ``apps/`` — focused per-app suites (inventory, inspect, topology, preferences, profile, security).
+
 Everything the suite writes is namespaced (``E2E-`` label prefix + ``vipat-e2e`` tag) so a shared
-local instance is safe. Cleanup has two layers: a session-start sweep removes any leftovers from
-prior runs, and the per-test ``topology_builder`` fixture removes exactly the devices a test
-created (also on failure). The sequential workflow suite intentionally leaves its topology behind
-for manual inspection; the next run's sweep removes it.
+local instance is safe. Cleanup is a single session-start sweep that removes every ``E2E-``
+artifact left from a prior run; suites intentionally leave their topologies (including the
+network-builder architectures) in VideoIPath for manual inspection after the run.
 """
 
 from __future__ import annotations
@@ -27,7 +31,7 @@ from videoipath_automation_tool.apps.inspect.app.app import _MIN_VERIFIED_VERSIO
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 from vipat_cli_scripts.project_env import load_project_env
 
-from .helpers import TopologyBuilder, remove_devices, sweep_e2e_namespace
+from .helpers import TopologyBuilder, sweep_e2e_namespace
 
 load_project_env()
 
@@ -57,7 +61,7 @@ def app() -> VideoIPathApp:
 
 @pytest.fixture(scope="session", autouse=True)
 def e2e_sweep(app: VideoIPathApp) -> None:
-    """Session-start sweep: remove every ``E2E-`` device left over from a prior run."""
+    """Session-start sweep: remove every ``E2E-`` artifact left over from a prior run."""
     sweep_e2e_namespace(app)
 
 
@@ -67,18 +71,31 @@ def e2e_addresses() -> Iterator[str]:
     return (f"10.99.{i // 256}.{i % 256}" for i in count(1))
 
 
+@pytest.fixture(scope="session")
+def e2e_map_origins() -> Iterator[tuple[int, int]]:
+    """Session-wide map-origin allocator so per-test TopologyBuilder instances never stack.
+
+    Laid out in a grid well clear of the workflow network-builder region (y >= 6000).
+    Each slot is large enough for a few devices spaced 300 apart horizontally.
+    """
+    cols, slot_w, slot_h, base_x, base_y = 8, 1200, 800, 0, 2000
+    return ((base_x + (i % cols) * slot_w, base_y + (i // cols) * slot_h) for i in count())
+
+
 @pytest.fixture
-def topology_builder(app: VideoIPathApp, e2e_addresses: Iterator[str]) -> Iterator[TopologyBuilder]:
-    """A per-test topology factory; teardown removes exactly the devices the test created."""
-    builder = TopologyBuilder(app, e2e_addresses)
-    yield builder
-    remove_devices(app, set(builder.device_ids))
+def topology_builder(
+    app: VideoIPathApp, e2e_addresses: Iterator[str], e2e_map_origins: Iterator[tuple[int, int]]
+) -> TopologyBuilder:
+    """A per-test topology factory with a unique map origin (session sweep cleans ``E2E-`` artifacts)."""
+    x, y = next(e2e_map_origins)
+    return TopologyBuilder(app, e2e_addresses, x=x, y=y)
 
 
-# --- Sequential workflow support (``@pytest.mark.incremental``) ---
-# Later steps of a sequential suite are skipped (not failed) once an earlier step fails. With the
+# --- Sequential suite support (``@pytest.mark.incremental``) ---
+# Later steps of an ordered suite are skipped (not failed) once an earlier step fails. With the
 # default ``-x`` in ``addopts`` the run stops at the first failure anyway; these hooks make the
-# behavior sensible without it too (e.g. ``--maxfail=0``).
+# behavior sensible without it too (e.g. ``--maxfail=0``). Each test class has its own failure stash,
+# so ordered suites (including the per-network builder subclasses) are isolated from one another.
 
 
 def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo) -> None:
@@ -93,4 +110,4 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
         return
     failed = item.parent.stash.get(_STEP_FAILED_KEY, None)
     if failed is not None:
-        pytest.skip(f"previous workflow step failed ({failed})")
+        pytest.skip(f"previous step in this suite failed ({failed})")
