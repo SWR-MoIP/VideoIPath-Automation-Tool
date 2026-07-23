@@ -2,11 +2,14 @@
 
 Read-only monitoring plus commit-style topology writes, built entirely on the collector API
 ([ADR-0008]). Composed from focused mixins, mirroring the Inventory/Topology app layout.
+
+This app is currently in beta; the API and behaviour may change in future releases.
 """
 
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import TYPE_CHECKING, Optional
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
@@ -19,6 +22,10 @@ from .actions import InspectActionsMixin
 from .read import InspectReadMixin, LoadMode
 from .write import InspectWriteMixin
 
+_BETA_MESSAGE = (
+    "InspectApp is in beta. The API and behaviour may change in future releases; use with care in production workflows."
+)
+
 
 class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
     def __init__(
@@ -27,11 +34,14 @@ class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
         logger: Optional[logging.Logger] = None,
         load: LoadMode = "skeleton",
     ) -> None:
-        """Inspect App: read the topology/status and apply commit-style topology changes.
+        """Inspect App (beta): read the topology/status and apply commit-style topology changes.
 
         The app keeps a single internal topology view that is loaded lazily on the first read and
         kept up to date across writes; interact with it entirely through this app (``app.inspect``),
         the same way as the other apps. Call :meth:`refresh` to reload it from the server.
+
+        .. note::
+            InspectApp is in beta. Construction emits a :class:`UserWarning` and a log warning.
 
         Args:
             vip_connector (VideoIPathConnector): connector handling the VideoIPath connection.
@@ -44,8 +54,13 @@ class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
         self._vip_connector = vip_connector
         self._load_mode: LoadMode = load
         self._snapshot: Optional[InspectSnapshot] = None
+        self._warn_beta()
         self._warn_if_version_unverified()
         self._logger.debug("Inspect APP initialized.")
+
+    def _warn_beta(self) -> None:
+        warnings.warn(_BETA_MESSAGE, UserWarning, stacklevel=3)
+        self._logger.warning(_BETA_MESSAGE)
 
     def _warn_if_version_unverified(self) -> None:
         version = self._vip_connector.videoipath_version

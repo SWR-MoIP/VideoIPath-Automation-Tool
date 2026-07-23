@@ -4,6 +4,9 @@
 > topology workflows with different implementations. This page is the recommended
 > path on VideoIPath **2025.4+**.
 
+**⚠️ BETA ⚠️**: The Inspect App is still in beta. The API and behaviour may change
+in future releases. Accessing `app.inspect` emits a `UserWarning` and a log warning.
+
 ### Compatibility & deprecation
 
 | Server version | Status |
