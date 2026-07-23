@@ -141,6 +141,8 @@ Use a transaction to stage several changes and commit them together:
 
 ```python
 with app.inspect.transaction() as tx:
+    device.description = "Rack A leaf"
+    tx.update(device)             # stage setter edits into the transaction
     tx.place_device("device12", x=100, y=200)
     tx.connect(a_out, b_in, bidirectional=True)
     tx.remove(edge_id)

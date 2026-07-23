@@ -64,7 +64,7 @@ def main() -> None:
                 continue
             device.label = new_label
             device.tags = sorted(set(device.tags) | {ADD_TAG})
-            app.inspect.update(device, tx=tx)
+            tx.update(device)
         tx.commit()
 
     # --- 5. Keep the inventory labels in sync ---------------------------------

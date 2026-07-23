@@ -37,7 +37,8 @@ class InspectDevice(InspectEditableModel):
     hydrated/refreshed data transparently.
 
     Editable attributes use property setters that stage pending intents on the snapshot
-    (read-your-writes). Flush with ``app.inspect.update(device)``.
+    (read-your-writes). Flush with ``app.inspect.update(device)`` or ``tx.update(device)``
+    inside a transaction.
     """
 
     snapshot: InspectSnapshot

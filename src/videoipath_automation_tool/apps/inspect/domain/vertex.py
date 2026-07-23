@@ -14,7 +14,8 @@ Instances are built by :meth:`InspectSnapshot.get_vertex`, which picks the subcl
 form's ``typeFields.type``.
 
 Editable attributes use property setters that stage pending wire-field intents on the snapshot
-(read-your-writes). Flush with ``app.inspect.update(vertex)`` or ``app.inspect.update(device)``.
+(read-your-writes). Flush with ``app.inspect.update(vertex)``, ``app.inspect.update(device)``,
+or ``tx.update(...)`` inside a transaction.
 """
 
 from __future__ import annotations

@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 from pydantic import Field
 
@@ -61,7 +61,15 @@ from videoipath_automation_tool.apps.inspect.model.update_topology import (
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.api import InspectAPI
+    from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
+    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+    from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
+    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
+
+    Editable = InspectDevice | InspectVertex | InspectEdge | InspectModule
+else:
+    Editable = Any
 
 
 class CommitResult(InspectFrozenModel):
@@ -87,9 +95,10 @@ class CommitResult(InspectFrozenModel):
 class InspectTransaction:
     """Single-use, atomic batch of Inspect topology changes.
 
-    Stage changes with the ``place_device`` / ``update_*`` / ``connect`` / ``disconnect`` / ``remove``
-    methods, then call ``commit()``. The transaction cannot be reused after commit or discard; use
-    it as a context manager to guarantee cleanup (exit without commit discards and logs a warning).
+    Stage changes with ``update`` (domain-object setter flush), ``place_device`` / ``update_*`` /
+    ``connect`` / ``disconnect`` / ``remove``, then call ``commit()``. The transaction cannot be
+    reused after commit or discard; use it as a context manager to guarantee cleanup (exit without
+    commit discards and logs a warning).
     """
 
     def __init__(
@@ -130,6 +139,36 @@ class InspectTransaction:
 
     def __len__(self) -> int:
         return len(self._entries)
+
+    # --- Staging: domain objects ---
+
+    def update(self, obj: Editable | Sequence[Editable]) -> "InspectTransaction":
+        """Flush pending domain-object setter edits into this transaction.
+
+        Accepts an :class:`InspectDevice`, :class:`InspectVertex`, :class:`InspectEdge`,
+        :class:`InspectModule`, or a sequence of them. For a device, also cascades every dirty
+        vertex/edge/module whose id belongs to that device (unit of work). Clears the snapshot's
+        pending edits after staging. Returns ``self`` for chaining.
+
+        Prefer this over keyword ``update_device`` / ``update_vertex`` / … when edits were made via
+        domain-object setters. Requires a snapshot-bound transaction (from ``app.inspect.transaction()``).
+        """
+        if self._snapshot is None:
+            raise RuntimeError(
+                "Inspect snapshot is not available; load the topology (e.g. access app.inspect.devices) "
+                "before updating domain objects."
+            )
+        objects = list(obj) if isinstance(obj, Sequence) and not _is_single_editable(obj) else [obj]  # type: ignore[list-item]
+        if not objects:
+            raise ValueError("Nothing to update.")
+
+        flushed_keys: list[tuple[str, str]] = []
+        for item in objects:
+            flushed_keys.extend(_stage_editable(self, self._snapshot, item))
+
+        for kind, entity_id in flushed_keys:
+            self._snapshot.clear_staged(kind=kind, entity_id=entity_id)
+        return self
 
     # --- Staging: devices ---
 
@@ -815,6 +854,71 @@ def _device_of(entity_id: str) -> str:
         if len(parts) >= 2:
             return f"{parts[0]}.{parts[1]}"
     return entity_id.split(".", 1)[0]
+
+
+def _is_single_editable(obj: Any) -> bool:
+    from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
+    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+    from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
+    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
+
+    return isinstance(obj, (InspectDevice, InspectVertex, InspectEdge, InspectModule))
+
+
+def _stage_editable(
+    tx: InspectTransaction,
+    snapshot: "InspectSnapshot",
+    obj: Editable,
+) -> list[tuple[str, str]]:
+    """Stage pending edits for ``obj`` (and cascade children for a device). Returns flushed keys."""
+    from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
+    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+    from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
+    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
+
+    flushed: list[tuple[str, str]] = []
+
+    if isinstance(obj, InspectDevice):
+        device_edits = snapshot.get_staged_edits("device", obj.id)
+        if device_edits:
+            tx.update_device(obj.id, intents=device_edits)
+            flushed.append(("device", obj.id))
+        for kind, entity_id, intents in snapshot.iter_staged_edits():
+            if kind == "vertex" and _device_of(entity_id) == obj.id and intents:
+                tx.update_vertex(entity_id, intents=intents)
+                flushed.append((kind, entity_id))
+            elif kind == "module" and _device_of(entity_id) == obj.id and intents:
+                tx.update_module(entity_id, intents=intents)
+                flushed.append((kind, entity_id))
+            elif kind == "edge" and intents:
+                from_id, _, to_id = entity_id.partition("::")
+                if _device_of(from_id) == obj.id or _device_of(to_id) == obj.id:
+                    tx.update_edge(entity_id, intents=intents)
+                    flushed.append((kind, entity_id))
+        return flushed
+
+    if isinstance(obj, InspectVertex):
+        edits = snapshot.get_staged_edits("vertex", obj.id)
+        if edits:
+            tx.update_vertex(obj.id, intents=edits)
+            flushed.append(("vertex", obj.id))
+        return flushed
+
+    if isinstance(obj, InspectEdge):
+        edits = snapshot.get_staged_edits("edge", obj.id)
+        if edits:
+            tx.update_edge(obj.id, intents=edits)
+            flushed.append(("edge", obj.id))
+        return flushed
+
+    if isinstance(obj, InspectModule):
+        edits = snapshot.get_staged_edits("module", obj.id)
+        if edits:
+            tx.update_module(obj.id, intents=edits)
+            flushed.append(("module", obj.id))
+        return flushed
+
+    raise TypeError(f"Unsupported update target: {type(obj)!r}")
 
 
 def _raise_if_tag_action_failed(action: str, tag_id: str, response: InspectApiSimpleActionResponse) -> None:

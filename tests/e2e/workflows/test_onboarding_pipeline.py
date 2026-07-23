@@ -77,7 +77,7 @@ class TestOnboardingPipeline:
                 device.label = f"E2E-{PIPELINE.name}-{spec.name}"
                 device.description = f"Onboarding pipeline {spec.name}"
                 device.tags = [E2E_TAG, SITE_TAG]
-                app.inspect.update(device, tx=tx)
+                tx.update(device)
             tx.commit()
         for spec in PIPELINE.devices:
             device = app.inspect.get_device(state.device_ids[spec.name])

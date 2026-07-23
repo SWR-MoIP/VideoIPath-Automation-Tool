@@ -148,7 +148,7 @@ def test_update_device_cascades_vertex_edits() -> None:
     assert snapshot.get_staged_edits("vertex", CODEC_ID) == {}
 
 
-def test_update_appends_to_existing_transaction() -> None:
+def test_transaction_update_stages_domain_edits() -> None:
     api = FakeAPI()
     api.devices[DEVICE_ID] = _device_response()
     snapshot = _skeleton_snapshot_with_device(DEVICE_ID)
@@ -158,7 +158,7 @@ def test_update_appends_to_existing_transaction() -> None:
 
     app = _WriteApp(api, snapshot)
     with app.transaction() as tx:
-        returned = app.update(device, tx=tx)
+        returned = tx.update(device)
         assert returned is tx
         tx.commit()
     assert api.update_calls[0].replaceDevices[DEVICE_ID].descriptor.label == "Via Tx"

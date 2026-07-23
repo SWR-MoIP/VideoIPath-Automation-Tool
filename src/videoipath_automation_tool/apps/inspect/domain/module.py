@@ -42,8 +42,9 @@ class InspectModule(InspectEditableModel):
     ``module_id`` / ``device_id``.
 
     Editable attributes use property setters that stage pending intents on the snapshot
-    (read-your-writes). Flush with ``app.inspect.update(module)`` or ``app.inspect.update(device)``.
-    Module tags are committed via ``assignTag`` / ``unassignTag`` (not ``updateTopology``).
+    (read-your-writes). Flush with ``app.inspect.update(module)``, ``app.inspect.update(device)``,
+    or ``tx.update(...)`` inside a transaction. Module tags are committed via ``assignTag`` /
+    ``unassignTag`` (not ``updateTopology``).
     """
 
     snapshot: InspectSnapshot

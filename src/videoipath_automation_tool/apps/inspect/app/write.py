@@ -6,7 +6,7 @@ context manager and call ``commit()`` explicitly.
 
 Domain objects also support a unit-of-work pattern: mutate attributes via setters (pending edits
 stage on the snapshot), then call ``update(device)`` / ``update(vertex)`` / ``update(edge)`` to
-flush them through a transaction (optionally appending to an existing ``tx``).
+auto-commit, or ``tx.update(...)`` to stage into an open transaction.
 
 Every write is bound to the app's internal snapshot: on a successful commit the touched entities are
 refreshed in place ([ADR-0010]) — but only if the snapshot has already been loaded, so a pure-write
@@ -18,7 +18,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Optional, Protocol, Sequence
 
-from videoipath_automation_tool.apps.inspect.transaction import CommitResult, InspectTransaction
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.model.common import (
     InspectConfigPriority,
@@ -27,17 +26,16 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectRedundancyMode,
     InspectSdpStrategy,
 )
+from videoipath_automation_tool.apps.inspect.transaction import (
+    CommitResult,
+    Editable,
+    InspectTransaction,
+    _is_single_editable,
+    _stage_editable,
+)
 
 if TYPE_CHECKING:
-    from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
-    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
-    from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
-    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
-
-    Editable = InspectDevice | InspectVertex | InspectEdge | InspectModule
-else:
-    Editable = Any
 
 
 class _HasInspectState(Protocol):
@@ -55,25 +53,15 @@ class InspectWriteMixin:
         """Open a batched, atomic transaction bound to the app's internal snapshot."""
         return InspectTransaction(self._inspect_api, snapshot=self._snapshot, logger=self._logger)
 
-    def update(
-        self: _HasInspectState,
-        obj: Editable | Sequence[Editable],
-        tx: Optional[InspectTransaction] = None,
-    ) -> CommitResult | InspectTransaction:
-        """Flush pending domain-object edits through a transaction.
+    def update(self: _HasInspectState, obj: Editable | Sequence[Editable]) -> CommitResult:
+        """Flush pending domain-object edits through a new auto-committed transaction.
 
         Accepts an :class:`InspectDevice`, :class:`InspectVertex`, :class:`InspectEdge`,
         :class:`InspectModule`, or a sequence of them. For a device, also cascades every dirty
         vertex/edge/module whose id belongs to that device (unit of work).
 
-        Args:
-            obj: Domain object(s) with pending setter edits.
-            tx: Optional open transaction to append into. When ``None``, a new transaction is opened
-                and committed; the return value is a :class:`CommitResult`. When given, edits are
-                staged into ``tx`` and ``tx`` is returned (caller commits).
-
-        Returns:
-            ``CommitResult`` when ``tx is None``; otherwise the supplied ``tx``.
+        For batched changes, mutate domain objects then call ``tx.update(obj)`` on an open
+        :meth:`transaction` and ``commit()`` yourself.
         """
         objects = list(obj) if isinstance(obj, Sequence) and not _is_single_editable(obj) else [obj]  # type: ignore[list-item]
         if not objects:
@@ -84,26 +72,17 @@ class InspectWriteMixin:
                 "before updating domain objects."
             )
 
-        owns_tx = tx is None
-        txn = self.transaction() if owns_tx else tx
-        assert txn is not None
-
+        txn = self.transaction()
         flushed_keys: list[tuple[str, str]] = []
         for item in objects:
             flushed_keys.extend(_stage_editable(txn, self._snapshot, item))
 
-        if owns_tx:
-            if not flushed_keys and len(txn) == 0:
-                raise ValueError("No pending edits to flush.")
-            result = txn.commit()
-            for kind, entity_id in flushed_keys:
-                self._snapshot.clear_staged(kind=kind, entity_id=entity_id)
-            return result
-
-        # When appending to a caller-owned transaction, no-op if there was nothing staged.
+        if not flushed_keys and len(txn) == 0:
+            raise ValueError("No pending edits to flush.")
+        result = txn.commit()
         for kind, entity_id in flushed_keys:
             self._snapshot.clear_staged(kind=kind, entity_id=entity_id)
-        return txn
+        return result
 
     def place_device(self: _HasInspectState, device_id: str, x: float, y: float) -> CommitResult:
         """Move a device to grid coordinates (single auto-committed change)."""
@@ -336,72 +315,6 @@ class InspectWriteMixin:
         with self.transaction() as tx:
             tx.remove_device(device_id)
             return tx.commit()
-
-
-def _is_single_editable(obj: Any) -> bool:
-    from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
-    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
-    from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
-    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
-
-    return isinstance(obj, (InspectDevice, InspectVertex, InspectEdge, InspectModule))
-
-
-def _stage_editable(
-    tx: InspectTransaction,
-    snapshot: "InspectSnapshot",
-    obj: Editable,
-) -> list[tuple[str, str]]:
-    """Stage pending edits for ``obj`` (and cascade children for a device). Returns flushed keys."""
-    from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
-    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
-    from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
-    from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
-    from videoipath_automation_tool.apps.inspect.transaction import _device_of
-
-    flushed: list[tuple[str, str]] = []
-
-    if isinstance(obj, InspectDevice):
-        device_edits = snapshot.get_staged_edits("device", obj.id)
-        if device_edits:
-            tx.update_device(obj.id, intents=device_edits)
-            flushed.append(("device", obj.id))
-        for kind, entity_id, intents in snapshot.iter_staged_edits():
-            if kind == "vertex" and _device_of(entity_id) == obj.id and intents:
-                tx.update_vertex(entity_id, intents=intents)
-                flushed.append((kind, entity_id))
-            elif kind == "module" and _device_of(entity_id) == obj.id and intents:
-                tx.update_module(entity_id, intents=intents)
-                flushed.append((kind, entity_id))
-            elif kind == "edge" and intents:
-                from_id, _, to_id = entity_id.partition("::")
-                if _device_of(from_id) == obj.id or _device_of(to_id) == obj.id:
-                    tx.update_edge(entity_id, intents=intents)
-                    flushed.append((kind, entity_id))
-        return flushed
-
-    if isinstance(obj, InspectVertex):
-        edits = snapshot.get_staged_edits("vertex", obj.id)
-        if edits:
-            tx.update_vertex(obj.id, intents=edits)
-            flushed.append(("vertex", obj.id))
-        return flushed
-
-    if isinstance(obj, InspectEdge):
-        edits = snapshot.get_staged_edits("edge", obj.id)
-        if edits:
-            tx.update_edge(obj.id, intents=edits)
-            flushed.append(("edge", obj.id))
-        return flushed
-
-    if isinstance(obj, InspectModule):
-        edits = snapshot.get_staged_edits("module", obj.id)
-        if edits:
-            tx.update_module(obj.id, intents=edits)
-            flushed.append(("module", obj.id))
-        return flushed
-
-    raise TypeError(f"Unsupported update target: {type(obj)!r}")
 
 
 __all__ = ["InspectWriteMixin"]

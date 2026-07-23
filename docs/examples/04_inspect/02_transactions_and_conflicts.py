@@ -7,9 +7,8 @@ example batches a device edit, a vertex edit, and a new connection into one comm
 handle a concurrent modification: the commit detects it, raises ``InspectCommitConflictError``, and you
 ``rebase`` onto fresh server state and retry.
 
-The recommended way to stage domain-object edits into a transaction is
-``app.inspect.update(objects, tx=tx)``; the keyword-style ``tx.update_device(...)`` is shown as an
-alternative.
+The recommended way to stage domain-object edits into a transaction is ``tx.update(objects)``;
+the keyword-style ``tx.update_device(...)`` is shown as an alternative.
 
 Prerequisites
 -------------
@@ -50,7 +49,7 @@ def main() -> None:
     leaf_out.use_as_endpoint = True
     try:
         with app.inspect.transaction() as tx:
-            app.inspect.update([leaf, leaf_out], tx=tx)  # stage setter edits into the transaction
+            tx.update([leaf, leaf_out])  # stage setter edits into the transaction
             tx.connect(leaf_out.id, spine_in.id, bidirectional=True)  # edge creation (no setter form)
             result = tx.commit()
         print("Committed:", result.applied_ids)
@@ -67,7 +66,7 @@ def main() -> None:
     # Stage the edit once, then retry the commit; rebase re-fetches baselines and keeps our intent.
     leaf.description = "Rack A leaf (updated)"
     tx = app.inspect.transaction()
-    app.inspect.update(leaf, tx=tx)
+    tx.update(leaf)
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             tx.commit()

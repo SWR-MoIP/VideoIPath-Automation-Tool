@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 class InspectEdge(InspectEditableModel):
     """A directed external edge. Live status fields come from the collector skeleton; Edit Edge
     dialog fields resolve from the lazily-fetched edit form, with pending setter edits taking
-    precedence (read-your-writes). Flush with ``app.inspect.update(edge)``."""
+    precedence (read-your-writes). Flush with ``app.inspect.update(edge)`` or ``tx.update(edge)``
+    inside a transaction."""
 
     snapshot: InspectSnapshot
     indexed: _IndexedEdge

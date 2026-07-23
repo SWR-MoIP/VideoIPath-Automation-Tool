@@ -89,7 +89,7 @@ def main() -> None:
             for vertex in device.codec_vertices:
                 vertex.use_as_endpoint = True
                 vertex.sips_mode = "SIPSAuto"
-            app.inspect.update(device, tx=tx)  # cascades the device + its dirty vertices
+            tx.update(device)  # cascades the device + its dirty vertices
         tx.commit()
 
     # --- 6. Connect devices per the cabling data ------------------------------
