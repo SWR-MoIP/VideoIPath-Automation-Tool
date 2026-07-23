@@ -33,7 +33,11 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiSingleVertexInfo,
     InspectPortStatus,
 )
-from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, InspectInternalModel
+from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectFrozenModel,
+    InspectInternalModel,
+    _STAGED_MISSING,
+)
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
@@ -104,6 +108,10 @@ class InspectSnapshot:
         # Entities whose post-write re-fetch failed; re-fetched lazily on next access ([ADR-0010]).
         self._stale_devices: set[str] = set()
         self._stale_pairs: set[str] = set()
+
+        # Pending domain-object edits (wire-field intents) staged by setters before update()/commit.
+        # Keyed by (kind, entity_id) where kind is "device" / "vertex" / "edge".
+        self._pending_edits: dict[tuple[str, str], dict[str, Any]] = {}
 
         for node in device_items or []:
             self._index_device(node, device_level)
@@ -240,13 +248,18 @@ class InspectSnapshot:
         }
 
     def get_vertex(
-        self, vertex_id: str, vertex_info: Optional["InspectApiSingleVertexInfo"] = None
+        self,
+        vertex_id: str,
+        vertex_info: Optional["InspectApiSingleVertexInfo"] = None,
+        *,
+        port_factory_label: str | None = None,
     ) -> Optional["InspectVertex"]:
         """Typed vertex view for ``vertex_id`` (triggers a cached ``lookupInspectVertexById``); the
         concrete subclass is chosen from the edit form's ``typeFields.type``. ``vertex_info`` (the
         owning port's offline ``vertexInfo`` side) supplies the direction/status flags: when it is
         given a base vertex is still returned even if the edit form is unavailable; without it, an
-        unknown vertex returns None."""
+        unknown vertex returns None. ``port_factory_label`` (when built via a port) is exposed as
+        :attr:`InspectVertex.factory_label`."""
         lookup = self.get_vertex_details(vertex_id)
         if lookup is None and vertex_info is None:
             return None
@@ -254,7 +267,7 @@ class InspectSnapshot:
         kind = type_fields.type if type_fields is not None else None
         from videoipath_automation_tool.apps.inspect.domain.vertex import build_vertex
 
-        return build_vertex(self, vertex_id, kind, vertex_info)
+        return build_vertex(self, vertex_id, kind, vertex_info, port_factory_label=port_factory_label)
 
     # --- Edge reads (no hydration) ---
 
@@ -365,6 +378,63 @@ class InspectSnapshot:
             return
         with ThreadPoolExecutor(max_workers=min(_PRELOAD_WORKERS, len(pending))) as pool:
             list(pool.map(self._ensure_device_detail, pending))
+
+    # --- Pending domain edits (setters → update()) ---
+
+    def stage_edit(self, kind: str, entity_id: str, field: str, value: Any) -> None:
+        """Record a pending wire-field intent for ``entity_id`` (``kind``: device/vertex/edge/module)."""
+        with self._lock:
+            self._pending_edits.setdefault((kind, entity_id), {})[field] = value
+
+    def get_staged_edits(self, kind: str, entity_id: str) -> dict[str, Any]:
+        """Return a copy of the pending intents for ``entity_id``, or an empty dict."""
+        with self._lock:
+            return dict(self._pending_edits.get((kind, entity_id), {}))
+
+    def get_staged_value(self, kind: str, entity_id: str, field: str) -> Any:
+        """Return the staged value for ``field``, or ``_STAGED_MISSING`` if none."""
+        with self._lock:
+            edits = self._pending_edits.get((kind, entity_id))
+            if edits is None or field not in edits:
+                return _STAGED_MISSING
+            return edits[field]
+
+    def iter_staged_edits(self, kind: str | None = None) -> list[tuple[str, str, dict[str, Any]]]:
+        """All pending edits as ``(kind, entity_id, intents)``. Optionally filter by ``kind``."""
+        with self._lock:
+            return [
+                (k, eid, dict(intents))
+                for (k, eid), intents in self._pending_edits.items()
+                if kind is None or k == kind
+            ]
+
+    def clear_staged(
+        self,
+        *,
+        kind: str | None = None,
+        entity_id: str | None = None,
+        entity_ids: Optional[list[str]] = None,
+    ) -> None:
+        """Clear pending edits. With ``entity_id``/``entity_ids``, clear those keys (optionally
+        scoped by ``kind``); with only ``kind``, clear every entity of that kind; with neither,
+        clear all."""
+        with self._lock:
+            if entity_id is not None:
+                ids = [entity_id]
+            elif entity_ids is not None:
+                ids = list(entity_ids)
+            else:
+                ids = None
+            if ids is None and kind is None:
+                self._pending_edits.clear()
+                return
+            for key in list(self._pending_edits):
+                k, eid = key
+                if kind is not None and k != kind:
+                    continue
+                if ids is not None and eid not in ids:
+                    continue
+                self._pending_edits.pop(key, None)
 
     # --- Refresh ---
 
@@ -935,4 +1005,4 @@ def _iter_ports(
     yield from ports
 
 
-__all__ = ["InspectSnapshot", "HydrationLevel"]
+__all__ = ["InspectSnapshot", "HydrationLevel", "_STAGED_MISSING"]

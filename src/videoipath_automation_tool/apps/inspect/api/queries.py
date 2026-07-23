@@ -3,7 +3,7 @@
 Every query string here is **verified live against VideoIPath 2025.4.9** and is the
 concrete basis for the skeleton-first + lazy-hydration loading model ([ADR-0007]).
 The Inspect UI issues the same paths over WebSocket subscriptions; the package
-issues them as REST GETs (see docs/inspect-app/endpoints.md).
+issues them as REST GETs (see docs/architecture/inspect-app/endpoints.md).
 
 Projection grammar used below (verified):
 - ``*``            select all items of a collection

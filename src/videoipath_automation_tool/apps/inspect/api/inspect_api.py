@@ -34,6 +34,10 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
 from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiSimpleActionResponse,
 )
+from videoipath_automation_tool.apps.inspect.model.tags import (
+    InspectApiAssignTagData,
+    InspectApiAssignTagRequest,
+)
 from videoipath_automation_tool.apps.inspect.model.update_topology import (
     InspectApiUpdateTopologyData,
     InspectApiUpdateTopologyRequest,
@@ -144,6 +148,18 @@ class InspectAPI:
         response = self.vip_connector.rest.post("/rest/v2/actions/status/collector/updateTopology", request)
         return InspectApiUpdateTopologyResponse.model_validate(_post_envelope(response))
 
+    def assign_tag(self, tag_id: str, element_ids: list[str]) -> InspectApiSimpleActionResponse:
+        """Bind ``tag_id`` to one or more resource ids (e.g. ``device:{modulePid}``)."""
+        request = InspectApiAssignTagRequest(data=InspectApiAssignTagData(tagId=tag_id, elementIds=element_ids))
+        response = self.vip_connector.rest.post("/rest/v2/actions/status/tags/assignTag", request)
+        return _tag_action_response(response)
+
+    def unassign_tag(self, tag_id: str, element_ids: list[str]) -> InspectApiSimpleActionResponse:
+        """Remove ``tag_id`` from one or more resource ids (e.g. ``device:{modulePid}``)."""
+        request = InspectApiAssignTagRequest(data=InspectApiAssignTagData(tagId=tag_id, elementIds=element_ids))
+        response = self.vip_connector.rest.post("/rest/v2/actions/status/tags/unassignTag", request)
+        return _tag_action_response(response)
+
     def add_devices(self, items: list[InspectApiAddDevicesItem]) -> InspectApiSimpleActionResponse:
         request = InspectApiAddDevicesRequest(data=items)
         response = self.vip_connector.rest.post("/rest/v2/actions/status/network/addDevices", request)
@@ -207,6 +223,17 @@ def _header_dict(response: Any) -> dict[str, Any]:
 def _post_envelope(response: Any) -> dict[str, Any]:
     """Reassemble a ``{data, header}`` dict from a ResponseV2Post for DTO validation."""
     return {"data": response.data, "header": _header_dict(response)}
+
+
+def _tag_action_response(response: Any) -> InspectApiSimpleActionResponse:
+    """Normalize assignTag / unassignTag responses (server often returns ``data: null``)."""
+    header = _header_dict(response)
+    data = response.data
+    if not isinstance(data, dict):
+        data = {"ok": bool(header.get("ok")), "msg": list(header.get("msg") or [])}
+    elif "ok" not in data:
+        data = {**data, "ok": bool(header.get("ok")), "msg": list(data.get("msg") or header.get("msg") or [])}
+    return InspectApiSimpleActionResponse.model_validate({"data": data, "header": header})
 
 
 __all__ = ["InspectAPI"]

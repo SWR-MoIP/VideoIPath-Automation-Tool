@@ -31,8 +31,9 @@ Inspect does **not** replace the **Inventory** app. Devices are still onboarded
 in Inventory first; only then can they be placed and connected in Inspect. So
 Inventory remains a separate, required prerequisite.
 
-In **this package**, `app.inspect` is added **additively** — `app.topology` and
-`app.inventory` keep working unchanged, with no deprecation planned.
+In **this package**, `app.inspect` replaces `app.topology`: `TopologyApp` is
+deprecated on VideoIPath 2025.x and unsupported on 2026.x+. `app.inventory`
+remains unchanged and required for device onboarding.
 
 ## 2. Architecture: the `collector` facade
 
@@ -292,22 +293,24 @@ the package keeps a separate Inspect model namespace (`InspectApiBaseDevice`,
 model classes in Inspect DTOs. `updateTopology` is **last-writer-wins** — a
 stale `_rev` in the payload is ignored ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorupdatetopology)).
 
-### 3.4 Tagging — device vs. vertex (Inspect vs. Topology)
+### 3.4 Tagging — device vs. vertex vs. module (Inspect vs. Topology)
 
-Inspect distinguishes two tag scopes. This is a **key difference from
+Inspect distinguishes three tag scopes. This is a **key difference from
 `app.topology`**, which only models tags on topology **devices** (`baseDevice`
 entries in `nGraphElements`).
 
-| Scope | What is tagged | Topology / `nGraphElements` | Inspect read surface | Server storage |
-| ----- | -------------- | --------------------------- | -------------------- | -------------- |
-| **Device** | Topology node (`baseDevice`) | `tags` on the `baseDevice` item | `nodeStatus` `tags` / `meta.tags` / `tagsInfo`; `lookupInspectDevice` | `ngraph` / `nGraphElements` |
-| **Vertex** | Individual port vertex (`ipVertex`, `codecVertex`, …) | **Not present** — no vertex-tag field on persisted graph elements | Hydrated port `tagsInfo`; editable form in `lookupInspectVertexByIds` | `videoipath_docs.device_tags` (separate from `ngraph`) |
+| Scope | What is tagged | Topology / `nGraphElements` | Inspect read surface | Write path |
+| ----- | -------------- | --------------------------- | -------------------- | ---------- |
+| **Device** | Topology node (`baseDevice`) | `tags` on the `baseDevice` item | `nodeStatus` `tags` / `meta.tags` / `tagsInfo`; `lookupInspectDevice` | `updateTopology` `replaceDevices` |
+| **Vertex** | Individual port vertex (`ipVertex`, `codecVertex`, …) | **Not present** — no vertex-tag field on persisted graph elements | Hydrated port `tagsInfo`; editable form in `lookupInspectVertexByIds` | `updateTopology` `replaceVertices` (`localAssignedTags`) |
+| **Module** | Device module / slot | **Not present** | Hydrated module `tagsInfo` on `nodeStatus` | `assignTag` / `unassignTag` with `elementIds: ["device:{modulePid}"]` |
 
 **Implications for the package:**
 
 - `app.topology` reads/writes device tags via `nGraphElements` only. It has no
   API for binding tags to a vertex id such as
-  `device-a.module-1.port-out-1.out`.
+  `device-a.module-1.port-out-1.out`, nor for module resource ids such as
+  `device:device-a.dev.0`.
 - `app.inspect` must treat vertex tags as a **separate concern** from the
   persisted graph element shape. Do not assume a vertex's `tags` array in an
   `nGraphElements` `ipVertex` / `codecVertex` item (if present at all) is the
@@ -316,6 +319,12 @@ entries in `nGraphElements`).
 - Stage-time baselines and compare-and-commit for vertex edits must use
   `lookupInspectVertexByIds` for tag fields ([ADR-0009](./decisions/0009-write-consistency.md)),
   not `nGraphElements` or the collector skeleton.
+- Module tags are **not** written via `updateTopology`. The Inspect UI uses
+  `POST …/actions/status/tags/assignTag` and `…/unassignTag` with a single
+  `tagId` plus `elementIds`. The package diffs the desired local tag list
+  against `tagsInfo.assigned.local` and issues one call per added/removed tag.
+  These RPCs are separate from the topology commit (not one atomic server
+  transaction).
 - Collector `tagInfo` provides tag → profile metadata for the aggregate; it does
   not replace per-vertex `assignedTags` on the lookup response.
 
@@ -414,6 +423,7 @@ Write consistency & post-commit refresh ([ADR-0009](./decisions/0009-write-consi
 
 - [x] Persisted-element lookups: `lookupInspectEdgesByIds` returns the **full persisted edge form** (batched); `lookupInspectVertexById`/`…ByIds` and `lookupInspectDevice` return editable forms; **no `_rev` in any lookup response**; `lookupGraphElement` does **not** exist; `lookupNodeInfo`/`lookupEdgeInfo`/`lookupDeviceVertices` are display-oriented ([endpoints.md](./endpoints.md#post-restv2actionsstatuscollectorlookupinspectedgesbyids))
 - [x] Vertex tag bindings: separate from `nGraphElements` — stored server-side in `videoipath_docs.device_tags`; surfaced on `lookupInspectVertexByIds` (`assignedTags`, `fields.tags`, `fields.localAssignedTags`) and hydrated port `tagsInfo` in `nodeStatus`; not modelled by `app.topology` (§3.4)
+- [x] Module tag bindings: read from hydrated module `tagsInfo`; write via `assignTag` / `unassignTag` with `device:{modulePid}` element ids (not `updateTopology`) (§3.4)
 - [x] UI edit/commit flows avoid `nGraphElements`: the Inspect UI bundle contains zero references; the edge edit flow calls `lookupInspectEdgesByIds` with both pair directions ([ADR-0008](./decisions/0008-collector-only-endpoints.md))
 - [x] Batched lookups for compare-and-commit baselines: `…ByIds` actions take id lists natively
 - [x] Direct edge-pair addressing for targeted refresh: `externalEdgesByDeviceKey/<deviceA::deviceB>/<projection>` returns the single pair item

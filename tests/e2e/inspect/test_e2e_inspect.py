@@ -17,7 +17,17 @@ import pytest
 from videoipath_automation_tool.apps.inspect.errors import InspectCommitConflictError, InspectCommitError
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 
-from ..helpers import TEST_TAG_ID, FetchSpy, TopologyBuilder, create_test_tag, delete_test_tag, edges_between
+from ..helpers import (
+    MODULE_TEST_TAG_ID,
+    TEST_TAG_ID,
+    FetchSpy,
+    TopologyBuilder,
+    create_module_test_tag,
+    create_test_tag,
+    delete_module_test_tag,
+    delete_test_tag,
+    edges_between,
+)
 
 
 pytestmark = pytest.mark.e2e
@@ -120,6 +130,39 @@ def test_assign_tag_to_port(app: VideoIPathApp, topology_builder: TopologyBuilde
         assert TEST_TAG_ID in port.tags
     finally:
         delete_test_tag(app)  # also removes the port binding
+
+
+def test_assign_and_unassign_module_tag(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
+    """Create a dedicated catalog tag, assign it to a module, then unassign it."""
+    (device_id,) = topology_builder.add_devices([("MOD-TAG-A", 2)])
+    create_module_test_tag(app)
+    try:
+        app.inspect.refresh()
+        device = app.inspect.get_device(device_id)
+        assert device is not None
+        assert device.modules, "mock device should expose at least one module"
+        module = device.modules[0]
+        module_id = module.id
+
+        module.tags = [MODULE_TEST_TAG_ID]
+        result = app.inspect.update(module)
+        assert result.ok
+
+        app.inspect.refresh()
+        module = app.inspect.get_device(device_id).get_module(module_id)
+        assert module is not None
+        assert MODULE_TEST_TAG_ID in module.tags
+
+        module.tags = []
+        result = app.inspect.update(module)
+        assert result.ok
+
+        app.inspect.refresh()
+        module = app.inspect.get_device(device_id).get_module(module_id)
+        assert module is not None
+        assert MODULE_TEST_TAG_ID not in module.tags
+    finally:
+        delete_module_test_tag(app)
 
 
 def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:

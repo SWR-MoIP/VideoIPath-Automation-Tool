@@ -104,6 +104,12 @@ app.inspect.update_edge(edge_id, weight=10)
 # "Category~~name" id; read them back with port.tags.
 app.inspect.update_vertex("device12.1.Ethernet1.out", tags=["Video~~1080p50"])
 
+# Module tags use the same setter / update() pattern (backed by assignTag / unassignTag).
+module = device.get_module("device12.dev.0")
+module.tags = ["Format~~V_720p60"]
+app.inspect.update(module)
+# or: app.inspect.update_module("device12.dev.0", tags=["Format~~V_720p60"])
+
 app.inspect.connect(
     "device12.1.Ethernet1.out",
     "device7.0.swp1.in",
@@ -171,4 +177,4 @@ app.inspect.sync_devices(["device12"], add_only=True, conflict_strategy=Conflict
   triggers a read. Reads and hydration are internally consistent under concurrent access, but a
   single `VideoIPathApp` is otherwise intended for single-owner use.
 - For the design rationale, see the architecture docs under
-  [`docs/inspect-app/`](../inspect-app/README.md).
+  [`docs/architecture/inspect-app/`](../architecture/inspect-app/README.md).

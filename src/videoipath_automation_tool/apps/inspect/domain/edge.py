@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiExternalEdgeLiveStatus
 from videoipath_automation_tool.apps.inspect.model.common import (
     CONFLICT_PRIORITY_BY_INT,
+    CONFLICT_PRIORITY_TO_INT,
     InspectConfigPriority,
-    InspectFrozenModel,
+    InspectEditableModel,
     InspectRedundancyMode,
 )
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _IndexedEdge
@@ -18,9 +19,17 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.model.actions import InspectApiEdgeForm
 
 
-class InspectEdge(InspectFrozenModel):
+class InspectEdge(InspectEditableModel):
+    """A directed external edge. Live status fields come from the collector skeleton; Edit Edge
+    dialog fields resolve from the lazily-fetched edit form, with pending setter edits taking
+    precedence (read-your-writes). Flush with ``app.inspect.update(edge)``."""
+
     snapshot: InspectSnapshot
     indexed: _IndexedEdge
+
+    @property
+    def _edit_kind(self) -> Literal["edge"]:
+        return "edge"
 
     @property
     def id(self) -> str:
@@ -56,6 +65,7 @@ class InspectEdge(InspectFrozenModel):
 
     @property
     def bandwidth(self) -> float | int | None:
+        """Live bandwidth status. For the configured capacity use :attr:`bandwidth_capacity`."""
         return self.indexed.edge.bandwidth
 
     @property
@@ -87,84 +97,176 @@ class InspectEdge(InspectFrozenModel):
     @property
     def label(self) -> str | None:
         """Manual edge label ("Label" in the Edit Edge dialog)."""
-        form = self._edit_form()
-        return form.descriptor.label if form else None
+        return self._staged_or(
+            "descriptor.label",
+            lambda: f.descriptor.label if (f := self._edit_form()) else None,
+        )
+
+    @label.setter
+    def label(self, value: str) -> None:
+        self._stage("descriptor.label", value)
 
     @property
     def description(self) -> str | None:
         """Edge description ("Description" in the Edit Edge dialog)."""
-        form = self._edit_form()
-        return form.descriptor.desc if form else None
+        return self._staged_or(
+            "descriptor.desc",
+            lambda: f.descriptor.desc if (f := self._edit_form()) else None,
+        )
+
+    @description.setter
+    def description(self, value: str) -> None:
+        self._stage("descriptor.desc", value)
 
     @property
     def tags(self) -> list[str]:
-        form = self._edit_form()
-        return list(form.tags) if form else []
+        return self._staged_or("tags", lambda: list(self._form_get("tags") or []), adapt=list)
+
+    @tags.setter
+    def tags(self, value: list[str]) -> None:
+        self._stage("tags", list(value))
 
     @property
     def active(self) -> bool | None:
-        form = self._edit_form()
-        return form.active if form else None
+        return self._staged_or("active", lambda: self._form_get("active"))
+
+    @active.setter
+    def active(self, value: bool) -> None:
+        self._stage("active", value)
 
     @property
     def include_formats(self) -> list[str]:
-        form = self._edit_form()
-        return list(form.includeFormats) if form else []
+        return self._staged_or(
+            "includeFormats",
+            lambda: list(self._form_get("includeFormats") or []),
+            adapt=list,
+        )
+
+    @include_formats.setter
+    def include_formats(self, value: list[str]) -> None:
+        self._stage("includeFormats", list(value))
 
     @property
     def exclude_formats(self) -> list[str]:
-        form = self._edit_form()
-        return list(form.excludeFormats) if form else []
+        return self._staged_or(
+            "excludeFormats",
+            lambda: list(self._form_get("excludeFormats") or []),
+            adapt=list,
+        )
+
+    @exclude_formats.setter
+    def exclude_formats(self, value: list[str]) -> None:
+        self._stage("excludeFormats", list(value))
 
     @property
     def conflict_priority(self) -> InspectConfigPriority | int | str | None:
         """Conflict priority ("Conflict priority" in the UI): ``"off"`` / ``"high"`` / ``"normal"`` /
         ``"low"`` (mapped from the on-wire int), or the raw value if unrecognized."""
-        form = self._edit_form()
-        if form is None:
-            return None
-        raw = form.conflictPri
-        return CONFLICT_PRIORITY_BY_INT.get(raw, raw) if isinstance(raw, int) else raw
+        return self._staged_or(
+            "conflictPri",
+            lambda: self._map_conflict_priority(self._form_get("conflictPri")),
+            adapt=self._map_conflict_priority,
+        )
+
+    @conflict_priority.setter
+    def conflict_priority(self, value: InspectConfigPriority | int | str) -> None:
+        wire = CONFLICT_PRIORITY_TO_INT.get(value, value) if isinstance(value, str) else value
+        self._stage("conflictPri", wire)
 
     @property
     def redundancy_mode(self) -> InspectRedundancyMode | str | None:
-        form = self._edit_form()
-        return form.redundancyMode if form else None
+        return self._staged_or("redundancyMode", lambda: self._form_get("redundancyMode"))
+
+    @redundancy_mode.setter
+    def redundancy_mode(self, value: InspectRedundancyMode | str) -> None:
+        self._stage("redundancyMode", value)
 
     @property
     def fixed_weight(self) -> int | None:
         """Fixed routing weight/cost ("Fixed weight" in the UI)."""
-        form = self._edit_form()
-        return form.weight if form else None
+        return self._staged_or("weight", lambda: self._form_get("weight"))
+
+    @fixed_weight.setter
+    def fixed_weight(self, value: int) -> None:
+        self._stage("weight", value)
+
+    @property
+    def weight(self) -> int | None:
+        return self.fixed_weight
+
+    @weight.setter
+    def weight(self, value: int) -> None:
+        self.fixed_weight = value
 
     @property
     def bandwidth_capacity(self) -> float | int | None:
         """Configured max bandwidth in Mbit/s ("Bandwidth capacity" in the UI); ``-1.0`` = disabled.
-        Distinct from :attr:`bandwidth`, which is the live status value."""
-        form = self._edit_form()
-        return form.bandwidth if form else None
+        Distinct from the live status bandwidth when no edit is staged."""
+        return self._staged_or("bandwidth", lambda: self._form_get("bandwidth"))
+
+    @bandwidth_capacity.setter
+    def bandwidth_capacity(self, value: float | int) -> None:
+        self._stage("bandwidth", value)
 
     @property
     def services_capacity(self) -> int | None:
         """Max number of simultaneous services ("Services capacity" in the UI); ``65535`` = unlimited."""
-        form = self._edit_form()
-        return form.capacity if form else None
+        return self._staged_or("capacity", lambda: self._form_get("capacity"))
+
+    @services_capacity.setter
+    def services_capacity(self, value: int) -> None:
+        self._stage("capacity", value)
+
+    @property
+    def capacity(self) -> int | None:
+        return self.services_capacity
+
+    @capacity.setter
+    def capacity(self, value: int) -> None:
+        self.services_capacity = value
 
     @property
     def bandwidth_weight_factor(self) -> int | None:
         """Bandwidth-based weight factor ("Bandwidth weight factor" in the UI)."""
-        form = self._edit_form()
-        if form is None:
-            return None
-        return (form.weightFactors.get("bandwidth") or {}).get("weight")
+        return self._staged_or(
+            "weightFactors.bandwidth.weight",
+            lambda: self._weight_factor("bandwidth"),
+        )
+
+    @bandwidth_weight_factor.setter
+    def bandwidth_weight_factor(self, value: int) -> None:
+        self._stage("weightFactors.bandwidth.weight", value)
 
     @property
     def weight_per_service(self) -> int | None:
         """Service-based weight factor ("Weight per service" in the UI)."""
-        form = self._edit_form()
-        if form is None:
-            return None
-        return (form.weightFactors.get("service") or {}).get("weight")
+        return self._staged_or(
+            "weightFactors.service.weight",
+            lambda: self._weight_factor("service"),
+        )
+
+    @weight_per_service.setter
+    def weight_per_service(self, value: int) -> None:
+        self._stage("weightFactors.service.weight", value)
 
     def _edit_form(self) -> InspectApiEdgeForm | None:
         return self.snapshot.get_edge_details(self.id)
+
+    def _form_get(self, attr: str, default: Any = None) -> Any:
+        form = self._edit_form()
+        return getattr(form, attr, default) if form is not None else default
+
+    def _weight_factor(self, key: str) -> int | None:
+        form = self._edit_form()
+        if form is None:
+            return None
+        return (form.weightFactors.get(key) or {}).get("weight")
+
+    @staticmethod
+    def _map_conflict_priority(raw: Any) -> InspectConfigPriority | int | str | None:
+        if raw is None:
+            return None
+        return CONFLICT_PRIORITY_BY_INT.get(raw, raw) if isinstance(raw, int) else raw
+
+
+__all__ = ["InspectEdge"]

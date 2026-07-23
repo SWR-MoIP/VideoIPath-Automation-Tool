@@ -34,6 +34,7 @@ from videoipath_automation_tool.apps.inspect.errors import (
     InspectCommitError,
     InspectConflict,
     InspectEntityNotFoundError,
+    InspectError,
 )
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiEdgeForm,
@@ -43,6 +44,7 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
 )
 from videoipath_automation_tool.apps.inspect.model.common import (
     CONFLICT_PRIORITY_TO_INT,
+    InspectApiSimpleActionResponse,
     InspectConfigPriority,
     InspectFrozenModel,
     InspectIconSize,
@@ -51,6 +53,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectRedundancyMode,
     InspectSdpStrategy,
 )
+from videoipath_automation_tool.apps.inspect.model.tags import module_resource_id
 from videoipath_automation_tool.apps.inspect.model.update_topology import (
     InspectApiUpdateTopologyData,
     InspectApiUpdateTopologyResponse,
@@ -62,11 +65,15 @@ if TYPE_CHECKING:
 
 
 class CommitResult(InspectFrozenModel):
-    """Outcome of a successful commit ([ADR-0006]); a failed commit raises ``InspectCommitError``."""
+    """Outcome of a successful commit ([ADR-0006]); a failed commit raises ``InspectCommitError``.
+
+    ``response`` is ``None`` when the commit only applied module tag assign/unassign ops (no
+    ``updateTopology`` call).
+    """
 
     applied_ids: list[str]
     created_ids: list[str]
-    response: InspectApiUpdateTopologyResponse
+    response: InspectApiUpdateTopologyResponse | None = None
 
     @property
     def ok(self) -> bool:
@@ -74,7 +81,7 @@ class CommitResult(InspectFrozenModel):
 
     @property
     def validation(self) -> Any:
-        return self.response.data.validation
+        return self.response.data.validation if self.response is not None else None
 
 
 class InspectTransaction:
@@ -143,7 +150,9 @@ class InspectTransaction:
         sdp_strategy: Optional[InspectSdpStrategy | str] = None,
         site_id: Optional[str] = None,
         tags: Optional[list[str]] = None,
+        local_assigned_tags: Optional[list[str]] = None,
         coordinates: Optional[dict[str, float]] = None,
+        intents: Optional[dict[str, Any]] = None,
     ) -> "InspectTransaction":
         """Edit a device's edit-dialog fields (``replaceDevices``).
 
@@ -153,6 +162,8 @@ class InspectTransaction:
         (it is mandatory server-side); ``label`` / ``description`` are applied to it only when set here.
         """
         entry = self._stage_device(device_id)
+        if intents:
+            entry.intents.update(intents)
         if label is not None:
             entry.intents["descriptor.label"] = label
         if description is not None:
@@ -167,6 +178,8 @@ class InspectTransaction:
             entry.intents["siteId"] = site_id
         if tags is not None:
             entry.intents["tags"] = list(tags)
+        if local_assigned_tags is not None:
+            entry.intents["localAssignedTags"] = list(local_assigned_tags)
         if coordinates is not None:
             entry.intents["coordinates"] = dict(coordinates)
         return self
@@ -180,12 +193,16 @@ class InspectTransaction:
         use_as_endpoint: Optional[bool] = None,
         label: Optional[str] = None,
         tags: Optional[list[str]] = None,
+        form_tags: Optional[list[str]] = None,
         description: Optional[str] = None,
         active: Optional[bool] = None,
         sips_mode: Optional[str] = None,
+        control: Optional[str] = None,
         control_props: Optional[Any] = None,
         extra_alert_filters: Optional[list[Any]] = None,
         custom: Optional[dict[str, Any]] = None,
+        queueable: Optional[bool] = None,
+        destination_monitor_leader: Optional[bool] = None,
         park_port: Optional[int] = None,
         # IP-vertex ``typeFields`` (only meaningful on IP vertices):
         ip_address: Optional[str] = None,
@@ -201,15 +218,35 @@ class InspectTransaction:
         supports_static_igmp: Optional[bool] = None,
         supports_vlan: Optional[bool] = None,
         supports_vpls: Optional[bool] = None,
+        # Codec-vertex ``typeFields.specific`` / ``typeFields.generic``:
+        sdp_support: Optional[bool] = None,
+        is_igmp_source: Optional[bool] = None,
+        specific_type: Optional[str] = None,
+        codec_format: Optional[str] = None,
+        multiplicity: Optional[int] = None,
+        codec_public: Optional[bool] = None,
+        extra_formats: Optional[list[Any]] = None,
+        bidir_partner_id: Optional[str] = None,
+        partner_config: Optional[Any] = None,
+        service_id: Optional[Any] = None,
+        main_src_info: Optional[dict[str, Any]] = None,
+        main_dst_info: Optional[dict[str, Any]] = None,
+        spare_src_info: Optional[dict[str, Any]] = None,
+        spare_dst_info: Optional[dict[str, Any]] = None,
+        main_destination_port: Optional[int] = None,
+        spare_destination_port: Optional[int] = None,
+        # Raw wire-field intents (used by domain-object flush / update()):
+        intents: Optional[dict[str, Any]] = None,
     ) -> "InspectTransaction":
         """Edit a vertex/port (``replaceVertices``; update-only — vertices cannot be created here).
 
-        Covers the "Edit vertex" / bulk-edit dialogs: base fields plus the IP-vertex ``typeFields``
-        (address, netmask, VLAN, VRF, public, and the "Config supports" flags). ``tags`` assigns
-        catalog tags to the port (as ``Category~~name`` ids), written to the vertex
-        ``localAssignedTags``.
+        Covers the "Edit vertex" / bulk-edit dialogs: base fields, IP-vertex ``typeFields``, and
+        codec ``typeFields.generic`` / ``typeFields.specific``. ``tags`` assigns catalog tags
+        (``localAssignedTags``); ``form_tags`` sets the form's distinct ``tags`` list.
         """
         entry = self._stage_vertex(vertex_id)
+        if intents:
+            entry.intents.update(intents)
         if use_as_endpoint is not None:
             entry.intents["useAsEndpoint"] = use_as_endpoint
         if label is not None:
@@ -218,12 +255,18 @@ class InspectTransaction:
             # Port tag assignment is the vertex's localAssignedTags (verified 2025.4.9); the
             # separate ``fields.tags`` list does not register as an assigned tag.
             entry.intents["localAssignedTags"] = list(tags)
+        if form_tags is not None:
+            entry.intents["tags"] = list(form_tags)
         if description is not None:
             entry.intents["desc"] = description
         if active is not None:
             entry.intents["active"] = active
         if sips_mode is not None:
             entry.intents["sipsMode"] = sips_mode
+        if control is not None:
+            # Best-effort: verified 2025.4.9 form has controlProps, not control; extra="allow"
+            # preserves a top-level control field if the server accepts it.
+            entry.intents["control"] = control
         if control_props is not None:
             if isinstance(control_props, dict):
                 entry.intents["controlProps"] = InspectApiVertexControlProps.model_validate(control_props)
@@ -233,9 +276,11 @@ class InspectTransaction:
             entry.intents["extraAlertFilters"] = list(extra_alert_filters)
         if custom is not None:
             entry.intents["custom"] = dict(custom)
+        if queueable is not None:
+            entry.intents["queueable"] = queueable
+        if destination_monitor_leader is not None:
+            entry.intents["destinationMonitorLeader"] = destination_monitor_leader
 
-        # IP-vertex typeFields, applied as one-level dotted intents (require a populated typeFields
-        # baseline, which IP/router/codec vertices have from the lookup edit form).
         for value, wire_field in (
             (park_port, "parkPort"),
             (ip_address, "ipAddress"),
@@ -254,6 +299,27 @@ class InspectTransaction:
         ):
             if value is not None:
                 entry.intents[f"typeFields.{wire_field}"] = value
+
+        for value, wire_path in (
+            (sdp_support, "typeFields.specific.sdpSupport"),
+            (is_igmp_source, "typeFields.specific.isIgmpSource"),
+            (specific_type, "typeFields.specific.type"),
+            (codec_format, "typeFields.generic.codecFormat"),
+            (multiplicity, "typeFields.generic.multiplicity"),
+            (codec_public, "typeFields.generic.public"),
+            (extra_formats, "typeFields.generic.extraFormats"),
+            (bidir_partner_id, "typeFields.generic.bidirPartnerId"),
+            (partner_config, "typeFields.generic.partnerConfig"),
+            (service_id, "typeFields.generic.serviceId"),
+            (main_src_info, "typeFields.generic.mainSrcInfo"),
+            (main_dst_info, "typeFields.generic.mainDstInfo"),
+            (spare_src_info, "typeFields.generic.spareSrcInfo"),
+            (spare_dst_info, "typeFields.generic.spareDstInfo"),
+            (main_destination_port, "typeFields.generic.mainDstInfo.port"),
+            (spare_destination_port, "typeFields.generic.spareDstInfo.port"),
+        ):
+            if value is not None:
+                entry.intents[wire_path] = list(value) if wire_path.endswith("extraFormats") else value
         return self
 
     # --- Staging: edges ---
@@ -276,6 +342,7 @@ class InspectTransaction:
         active: Optional[bool] = None,
         tags: Optional[list[str]] = None,
         also_opposite: bool = False,
+        intents: Optional[dict[str, Any]] = None,
     ) -> "InspectTransaction":
         """Edit an existing edge's "Edit Edge" dialog fields (``replaceEdges``).
 
@@ -297,6 +364,7 @@ class InspectTransaction:
             weight_per_service=weight_per_service,
             active=active,
             tags=tags,
+            intents=intents,
         )
         self._apply_edge_update(edge_id, fields)
         if also_opposite:
@@ -308,6 +376,8 @@ class InspectTransaction:
 
     def _apply_edge_update(self, edge_id: str, fields: dict[str, Any]) -> None:
         entry = self._stage_edge(edge_id)
+        if fields.get("intents"):
+            entry.intents.update(fields["intents"])
         if fields["label"] is not None:
             entry.intents["descriptor.label"] = fields["label"]
         if fields["description"] is not None:
@@ -379,32 +449,67 @@ class InspectTransaction:
         """Remove a device (its baseDevice element) from the topology graph."""
         return self.remove(device_id)
 
+    # --- Staging: modules (tag assign/unassign; not updateTopology) ---
+
+    def update_module(
+        self,
+        module_id: str,
+        *,
+        tags: Optional[list[str]] = None,
+        intents: Optional[dict[str, Any]] = None,
+    ) -> "InspectTransaction":
+        """Edit a module's locally assigned tags (``assignTag`` / ``unassignTag`` on commit).
+
+        Requires a bound snapshot so the current local tag set can be read for the diff. Tag ops
+        are separate RPCs from ``updateTopology`` and are not atomic with topology changes.
+        """
+        entry = self._stage_module(module_id)
+        if intents:
+            entry.intents.update(intents)
+        if tags is not None:
+            entry.intents["tags"] = list(tags)
+        return self
+
     # --- Commit lifecycle ---
 
     def commit(self, check_conflicts: bool = True) -> CommitResult:
         """Validate, send, and (on success) refresh. Raises on conflict or server rejection.
 
+        Topology entries go through ``updateTopology`` ([ADR-0006]). Module tag intents are applied
+        afterward via ``assignTag`` / ``unassignTag`` (not one atomic server transaction).
+
         Raises:
             InspectCommitConflictError: a staged entity changed on the server since staging.
-            InspectCommitError: the server rejected the commit (validation or apply gate).
+            InspectCommitError: the server rejected the topology commit (validation or apply gate).
+            InspectError: a module tag assign/unassign action failed.
         """
         self._ensure_open()
         if not self._entries:
             raise ValueError("Nothing staged; commit aborted.")
 
-        if check_conflicts:
+        topology_entries = [e for e in self._entries.values() if e.kind != _MODULE]
+        module_entries = [e for e in self._entries.values() if e.kind == _MODULE]
+
+        if check_conflicts and topology_entries:
             self._check_conflicts()
 
-        delta = self._build_delta()
-        response = self._api.update_topology(delta)
-        if not response.committed:
-            raise InspectCommitError(response)
+        response: InspectApiUpdateTopologyResponse | None = None
+        created_ids: list[str] = []
+        if topology_entries:
+            delta = self._build_delta()
+            response = self._api.update_topology(delta)
+            if not response.committed:
+                raise InspectCommitError(response)
+            created_ids = list(response.data.validation.createIds)
+
+        if module_entries:
+            self._commit_module_tags(module_entries)
 
         self._committed = True
         applied_ids = [e.entity_id for e in self._entries.values()]
         result = CommitResult(
             applied_ids=applied_ids,
-            created_ids=list(response.data.validation.createIds),
+            created_ids=created_ids,
             response=response,
         )
         self._refresh_snapshot()
@@ -416,11 +521,18 @@ class InspectTransaction:
 
         Use after ``InspectCommitConflictError`` to move the staged changes onto current server
         state; then ``commit()`` again. Intents that themselves target a concurrently-changed field
-        will overwrite that change (last-writer-wins for the intent).
+        will overwrite that change (last-writer-wins for the intent). Module tag baselines are
+        refreshed from the bound snapshot when present.
         """
         self._ensure_open()
         for entry in self._entries.values():
             if entry.remove or entry.is_new or entry.baseline_form is None:
+                continue
+            if entry.kind == _MODULE:
+                if self._snapshot is not None:
+                    tags = self._module_local_tags(entry.entity_id)
+                    entry.baseline_form = list(tags)
+                    entry.baseline_dump = {"tags": list(tags)}
                 continue
             fresh = self._fetch_baseline(entry.kind, entry.entity_id)
             entry.baseline_form = fresh
@@ -448,6 +560,30 @@ class InspectTransaction:
 
     def _stage_edge(self, edge_id: str) -> _Staged:
         return self._stage(_EDGE, edge_id)
+
+    def _stage_module(self, module_id: str) -> _Staged:
+        """Stage a module tag edit; baseline is the current local tag list from the snapshot."""
+        self._ensure_open()
+        key = (_MODULE, module_id)
+        existing = self._entries.get(key)
+        if existing is not None and not existing.remove:
+            return existing
+        if self._snapshot is None:
+            raise RuntimeError(
+                "Inspect snapshot is required to stage module tag edits (load the topology before updating modules)."
+            )
+        device_id = _device_of(module_id)
+        if self._snapshot.get_module(device_id, module_id) is None:
+            raise InspectEntityNotFoundError(module_id, kind="module")
+        baseline_tags = self._module_local_tags(module_id)
+        entry = _Staged(
+            kind=_MODULE,
+            entity_id=module_id,
+            baseline_form=list(baseline_tags),
+            baseline_dump={"tags": list(baseline_tags)},
+        )
+        self._entries[key] = entry
+        return entry
 
     def _stage(self, kind: str, entity_id: str) -> _Staged:
         self._ensure_open()
@@ -531,7 +667,7 @@ class InspectTransaction:
         current = self._refetch_baselines()
         conflicts: list[InspectConflict] = []
         for entry in self._entries.values():
-            if entry.remove or entry.is_new or entry.baseline_dump is None:
+            if entry.kind == _MODULE or entry.remove or entry.is_new or entry.baseline_dump is None:
                 continue
             key = (entry.kind, entry.entity_id)
             server_form = current.get(key)
@@ -575,6 +711,8 @@ class InspectTransaction:
     def _build_delta(self) -> InspectApiUpdateTopologyData:
         delta = InspectApiUpdateTopologyData()
         for entry in self._entries.values():
+            if entry.kind == _MODULE:
+                continue
             if entry.remove:
                 delta.remove.append(entry.entity_id)
                 continue
@@ -587,6 +725,37 @@ class InspectTransaction:
             else:
                 delta.replaceEdges[entry.entity_id] = form
         return delta
+
+    def _commit_module_tags(self, entries: list[_Staged]) -> None:
+        """Diff desired vs current local tags and call assignTag / unassignTag (batched by tag)."""
+        to_assign: dict[str, list[str]] = {}
+        to_unassign: dict[str, list[str]] = {}
+        for entry in entries:
+            desired = entry.intents.get("tags")
+            if desired is None:
+                continue
+            desired_set = set(desired)
+            current_set = set(self._module_local_tags(entry.entity_id))
+            element_id = module_resource_id(entry.entity_id)
+            for tag_id in desired_set - current_set:
+                to_assign.setdefault(tag_id, []).append(element_id)
+            for tag_id in current_set - desired_set:
+                to_unassign.setdefault(tag_id, []).append(element_id)
+
+        for tag_id, element_ids in to_assign.items():
+            _raise_if_tag_action_failed("assignTag", tag_id, self._api.assign_tag(tag_id, element_ids))
+        for tag_id, element_ids in to_unassign.items():
+            _raise_if_tag_action_failed("unassignTag", tag_id, self._api.unassign_tag(tag_id, element_ids))
+
+    def _module_local_tags(self, module_id: str) -> list[str]:
+        """Current local (or effective) tags for ``module_id`` from the bound snapshot."""
+        assert self._snapshot is not None
+        device_id = _device_of(module_id)
+        status = self._snapshot.get_module_status(device_id, module_id)
+        if status is None:
+            return []
+        local = status.local_assigned_tags
+        return list(local) if local else list(status.assigned_tags)
 
     # --- Internal: post-commit targeted refresh (ADR-0010) ---
 
@@ -604,9 +773,9 @@ class InspectTransaction:
                 continue
             if entry.kind == _DEVICE:
                 device_ids.add(entry.entity_id)
-            elif entry.kind == _VERTEX:
+            elif entry.kind in (_VERTEX, _MODULE):
                 device_ids.add(_device_of(entry.entity_id))
-            else:
+            elif entry.kind == _EDGE:
                 pair_ids.update(_pair_ids_for_edge(entry.entity_id))
         self._snapshot.apply_post_commit(
             removed_ids=removed_ids,
@@ -622,6 +791,7 @@ class InspectTransaction:
 _DEVICE = "device"
 _VERTEX = "vertex"
 _EDGE = "edge"
+_MODULE = "module"
 
 
 class _Staged(InspectInternalModel):
@@ -645,6 +815,14 @@ def _device_of(entity_id: str) -> str:
         if len(parts) >= 2:
             return f"{parts[0]}.{parts[1]}"
     return entity_id.split(".", 1)[0]
+
+
+def _raise_if_tag_action_failed(action: str, tag_id: str, response: InspectApiSimpleActionResponse) -> None:
+    if response.header.ok and response.data.ok:
+        return
+    messages = list(response.data.msg) + list(response.header.msg)
+    detail = "; ".join(m for m in messages if m) or "tag action rejected by the server"
+    raise InspectError(f"Inspect {action} failed for tag '{tag_id}': {detail}")
 
 
 def _entity_kind(entity_id: str) -> str:
@@ -705,12 +883,55 @@ def _merged_weight_factors(
 
 
 def _apply_intents(form: Any, intents: dict[str, Any]) -> None:
+    """Apply wire-field intents onto a baseline form. Supports arbitrary dotted paths and deep-merges
+    when the terminal parent is a ``dict`` (e.g. codec ``mainDstInfo.port``, edge ``weightFactors``)."""
     for key, value in intents.items():
-        if "." in key:
-            head, tail = key.split(".", 1)
-            setattr(getattr(form, head), tail, value)
-        else:
+        if "." not in key:
             setattr(form, key, value)
+            continue
+        parts = key.split(".")
+        target: Any = form
+        for index, part in enumerate(parts[:-1]):
+            next_target = _get_path_child(target, part)
+            if next_target is None:
+                # Intermediate containers are dicts (codec generic/specific, weightFactors, …).
+                next_target = {}
+                _set_path_child(target, part, next_target)
+                # Re-fetch in case the parent model replaced the assigned value.
+                next_target = _get_path_child(target, part)
+                if next_target is None:
+                    raise ValueError(f"Cannot create intermediate path '{'.'.join(parts[: index + 1])}' on form.")
+            target = next_target
+        leaf = parts[-1]
+        if isinstance(target, dict):
+            existing = target.get(leaf)
+            if isinstance(existing, dict) and isinstance(value, dict):
+                merged = copy.deepcopy(existing)
+                merged.update(value)
+                target[leaf] = merged
+            else:
+                target[leaf] = value
+        else:
+            existing = getattr(target, leaf, None)
+            if isinstance(existing, dict) and isinstance(value, dict):
+                merged = copy.deepcopy(existing)
+                merged.update(value)
+                setattr(target, leaf, merged)
+            else:
+                setattr(target, leaf, value)
+
+
+def _get_path_child(obj: Any, name: str) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(name)
+    return getattr(obj, name, None)
+
+
+def _set_path_child(obj: Any, name: str, value: Any) -> None:
+    if isinstance(obj, dict):
+        obj[name] = value
+    else:
+        setattr(obj, name, value)
 
 
 def _checkable(entry: _Staged) -> bool:

@@ -1,8 +1,10 @@
 import logging
+import warnings
 from typing import List, Literal, Optional
 
 from typing_extensions import deprecated
 
+from videoipath_automation_tool.apps.topology.errors import TopologyUnsupportedError
 from videoipath_automation_tool.apps.topology.helper.placement import TopologyPlacement
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_base_device import BaseDevice
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecVertex
@@ -20,6 +22,9 @@ from videoipath_automation_tool.connector.vip_connector import VideoIPathConnect
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 from videoipath_automation_tool.validators.device_id_including_virtual import validate_device_id_including_virtual
 
+_DEPRECATION_MAJOR = 2025
+_UNSUPPORTED_MAJOR = 2026
+
 
 class TopologyApp:
     def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
@@ -31,6 +36,8 @@ class TopologyApp:
         """
         # --- Setup Logging ---
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_topology_app")
+
+        self._check_version_compatibility(vip_connector)
 
         # --- Setup Topology API ---
         self._topology_api = TopologyAPI(vip_connector=vip_connector, logger=self._logger)
@@ -45,6 +52,25 @@ class TopologyApp:
         self.synchronize = TopologySynchronize(self._topology_api, self._logger)
 
         self._logger.debug("Topology APP initialized.")
+
+    def _check_version_compatibility(self, vip_connector: VideoIPathConnector) -> None:
+        version = vip_connector.videoipath_version
+        parsed = _parse_version(version)
+        if parsed is None:
+            return
+
+        major, _minor = parsed
+        if major >= _UNSUPPORTED_MAJOR:
+            raise TopologyUnsupportedError(
+                f"TopologyApp is not supported on VideoIPath {version}. Use InspectApp (app.inspect) instead."
+            )
+        if major == _DEPRECATION_MAJOR:
+            message = (
+                "TopologyApp is deprecated on VideoIPath 2025.x and will not be supported on 2026.x. "
+                "Migrate to InspectApp (app.inspect)."
+            )
+            warnings.warn(message, DeprecationWarning, stacklevel=3)
+            self._logger.warning(message)
 
     # --- Topology Device CRUD Operations ---
 
@@ -409,6 +435,16 @@ class TopologyApp:
             redundancy_mode=redundancy_mode,
             fixed_weight=fixed_weight,
         )
+
+
+def _parse_version(version: str) -> Optional[tuple[int, int]]:
+    parts = version.split(".")
+    if len(parts) < 2:
+        return None
+    try:
+        return int(parts[0]), int(parts[1])
+    except ValueError:
+        return None
 
 
 class TopologyExperimental:

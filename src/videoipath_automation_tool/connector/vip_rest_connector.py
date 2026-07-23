@@ -16,6 +16,7 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
             "PREFIXES": {
                 "/rest/v2/actions/status/collector/",
                 "/rest/v2/actions/status/network/",
+                "/rest/v2/actions/status/tags/",
             },
             "EXACT_MATCHES": {"/rest/v2/actions/status/pathman/validateTopologyUpdate"},
         },

@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
+
+# Sentinel returned by :meth:`InspectSnapshot.get_staged_value` / :meth:`InspectEditableModel._staged`
+# when no pending edit exists for a field.
+_STAGED_MISSING: Any = object()
+
+_T = TypeVar("_T")
 
 # The icon types selectable in the VideoIPath UI (mirrors the topology app's ``IconType``; live data
 # may contain further values, so read/write surfaces use the permissive ``InspectIconType | str``).
@@ -64,6 +75,47 @@ class InspectInternalModel(BaseModel):
 
 class InspectFrozenModel(InspectInternalModel):
     model_config = ConfigDict(frozen=True, slots=True, validate_assignment=True, arbitrary_types_allowed=True)
+
+
+class InspectEditableModel(InspectInternalModel, ABC):
+    """Mutable domain view: identity fields are set at construction; editable attributes are
+    exposed as property setters that stage pending edits on the snapshot (read-your-writes).
+
+    Subclasses must provide ``snapshot``, ``id``, and :attr:`_edit_kind`. Staging helpers
+    (:meth:`_stage` / :meth:`_staged`) are shared here.
+    """
+
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
+
+    snapshot: InspectSnapshot
+
+    @property
+    @abstractmethod
+    def _edit_kind(self) -> Literal["device", "vertex", "edge", "module"]:
+        """Snapshot staging namespace for this entity (``device`` / ``vertex`` / ``edge`` / ``module``)."""
+
+    def _stage(self, field: str, value: Any) -> None:
+        self.snapshot.stage_edit(self._edit_kind, self.id, field, value)
+
+    def _staged(self, field: str) -> Any:
+        return self.snapshot.get_staged_value(self._edit_kind, self.id, field)
+
+    def _staged_or(
+        self,
+        field: str,
+        fallback: Callable[[], _T],
+        *,
+        adapt: Callable[[Any], _T] | None = None,
+    ) -> _T:
+        """Return the staged value for ``field``, else ``fallback()``.
+
+        When a staged value exists and ``adapt`` is given, ``adapt(staged)`` is returned (e.g.
+        ``list`` / ``dict`` for defensive copies).
+        """
+        staged = self._staged(field)
+        if staged is not _STAGED_MISSING:
+            return adapt(staged) if adapt is not None else staged
+        return fallback()
 
 
 class InspectApiDescriptor(InspectApiBaseModel):
@@ -131,6 +183,7 @@ class InspectApiActionValidationErrorResponse(InspectApiBaseModel):
 __all__ = [
     "InspectApiActionValidationErrorResponse",
     "InspectApiBaseModel",
+    "InspectEditableModel",
     "InspectFrozenModel",
     "InspectInternalModel",
     "InspectApiCollection",
@@ -150,4 +203,5 @@ __all__ = [
     "InspectSdpStrategy",
     "InspectVertexKind",
     "InspectVertexType",
+    "_STAGED_MISSING",
 ]

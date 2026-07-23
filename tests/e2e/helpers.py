@@ -29,11 +29,15 @@ E2E_PREFIX = "E2E-"
 E2E_TAG = "vipat-e2e"
 MOCK_DRIVER = "com.nevion.mock-0.1.0"
 
-# A test video tag, created via a simple API request and assigned to a port via the inspect app.
-# Tag references are ``Category~~name`` ids; it lives in the existing "Video" format category.
+# Catalog tags created via simple API requests for Inspect e2e. Tag references are
+# ``Category~~name`` ids; they live in the existing "Video" format category.
 TEST_TAG_CATEGORY = "Video"
 TEST_TAG_NAME = "E2E-VIDEO-TAG"
 TEST_TAG_ID = f"{TEST_TAG_CATEGORY}~~{TEST_TAG_NAME}"
+
+MODULE_TEST_TAG_CATEGORY = "Video"
+MODULE_TEST_TAG_NAME = "E2E-MODULE-TAG"
+MODULE_TEST_TAG_ID = f"{MODULE_TEST_TAG_CATEGORY}~~{MODULE_TEST_TAG_NAME}"
 
 
 def unique_label(base: str) -> str:
@@ -125,12 +129,13 @@ def remove_devices(app: "VideoIPathApp", device_ids: set[str]) -> None:
 
 
 def sweep_e2e_namespace(app: "VideoIPathApp") -> None:
-    """Remove every ``E2E-`` device (and the test tag) so a run starts from a clean namespace.
+    """Remove every ``E2E-`` device (and e2e catalog tags) so a run starts from a clean namespace.
 
     Discovers devices by their ``E2E-`` label in **both** the inventory and the topology graph,
     catching orphans from an aborted run as well as the intentionally persisted workflow topology.
     """
     delete_test_tag(app)
+    delete_module_test_tag(app)
     inventory_labels = app.inventory._inventory_api.fetch_devices_user_defined_labels_as_dict()
     inventory_ids = {i for i, label in inventory_labels.items() if (label or "").startswith(E2E_PREFIX)}
     app.inspect.refresh()
@@ -220,44 +225,75 @@ class FetchSpy:
 # --- Test tag catalog (simple API requests) ---
 
 
-def create_test_tag(app: "VideoIPathApp") -> None:
-    """Create the E2E test video tag in the catalog (idempotent)."""
-    category = _tag_category(app, TEST_TAG_CATEGORY)
-    if category is None:
-        raise RuntimeError(f"Tag category '{TEST_TAG_CATEGORY}' not found on the server.")
-    children = dict(category.get("children") or {})
-    children[TEST_TAG_NAME] = {"exclusive": False, "children": {}}
+def create_catalog_tag(app: "VideoIPathApp", *, category: str, name: str) -> str:
+    """Create a catalog tag under ``category`` (idempotent). Returns the ``Category~~name`` id."""
+    cat = _tag_category(app, category)
+    if cat is None:
+        raise RuntimeError(f"Tag category '{category}' not found on the server.")
+    children = dict(cat.get("children") or {})
+    children[name] = {"exclusive": False, "children": {}}
     body = {
         "actions": [
             {
                 "_action": "update",
-                "_id": TEST_TAG_CATEGORY,
-                "_rev": category["_rev"],
+                "_id": category,
+                "_rev": cat["_rev"],
                 "children": children,
-                "type": category.get("type", "format"),
-                "exclusive": category.get("exclusive", False),
-                "formatTagLinks": category.get("formatTagLinks", {}),
-                "locationTypes": category.get("locationTypes", []),
+                "type": cat.get("type", "format"),
+                "exclusive": cat.get("exclusive", False),
+                "formatTagLinks": cat.get("formatTagLinks", {}),
+                "locationTypes": cat.get("locationTypes", []),
             }
         ]
     }
     _raw_request(app, "patch", "/rest/v2/data/config/tags/tagTrees", body)
+    return f"{category}~~{name}"
+
+
+def catalog_tag_exists(app: "VideoIPathApp", *, category: str, name: str) -> bool:
+    cat = _tag_category(app, category)
+    return cat is not None and name in (cat.get("children") or {})
+
+
+def delete_catalog_tag(app: "VideoIPathApp", tag_id: str) -> None:
+    """Force-delete a catalog tag (removes it and any resource bindings) if it exists."""
+    category, _, name = tag_id.partition("~~")
+    if not category or not name or not catalog_tag_exists(app, category=category, name=name):
+        return
+    _raw_request(
+        app,
+        "post",
+        "/rest/v2/actions/status/tags/forceDeleteTag",
+        {"header": {"id": 0}, "data": {"tagId": tag_id}},
+    )
+
+
+def create_test_tag(app: "VideoIPathApp") -> None:
+    """Create the E2E port/vertex test video tag in the catalog (idempotent)."""
+    create_catalog_tag(app, category=TEST_TAG_CATEGORY, name=TEST_TAG_NAME)
 
 
 def test_tag_exists(app: "VideoIPathApp") -> bool:
-    category = _tag_category(app, TEST_TAG_CATEGORY)
-    return category is not None and TEST_TAG_NAME in (category.get("children") or {})
+    return catalog_tag_exists(app, category=TEST_TAG_CATEGORY, name=TEST_TAG_NAME)
 
 
 def delete_test_tag(app: "VideoIPathApp") -> None:
-    """Force-delete the test tag (removes it and any port bindings) if it exists."""
-    if test_tag_exists(app):
-        _raw_request(
-            app,
-            "post",
-            "/rest/v2/actions/status/tags/forceDeleteTag",
-            {"header": {"id": 0}, "data": {"tagId": TEST_TAG_ID}},
-        )
+    """Force-delete the port/vertex test tag (removes it and any port bindings) if it exists."""
+    delete_catalog_tag(app, TEST_TAG_ID)
+
+
+def create_module_test_tag(app: "VideoIPathApp") -> None:
+    """Create the E2E module test tag in the catalog (idempotent)."""
+    create_catalog_tag(app, category=MODULE_TEST_TAG_CATEGORY, name=MODULE_TEST_TAG_NAME)
+
+
+def module_test_tag_exists(app: "VideoIPathApp") -> bool:
+    return catalog_tag_exists(app, category=MODULE_TEST_TAG_CATEGORY, name=MODULE_TEST_TAG_NAME)
+
+
+def delete_module_test_tag(app: "VideoIPathApp") -> None:
+    """Force-delete the module test tag (removes it and any module bindings) if it exists."""
+    delete_catalog_tag(app, MODULE_TEST_TAG_ID)
 
 
 # --- Internal ---

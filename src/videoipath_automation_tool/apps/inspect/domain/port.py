@@ -151,13 +151,16 @@ class InspectPort(InspectFrozenModel):
     def _vertex_by_type(self, vertex_type: str) -> InspectVertex | None:
         for vid, side in self._vertex_sides():
             if side.vertexType == vertex_type:
-                return self.snapshot.get_vertex(vid, vertex_info=side)
+                return self.snapshot.get_vertex(vid, vertex_info=side, port_factory_label=self.factory_label)
         return None
 
     def _vertices(self) -> list[InspectVertex]:
         """All typed vertex views this port carries (including Internal/Undecided). Prefer
         :attr:`vertex_out` / :attr:`vertex_in` for the public API."""
-        return [self.snapshot.get_vertex(vid, vertex_info=side) for vid, side in self._vertex_sides()]
+        return [
+            self.snapshot.get_vertex(vid, vertex_info=side, port_factory_label=self.factory_label)
+            for vid, side in self._vertex_sides()
+        ]
 
     def _vertex_sides(self) -> list[tuple[str, InspectApiSingleVertexInfo]]:
         """(vertex id, its offline ``vertexInfo`` side) for each vertex the port carries."""

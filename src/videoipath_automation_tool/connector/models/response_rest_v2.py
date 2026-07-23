@@ -69,6 +69,9 @@ class ResponseV2Patch(ResponseV2):
 
 # --- POST ---
 class ResponseV2Post(ResponseV2):
-    """REST API v2 POST Response"""
+    """REST API v2 POST Response.
 
-    data: dict
+    ``data`` may be ``null`` for some actions (e.g. ``assignTag`` / ``unassignTag``).
+    """
+
+    data: dict | None = None

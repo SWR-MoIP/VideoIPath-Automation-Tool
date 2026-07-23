@@ -8,9 +8,9 @@ replace **Inventory**: devices are still onboarded in Inventory first, then plac
 and connected in Inspect. Inspect also uses a **commit-style** write model, where
 create/edit/delete actions are gathered into a change set and committed together.
 
-In **this package**, `app.inspect` is **purely additive**: it is added alongside
-the existing apps. `app.topology` and `app.inventory` keep working **unchanged** —
-there is **no deprecation and no migration** planned.
+In **this package**, `app.inspect` is the replacement for `app.topology`:
+`TopologyApp` emits a deprecation warning on VideoIPath 2025.x and raises on
+2026.x+. `app.inventory` remains unchanged and required for device onboarding.
 
 These docs are **living documents** — meant to be edited and refined as the
 design firms up and as the real Inspect API is reverse-engineered. The official
@@ -21,7 +21,7 @@ reference is now a primary source.
 > (`src/videoipath_automation_tool/apps/inspect/`), with offline unit tests under
 > `tests/inspect/` and a developer-run live E2E suite under `tests/e2e/inspect/`.
 > All ten ADRs are Accepted. For usage, see the
-> [Inspect getting-started page](../getting-started-guide/05_Inspect.md).
+> [Inspect getting-started page](../../getting-started-guide/05_Inspect.md).
 
 ## Reading order
 

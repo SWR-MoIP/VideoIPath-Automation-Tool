@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import Field
 
 from videoipath_automation_tool.apps.inspect.domain.port import PortFromTemplate
 from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiStatusSummary,
-    InspectFrozenModel,
+    InspectEditableModel,
     InspectInternalModel,
 )
 from videoipath_automation_tool.apps.inspect.model.virtual import InspectApiVirtualModule
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
+from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _STAGED_MISSING
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
@@ -33,18 +33,26 @@ class VirtualModuleSpec(InspectInternalModel):
         )
 
 
-class InspectModule(InspectFrozenModel):
+class InspectModule(InspectEditableModel):
     """A device module / slot. A module owns many ports, each of which carries one or more vertices, so a module
     holds many vertices in total. The module status is resolved live from the snapshot, so a held
     reference sees hydrated/refreshed data transparently.
 
     Prefer :attr:`id` and :attr:`device` (``module.device.id``) over the constructor fields
     ``module_id`` / ``device_id``.
+
+    Editable attributes use property setters that stage pending intents on the snapshot
+    (read-your-writes). Flush with ``app.inspect.update(module)`` or ``app.inspect.update(device)``.
+    Module tags are committed via ``assignTag`` / ``unassignTag`` (not ``updateTopology``).
     """
 
     snapshot: InspectSnapshot
     device_id: str
     module_id: str
+
+    @property
+    def _edit_kind(self) -> Literal["module"]:
+        return "module"
 
     @property
     def id(self) -> str:
@@ -68,9 +76,19 @@ class InspectModule(InspectFrozenModel):
 
     @property
     def tags(self) -> list[str]:
-        """Tags assigned to this module (from ``tagsInfo.assigned.all``)."""
+        """Locally assigned module tags (``tagsInfo.assigned.local``; writable via assign/unassign)."""
+        staged = self._staged("tags")
+        if staged is not _STAGED_MISSING:
+            return list(staged)
         status = self._status()
-        return status.assigned_tags if status is not None else []
+        if status is None:
+            return []
+        local = status.local_assigned_tags
+        return list(local) if local else list(status.assigned_tags)
+
+    @tags.setter
+    def tags(self, value: list[str]) -> None:
+        self._stage("tags", list(value))
 
     @property
     def device(self) -> InspectDevice | None:

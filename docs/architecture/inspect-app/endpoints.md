@@ -1760,6 +1760,41 @@ Earlier anonymized failure shape (browser capture, 2026-06-18):
 }
 ```
 
+## `POST /rest/v2/actions/status/tags/assignTag` / `…/unassignTag`
+
+Module (and other resource) tag bindings that are **not** carried on
+`updateTopology` edit forms. Captured from the Inspect UI (2025.4.x).
+
+Both actions share the same request body shape:
+
+```http
+POST /rest/v2/actions/status/tags/assignTag
+POST /rest/v2/actions/status/tags/unassignTag
+```
+
+```json
+{
+  "header": { "id": 0 },
+  "data": {
+    "tagId": "Format~~V_720p60",
+    "elementIds": ["device:device-a.dev.0"]
+  }
+}
+```
+
+| Field | Notes |
+| ----- | ----- |
+| `tagId` | Catalog tag id (`Category~~name`) |
+| `elementIds` | Resource ids — for modules, `device:{modulePid}` (e.g. `device:device-a.dev.0`) |
+
+One tag per call; the package batches multiple modules that share the same
+`tagId` into a single `elementIds` list. Assign adds a local binding; unassign
+removes it. These calls are **not** part of the `updateTopology` atomic apply
+— a mixed topology + module-tag commit runs topology first, then tag RPCs.
+
+Success responses often return ``data: null`` with ``header.ok == true`` (verified
+live); the package treats a successful header as enough when ``data`` is absent.
+
 ## Action registration discovery
 
 `GET /rest/v2/actions/status/collector/<actionName>` returns whether an action

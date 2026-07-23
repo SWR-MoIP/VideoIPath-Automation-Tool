@@ -185,6 +185,19 @@ class InspectApiModuleStatus(InspectApiBaseModel):
         return []
 
     @property
+    def local_assigned_tags(self) -> list[str]:
+        """Locally bound tags on this module (keys of ``tagsInfo.assigned.local``)."""
+        if not self.tagsInfo:
+            return []
+        assigned = self.tagsInfo.get("assigned")
+        if not isinstance(assigned, dict):
+            return []
+        local = assigned.get("local")
+        if isinstance(local, dict):
+            return list(local.keys())
+        return []
+
+    @property
     def effective_label(self) -> str | None:
         if self.descriptor is not None and self.descriptor.label:
             return self.descriptor.label
