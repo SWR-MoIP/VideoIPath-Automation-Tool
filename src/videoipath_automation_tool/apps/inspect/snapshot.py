@@ -424,15 +424,19 @@ class InspectSnapshot:
     # --- Bulk preload (ADR-0004) ---
 
     def preload(self, devices: Optional[list[str]] = None) -> None:
-        """Hydrate multiple devices in parallel to avoid N+1 when detail is needed for many."""
+        """Hydrate multiple devices in parallel to avoid N+1 when detail is needed for many.
+
+        Best-effort: a failed per-device fetch is marked stale and logged so the rest of the
+        preload still completes (mirrors :meth:`_try_refresh_device`).
+        """
         target = devices if devices is not None else list(self._devices_by_id)
         pending = [d for d in target if not self.is_device_hydrated(d)]
         if not pending or self._fetcher is None:
             for device_id in pending:
-                self._ensure_device_detail(device_id)
+                self._try_ensure_device_detail(device_id)
             return
         with ThreadPoolExecutor(max_workers=min(_PRELOAD_WORKERS, len(pending))) as pool:
-            list(pool.map(self._ensure_device_detail, pending))
+            list(pool.map(self._try_ensure_device_detail, pending))
 
     # --- Pending domain edits (setters → update()) ---
 
@@ -626,6 +630,14 @@ class InspectSnapshot:
 
     # --- Internal: resilient refresh + lazy-stale self-heal (ADR-0010) ---
 
+    def _try_ensure_device_detail(self, device_id: str) -> None:
+        """Hydrate a device; on failure mark it stale (lazy self-heal on next access) and log."""
+        try:
+            self._ensure_device_detail(device_id)
+        except Exception as exc:
+            self._stale_devices.add(device_id)
+            _logger.warning("Inspect snapshot: preload of device '%s' failed: %s", device_id, exc)
+
     def _try_refresh_device(self, device_id: str) -> None:
         """Re-fetch a device; on failure mark it stale (lazy self-heal on next access) and log."""
         try:
@@ -662,16 +674,15 @@ class InspectSnapshot:
         """Reconcile every edge pair touching an affected device from one fresh edge-skeleton read."""
         if self._fetcher is None or not device_ids:
             return
+        affected_pairs = {indexed.pair_id for d in device_ids for indexed in self._edges_by_device_id.get(d, [])}
         try:
             pairs = self._fetcher.get_edge_skeleton()
         except Exception as exc:
-            self._stale_pairs.update(
-                indexed.pair_id for d in device_ids for indexed in self._edges_by_device_id.get(d, [])
-            )
+            self._stale_pairs.update(affected_pairs)
             _logger.warning("Inspect snapshot: edge reconcile after network action failed: %s", exc)
             return
         with self._lock:
-            for pair_id in {indexed.pair_id for d in device_ids for indexed in self._edges_by_device_id.get(d, [])}:
+            for pair_id in affected_pairs:
                 self._drop_edge_pair(pair_id)
             for pair in pairs:
                 if self._pair_touches(pair, device_ids):

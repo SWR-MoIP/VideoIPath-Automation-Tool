@@ -115,9 +115,11 @@ class InspectModule(InspectEditableModel):
 
     @property
     def vertices(self) -> list[InspectVertex]:
-        """Every vertex across the module's ports (triggers a lazy vertex lookup per port for the
-        typed kind)."""
-        return [vertex for port in self.ports for vertex in port._vertices()]
+        """Every vertex across the module's ports (hydrates + batches vertex lookups)."""
+        ports = self.ports
+        sides = [side for port in ports for side in port._vertex_sides()]
+        self.snapshot.get_vertex_details_many([vid for vid, _ in sides])
+        return [vertex for port in ports for vertex in port._vertices()]
 
     def __repr__(self) -> str:
         return format_repr(

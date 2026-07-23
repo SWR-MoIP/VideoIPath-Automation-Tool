@@ -242,10 +242,11 @@ class InspectDevice(InspectEditableModel):
         module_ids = {m.id for m in self.modules if m.label == module_label}
         if not module_ids:
             return []
+        ports = [port for port in self.ports if port.indexed.module_id in module_ids]
+        sides = [side for port in ports for side in port._vertex_sides()]
+        self.snapshot.get_vertex_details_many([vid for vid, _ in sides])
         result: list[InspectVertex] = []
-        for port in self.ports:
-            if port.indexed.module_id not in module_ids:
-                continue
+        for port in ports:
             for vertex in port._vertices():
                 if kind is not None and vertex.vertex_kind != kind:
                     continue
@@ -257,9 +258,7 @@ class InspectDevice(InspectEditableModel):
         for vertex in self._all_vertices():
             if vertex.id == vertex_id:
                 return vertex
-        if vertex_id.startswith(self.id + ".") or (
-            self.id.startswith("virtual.") and vertex_id.startswith(self.id + ".")
-        ):
+        if vertex_id.startswith(self.id + "."):
             return self.snapshot.get_vertex(vertex_id)
         return None
 
@@ -343,10 +342,11 @@ class InspectDevice(InspectEditableModel):
         return getattr(meta, attr, default) if meta is not None else default
 
     def _all_vertices(self) -> list[InspectVertex]:
-        sides = [side for port in self.ports for side in port._vertex_sides()]
+        ports = self.ports
+        sides = [side for port in ports for side in port._vertex_sides()]
         self.snapshot.get_vertex_details_many([vid for vid, _ in sides])
         result: list[InspectVertex] = []
-        for port in self.ports:
+        for port in ports:
             result.extend(port._vertices())
         return result
 

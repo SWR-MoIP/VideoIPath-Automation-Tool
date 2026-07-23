@@ -684,6 +684,49 @@ def test_device_modules_group_ports(snapshot: tuple[InspectSnapshot, FakeFetcher
     assert leaf.get_module("no-such-module") is None
 
 
+def test_module_vertices_uses_one_batched_lookup(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    module = snap.get_device("leaf-a").get_module("leaf-a.dev.0")
+    assert module is not None
+    vertices = module.vertices
+    assert {v.id for v in vertices} == {"leaf-a.0.up1", "leaf-a.0.host1"}
+    assert len(fetcher.vertex_lookup_calls) == 1
+    assert set(fetcher.vertex_lookup_calls[0]) == {"leaf-a.0.up1", "leaf-a.0.host1"}
+
+
+def test_get_vertices_by_module_label_uses_one_batched_lookup(
+    snapshot: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = _filter_detail_node("leaf-a", "LEAF-A")
+    leaf = snap.get_device("leaf-a")
+    vertices = leaf.get_vertices_by_module_label("Slot 1")
+    assert {v.id for v in vertices} == {"leaf-a.1.bidi1.out", "leaf-a.1.bidi1.in"}
+    assert len(fetcher.vertex_lookup_calls) == 1
+    assert set(fetcher.vertex_lookup_calls[0]) == {"leaf-a.1.bidi1.out", "leaf-a.1.bidi1.in"}
+    ip_only = leaf.get_vertices_by_module_label("Slot 1", kind="ip")
+    assert {v.id for v in ip_only} == {"leaf-a.1.bidi1.out", "leaf-a.1.bidi1.in"}
+    assert len(fetcher.vertex_lookup_calls) == 1  # cached → no further lookups
+
+
+def test_preload_continues_when_one_device_fails(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+
+    original = fetcher.get_device_detail
+
+    def flaky_detail(device_id: str) -> InspectApiNodeStatusItem | None:
+        if device_id == "spine-a":
+            raise RuntimeError("simulated detail failure")
+        return original(device_id)
+
+    fetcher.get_device_detail = flaky_detail  # type: ignore[method-assign]
+    snap.preload()
+    assert "leaf-a" in fetcher.device_detail_calls
+    assert snap.get_device("leaf-a").is_hydrated is True
+    assert snap.get_device("spine-a").is_hydrated is False
+    assert "spine-a" in snap._stale_devices
+
+
 def test_device_exposes_multiple_modules(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
     snap, fetcher = snapshot
     fetcher._details["leaf-a"] = _filter_detail_node("leaf-a", "LEAF-A")
