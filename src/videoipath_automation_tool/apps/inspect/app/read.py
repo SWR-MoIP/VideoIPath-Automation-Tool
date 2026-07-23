@@ -1,6 +1,6 @@
 """Read-side user methods for the Inspect app.
 
-The Inspect app owns a single internal :class:`InspectSnapshot` ([ADR-0007]); users never handle it
+The Inspect app owns a single internal :class:`InspectSnapshot`; users never handle it
 directly. It is built lazily on the first read and reused (skeleton-first, then hydrated on demand).
 Writes update it in place; :meth:`refresh` rebuilds it from the server.
 """
@@ -111,7 +111,7 @@ class InspectReadMixin:
     # --- Internal snapshot lifecycle ---
 
     def _get_snapshot(self: _HasInspectState) -> InspectSnapshot:
-        """Return the internal snapshot, building it on first access ([ADR-0007])."""
+        """Return the internal snapshot, building it on first access."""
         if self._snapshot is None:
             self._snapshot = self._load_snapshot(self._load_mode)
         return self._snapshot

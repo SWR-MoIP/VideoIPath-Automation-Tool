@@ -109,7 +109,7 @@ def test_empty_lists_rejected() -> None:
         app.get_sync_info([])
 
 
-# --- Post-action snapshot refresh (ADR-0010) ---
+# --- Post-action snapshot refresh ---
 
 
 def test_add_devices_refreshes_snapshot_when_loaded() -> None:

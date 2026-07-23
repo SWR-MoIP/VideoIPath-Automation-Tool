@@ -338,7 +338,7 @@ def test_empty_commit_rejected() -> None:
         tx.commit()
 
 
-# --- Conflict detection (ADR-0009) ---
+# --- Conflict detection ---
 
 
 def test_conflict_detected_on_baseline_change() -> None:
@@ -390,7 +390,7 @@ def test_rebase_refetches_baseline() -> None:
     assert api.update_calls[0].replaceEdges[EDGE_ID].weight == 99
 
 
-# --- Post-commit refresh hook derivation (ADR-0010) ---
+# --- Post-commit refresh hook derivation ---
 
 
 def test_post_commit_refresh_derives_affected_ids() -> None:

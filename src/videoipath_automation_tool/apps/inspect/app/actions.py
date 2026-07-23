@@ -4,7 +4,7 @@ updateVirtualTemplates, addVirtualTopology).
 
 These wrap the ``actions/status/network/*`` and ``lookupSyncInfo`` endpoints used by the Inspect
 device-onboarding-into-topology workflows. Placement, metadata edits, connections, and removal of
-virtual devices go through the same write/transaction path as physical devices ([ADR-0006]); only
+virtual devices go through the same write/transaction path as physical devices; only
 creating a virtual device (and managing port templates / adding ports from templates) uses these
 dedicated network actions.
 """
@@ -302,7 +302,7 @@ class InspectActionsMixin:
         """Update the internal snapshot for the affected devices after a successful network action.
 
         Only refreshes when a snapshot is already loaded, so a pure-action workflow never triggers
-        an unnecessary topology read (mirrors the write path; [ADR-0010])."""
+        an unnecessary topology read (mirrors the write path)."""
         if self._snapshot is not None:
             self._snapshot.apply_network_refresh(device_ids)
 

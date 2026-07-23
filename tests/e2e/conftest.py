@@ -1,4 +1,4 @@
-"""Gating and shared fixtures for the developer-run live-server E2E suite ([ADR-0005]).
+"""Gating and shared fixtures for the developer-run live-server E2E suite.
 
 These tests are excluded by default (``-m "not e2e"`` in ``pyproject.toml``) and only run when:
   * you invoke an e2e entry point (``poetry run test-e2e``, ``poetry run test``, or VS Code **E2E Tests**), **and**

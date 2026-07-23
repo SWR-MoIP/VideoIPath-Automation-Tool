@@ -1,7 +1,7 @@
 """InspectApp — the user-facing entry point for the VideoIPath Inspect surface.
 
-Read-only monitoring plus commit-style topology writes, built entirely on the collector API
-([ADR-0008]). Composed from focused mixins, mirroring the Inventory/Topology app layout.
+Read-only monitoring plus commit-style topology writes, built entirely on the collector API.
+Composed from focused mixins, mirroring the Inventory/Topology app layout.
 
 This app is currently in beta; the API and behaviour may change in future releases.
 """

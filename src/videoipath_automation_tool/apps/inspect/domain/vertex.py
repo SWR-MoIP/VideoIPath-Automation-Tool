@@ -1,4 +1,4 @@
-"""Typed vertex domain views ([ADR-0007]).
+"""Typed vertex domain views.
 
 A vertex is one directed endpoint of a port (a port carries one vertex, or an ``out``/``in`` pair).
 ``InspectVertex`` is the base read/write view over the vertex edit form (``lookupInspectVertexById``);

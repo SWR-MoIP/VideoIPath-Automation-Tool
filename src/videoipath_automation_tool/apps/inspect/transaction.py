@@ -1,10 +1,10 @@
-"""Transaction for Inspect topology writes ([ADR-0006]/[ADR-0009]/[ADR-0010]).
+"""Transaction for Inspect topology writes.
 
 A transaction stages topology changes, captures a per-entity baseline via the lookup endpoints
-(the lookup forms *are* the ``updateTopology`` write shapes — [ADR-0009]), and applies them
+(the lookup forms *are* the ``updateTopology`` write shapes), and applies them
 atomically on ``commit()``. Commit runs a client-side compare-and-commit conflict check against
 freshly re-fetched baselines, then a single ``updateTopology`` POST, then a three-flag success
-evaluation ([ADR-0006]). On success it drives a targeted snapshot refresh ([ADR-0010]) instead of
+evaluation. On success it drives a targeted snapshot refresh instead of
 a full reload.
 
 Caller mutations are field-level *intents* recorded against the staged baseline and applied at
@@ -77,7 +77,7 @@ else:
 
 
 class CommitResult(InspectFrozenModel):
-    """Outcome of a successful commit ([ADR-0006]); a failed commit raises ``InspectCommitError``.
+    """Outcome of a successful commit; a failed commit raises ``InspectCommitError``.
 
     ``response`` is ``None`` when the commit only applied module tag assign/unassign ops (no
     ``updateTopology`` call).
@@ -537,7 +537,7 @@ class InspectTransaction:
     def commit(self, check_conflicts: bool = True) -> CommitResult:
         """Validate, send, and (on success) refresh. Raises on conflict or server rejection.
 
-        Topology entries go through ``updateTopology`` ([ADR-0006]). Module tag intents are applied
+        Topology entries go through ``updateTopology``. Module tag intents are applied
         afterward via ``assignTag`` / ``unassignTag`` (not one atomic server transaction).
 
         Raises:
@@ -723,7 +723,7 @@ class InspectTransaction:
         item = response.data.get(edge_id)
         return item.edge if item is not None else None
 
-    # --- Internal: conflict check (compare-and-commit, ADR-0009) ---
+    # --- Internal: conflict check (compare-and-commit) ---
 
     def _check_conflicts(self) -> None:
         current = self._refetch_baselines()
@@ -819,7 +819,7 @@ class InspectTransaction:
         local = status.local_assigned_tags
         return list(local) if local else list(status.assigned_tags)
 
-    # --- Internal: post-commit targeted refresh (ADR-0010) ---
+    # --- Internal: post-commit targeted refresh ---
 
     def _refresh_snapshot(self) -> None:
         if self._snapshot is None:

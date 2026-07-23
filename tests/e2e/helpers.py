@@ -1,4 +1,4 @@
-"""Shared helpers for the developer-run live-server E2E suite ([ADR-0005]).
+"""Shared helpers for the developer-run live-server E2E suite.
 
 Everything the suite writes is namespaced (``E2E-`` label prefix + ``vipat-e2e`` tag) so a shared
 local instance stays safe. Cleanup is a single session-start :func:`sweep_e2e_namespace` that

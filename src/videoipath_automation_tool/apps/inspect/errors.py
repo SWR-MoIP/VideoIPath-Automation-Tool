@@ -1,8 +1,8 @@
 """Typed exceptions for the Inspect app.
 
 The Inspect surface has semantics that a raw HTTP envelope cannot express:
-commit success is a three-flag check (see [ADR-0006]), concurrent writes are
-detected client-side (see [ADR-0009]), and over-long projection URLs are
+commit success is a three-flag check, concurrent writes are
+detected client-side, and over-long projection URLs are
 rejected by the proxy before they reach the server. These exceptions carry the
 structured detail callers need to react without parsing raw responses.
 """
@@ -64,7 +64,7 @@ class InspectCommitError(InspectError):
 
 
 class InspectConflict:
-    """One entity whose server state changed between staging and commit (see [ADR-0009])."""
+    """One entity whose server state changed between staging and commit."""
 
     def __init__(self, entity_id: str, kind: str, field_diffs: dict[str, tuple[object, object]]) -> None:
         self.entity_id = entity_id

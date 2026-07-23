@@ -1,4 +1,4 @@
-"""User-facing topology writes: direct auto-commit sugar + the explicit transaction ([ADR-0006]).
+"""User-facing topology writes: direct auto-commit sugar + the explicit transaction.
 
 Direct methods (``place_device``, ``update_device``, ``connect`` …) each open a single-change
 transaction and commit it immediately. For batched, atomic changes use ``transaction()`` as a
@@ -9,7 +9,7 @@ stage on the snapshot), then call ``update(device)`` / ``update(vertex)`` / ``up
 auto-commit, or ``tx.update(...)`` to stage into an open transaction.
 
 Every write is bound to the app's internal snapshot: on a successful commit the touched entities are
-refreshed in place ([ADR-0010]) — but only if the snapshot has already been loaded, so a pure-write
+refreshed in place — but only if the snapshot has already been loaded, so a pure-write
 workflow never triggers an unnecessary topology read.
 """
 

@@ -35,7 +35,7 @@ flowchart LR
 ```
 
 A snapshot is built **skeleton-first**
-([ADR-0007](./decisions/0007-lazy-snapshot-loading.md)): two parallel scoped
+([ADR-005](./decisions/005-lazy-snapshot-loading.md)): two parallel scoped
 collector queries load all devices (without modules/ports) and all external
 edges (lean projection). Detail is **lazily hydrated** — accessing an unloaded
 property fetches that one device's full `nodeStatus` subtree (or, for
@@ -70,7 +70,7 @@ The loading contract:
 - Because hydration is HTTP, touching an unloaded property can add latency and
   raise connector errors — this is deliberate, documented behaviour.
 - Iterating detail over many devices hydrates one device per iteration (N+1);
-  use bulk preload helpers (e.g. `snapshot.preload_devices(...)` /
+  use bulk preload helpers (e.g. `app.inspect.preload(...)` /
   `get_devices(detail=True)`) for that pattern.
 - The snapshot is **not** a single point in time: skeleton and hydrated
   subtrees carry their own fetch timestamps.
@@ -232,6 +232,23 @@ for alarm in device.alarms:
     print(alarm.severity, alarm.message)
 ```
 
+### `InspectModule`
+
+Represents one device module / slot. Modules own ports (and therefore vertices).
+Editable attributes (e.g. tags) stage pending intents on the snapshot; flush with
+`app.inspect.update(module)` or `tx.update(...)`. Module tags commit via
+`assignTag` / `unassignTag`, not `updateTopology`.
+
+| Field / property | Meaning |
+| --- | --- |
+| `id` | Module pid |
+| `label` / `description` | Display fields |
+| `device` | Owning `InspectDevice` |
+| `status` | Module status summary (`InspectSeverity` fields) |
+| `alarms` | Active alarms correlated to this module |
+| `tags` | Locally assigned tags (writable) |
+| `ports` | Ports on this module |
+
 ### `InspectPort`
 
 Represents one module port with status, optional vertex linkage, and an optional
@@ -248,6 +265,28 @@ external edge to another device.
 | `vertex_id` | Linked topology vertex when available |
 | `tags` | Vertex tag bindings when hydrated (`tagsInfo` from `nodeStatus`) |
 | `edge` | External edge when this port connects to another device; otherwise `None` |
+
+### `InspectVertex`
+
+Base read/write view of a single topology vertex (one directed endpoint of a
+port). Concrete subclasses expose kind-specific fields:
+
+- `InspectIpVertex` — IP config (address, netmask, VLAN, VRF, support flags)
+- `InspectCodecVertex` — codec config (`typeFields.generic` / `typeFields.specific`)
+- `InspectGenericVertex` / `InspectResourceTransformVertex` — base fields only
+
+Built by `InspectSnapshot.get_vertex`, which picks the subclass from the edit
+form's `typeFields.type`. Editable attributes stage pending intents; flush with
+`app.inspect.update(vertex)` or `tx.update(...)`.
+
+| Field / property | Meaning |
+| --- | --- |
+| `id` | Vertex id (e.g. `device-a.module-1.port-out-1.out`) |
+| `label` / `description` | Display fields (writable) |
+| `vertex_type` | Direction: `"In"` / `"Out"` / … |
+| `is_active` / `is_controlled` / `is_endpoint` | Offline status flags from port `vertexInfo` |
+| `tags` | Locally assigned vertex tags (writable via `localAssignedTags`) |
+| `use_as_endpoint` | Whether usable as a service endpoint |
 
 ### `InspectEdge`
 
@@ -282,8 +321,8 @@ Represents one service/booking path across devices and ports.
 Lookup:
 
 ```python
-service = snapshot.get_service_by_booking_id("booking-1001")
-all_services = snapshot.get_services()
+service = app.inspect.get_service_by_booking_id("booking-1001")
+all_services = app.inspect.services
 ```
 
 ## Transport DTO Examples
@@ -521,7 +560,7 @@ tag bindings** (not available from `nGraphElements` or `app.topology`):
 ```
 
 This is the stage-time baseline for vertex tag fields in compare-and-commit
-([ADR-0009](./decisions/0009-write-consistency.md)).
+([ADR-007](./decisions/007-write-consistency.md)).
 
 `lookupSyncInfo` returns per-device sync differences:
 
@@ -577,7 +616,7 @@ shape to parse.
 > concept. Inspect reads vertex tags from hydrated port `tagsInfo` in
 > `nodeStatus` and from `lookupInspectVertexByIds` (`assignedTags`,
 > `fields.tags`, `fields.localAssignedTags`) — see
-> [concepts.md §3.4](./concepts.md#34-tagging--device-vs-vertex-inspect-vs-topology).
+> [concepts.md §3.4](./concepts.md#34-tagging--device-vs-vertex-vs-module-inspect-vs-topology).
 > A `tags` field may appear on vertex elements in `nGraphElements` wire examples
 > but is not the authoritative store for vertex tag bindings.
 
@@ -737,7 +776,7 @@ inspect `data.res`, `data.validation.result`, and `data.validation.details`.
 `updateTopology` enforces no revisions (last-writer-wins), `replace*` entries
 are full-object upserts, and collector reads carry no `_rev` — so the change
 set protects callers itself
-([ADR-0009](./decisions/0009-write-consistency.md)):
+([ADR-007](./decisions/007-write-consistency.md)):
 
 - **Staging an entity fetches its baseline**: the current form, read via
   Inspect-surface lookups (`lookupInspectDevice` for devices,
@@ -762,7 +801,7 @@ revisions, possibly stale by design (lazy hydration).
 A successful commit leaves the caller's `InspectSnapshot` stale exactly where
 the change set touched it. Instead of a full re-snapshot (~MBs), the snapshot
 catches up with **targeted scoped re-reads**
-([ADR-0010](./decisions/0010-post-commit-snapshot-refresh.md)):
+([ADR-008](./decisions/008-post-commit-snapshot-refresh.md)):
 
 - removed entities are dropped from the indexes locally;
 - affected devices and edge pairs (derived from the change-set keys and the
@@ -787,14 +826,21 @@ Transport DTOs are split by payload area under `apps/inspect/model/`:
 - `ngraph.py` — persisted `nGraphElements` wire models
 - `actions.py` — lookup/add/sync action request and response DTOs
 - `update_topology.py` — `updateTopology` change-set and commit response DTOs
+- `alarms.py` — current-alarm wire models (`status/alarms/current`)
+- `tags.py` — `assignTag` / `unassignTag` request DTOs
+- `virtual.py` — virtual-device and port-template wire models
 
-User-facing read models live alongside the snapshot:
+User-facing domain models and the snapshot:
 
 - `snapshot.py` — `InspectSnapshot` and internal indexes
+- `transaction.py` — `InspectTransaction` (commit-style writes)
 - `domain/device.py` — `InspectDevice`
+- `domain/module.py` — `InspectModule`
 - `domain/port.py` — `InspectPort`
+- `domain/vertex.py` — `InspectVertex` and subclasses
 - `domain/edge.py` — `InspectEdge`
 - `domain/service.py` — `InspectService`
+- `domain/alarm.py` — `InspectAlarm`
 
 When adding transport fields, prefer extending the nearest existing `InspectApi*`
 DTO. When adding user-facing behaviour, extend the domain layer and snapshot

@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 class InspectDevice(InspectEditableModel):
     """A topology device/node. Skeleton fields (id, label, coordinates, status, sync, tags) are
     available immediately; ``ports`` and ``services`` lazily hydrate from the server on first
-    access ([ADR-0007]). The record is resolved live from the snapshot, so a held reference sees
+    access. The record is resolved live from the snapshot, so a held reference sees
     hydrated/refreshed data transparently.
 
     Editable attributes use property setters that stage pending intents on the snapshot

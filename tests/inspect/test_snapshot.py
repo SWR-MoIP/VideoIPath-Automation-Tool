@@ -181,7 +181,7 @@ def test_post_commit_marks_paths_stale(snapshot: tuple[InspectSnapshot, FakeFetc
 
 
 def test_post_commit_reindexes_changed_label(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
-    # Latent-bug guard: a committed label change must re-point the label index (ADR-0010).
+    # Latent-bug guard: a committed label change must re-point the label index.
     snap, fetcher = snapshot
     fetcher._details["leaf-a"] = _detail_node("leaf-a", "LEAF-A-RENAMED", ["leaf-a.dev.0.up1"])
     snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)

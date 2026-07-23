@@ -1,7 +1,7 @@
 """Raw Inspect API layer: one method per verified endpoint, typed responses, no business logic.
 
-All reads use the collector namespace only ([ADR-0008]); scoped queries come from
-``queries.py`` ([ADR-0007]). Writes go through ``updateTopology`` and the network
+All reads use the collector namespace only; scoped queries come from
+``queries.py``. Writes go through ``updateTopology`` and the network
 actions (``addDevices``, ``syncDevices``, virtual-device actions).
 """
 
@@ -65,7 +65,7 @@ class InspectAPI:
         self.vip_connector = vip_connector
         self._logger.debug("Inspect API initialized.")
 
-    # --- Collector reads (scoped, ADR-0007) ---
+    # --- Collector reads (scoped) ---
 
     def get_device_skeleton(self) -> list[InspectApiNodeStatusItem]:
         """All devices without module/port detail (skeleton load)."""
@@ -88,7 +88,7 @@ class InspectAPI:
         return [InspectApiExternalEdgesByDeviceKeyItem.model_validate(item) for item in items]
 
     def get_edge_pair(self, pair_id: str) -> Optional[InspectApiExternalEdgesByDeviceKeyItem]:
-        """A single external-edge device pair (targeted refresh, ADR-0010)."""
+        """A single external-edge device pair (targeted refresh)."""
         response = self.vip_connector.rest.get(queries.edge_pair(pair_id), allow_projection=True)
         items = _extract_items(response.data, "status", "collector", "externalEdgesByDeviceKey")
         if not items:
@@ -126,7 +126,7 @@ class InspectAPI:
         items = _extract_items(response.data, "status", "network", "virtualDevices")
         return [InspectApiVirtualDeviceInstance.model_validate(item) for item in items]
 
-    # --- Lookups (baselines for compare-and-commit, ADR-0009) ---
+    # --- Lookups (baselines for compare-and-commit) ---
 
     def lookup_inspect_device(self, device_id: str) -> InspectApiLookupInspectDeviceResponse:
         request = InspectApiLookupInspectDeviceRequest(data=device_id)

@@ -7,14 +7,15 @@ read-only requests and one empty no-op `updateTopology` POST were executed.
 
 The Inspect package scope follows the accepted ADRs:
 
-- Request/response only; no WebSocket subscription API. Subscription *captures*
-  are still used as an endpoint-discovery source — see
+- Request/response only; no WebSocket subscription API
+  ([ADR-001](./decisions/001-api-paradigm.md)). Subscription *captures* are
+  still used as an endpoint-discovery source — see
   [Collector Scoped Queries](#collector-scoped-queries-captured-from-the-inspect-ui).
 - Snapshot-scoped reads: a snapshot loads a skeleton first and lazily hydrates
   detail; fresh status means building a new snapshot
-  ([ADR-0007](./decisions/0007-lazy-snapshot-loading.md)).
-- Data-only DTOs; write/commit behaviour belongs in the future app/transaction
-  layer, not in the model classes.
+  ([ADR-005](./decisions/005-lazy-snapshot-loading.md)).
+- Data-only DTOs; write/commit behaviour lives in the app/transaction layer
+  (`transaction.py`), not in the model classes.
 
 ## Common Envelope
 
@@ -85,7 +86,7 @@ Response example:
 Purpose: full Inspect read aggregate — services, path drill-down, external edge
 status, and topology node status in one response.
 
-> Since [ADR-0007](./decisions/0007-lazy-snapshot-loading.md) this full fetch is
+> Since [ADR-005](./decisions/005-lazy-snapshot-loading.md) this full fetch is
 > the **eager/fallback mode** only. The default read path uses the scoped
 > queries documented in
 > [Collector Scoped Queries](#collector-scoped-queries-captured-from-the-inspect-ui),
@@ -149,7 +150,7 @@ Source: a browser WebSocket capture of the Inspect app's **initial load**
 The UI never fetches `/status/collector/**`. It opens ~8 **parallel scoped
 subscriptions**, each addressing a collector sub-path with a filter and a deep
 field projection. These queries are the concrete basis for the skeleton +
-lazy-hydration loading model ([ADR-0007](./decisions/0007-lazy-snapshot-loading.md)).
+lazy-hydration loading model ([ADR-005](./decisions/005-lazy-snapshot-loading.md)).
 
 All ids, labels, and addresses below are anonymized. Decoded paths are shown
 with URL encoding removed (`%20` → space, `%22` → `"`, `%2C` → `,`,
@@ -183,13 +184,12 @@ Protocol details (verified by live connection and the UI bundle on 2025.4.9):
 | Delta frames | `payload.data._e` (observed in the UI decoder) |
 | Reconnect | UI re-opens when the socket is gone and the tab is visible; no dedicated heartbeat channel |
 
-The package stays request/response ([ADR-0001](./decisions/0001-api-paradigm.md),
-[ADR-0003](./decisions/0003-websocket-subscriptions.md)): the same query paths
-work as `GET /rest/v2/data<decoded path>`. **Confirmed** on VideoIPath 2025.4.9
-for practical query lengths; URL encoding of spaces (`%20`), quotes (`%22`),
-parentheses (`%28`/`%29`), and `=` (`%3D`) works as captured. The **full** UI
-projection below returns **HTTP 414** (URI Too Long) as a REST GET — a
-proxy/URL-length constraint, not a server bug — so the package uses a trimmed
+The package stays request/response ([ADR-001](./decisions/001-api-paradigm.md)):
+the same query paths work as `GET /rest/v2/data<decoded path>`. **Confirmed** on
+VideoIPath 2025.4.9 for practical query lengths; URL encoding of spaces (`%20`),
+quotes (`%22`), parentheses (`%28`/`%29`), and `=` (`%3D`) works as captured. The
+**full** UI projection below returns **HTTP 414** (URI Too Long) as a REST GET —
+a proxy/URL-length constraint, not a server bug — so the package uses a trimmed
 skeleton projection or the `/**` fallback.
 
 Measured payload sizes (2025.4.9 instance, 30 devices / 40 edge pairs):
@@ -302,7 +302,7 @@ With `modules/*` the projection expands modules → ports → `vertexInfo`,
 (`deviceLevel` + `serviceLevel`) — the full drill-down detail.
 
 This is the template for **per-device lazy hydration**
-([ADR-0007](./decisions/0007-lazy-snapshot-loading.md)): reuse the detail
+([ADR-005](./decisions/005-lazy-snapshot-loading.md)): reuse the detail
 projection but scope it to one device. **Confirmed** on 2025.4.9 — both work;
 prefer the shorter direct-id form:
 
@@ -668,7 +668,7 @@ Observed response on this instance:
 ## `GET /rest/v2/data/status/network/edgesByDevice/**`
 
 > **Reference only — not called by the package**
-> ([ADR-0008](./decisions/0008-collector-only-endpoints.md)).
+> ([ADR-006](./decisions/006-collector-only-endpoints.md)).
 
 Purpose: existing status-plane edge view. This is not the collector facade, but
 it is useful for cross-checking edge payload fields during discovery when
@@ -725,12 +725,12 @@ Response fragment:
 ## `GET /rest/v2/data/config/network/nGraphElements/**`
 
 > **Reference only — not called by the package**
-> ([ADR-0008](./decisions/0008-collector-only-endpoints.md)). This is
+> ([ADR-006](./decisions/006-collector-only-endpoints.md)). This is
 > `app.topology`'s surface; it is documented here because `updateTopology`
 > persists into it and the `replace*` payloads carry the persisted element
 > shape. Its `_rev` is irrelevant to Inspect writes — `updateTopology` ignores
 > revisions (last-writer-wins; see
-> [ADR-0009](./decisions/0009-write-consistency.md)).
+> [ADR-007](./decisions/007-write-consistency.md)).
 
 Purpose: revisioned config store that `updateTopology` persists into. Inspect
 models include independent `InspectApi*` nGraph DTOs for this persisted shape, but
@@ -741,7 +741,7 @@ they do not import or subclass topology app models.
 > `videoipath_docs.device_tags` (separate from the `ngraph` table). Inspect
 > surfaces vertex tags via `lookupInspectVertexByIds` and hydrated port
 > `tagsInfo` in `nodeStatus` — see
-> [concepts.md §3.4](./concepts.md#34-tagging--device-vs-vertex-inspect-vs-topology).
+> [concepts.md §3.4](./concepts.md#34-tagging--device-vs-vertex-vs-module-inspect-vs-topology).
 > `app.topology` only knows the `nGraphElements` shape and therefore has no
 > vertex-tag API.
 
@@ -783,11 +783,9 @@ GET /rest/v2/data/config/network/nGraphElements/* where type='unidirectionalEdge
 GET /rest/v2/data/config/network/nGraphElements/* where type='nGraphResourceTransform' /**
 ```
 
-## Known Action Endpoints Needing Payload Capture
+## Action Endpoints
 
-Manual endpoint discovery also identified the following Inspect-related action
-endpoints. The examples below are anonymized and were captured with safe lookup
-or no-op requests.
+Anonymized request/response shapes for Inspect collector and network actions.
 
 ### `POST /rest/v2/actions/status/collector/lookupInspectEdgesByIds`
 
@@ -796,7 +794,7 @@ form** — every field a `replaceEdges` payload needs (`weight`, `capacity`,
 `bandwidth`, `redundancyMode`, `weightFactors`, `descriptor`, `fDescriptor`,
 `tags`, `conflictPri`, `includeFormats`, `excludeFormats`). Batched by design.
 This is the stage-time baseline read for compare-and-commit
-([ADR-0009](./decisions/0009-write-consistency.md)). The UI bundle's edge edit
+([ADR-007](./decisions/007-write-consistency.md)). The UI bundle's edge edit
 flow calls it with **both directions of a connection**
 (`[edgeId, pairedEdgeId]`) before opening the dialog. **No `_rev` anywhere in
 the response.**
@@ -855,7 +853,7 @@ or batched (`…ByIds`, `data: ["<id>", …]`, response keyed by id). The UI bun
 uses only the batched form. **No `_rev`.** Together with
 `lookupInspectDevice` (devices, above) and `lookupInspectEdgesByIds` this
 covers all three `replace*` element kinds for stage-time baselines
-(ADR-0009).
+(ADR-007).
 
 > **Vertex tags.** Tag bindings on a vertex are **not** part of the topology
 > `nGraphElements` store (`app.topology` has no equivalent). Server-side they
@@ -864,7 +862,7 @@ covers all three `replace*` element kinds for stage-time baselines
 > `assignedTags` (with `all`, `inherited`, `local`, `inheritedConflict`) and
 > `fields.tags` / `fields.localAssignedTags`. Hydrated `nodeStatus` ports carry
 > the same bindings under `tagsInfo` for read-side display
-> ([concepts.md §3.4](./concepts.md#34-tagging--device-vs-vertex-inspect-vs-topology)).
+> ([concepts.md §3.4](./concepts.md#34-tagging--device-vs-vertex-vs-module-inspect-vs-topology)).
 
 Response (single form; `…ByIds` nests this per id):
 
@@ -1608,9 +1606,9 @@ committed = response.header.ok and response.data.res.ok and response.data.valida
 Concurrency: the action performs **no revision check** — a stale `_rev` in
 `replace*` payloads is ignored (last-writer-wins, verified 2025.4.9). Conflict
 detection is client-side compare-and-commit
-([ADR-0009](./decisions/0009-write-consistency.md)); after a successful commit
+([ADR-007](./decisions/007-write-consistency.md)); after a successful commit
 the snapshot is refreshed with targeted scoped reads
-([ADR-0010](./decisions/0010-post-commit-snapshot-refresh.md)).
+([ADR-008](./decisions/008-post-commit-snapshot-refresh.md)).
 
 Failure modes (verified 2025.4.9):
 
@@ -1729,37 +1727,6 @@ verified 2025.4.9):
 }
 ```
 
-Earlier anonymized failure shape (browser capture, 2026-06-18):
-
-```json
-{
-  "data": {
-    "items": [],
-    "res": {
-      "msg": ["Validation failed"],
-      "ok": false
-    },
-    "validation": {
-      "createIds": [],
-      "details": {
-        "booking-1001": {
-          "isCancel": false,
-          "isProduct": false,
-          "resolvable": false,
-          "rev": "2-2026-01-01T00:00:00.000000000Z[UTC]",
-          "status": -22,
-          "type": "generic"
-        }
-      },
-      "result": {
-        "msg": ["A required edge was not found. (main)"],
-        "ok": false
-      }
-    }
-  }
-}
-```
-
 ## `POST /rest/v2/actions/status/tags/assignTag` / `…/unassignTag`
 
 Module (and other resource) tag bindings that are **not** carried on
@@ -1849,4 +1816,4 @@ references `updateTopology`, `addDevices`, `syncDevices`, `lookupSyncInfo`,
 `lookupNodeInfo`, `lookupConfigDesc`, `updateVirtualInstances`,
 `updateVirtualTemplates`, and `addVirtualTopology` — and contains **zero
 references to `nGraphElements`**
-([ADR-0008](./decisions/0008-collector-only-endpoints.md)).
+([ADR-006](./decisions/006-collector-only-endpoints.md)).

@@ -1,4 +1,4 @@
-"""InspectSnapshot: skeleton-first, lazily-hydrated, accreting read state ([ADR-0007]).
+"""InspectSnapshot: skeleton-first, lazily-hydrated, accreting read state.
 
 A snapshot is built from two scoped skeleton reads (all devices without module/port detail, all
 external-edge pairs). Detail is hydrated on demand — the first access to a device's ports fetches
@@ -8,7 +8,7 @@ carries its own fetch timestamp. ``refresh()`` builds a *new* snapshot; state is
 across snapshots.
 
 After a successful commit the transaction calls the post-commit hooks here to update only the
-touched entities via targeted scoped re-reads ([ADR-0010]) instead of a full reload.
+touched entities via targeted scoped re-reads instead of a full reload.
 """
 
 from __future__ import annotations
@@ -90,11 +90,11 @@ class InspectSnapshot:
         self._ports_by_pid: dict[str, list[_IndexedPort]] = {}
         self._modules_by_device_id: dict[str, dict[str, InspectApiModuleStatus]] = {}
 
-        # Vertex edit-form details, fetched lazily per vertex ([ADR-0007]) and invalidated when the
+        # Vertex edit-form details, fetched lazily per vertex and invalidated when the
         # owning device's ports are rebuilt after a refresh/commit.
         self._vertex_details: dict[str, "InspectApiLookupVertexResponseData"] = {}
 
-        # Edge edit-form details, fetched lazily per edge ([ADR-0007]) and invalidated when the
+        # Edge edit-form details, fetched lazily per edge and invalidated when the
         # owning edge pair is dropped/re-indexed after a refresh/commit.
         self._edge_details: dict[str, "InspectApiEdgeForm"] = {}
 
@@ -115,7 +115,7 @@ class InspectSnapshot:
         self._edge_cache: dict[str, "InspectEdge"] = {}
         self._service_cache: dict[str, "InspectService"] = {}
 
-        # Entities whose post-write re-fetch failed; re-fetched lazily on next access ([ADR-0010]).
+        # Entities whose post-write re-fetch failed; re-fetched lazily on next access.
         self._stale_devices: set[str] = set()
         self._stale_pairs: set[str] = set()
 
@@ -421,7 +421,7 @@ class InspectSnapshot:
     def get_alarms_for_service(self, booking_id: str) -> list["InspectAlarm"]:
         return self.get_alarms_for_resource(booking_id)
 
-    # --- Bulk preload (ADR-0004) ---
+    # --- Bulk preload ---
 
     def preload(self, devices: Optional[list[str]] = None) -> None:
         """Hydrate multiple devices in parallel to avoid N+1 when detail is needed for many.
@@ -507,7 +507,7 @@ class InspectSnapshot:
             edge_items=self._fetcher.get_edge_skeleton(),
         )
 
-    # --- Post-commit hooks (ADR-0010) ---
+    # --- Post-commit hooks ---
 
     def apply_post_commit(
         self,
@@ -628,7 +628,7 @@ class InspectSnapshot:
                 self._index_edge_pair(pair)
             self._stale_pairs.discard(pair_id)
 
-    # --- Internal: resilient refresh + lazy-stale self-heal (ADR-0010) ---
+    # --- Internal: resilient refresh + lazy-stale self-heal ---
 
     def _try_ensure_device_detail(self, device_id: str) -> None:
         """Hydrate a device; on failure mark it stale (lazy self-heal on next access) and log."""

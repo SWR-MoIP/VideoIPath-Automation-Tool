@@ -1,7 +1,7 @@
 """Scoped collector query catalogue for the Inspect app.
 
 Every query string here is **verified live against VideoIPath 2025.4.9** and is the
-concrete basis for the skeleton-first + lazy-hydration loading model ([ADR-0007]).
+concrete basis for the skeleton-first + lazy-hydration loading model.
 The Inspect UI issues the same paths over WebSocket subscriptions; the package
 issues them as REST GETs (see docs/architecture/inspect-app/endpoints.md).
 
@@ -51,7 +51,7 @@ def edge_skeleton() -> str:
 
 
 def edge_pair(pair_id: str) -> str:
-    """GET path for a single external-edge device pair (targeted refresh, [ADR-0010])."""
+    """GET path for a single external-edge device pair (targeted refresh)."""
     return _build(f"/status/collector/externalEdgesByDeviceKey/{pair_id}" + _EDGE_LEAN_TAIL)
 
 
