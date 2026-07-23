@@ -79,6 +79,7 @@ except Exception as e:
 ## Documentation
 
 - [Getting Started Guide](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/getting-started-guide/README.md)
+- [Examples](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/examples/README.md)
 - [Driver Versioning](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/driver-versioning.md)
 - [Python Module Architecture](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/architecture/python-module-architecture.md)
 - [Development and Release](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blob/main/docs/development-and-release.md)

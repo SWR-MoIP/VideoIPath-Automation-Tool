@@ -21,7 +21,7 @@ reference is now a primary source.
 > (`src/videoipath_automation_tool/apps/inspect/`), with offline unit tests under
 > `tests/inspect/` and a developer-run live E2E suite under `tests/e2e/inspect/`.
 > All ten ADRs are Accepted. For usage, see the
-> [Inspect getting-started page](../../getting-started-guide/05_Inspect.md).
+> [Inspect getting-started page](../../getting-started-guide/03_B_Inspect.md).
 
 ## Reading order
 

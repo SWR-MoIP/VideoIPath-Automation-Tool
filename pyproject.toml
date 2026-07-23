@@ -67,7 +67,7 @@ test-e2e = "vipat_cli_scripts.test_runner:run_e2e"
 test = "vipat_cli_scripts.test_runner:run"
 
 [tool.ruff]
-include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]
+include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py", "docs/examples/**/*.py"]
 
 # Formatter config
 line-length = 120

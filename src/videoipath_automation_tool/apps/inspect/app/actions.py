@@ -69,21 +69,44 @@ class InspectActionsMixin:
             raise ValueError("device_ids must not be empty.")
         return self._inspect_api.lookup_sync_info(device_ids).data
 
-    def add_devices_to_topology(self: _HasInspectApi, devices: Iterable[AddDeviceSpec]) -> bool:
+    def add_devices_to_topology(
+        self: _HasInspectApi,
+        devices: Iterable[AddDeviceSpec],
+        *,
+        sync: bool = True,
+        add_only: bool = True,
+        conflict_strategy: ConflictStrategy = ConflictStrategy.STRICT,
+    ) -> bool:
         """Add onboarded devices to the topology graph (``addDevices`` network action).
+
+        By default also runs ``syncDevices`` so driver-reported ports/vertices appear in the
+        graph — the usual onboarding sequence in one call. Pass ``sync=False`` to place only.
 
         Args:
             devices: device ids, or ``(device_id, x, y)`` tuples to place them.
+            sync: when ``True`` (default), synchronize driver-reported topology after adding.
+            add_only: forwarded to ``syncDevices`` (only add new elements; do not remove/update).
+            conflict_strategy: forwarded to ``syncDevices`` for conflicts with active services.
 
         Returns:
-            bool: whether the action reported success (``data.ok``).
+            bool: whether every action that ran reported success (``data.ok``). On sync failure
+            after a successful add, the snapshot is still refreshed for the added devices.
         """
         items = [_to_add_item(spec) for spec in devices]
+        device_ids = [item.id for item in items]
         response = self._inspect_api.add_devices(items)
         if not response.data.ok:
             self._logger.warning(f"addDevices reported failure: {response.data.msg}")
             return False
-        self._refresh_after_network_action([item.id for item in items])
+        if sync and device_ids:
+            sync_response = self._inspect_api.sync_devices(
+                device_ids, add_only=add_only, conflict_strategy=int(conflict_strategy)
+            )
+            if not sync_response.data.ok:
+                self._logger.warning(f"syncDevices reported failure: {sync_response.data.msg}")
+                self._refresh_after_network_action(device_ids)
+                return False
+        self._refresh_after_network_action(device_ids)
         return True
 
     def sync_devices(

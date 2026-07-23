@@ -11,15 +11,25 @@ import pytest
 from videoipath_automation_tool.apps.inspect.app.actions import ConflictStrategy, InspectActionsMixin
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
 
+_ADD_DEVICES = "/rest/v2/actions/status/network/addDevices"
+_SYNC_DEVICES = "/rest/v2/actions/status/network/syncDevices"
+
 
 class FakeRest:
-    def __init__(self, post_data: dict[str, Any]) -> None:
-        self._post_data = post_data
+    def __init__(
+        self,
+        post_data: dict[str, Any] | None = None,
+        *,
+        by_path: dict[str, dict[str, Any]] | None = None,
+    ) -> None:
+        self._post_data = post_data if post_data is not None else {"msg": [], "ok": True}
+        self._by_path = by_path or {}
         self.post_calls: list[tuple[str, dict[str, Any]]] = []
 
     def post(self, url_path: str, body: Any, **kwargs: Any) -> SimpleNamespace:
         self.post_calls.append((url_path, body.model_dump(mode="json", by_alias=True)))
-        return SimpleNamespace(data=self._post_data, header=_ok_header())
+        data = self._by_path.get(url_path, self._post_data)
+        return SimpleNamespace(data=data, header=_ok_header())
 
 
 def test_conflict_strategy_values() -> None:
@@ -29,14 +39,58 @@ def test_conflict_strategy_values() -> None:
 
 
 def test_add_devices_builds_placement_items() -> None:
-    app = _App({"msg": [], "ok": True})
-    assert app.add_devices_to_topology([("device12", 100, 200), "device13"]) is True
+    app = _App()
+    assert app.add_devices_to_topology([("device12", 100, 200), "device13"], sync=False) is True
+    paths = [path for path, _ in app._inspect_api.vip_connector.rest.post_calls]
+    assert paths == [_ADD_DEVICES]
     _, payload = app._inspect_api.vip_connector.rest.post_calls[0]
     assert payload["data"] == [{"id": "device12", "x": 100, "y": 200}, {"id": "device13", "x": 0, "y": 0}]
 
 
+def test_add_devices_syncs_by_default() -> None:
+    app = _App()
+    assert app.add_devices_to_topology([("device12", 100, 200), "device13"]) is True
+    rest = app._inspect_api.vip_connector.rest
+    assert [path for path, _ in rest.post_calls] == [_ADD_DEVICES, _SYNC_DEVICES]
+    assert rest.post_calls[0][1]["data"] == [
+        {"id": "device12", "x": 100, "y": 200},
+        {"id": "device13", "x": 0, "y": 0},
+    ]
+    assert rest.post_calls[1][1]["data"] == {
+        "ids": ["device12", "device13"],
+        "addOnly": True,
+        "conflictStrategy": 0,
+    }
+
+
+def test_add_devices_passes_sync_options() -> None:
+    app = _App()
+    assert (
+        app.add_devices_to_topology(
+            ["device12"],
+            sync=True,
+            add_only=False,
+            conflict_strategy=ConflictStrategy.CANCEL_SERVICES,
+        )
+        is True
+    )
+    _, sync_payload = app._inspect_api.vip_connector.rest.post_calls[1]
+    assert sync_payload["data"] == {
+        "ids": ["device12"],
+        "addOnly": False,
+        "conflictStrategy": 2,
+    }
+
+
+def test_add_devices_sync_false_skips_sync() -> None:
+    app = _App()
+    assert app.add_devices_to_topology(["device12"], sync=False) is True
+    paths = [path for path, _ in app._inspect_api.vip_connector.rest.post_calls]
+    assert paths == [_ADD_DEVICES]
+
+
 def test_sync_devices_passes_strategy() -> None:
-    app = _App({"msg": [], "ok": True})
+    app = _App()
     app.sync_devices(["device12"], add_only=True, conflict_strategy=ConflictStrategy.CANCEL_SERVICES)
     _, payload = app._inspect_api.vip_connector.rest.post_calls[0]
     assert payload["data"] == {"ids": ["device12"], "addOnly": True, "conflictStrategy": 2}
@@ -48,7 +102,7 @@ def test_sync_devices_reports_failure() -> None:
 
 
 def test_empty_lists_rejected() -> None:
-    app = _App({"msg": [], "ok": True})
+    app = _App()
     with pytest.raises(ValueError):
         app.sync_devices([])
     with pytest.raises(ValueError):
@@ -60,21 +114,21 @@ def test_empty_lists_rejected() -> None:
 
 def test_add_devices_refreshes_snapshot_when_loaded() -> None:
     snap = _RecordingSnapshot()
-    app = _App({"msg": [], "ok": True}, snapshot=snap)
+    app = _App(snapshot=snap)
     assert app.add_devices_to_topology([("device12", 1, 2), "device13"]) is True
     assert snap.network_refresh_calls == [["device12", "device13"]]
 
 
 def test_sync_devices_refreshes_snapshot_when_loaded() -> None:
     snap = _RecordingSnapshot()
-    app = _App({"msg": [], "ok": True}, snapshot=snap)
+    app = _App(snapshot=snap)
     assert app.sync_devices(["device12", "device13"]) is True
     assert snap.network_refresh_calls == [["device12", "device13"]]
 
 
 def test_network_action_without_snapshot_does_not_build_one() -> None:
     # _snapshot is None: a pure-action workflow must not trigger a topology read.
-    app = _App({"msg": [], "ok": True})
+    app = _App()
     assert app.add_devices_to_topology(["device12"]) is True
 
 
@@ -83,6 +137,33 @@ def test_failed_action_does_not_refresh() -> None:
     app = _App({"msg": ["nope"], "ok": False}, snapshot=snap)
     assert app.sync_devices(["device12"]) is False
     assert snap.network_refresh_calls == []
+
+
+def test_add_devices_failure_skips_sync_and_refresh() -> None:
+    snap = _RecordingSnapshot()
+    app = _App(
+        by_path={_ADD_DEVICES: {"msg": ["add failed"], "ok": False}},
+        snapshot=snap,
+    )
+    assert app.add_devices_to_topology(["device12"]) is False
+    paths = [path for path, _ in app._inspect_api.vip_connector.rest.post_calls]
+    assert paths == [_ADD_DEVICES]
+    assert snap.network_refresh_calls == []
+
+
+def test_add_devices_sync_failure_refreshes_and_returns_false() -> None:
+    snap = _RecordingSnapshot()
+    app = _App(
+        by_path={
+            _ADD_DEVICES: {"msg": [], "ok": True},
+            _SYNC_DEVICES: {"msg": ["sync failed"], "ok": False},
+        },
+        snapshot=snap,
+    )
+    assert app.add_devices_to_topology(["device12"]) is False
+    paths = [path for path, _ in app._inspect_api.vip_connector.rest.post_calls]
+    assert paths == [_ADD_DEVICES, _SYNC_DEVICES]
+    assert snap.network_refresh_calls == [["device12"]]
 
 
 # --- Internal ---
@@ -117,9 +198,14 @@ class _RecordingSnapshot:
 class _App(InspectActionsMixin):
     def __init__(
         self,
-        post_data: dict[str, Any],
+        post_data: dict[str, Any] | None = None,
         snapshot: _RecordingSnapshot | None = None,
+        *,
+        by_path: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self._logger = logging.getLogger("test")
-        self._inspect_api = InspectAPI(SimpleNamespace(rest=FakeRest(post_data)), self._logger)
+        self._inspect_api = InspectAPI(
+            SimpleNamespace(rest=FakeRest(post_data, by_path=by_path)),
+            self._logger,
+        )
         self._snapshot = snapshot

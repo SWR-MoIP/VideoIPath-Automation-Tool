@@ -1,36 +1,46 @@
-# Inspect App
+# 03-B — Inspect App
+
+> **Paired stage:** this page and [03-A Topology](03_A_Topology.md) cover the same
+> topology workflows with different implementations. This page is the recommended
+> path on VideoIPath **2025.4+**.
+
+### Compatibility & deprecation
+
+| Server version | Status |
+|---|---|
+| VideoIPath **≥ 2025.4** | Supported and recommended (verified) |
+| VideoIPath **&lt; 2025.4** | Unverified — the app logs a warning; behaviour is not guaranteed |
+| Relation to Topology | Inspect **replaces** `app.topology` going forward |
 
 ## 1. Introduction
 
-The **Inspect App** (`app.inspect`) is the read/write interface to VideoIPath's newer *Inspect*
-surface: it builds a live view of the topology (devices, ports, edges, and services) and applies
-topology changes with a **commit-style** write model.
-
-It is **purely additive** — `app.topology` and `app.inventory` keep working unchanged. Devices are
-still onboarded in Inventory first; Inspect then places, connects, and monitors them.
+The **Inspect App** (`app.inspect`) is the read/write interface to VideoIPath's
+newer *Inspect* surface: it builds a live view of the topology (devices, ports,
+edges, and services) and applies topology changes with a **commit-style** write
+model.
 
 Two ideas shape the API:
 
-- **Skeleton-first snapshots** — a snapshot loads only the minimal topology (all devices and edges,
-  without per-port detail) up front, then *lazily hydrates* detail the first time you touch it. This
-  keeps the initial read fast even in large environments. A snapshot is never a single point in
-  time; each device and section carries its own fetch timestamp.
-- **Commit-style writes** — changes are staged and applied atomically. Before sending, the change
-  set re-checks that nobody else modified the affected entities (compare-and-commit); after a
-  successful commit it refreshes only the touched entities.
+- **Skeleton-first snapshots** — a snapshot loads only the minimal topology (all
+  devices and edges, without per-port detail) up front, then *lazily hydrates*
+  detail the first time you touch it. This keeps the initial read fast even in
+  large environments. A snapshot is never a single point in time; each device and
+  section carries its own fetch timestamp.
+- **Commit-style writes** — changes are staged and applied atomically. Before
+  sending, the change set re-checks that nobody else modified the affected
+  entities (compare-and-commit); after a successful commit it refreshes only the
+  touched entities.
 
-> Inspect is verified against VideoIPath **2025.4** and newer. Against older servers the app logs a
-> warning; behaviour is unverified.
-
-The app keeps a single topology view internally — you never handle a "snapshot" object. It loads on
-your first read and stays current across writes; call `app.inspect.refresh()` to reload it.
+The app keeps a single topology view internally — you never handle a "snapshot"
+object. It loads on your first read and stays current across writes; call
+`app.inspect.refresh()` to reload it.
 
 ## 2. Reading the topology
 
 ### 2.1. Devices, ports, and edges
 
-Everything is read straight off `app.inspect`. Skeleton fields are available without any per-device
-I/O:
+Everything is read straight off `app.inspect`. Skeleton fields are available
+without any per-device I/O:
 
 ```python
 device = app.inspect.get_device("device10")
@@ -42,8 +52,8 @@ for device in app.inspect.devices:     # all devices
     print(device.id, device.label)
 ```
 
-The first access to a device's **ports** hydrates that one device (a single scoped read), then
-serves from local state:
+The first access to a device's **ports** hydrates that one device (a single
+scoped read), then serves from local state:
 
 ```python
 for port in device.ports:              # triggers one hydration fetch for this device
@@ -80,7 +90,11 @@ for service in app.inspect.services:             # loads the paths section on fi
 
 ### 2.3. Refreshing
 
-The view updates itself after your own writes. To pick up external changes, reload it:
+The view updates itself after your own writes and network actions (targeted
+scoped re-fetch of touched devices/edges) — you do **not** need to call
+`refresh()` after `connect`, `update`, `add_devices_to_topology`, and similar.
+Use `refresh()` only to pick up **external** changes (another user/session, or
+server-side work outside this app):
 
 ```python
 app.inspect.refresh()                # reload (skeleton; lazy detail)
@@ -91,8 +105,9 @@ app.inspect.refresh(load="full")     # reload eagerly in one request
 
 ### 3.1. Direct writes (auto-commit)
 
-Each direct method opens a one-change transaction and commits it immediately. If the internal view
-is already loaded, the change is reflected into it via targeted refresh:
+Each direct method opens a one-change transaction and commits it immediately. If
+the internal view is already loaded, the change is reflected into it via targeted
+refresh:
 
 ```python
 app.inspect.place_device("device12", x=1600, y=9050)
@@ -134,7 +149,8 @@ with app.inspect.transaction() as tx:
 print(result.ok, result.applied_ids)
 ```
 
-Exiting the `with` block **without** committing discards the staged changes (and logs a warning).
+Exiting the `with` block **without** committing discards the staged changes (and
+logs a warning).
 
 ### 3.3. Handling concurrent changes
 
@@ -156,25 +172,37 @@ except InspectCommitConflictError as exc:
 tx.commit(check_conflicts=False)
 ```
 
-A server-rejected commit (validation or apply gate) raises `InspectCommitError`, which carries the
-typed `validation` details.
+A server-rejected commit (validation or apply gate) raises `InspectCommitError`,
+which carries the typed `validation` details.
 
 ## 4. Onboarding devices into the topology
+
+`add_devices_to_topology` places devices and, by default, syncs their
+driver-reported ports/vertices in one call:
 
 ```python
 from videoipath_automation_tool.apps.inspect import ConflictStrategy
 
 app.inspect.add_devices_to_topology([("device12", 100, 200), "device13"])
+# Pass sync=False to place only; or override sync options:
+# app.inspect.add_devices_to_topology(
+#     ["device12"], sync=True, add_only=True, conflict_strategy=ConflictStrategy.STRICT
+# )
+
+# Preview what a later re-sync would change, then re-sync existing devices:
 info = app.inspect.get_sync_info(["device12"])
 app.inspect.sync_devices(["device12"], add_only=True, conflict_strategy=ConflictStrategy.STRICT)
 ```
 
 ## 5. Notes
 
-- Inspect uses **only** the collector API surface at runtime; it never calls the legacy
-  `nGraphElements` / `edgesByDevice` endpoints.
-- The topology view is loaded lazily and kept internal to `app.inspect`; a pure-write workflow never
-  triggers a read. Reads and hydration are internally consistent under concurrent access, but a
-  single `VideoIPathApp` is otherwise intended for single-owner use.
+- Inspect uses **only** the collector API surface at runtime; it never calls the
+  legacy `nGraphElements` / `edgesByDevice` endpoints.
+- The topology view is loaded lazily and kept internal to `app.inspect`; a
+  pure-write workflow never triggers a read. Reads and hydration are internally
+  consistent under concurrent access, but a single `VideoIPathApp` is otherwise
+  intended for single-owner use.
+- Runnable paired scripts (Inspect vs Topology) live under
+  [`docs/examples/03_topology_and_inspect/`](../examples/03_topology_and_inspect/).
 - For the design rationale, see the architecture docs under
   [`docs/architecture/inspect-app/`](../architecture/inspect-app/README.md).
