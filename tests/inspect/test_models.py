@@ -198,6 +198,29 @@ def test_inspect_icon_type_matches_topology_icon_type() -> None:
     assert set(get_args(InspectIconType)) == set(get_args(IconType))
 
 
+def test_inspect_literals_match_topology_literals() -> None:
+    """Drift guard: inspect Literals that mirror topology must stay in sync."""
+    from typing import get_args, get_type_hints
+
+    from videoipath_automation_tool.apps.inspect.model.common import (
+        InspectCodecFormat,
+        InspectControl,
+        InspectMapCType,
+        InspectSipsMode,
+    )
+    from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_codec_vertex import CodecFormat
+    from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import (
+        Control,
+        MapsElement,
+        SipsMode,
+    )
+
+    assert set(get_args(InspectSipsMode)) == set(get_args(SipsMode))
+    assert set(get_args(InspectControl)) == set(get_args(Control))
+    assert set(get_args(InspectCodecFormat)) == set(get_args(CodecFormat))
+    assert set(get_args(InspectMapCType)) == set(get_args(get_type_hints(MapsElement)["cType"]))
+
+
 def test_port_assigned_tags_from_tags_info() -> None:
     port = InspectPortStatus.model_validate(
         {

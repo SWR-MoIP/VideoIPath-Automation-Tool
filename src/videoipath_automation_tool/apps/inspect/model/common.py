@@ -64,6 +64,18 @@ InspectConfigPriority = Literal["off", "high", "normal", "low"]
 CONFLICT_PRIORITY_TO_INT: dict[str, int] = {"off": 0, "high": 1, "normal": 2, "low": 3}
 CONFLICT_PRIORITY_BY_INT: dict[int, str] = {value: name for name, value in CONFLICT_PRIORITY_TO_INT.items()}
 
+# SIPS mode on vertices (mirrors the topology app's ``SipsMode``).
+InspectSipsMode = Literal["NONE", "SIPSAuto", "SIPSDuplicate", "SIPSMerge", "SIPSSplit"]
+
+# Vertex control level (mirrors the topology app's ``Control``).
+InspectControl = Literal["full", "off", "semi"]
+
+# Codec format on codec vertices (mirrors the topology app's ``CodecFormat``).
+InspectCodecFormat = Literal["Video", "Audio", "ASI", "Ancillary"]
+
+# Map coordinate type on nGraph map elements (mirrors topology ``cType``).
+InspectMapCType = Literal["Topology", "Geo"]
+
 
 class InspectApiBaseModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_assignment=True, extra="allow")
@@ -198,11 +210,15 @@ __all__ = [
     "InspectApiStatusSummary",
     "CONFLICT_PRIORITY_BY_INT",
     "CONFLICT_PRIORITY_TO_INT",
+    "InspectCodecFormat",
     "InspectConfigPriority",
+    "InspectControl",
     "InspectIconSize",
     "InspectIconType",
+    "InspectMapCType",
     "InspectRedundancyMode",
     "InspectSdpStrategy",
+    "InspectSipsMode",
     "InspectVertexKind",
     "InspectVertexType",
     "_STAGED_MISSING",

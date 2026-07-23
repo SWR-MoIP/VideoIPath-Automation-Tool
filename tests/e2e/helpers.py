@@ -31,14 +31,14 @@ E2E_TAG = "vipat-e2e"
 MOCK_DRIVER = "com.nevion.mock-0.1.0"
 
 # Catalog tags created via simple API requests for the Inspect tag tests. Tag references are
-# ``Category~~name`` ids; they live in the existing "Video" format category.
-TEST_TAG_CATEGORY = "Video"
+# ``~~``-joined ids under the default Format tree (e.g. Format~~Video~~E2E-VIDEO-TAG).
+TEST_TAG_PATH = ("Format", "Video")
 TEST_TAG_NAME = "E2E-VIDEO-TAG"
-TEST_TAG_ID = f"{TEST_TAG_CATEGORY}~~{TEST_TAG_NAME}"
+TEST_TAG_ID = "~~".join((*TEST_TAG_PATH, TEST_TAG_NAME))
 
-MODULE_TEST_TAG_CATEGORY = "Video"
+MODULE_TEST_TAG_PATH = ("Format", "Video")
 MODULE_TEST_TAG_NAME = "E2E-MODULE-TAG"
-MODULE_TEST_TAG_ID = f"{MODULE_TEST_TAG_CATEGORY}~~{MODULE_TEST_TAG_NAME}"
+MODULE_TEST_TAG_ID = "~~".join((*MODULE_TEST_TAG_PATH, MODULE_TEST_TAG_NAME))
 
 
 def unique_label(base: str) -> str:
@@ -354,18 +354,35 @@ class FetchSpy:
 # --- Test tag catalog (simple API requests) --------------------------------------------------------
 
 
-def create_catalog_tag(app: "VideoIPathApp", *, category: str, name: str) -> str:
-    """Create a catalog tag under ``category`` (idempotent). Returns the ``Category~~name`` id."""
-    cat = _tag_category(app, category)
+def create_catalog_tag(app: "VideoIPathApp", *, path: tuple[str, ...], name: str) -> str:
+    """Create a catalog tag under ``path`` (idempotent). Returns the ``~~``-joined id.
+
+    ``path`` is ``(root_tree_id, *intermediate_node_names)``, e.g. ``(\"Format\", \"Video\")``.
+    """
+    if not path:
+        raise ValueError("path must include at least the root tag tree id")
+    root_id, *intermediates = path
+    cat = _tag_category(app, root_id)
     if cat is None:
-        raise RuntimeError(f"Tag category '{category}' not found on the server.")
+        raise RuntimeError(f"Tag category '{root_id}' not found on the server.")
+
     children = dict(cat.get("children") or {})
-    children[name] = {"exclusive": False, "children": {}}
+    parent_children = children
+    for segment in intermediates:
+        if segment not in parent_children:
+            raise RuntimeError(f"Tag path segment '{segment}' not found under '{root_id}'.")
+        node = dict(parent_children[segment])
+        node_children = dict(node.get("children") or {})
+        node["children"] = node_children
+        parent_children[segment] = node
+        parent_children = node_children
+
+    parent_children[name] = {"_id": name, "exclusive": False, "children": {}, "color": ""}
     body = {
         "actions": [
             {
                 "_action": "update",
-                "_id": category,
+                "_id": root_id,
                 "_rev": cat["_rev"],
                 "children": children,
                 "type": cat.get("type", "format"),
@@ -376,18 +393,32 @@ def create_catalog_tag(app: "VideoIPathApp", *, category: str, name: str) -> str
         ]
     }
     _raw_request(app, "patch", "/rest/v2/data/config/tags/tagTrees", body)
-    return f"{category}~~{name}"
+    return "~~".join((*path, name))
 
 
-def catalog_tag_exists(app: "VideoIPathApp", *, category: str, name: str) -> bool:
-    cat = _tag_category(app, category)
-    return cat is not None and name in (cat.get("children") or {})
+def catalog_tag_exists(app: "VideoIPathApp", *, path: tuple[str, ...], name: str) -> bool:
+    if not path:
+        return False
+    root_id, *intermediates = path
+    cat = _tag_category(app, root_id)
+    if cat is None:
+        return False
+    node_children: dict[str, Any] = cat.get("children") or {}
+    for segment in intermediates:
+        if segment not in node_children:
+            return False
+        node_children = node_children[segment].get("children") or {}
+    return name in node_children
 
 
 def delete_catalog_tag(app: "VideoIPathApp", tag_id: str) -> None:
     """Force-delete a catalog tag (removes it and any resource bindings) if it exists."""
-    category, _, name = tag_id.partition("~~")
-    if not category or not name or not catalog_tag_exists(app, category=category, name=name):
+    parts = tag_id.split("~~")
+    if len(parts) < 2:
+        return
+    path = tuple(parts[:-1])
+    name = parts[-1]
+    if not catalog_tag_exists(app, path=path, name=name):
         return
     _raw_request(
         app,
@@ -399,7 +430,7 @@ def delete_catalog_tag(app: "VideoIPathApp", tag_id: str) -> None:
 
 def create_test_tag(app: "VideoIPathApp") -> None:
     """Create the E2E port/vertex test video tag in the catalog (idempotent)."""
-    create_catalog_tag(app, category=TEST_TAG_CATEGORY, name=TEST_TAG_NAME)
+    create_catalog_tag(app, path=TEST_TAG_PATH, name=TEST_TAG_NAME)
 
 
 def delete_test_tag(app: "VideoIPathApp") -> None:
@@ -409,7 +440,7 @@ def delete_test_tag(app: "VideoIPathApp") -> None:
 
 def create_module_test_tag(app: "VideoIPathApp") -> None:
     """Create the E2E module test tag in the catalog (idempotent)."""
-    create_catalog_tag(app, category=MODULE_TEST_TAG_CATEGORY, name=MODULE_TEST_TAG_NAME)
+    create_catalog_tag(app, path=MODULE_TEST_TAG_PATH, name=MODULE_TEST_TAG_NAME)
 
 
 def delete_module_test_tag(app: "VideoIPathApp") -> None:

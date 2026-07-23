@@ -18,7 +18,13 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiPostRequestHeader,
     InspectApiRestV2Header,
     InspectApiSimpleActionResult,
+    InspectCodecFormat,
+    InspectConfigPriority,
+    InspectControl,
+    InspectSipsMode,
+    InspectVertexType,
 )
+from videoipath_automation_tool.apps.inspect.model.ngraph import InspectApiNGraphElementType
 
 
 class InspectApiVirtualPortFromTemplate(InspectApiBaseModel):
@@ -88,13 +94,13 @@ class InspectApiUpdateVirtualInstancesResponse(InspectApiBaseModel):
 class InspectApiVirtualTemplateVertex(InspectApiBaseModel):
     """Vertex config embedded in a port template (lossless; ``extra="allow"``)."""
 
-    type: str | None = None
-    vertexType: str | None = None
-    codecFormat: str | None = None
+    type: InspectApiNGraphElementType | str | None = None
+    vertexType: InspectVertexType | str | None = None
+    codecFormat: InspectCodecFormat | str | None = None
     isVirtual: bool | None = None
     active: bool | None = None
-    control: str | None = None
-    configPriority: str | None = None
+    control: InspectControl | str | None = None
+    configPriority: InspectConfigPriority | str | None = None
     useAsEndpoint: bool | None = None
     deviceId: str | None = None
     descriptor: dict[str, Any] | None = None
@@ -102,7 +108,7 @@ class InspectApiVirtualTemplateVertex(InspectApiBaseModel):
     custom: dict[str, Any] = Field(default_factory=dict)
     tags: list[str] = Field(default_factory=list)
     maps: list[Any] = Field(default_factory=list)
-    sipsMode: str | None = None
+    sipsMode: InspectSipsMode | str | None = None
     imgUrl: str | None = None
     extraAlertFilters: list[Any] = Field(default_factory=list)
     gpid: dict[str, Any] | None = None

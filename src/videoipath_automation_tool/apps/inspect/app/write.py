@@ -20,11 +20,14 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol, Sequence
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectCodecFormat,
     InspectConfigPriority,
+    InspectControl,
     InspectIconSize,
     InspectIconType,
     InspectRedundancyMode,
     InspectSdpStrategy,
+    InspectSipsMode,
 )
 from videoipath_automation_tool.apps.inspect.transaction import (
     CommitResult,
@@ -150,8 +153,8 @@ class InspectWriteMixin:
         form_tags: Optional[list[str]] = None,
         description: Optional[str] = None,
         active: Optional[bool] = None,
-        sips_mode: Optional[str] = None,
-        control: Optional[str] = None,
+        sips_mode: Optional[InspectSipsMode | str] = None,
+        control: Optional[InspectControl | str] = None,
         control_props: Optional[Any] = None,
         extra_alert_filters: Optional[list[Any]] = None,
         custom: Optional[dict[str, Any]] = None,
@@ -174,7 +177,7 @@ class InspectWriteMixin:
         sdp_support: Optional[bool] = None,
         is_igmp_source: Optional[bool] = None,
         specific_type: Optional[str] = None,
-        codec_format: Optional[str] = None,
+        codec_format: Optional[InspectCodecFormat | str] = None,
         multiplicity: Optional[int] = None,
         codec_public: Optional[bool] = None,
         extra_formats: Optional[list[Any]] = None,

@@ -8,7 +8,12 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiDoubleVertexInfo,
     InspectApiSingleVertexInfo,
 )
-from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel
+from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectCodecFormat,
+    InspectFrozenModel,
+    InspectVertexType,
+)
+from videoipath_automation_tool.apps.inspect.model.ngraph import InspectApiNGraphElementType
 from videoipath_automation_tool.apps.inspect.model.virtual import (
     InspectApiVirtualPortFromTemplate,
     InspectApiVirtualTemplateItem,
@@ -50,9 +55,9 @@ class InspectPortTemplate(InspectFrozenModel):
 
     id: str
     label: str
-    kind: str | None = None
-    direction: str | None = None
-    codec_format: str | None = None
+    kind: InspectApiNGraphElementType | str | None = None
+    direction: InspectVertexType | str | None = None
+    codec_format: InspectCodecFormat | str | None = None
     vertex: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod

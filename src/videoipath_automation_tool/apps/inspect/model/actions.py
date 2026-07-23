@@ -9,6 +9,15 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiDescriptor,
     InspectApiPostRequestHeader,
     InspectApiRestV2Header,
+    InspectCodecFormat,
+    InspectConfigPriority,
+    InspectIconSize,
+    InspectIconType,
+    InspectRedundancyMode,
+    InspectSdpStrategy,
+    InspectSipsMode,
+    InspectVertexKind,
+    InspectVertexType,
 )
 from videoipath_automation_tool.apps.inspect.model.virtual import InspectApiVirtualDeviceFields
 
@@ -28,10 +37,10 @@ class InspectApiAssignedTags(InspectApiBaseModel):
 class InspectApiLookupInspectDeviceFields(InspectApiBaseModel):
     coordinates: dict[str, float | int] | None = None
     descriptor: InspectApiDescriptor
-    iconSize: str | None = None
-    iconType: str | None = None
+    iconSize: InspectIconSize | str | None = None
+    iconType: InspectIconType | str | None = None
     localAssignedTags: list[str] = Field(default_factory=list)
-    sdpStrategy: str | None = None
+    sdpStrategy: InspectSdpStrategy | str | None = None
     siteId: str | None = None
     tags: list[str] = Field(default_factory=list)
     virtualDeviceFields: InspectApiVirtualDeviceFields | None = None
@@ -55,7 +64,7 @@ class InspectApiCodecGeneric(InspectApiBaseModel):
     endpoint blocks are kept as dicts for lossless round-tripping (``extra="allow"`` on the base)."""
 
     bidirPartnerId: str | None = None
-    codecFormat: str | None = None
+    codecFormat: InspectCodecFormat | str | None = None
     extraFormats: list[Any] = Field(default_factory=list)
     mainDstInfo: dict[str, Any] | None = None
     mainSrcInfo: dict[str, Any] | None = None
@@ -88,7 +97,7 @@ class InspectApiVertexTypeFields(InspectApiBaseModel):
     supportsStaticIgmpCfg: bool | None = None
     supportsVlanCfg: bool | None = None
     supportsVplsCfg: bool | None = None
-    type: str | None = None
+    type: InspectVertexKind | str | None = None
     vlanId: str | None = None
     vrfId: str | None = None
     # Codec vertices additionally carry ``generic`` / ``specific`` blocks here; they are preserved
@@ -100,7 +109,7 @@ class InspectApiVertexTypeFields(InspectApiBaseModel):
 class InspectApiVertexControlProps(InspectApiBaseModel):
     """Control properties of a controlled vertex (verified against a live 2025.4.9 server)."""
 
-    configPriority: str | None = None
+    configPriority: InspectConfigPriority | str | None = None
     onlyInitial: bool | None = None
 
 
@@ -117,7 +126,7 @@ class InspectApiVertexEditForm(InspectApiBaseModel):
     label: str = ""
     localAssignedTags: list[str] = Field(default_factory=list)
     queueable: bool | None = None
-    sipsMode: str | None = None
+    sipsMode: InspectSipsMode | str | None = None
     tags: list[str] = Field(default_factory=list)
     typeFields: InspectApiVertexTypeFields | None = None
     useAsEndpoint: bool | None = None
@@ -140,7 +149,7 @@ class InspectApiLookupVertexResponseData(InspectApiBaseModel):
     fields: InspectApiVertexEditForm
     id: str
     isVirtual: bool | None = None
-    vertexType: str | None = None
+    vertexType: InspectVertexType | str | None = None
 
 
 class InspectApiLookupVertexResponse(InspectApiBaseModel):
@@ -169,7 +178,7 @@ class InspectApiEdgeForm(InspectApiBaseModel):
     fDescriptor: InspectApiDescriptor = Field(default_factory=InspectApiDescriptor)
     fromId: str
     includeFormats: list[str] = Field(default_factory=list)
-    redundancyMode: str = "Any"
+    redundancyMode: InspectRedundancyMode | str = "Any"
     tags: list[str] = Field(default_factory=list)
     toId: str
     weight: int = 1

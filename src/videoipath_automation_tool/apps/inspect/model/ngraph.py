@@ -7,6 +7,16 @@ from pydantic import Field
 from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiBaseModel,
     InspectApiDescriptor,
+    InspectCodecFormat,
+    InspectConfigPriority,
+    InspectControl,
+    InspectIconSize,
+    InspectIconType,
+    InspectMapCType,
+    InspectRedundancyMode,
+    InspectSdpStrategy,
+    InspectSipsMode,
+    InspectVertexType,
 )
 
 
@@ -26,7 +36,7 @@ class InspectApiGpid(InspectApiBaseModel):
 
 
 class InspectApiMapElement(InspectApiBaseModel):
-    cType: str = "Topology"
+    cType: InspectMapCType = "Topology"
     id: str = ""
     name: str = ""
     visible: bool = True
@@ -46,27 +56,27 @@ class InspectApiNGraphElement(InspectApiBaseModel):
 
 class InspectApiBaseDevice(InspectApiNGraphElement):
     type: Literal["baseDevice"] = "baseDevice"
-    iconSize: str = "medium"
-    iconType: str = "default"
+    iconSize: InspectIconSize | str = "medium"
+    iconType: InspectIconType | str = "default"
     isVirtual: bool = False
     maps: list[InspectApiMapElement] = Field(default_factory=list)
-    sdpStrategy: str = "always"
+    sdpStrategy: InspectSdpStrategy | str = "always"
     siteId: str | None = None
 
 
 class InspectApiVertex(InspectApiNGraphElement):
     deviceId: str
     gpid: InspectApiGpid | None = None
-    configPriority: str | int | None = None
-    control: str | int | None = None
+    configPriority: InspectConfigPriority | str | int | None = None
+    control: InspectControl | str | int | None = None
     custom: dict[str, Any] = Field(default_factory=dict)
     extraAlertFilters: list[Any] = Field(default_factory=list)
     imgUrl: str | None = None
     isVirtual: bool = False
     maps: list[InspectApiMapElement] = Field(default_factory=list)
-    sipsMode: str | None = None
+    sipsMode: InspectSipsMode | str | None = None
     useAsEndpoint: bool | None = None
-    vertexType: str | None = None
+    vertexType: InspectVertexType | str | None = None
 
 
 class InspectApiIpVertex(InspectApiVertex):
@@ -88,7 +98,7 @@ class InspectApiIpVertex(InspectApiVertex):
 
 class InspectApiCodecVertex(InspectApiVertex):
     type: Literal["codecVertex"] = "codecVertex"
-    codecFormat: str | None = None
+    codecFormat: InspectCodecFormat | str | None = None
     codecType: str | None = None
 
 
@@ -119,7 +129,7 @@ class InspectApiUnidirectionalEdge(InspectApiNGraphElement):
     excludeFormats: list[str] = Field(default_factory=list)
     fromId: str
     includeFormats: list[str] = Field(default_factory=list)
-    redundancyMode: str = "Any"
+    redundancyMode: InspectRedundancyMode | str = "Any"
     toId: str
     weight: int = 0
     weightFactors: InspectApiWeightFactors = Field(default_factory=InspectApiWeightFactors)

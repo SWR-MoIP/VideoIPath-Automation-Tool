@@ -25,7 +25,10 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiSingleVertexInfo
 from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectCodecFormat,
+    InspectControl,
     InspectEditableModel,
+    InspectSipsMode,
     InspectVertexKind,
     InspectVertexType,
     _STAGED_MISSING,
@@ -147,11 +150,11 @@ class InspectVertex(InspectEditableModel):
         self._stage("useAsEndpoint", value)
 
     @property
-    def sips_mode(self) -> str | None:
+    def sips_mode(self) -> InspectSipsMode | str | None:
         return self._staged_or("sipsMode", lambda: self._form_get("sipsMode"))
 
     @sips_mode.setter
-    def sips_mode(self, value: str) -> None:
+    def sips_mode(self, value: InspectSipsMode | str) -> None:
         self._stage("sipsMode", value)
 
     @property
@@ -163,7 +166,7 @@ class InspectVertex(InspectEditableModel):
         self._stage("controlProps", value)
 
     @property
-    def control(self) -> str | None:
+    def control(self) -> InspectControl | str | None:
         """Best-effort ``control`` scalar (``"full"`` / ``"off"`` / ``"semi"``).
 
         The verified 2025.4.9 vertex edit form exposes ``controlProps`` rather than a ``control``
@@ -173,7 +176,7 @@ class InspectVertex(InspectEditableModel):
         return self._staged_or("control", lambda: self._form_get("control"))
 
     @control.setter
-    def control(self, value: str) -> None:
+    def control(self, value: InspectControl | str) -> None:
         warnings.warn(
             "InspectVertex.control stages a best-effort top-level 'control' field; the verified "
             "2025.4.9 edit form exposes controlProps instead. Prefer control_props when possible.",
@@ -413,11 +416,11 @@ class InspectCodecVertex(InspectVertex):
     read from the ``typeFields.generic`` / ``typeFields.specific`` blocks (verified 2025.4.9)."""
 
     @property
-    def codec_format(self) -> str | None:
+    def codec_format(self) -> InspectCodecFormat | str | None:
         return self._generic_get("codecFormat", "typeFields.generic.codecFormat")
 
     @codec_format.setter
-    def codec_format(self, value: str) -> None:
+    def codec_format(self, value: InspectCodecFormat | str) -> None:
         self._stage("typeFields.generic.codecFormat", value)
 
     @property

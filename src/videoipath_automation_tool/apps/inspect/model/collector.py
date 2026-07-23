@@ -11,8 +11,12 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiEndpointStatus,
     InspectApiRestV2Header,
     InspectApiStatusContext,
+    InspectIconSize,
+    InspectIconType,
+    InspectSdpStrategy,
     InspectServiceStatus,
     InspectApiStatusSummary,
+    InspectVertexType,
 )
 
 
@@ -68,11 +72,11 @@ class InspectApiPathItem(InspectApiBaseModel):
 class InspectApiNodeMeta(InspectApiBaseModel):
     coordinates: dict[str, float | int | str | None] | None = None
     hwPanelType: str | None = None
-    iconSize: str | None = None
-    iconType: str | None = None
+    iconSize: InspectIconSize | str | None = None
+    iconType: InspectIconType | str | None = None
     isCore: bool | None = None
     isVirtual: bool | None = None
-    sdpStrategy: str | None = None
+    sdpStrategy: InspectSdpStrategy | str | None = None
     siteId: str | None = None
     tags: list[str] = Field(default_factory=list)
 
@@ -87,7 +91,7 @@ class InspectApiSingleVertexInfo(InspectApiBaseModel):
     type: Literal["single"] = "single"
     id: str | None = None
     label: str | None = None
-    vertexType: str | None = None
+    vertexType: InspectVertexType | str | None = None
     fields: InspectApiVertexInfoFields | None = None
 
 
