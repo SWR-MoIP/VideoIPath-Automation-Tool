@@ -196,6 +196,8 @@ __all__ = [
     "InspectApiSimpleActionResult",
     "InspectApiStatusContext",
     "InspectApiStatusSummary",
+    "CONFLICT_PRIORITY_BY_INT",
+    "CONFLICT_PRIORITY_TO_INT",
     "InspectConfigPriority",
     "InspectIconSize",
     "InspectIconType",

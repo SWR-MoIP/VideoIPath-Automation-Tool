@@ -16,7 +16,7 @@ workflow never triggers an unnecessary topology read.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Protocol, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Protocol, Sequence
 
 from videoipath_automation_tool.apps.inspect.transaction import CommitResult, InspectTransaction
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
@@ -35,7 +35,9 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
-Editable = Union["InspectDevice", "InspectVertex", "InspectEdge", "InspectModule"]
+    Editable = InspectDevice | InspectVertex | InspectEdge | InspectModule
+else:
+    Editable = Any
 
 
 class _HasInspectState(Protocol):

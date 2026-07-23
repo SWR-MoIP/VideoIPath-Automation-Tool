@@ -26,6 +26,7 @@ def test_profile_create_and_clone(app: VideoIPathApp) -> None:
     profile_name = unique_name("profile")
     created = app.profile.create_profile(name=profile_name)
     created = app.profile.add_profile(created)
+    assert created.name == profile_name
     names = app.profile.list_profile_names() or []
     assert profile_name in names
 
