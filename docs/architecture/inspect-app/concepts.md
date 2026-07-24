@@ -99,7 +99,7 @@ Inventory onboarding stays on the existing path (`config/devman/devices`,
 | Device (inventory)     | Prerequisite — not part of collector; onboard via `config/devman/devices` | `InventoryDevice` (`apps/inventory`) |
 | Device (topology node) | Read: `collector.inspect.nodeStatus`; stored as `baseDevice` in `nGraphElements` | Store shape overlaps with Topology, but Inspect uses `InspectApiBaseDevice` |
 | Vertices / Edges       | Read: `nodeStatus` `vertexInfo` / `externalEdgesByDeviceKey`; stored as `ipVertex` / `codecVertex` / `unidirectionalEdge` in `nGraphElements` | Store shape overlaps with Topology, but Inspect uses `InspectApi*` nGraph DTOs |
-| Vertex tags            | Read: per-port `tagsInfo` on hydrated `nodeStatus`; editable form via `lookupInspectVertexByIds` (`assignedTags`, `fields.tags`, `fields.localAssignedTags`) | **Not in `nGraphElements`** — `app.topology` has no vertex-tag concept; server-side bindings live in `videoipath_docs.device_tags`, not the `ngraph` table (§3.4) |
+| Vertex tags            | Read: per-port `tagsInfo` on hydrated `nodeStatus`; editable form via `lookupInspectVertexByIds` (`assignedTags`, `fields.tags`, `fields.localAssignedTags`) | Legacy `tags` in `nGraphElements` are separate from the new framework; they are not synchronized or migrated. New-framework bindings live server-side in `videoipath_docs.device_tags`, not the `ngraph` table (§3.4) |
 | Change set / commit    | `POST …/actions/status/collector/updateTopology` → writes `nGraphElements` ([ADR-004](./decisions/004-commit-write-model.md)) | _commit flow net-new; target store is existing `nGraphElements`_ |
 | Services / paths       | `collector.inspect.paths`, `pathDescriptions` on nodes/edges | _none — net-new_ |
 | Device / edge status   | Embedded in collector (`status`, `sa`/`severity`, bandwidth, PTP) | `inventory.model.device_status`, `status/network/*` — partial overlap |
@@ -246,10 +246,10 @@ Element `type` values:
 
 | `type` | Represents | Key fields |
 | ------ | ---------- | ---------- |
-| `baseDevice` | Topology device node | `maps[]` (`cType: "Topology"`, integer `x`/`y`), `iconType`, `sdpStrategy`, `isVirtual`, `tags` (device-level only) |
-| `ipVertex` | Ethernet/IP port vertex (`.in` / `.out`) | `vertexType`, `gpid.pointId`, `supports*Cfg` capability flags — **not** vertex tag bindings (§3.4) |
-| `codecVertex` | Codec/SDI endpoint vertex | `vertexType` (`In`/`Out`), `codecFormat`, `useAsEndpoint`, `control`, SIPS/SDP fields — **not** vertex tag bindings (§3.4) |
-| `unidirectionalEdge` | Directed link/route between vertices | `fromId`, `toId`, `weight`, `capacity`, `bandwidth`, `redundancyMode`, `weightFactors`, `conflictPri` |
+| `baseDevice` | Topology device node | `maps[]` (`cType: "Topology"`, integer `x`/`y`), `iconType`, `sdpStrategy`, `isVirtual`, legacy `tags` |
+| `ipVertex` | Ethernet/IP port vertex (`.in` / `.out`) | `vertexType`, `gpid.pointId`, `supports*Cfg` capability flags, legacy `tags` — separate from new-framework tag bindings (§3.4) |
+| `codecVertex` | Codec/SDI endpoint vertex | `vertexType` (`In`/`Out`), `codecFormat`, `useAsEndpoint`, `control`, SIPS/SDP fields, legacy `tags` — separate from new-framework tag bindings (§3.4) |
+| `unidirectionalEdge` | Directed link/route between vertices | `fromId`, `toId`, `weight`, `capacity`, `bandwidth`, `redundancyMode`, `weightFactors`, `conflictPri`, legacy `tags` |
 
 **Implication:** Inspect's underlying topology store is `nGraphElements`, but
 the package keeps a separate Inspect model namespace (`InspectApiBaseDevice`,
@@ -260,22 +260,39 @@ stale `_rev` in the payload is ignored
 
 ### 3.4 Tagging — device vs. vertex vs. module (Inspect vs. Topology)
 
-Inspect distinguishes three tag scopes. This is a **key difference from
-`app.topology`**, which only models tags on topology **devices** (`baseDevice`
-entries in `nGraphElements`).
+The new Tags framework (introduced in VideoIPath 2025.3) is centrally managed
+in **Settings** under **Tags and Filters**. Its hierarchical **Location**,
+**Format**, and **General** categories support tag inheritance, unlike the
+flat, local `tags` lists on elements in the legacy Topology app.
+
+Upgrading to VideoIPath 2025.3+ performs a one-time migration of supported
+legacy tags (see Admin Guide).
+
+From VideoIPath 2025 LTS onward, only new-framework tags are considered across
+apps and for UI filtering. They must be linked to devices, modules, and
+vertices in the Inspect app. Legacy Topology tags remain local; there is no
+runtime synchronization or reconciliation with new-framework bindings.
+
+The framework supports tags on profiles, devices, modules, vertices, junctions,
+and endpoint groups. A tag on a device is inherited by its modules and vertices; a
+module tag is inherited by its vertices; and an endpoint-group tag is inherited
+by its endpoints. A child tag also implicitly applies its parent tags for
+filtering. Format tags can additionally be inherited by vertices whose codec
+format is linked to the tag.
 
 | Scope | What is tagged | Topology / `nGraphElements` | Inspect read surface | Write path |
 | ----- | -------------- | --------------------------- | -------------------- | ---------- |
-| **Device** | Topology node (`baseDevice`) | `tags` on the `baseDevice` item | `nodeStatus` `tags` / `meta.tags` / `tagsInfo`; `lookupInspectDevice` | `updateTopology` `replaceDevices` |
-| **Vertex** | Individual port vertex (`ipVertex`, `codecVertex`, …) | **Not present** — no vertex-tag field on persisted graph elements | Hydrated port `tagsInfo`; editable form in `lookupInspectVertexByIds` | `updateTopology` `replaceVertices` (`localAssignedTags`) |
-| **Module** | Device module / slot | **Not present** | Hydrated module `tagsInfo` on `nodeStatus` | `assignTag` / `unassignTag` with `elementIds: ["device:{modulePid}"]` |
+| **Device** | Topology node (`baseDevice`) | Legacy `tags` on the `baseDevice` item | `nodeStatus` `tags` / `meta.tags` / `tagsInfo`; `lookupInspectDevice` | `updateTopology` `replaceDevices` |
+| **Vertex** | Individual port vertex (`ipVertex`, `codecVertex`, …) | Legacy `tags`; no new-framework tag binding | Hydrated port `tagsInfo`; editable form in `lookupInspectVertexByIds` | `updateTopology` `replaceVertices` (`localAssignedTags`) |
+| **Module** | Device module / slot | Not an `nGraphElements` item; legacy and new-framework tags are separate | Hydrated module `tagsInfo` on `nodeStatus` | `assignTag` / `unassignTag` with `elementIds: ["device:{modulePid}"]` |
 
 **Implications for the package:**
 
-- `app.topology` reads/writes device tags via `nGraphElements` only. It has no
-  API for binding tags to a vertex id such as
-  `device-a.module-1.port-out-1.out`, nor for module resource ids such as
-  `device:device-a.dev.0`.
+- `app.topology` reads/writes legacy per-element tags through
+  `nGraphElements`. It has no API for new-framework tag bindings to a vertex id
+  such as `device-a.module-1.port-out-1.out`, nor to module resource ids such
+  as `device:device-a.dev.0`; the package must not derive those bindings from
+  legacy tags.
 - `app.inspect` must treat vertex tags as a **separate concern** from the
   persisted graph element shape. Do not assume a vertex's `tags` array in an
   `nGraphElements` `ipVertex` / `codecVertex` item (if present at all) is the
