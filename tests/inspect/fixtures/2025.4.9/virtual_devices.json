@@ -1,0 +1,43 @@
+{
+  "data": {
+    "status": {
+      "network": {
+        "virtualDevices": {
+          "_items": [
+            {
+              "_id": "virtual.1",
+              "_vid": "virtual.1",
+              "modules": [
+                {
+                  "moduleNumber": 0,
+                  "vertices": [
+                    { "count": 1, "templateId": "ip_in" },
+                    { "count": 1, "templateId": "ip_out" },
+                    { "count": 5, "templateId": "video_in" },
+                    { "count": 5, "templateId": "video_out" }
+                  ]
+                }
+              ]
+            },
+            {
+              "_id": "virtual.2",
+              "_vid": "virtual.2",
+              "modules": []
+            }
+          ]
+        }
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

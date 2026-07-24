@@ -1,0 +1,1 @@
+../../.agents/rules/agent-rules-layout.md

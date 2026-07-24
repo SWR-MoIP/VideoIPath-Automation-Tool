@@ -1,4 +1,5 @@
 {
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnType": true
@@ -21,7 +22,7 @@
     "python.analysis.extraPaths": [
         "${workspaceFolder}/.venv/*"
     ],
-    "python.languageServer": "Pylance",
+    "python.languageServer": "None",
     "python.analysis.addImport.exactMatchOnly": true,
     "python.analysis.autoFormatStrings": true,
     "python.analysis.fixAll": [

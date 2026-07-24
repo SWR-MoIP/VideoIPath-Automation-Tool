@@ -1,0 +1,66 @@
+{
+  "data": {
+    "id": "device-a.module-1.port-out-1.out",
+    "isVirtual": false,
+    "vertexType": "In",
+    "customSchemas": {},
+    "assignedTags": { "all": [], "inherited": {}, "inheritedConflict": false, "local": {} },
+    "context": {},
+    "fields": {
+      "active": true,
+      "controlProps": { "configPriority": "off", "onlyInitial": false },
+      "custom": {},
+      "desc": "",
+      "destinationMonitorLeader": false,
+      "extraAlertFilters": [],
+      "label": "codec-out-1",
+      "localAssignedTags": [],
+      "queueable": false,
+      "sipsMode": "NONE",
+      "tags": [],
+      "typeFields": {
+        "ipAddress": null,
+        "ipNetmask": null,
+        "parkPort": null,
+        "public": null,
+        "supportsCpipeCfg": null,
+        "supportsIgmpCfg": null,
+        "supportsMacForwardingCfg": null,
+        "supportsNsoCfg": null,
+        "supportsOpenflowCfg": null,
+        "supportsStaticIgmpCfg": null,
+        "supportsVlanCfg": null,
+        "supportsVplsCfg": null,
+        "type": "codec",
+        "vlanId": null,
+        "vrfId": null,
+        "generic": {
+          "bidirPartnerId": null,
+          "codecFormat": "Video",
+          "extraFormats": [],
+          "mainDstInfo": { "ip": "10.0.0.1", "mac": null, "port": 5000, "vlan": null },
+          "mainSrcInfo": { "gateway": null, "ip": "10.0.0.2", "mac": null, "netmask": "255.255.255.0" },
+          "multiplicity": 1,
+          "partnerConfig": null,
+          "public": false,
+          "serviceId": null,
+          "spareDstInfo": { "ip": null, "mac": null, "port": null, "vlan": null },
+          "spareSrcInfo": { "gateway": null, "ip": null, "mac": null, "netmask": null }
+        },
+        "specific": { "isIgmpSource": false, "sdpSupport": true, "type": "video" }
+      },
+      "useAsEndpoint": false
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

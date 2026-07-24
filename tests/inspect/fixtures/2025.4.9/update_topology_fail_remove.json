@@ -1,0 +1,30 @@
+{
+  "data": {
+    "items": [],
+    "res": {
+      "msg": [
+        "Failed to update local edges: Cannot remove non-existent object with key nonexistent-edge-id-xyz!"
+      ],
+      "ok": false
+    },
+    "validation": {
+      "createIds": [],
+      "details": {},
+      "result": {
+        "msg": [],
+        "ok": true
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

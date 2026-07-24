@@ -1,0 +1,48 @@
+{
+  "data": {
+    "assignedTags": {
+      "all": [],
+      "inherited": {},
+      "inheritedConflict": false,
+      "local": {}
+    },
+    "context": {
+      "devicePid": "device-a",
+      "modulePid": "device-a.dev.module-1",
+      "portPid": "device-a.dev.module-1.port-in-1"
+    },
+    "customSchemas": {},
+    "fields": {
+      "active": true,
+      "controlProps": null,
+      "custom": {},
+      "desc": "",
+      "destinationMonitorLeader": false,
+      "extraAlertFilters": [],
+      "label": "Router In 11.1",
+      "localAssignedTags": [],
+      "queueable": false,
+      "sipsMode": "NONE",
+      "tags": [],
+      "typeFields": {
+        "parkPort": 42,
+        "type": "router"
+      },
+      "useAsEndpoint": false
+    },
+    "id": "device-a.module-1.port-in-1.in",
+    "isVirtual": false,
+    "vertexType": "In"
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

@@ -1,29 +1,54 @@
-# Topology App
+# 03-A — Topology App
+
+> **Paired stage:** this page and [03-B Inspect](03_B_Inspect.md) cover the same
+> topology workflows with different implementations. Prefer **03-B** on VideoIPath
+> version >= 2025.x; use this page when you still target the classic Topology API.
+
+### Compatibility & deprecation
+
+**⚠️ CAUTION ⚠️**: The Topology App is **not supported** for VideoIPath version **2026.x or above**! Use the Inspect App for these versions (see [03-B Inspect](03_B_Inspect.md)).
+
+| Server version          | Status                                                                    |
+| ----------------------- | ------------------------------------------------------------------------- |
+| VideoIPath **≤ 2024.x** | Supported                                                                 |
+| VideoIPath **2025.x**   | **Deprecated** — constructor emits `DeprecationWarning` and a log warning |
+| VideoIPath **≥ 2026.x**  | **Unsupported** — constructor raises `TopologyUnsupportedError`           |
 
 ## 1. Introduction
 
-The Topology App focuses on configuring devices, defining their capabilities, and establishing links between them. For all these purposes, instances of "Topology Device" are used.
+The Topology App (`app.topology`) focuses on configuring devices, defining their
+capabilities, and establishing links between them. For all these purposes,
+instances of "Topology Device" are used.
 
-A **Topology Device** represents a network entity within the topology, containing configuration details. It is composed of multiple elements, each serving a specific role:  
+A **Topology Device** represents a network entity within the topology, containing
+configuration details. It is composed of multiple elements, each serving a
+specific role:
 
-- **Base Device (BaseDevice)**: Stores fundamental properties such as labels, descriptions, and appearance settings.  
-- **Vertices**:  
-  - **Generic Vertices (GenericVertex)**: Primarily represent switching cores.  
-  - **IP Vertices (IpVertex)**: Represent network interfaces.  
-  - **Codec Vertices (CodecVertex)**: Represent media-specific inputs and outputs.  
-- **Edges**:  
-  - **Internal Edges**: Connect vertices within the same device.  
-  - **External Edges**: Link the device to other devices in the topology.  
+- **Base Device (BaseDevice)**: Stores fundamental properties such as labels,
+descriptions, and appearance settings.
+- **Vertices**:
+  - **Generic Vertices (GenericVertex)**: Primarily represent switching cores.
+  - **IP Vertices (IpVertex)**: Represent network interfaces.
+  - **Codec Vertices (CodecVertex)**: Represent media-specific inputs and outputs.
+- **Edges**:
+  - **Internal Edges**: Connect vertices within the same device.
+  - **External Edges**: Link the device to other devices in the topology.
 
-All device properties are stored within the configuration attribute of a **Topology Device**.  
-While the **Base Device** exists as a single instance and can be accessed directly, all **Vertices** and **Edges** are stored in lists within configuration, categorized by their type.
-The following examples illustrate how to retrieve, modify and update specific properties of a **Topology Device**.
+All device properties are stored within the configuration attribute of a
+**Topology Device**. While the **Base Device** exists as a single instance and
+can be accessed directly, all **Vertices** and **Edges** are stored in lists
+within configuration, categorized by their type. The following examples
+illustrate how to retrieve, modify and update specific properties of a
+**Topology Device**.
 
 ## 2. Basic Usage
 
+
+
 ### 2.1. Retrieving the Configuration of a Device in the Topology
 
-The configuration of a device that has already been added to the topology or is ready for synchronization can be retrieved using its unique device ID.
+The configuration of a device that has already been added to the topology or is
+ready for synchronization can be retrieved using its unique device ID.
 
 ```python
 device = app.topology.get_device(device_id="device10")
@@ -31,14 +56,20 @@ print(device.configuration.factory_label)
 # > BORDERLEAF-26B [10.0.1.26][Arista Networks EOS]
 ```
 
-Alternatively, a device can be identified by determining its device ID based on its label.  
+Alternatively, a device can be identified by determining its device ID based on
+its label.
 
-Similar to the Inventory app, multiple label_search_mode options are available, with canonical_label set as the default.  
-In this mode, devices that have not yet been added but are ready for synchronization are matched using the factory label.  
-For devices already configured in the topology, the displayed label is used—either the user-defined label, if set, or otherwise the factory label.  
+Similar to the Inventory app, multiple `label_search_mode` options are available,
+with `canonical_label` set as the default. In this mode, devices that have not
+yet been added but are ready for synchronization are matched using the factory
+label. For devices already configured in the topology, the displayed label is
+used—either the user-defined label, if set, or otherwise the factory label.
 
 ```python
-device_id = app.topology.find_device_id_by_label("BORDERLEAF-26B [10.0.1.26][Arista Networks EOS]", label_search_mode="canonical_label")
+device_id = app.topology.find_device_id_by_label(
+    "BORDERLEAF-26B [10.0.1.26][Arista Networks EOS]",
+    label_search_mode="canonical_label",
+)
 
 if device_id is None:
     raise ValueError("Device not found")
@@ -50,9 +81,12 @@ print(device_id)
 # > device10
 ```
 
+
+
 ### 2.2. Updating a Device in the Topology
 
-The configuration of a device in the topology can be updated. If the device does not exist, it is automatically added to the topology.
+The configuration of a device in the topology can be updated. If the device does
+not exist, it is automatically added to the topology.
 
 ```python
 device.configuration.label = "New Label"
@@ -66,7 +100,10 @@ print(updated_device.configuration.label)
 # > New Label
 ```
 
-The method evaluates which `nGraphElements` have changed compared to the server state and updates only those elements. Additionally, by default, it checks whether any services are affected. This behavior can be bypassed by setting `ignore_affected_services` to `True`.
+The method evaluates which `nGraphElements` have changed compared to the server
+state and updates only those elements. Additionally, by default, it checks
+whether any services are affected. This behavior can be bypassed by setting
+`ignore_affected_services` to `True`.
 
 ### 2.3. Remove a Device from the Topology
 
@@ -76,14 +113,17 @@ A device can be removed from the topology using its device ID.
 app.topology.remove_device_by_id(device_id="device10")
 ```
 
+
+
 ## 3. Working with Vertices and Edges
 
-It is possible to either iterate through all vertices/edges of a category, which is often useful for bulk operations, or access individual vertices/edges directly by their ID or label.
+It is possible to either iterate through all vertices/edges of a category, which
+is often useful for bulk operations, or access individual vertices/edges
+directly by their ID or label.
 
 ### 3.1 Iterate through all Edges/Vertices of a Category
 
 ```python
-
 device = app.topology.get_device(device_id="device80")
 
 codec_vertices = device.configuration.codec_vertices
@@ -99,6 +139,8 @@ for codec_vertex in codec_vertices:
     #   ...
 ```
 
+
+
 ### 3.2 Access a Edge/Vertex by its ID
 
 ```python
@@ -110,6 +152,8 @@ if vertice_video_ip_in_1_1 is None:
 print(vertice_video_ip_in_1_1.factory_label)
 # > Video-IP In 1.1
 ```
+
+
 
 ### 3.3 Access a Vertex by its Label
 
@@ -123,7 +167,11 @@ print(vertice_video_ip_in_1_1.id)
 # > device80.1.3000000
 ```
 
+
+
 ### 3.4. Example: Configure existing Edges/Vertices
+
+
 
 #### 3.4.1. Configure Codec Vertices based on information from factory labels
 
@@ -164,18 +212,20 @@ for vertex in codec_vertices:
         vertex.spare_destination_address_pool = "SPARE_POOL"
 
     print(
-        f"Vertex with id '{vertex.id}‘ and label '{vertex.factory_label}' configured for {codec_format} ({direction}). Tags: {', '.join(vertex.tags)}"
+        f"Vertex with id '{vertex.id}' and label '{vertex.factory_label}' configured for {codec_format} ({direction}). Tags: {', '.join(vertex.tags)}"
     )
-    # > Vertex with id 'device80.1.3000000‘ and label 'Video-IP In 1.1' configured for Video (RX). Tags: V_1080i25, V_1080p50, V_2160p50
-    #   Vertex with id 'device80.1.3000001‘ and label 'Video-IP In 1.2' configured for Video (RX). Tags: V_1080i25, V_1080p50, V_2160p50
+    # > Vertex with id 'device80.1.3000000' and label 'Video-IP In 1.1' configured for Video (RX). Tags: V_1080i25, V_1080p50, V_2160p50
+    #   Vertex with id 'device80.1.3000001' and label 'Video-IP In 1.2' configured for Video (RX). Tags: V_1080i25, V_1080p50, V_2160p50
     #   ...
-    
+
 app.topology.update_device(device=device)
 ```
 
 More examples will be added soon!
 
 ---
+
+
 
 ### 3.5. Creating external Edges between devices
 
@@ -218,4 +268,9 @@ virtuoso_topology.configuration.external_edges.extend(edges_blue_slot_1)
 app.topology.update_device(device=virtuoso_topology)
 ```
 
-> **Note:** The documentation is currently being expanded. Upcoming sections will include details on device positioning, virtual device management, and device comparison, as well as synchronization status and various helper functions.
+> **Note:** The documentation is currently being expanded. Upcoming sections will
+> include details on device positioning, virtual device management, and device
+> comparison, as well as synchronization status and various helper functions.
+> Runnable paired scripts for these workflows live under
+> `[docs/examples/03_topology_and_inspect/](../examples/03_topology_and_inspect/)`.
+

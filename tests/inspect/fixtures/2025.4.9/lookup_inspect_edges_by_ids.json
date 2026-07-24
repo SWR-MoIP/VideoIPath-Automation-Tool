@@ -1,0 +1,49 @@
+{
+  "data": {
+    "device-a.module-1.port-out-1.out::device-b.module-1.port-in-1.in": {
+      "edge": {
+        "active": true,
+        "bandwidth": -1.0,
+        "capacity": 65535,
+        "conflictPri": 0,
+        "descriptor": {
+          "desc": "",
+          "label": ""
+        },
+        "excludeFormats": [],
+        "fDescriptor": {
+          "desc": "",
+          "label": ""
+        },
+        "fromId": "device-a.module-1.port-out-1.out",
+        "includeFormats": [],
+        "redundancyMode": "Any",
+        "tags": [],
+        "toId": "device-b.module-1.port-in-1.in",
+        "weight": 1,
+        "weightFactors": {
+          "bandwidth": {
+            "weight": 0
+          },
+          "service": {
+            "max": 100,
+            "weight": 0
+          }
+        }
+      },
+      "fromDevice": "device-a",
+      "toDevice": "device-b"
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

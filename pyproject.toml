@@ -46,13 +46,14 @@ pre-commit = "^4.6.0"
 [tool.poetry.group.test.dependencies]
 pytest = "^9.1.1"
 pytest-cov = "^7.1.0"
-pytest-dotenv = "^0.5.2"
+python-dotenv = "^1.1.0"
 
 [tool.pytest.ini_options]
-addopts = "-x -p no:warnings --cov-report=term --cov-report=term-missing --no-cov-on-fail --cov=src --ignore=__intern"
-env_override_existing_values = 0
-env_files = ["tests/.env.test"]
-
+addopts = "-x -p no:warnings --cov-report=term --cov-report=term-missing --no-cov-on-fail --cov=src --ignore=__intern -m \"not e2e\""
+markers = [
+    "e2e: developer-run tests against a live VideoIPath instance (gated on VIPAT_E2E_ENABLED=1; excluded by default). Run with '-m e2e'.",
+    "incremental: sequential workflow steps; later steps are skipped when an earlier one fails.",
+]
 
 [virtualenvs]
 in-project = true
@@ -61,9 +62,12 @@ in-project = true
 set-videoipath-version = "vipat_cli_scripts.generate_all:main"
 get-videoipath-version = "vipat_cli_scripts.version_utils:get_videoipath_version"
 list-videoipath-versions = "vipat_cli_scripts.version_utils:list_videoipath_versions"
+test-unit = "vipat_cli_scripts.test_runner:run_unit"
+test-e2e = "vipat_cli_scripts.test_runner:run_e2e"
+test = "vipat_cli_scripts.test_runner:run"
 
 [tool.ruff]
-include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py"]
+include = ["pyproject.toml", "src/**/*.py", "tests/**/*.py", "docs/examples/**/*.py"]
 
 # Formatter config
 line-length = 120

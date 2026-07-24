@@ -1,0 +1,72 @@
+{
+  "data": {
+    "status": {
+      "network": {
+        "virtualTemplates": {
+          "_items": [
+            {
+              "_id": "generic_bidir",
+              "_vid": "generic_bidir",
+              "label": "Generic bidir",
+              "vertex": {
+                "active": true,
+                "configPriority": "off",
+                "control": "off",
+                "custom": {},
+                "descriptor": { "desc": "", "label": "" },
+                "deviceId": "",
+                "extraAlertFilters": [],
+                "fDescriptor": { "desc": "", "label": "Virtual Vertex Template" },
+                "gpid": { "component": 1, "pointId": [] },
+                "imgUrl": "",
+                "isVirtual": true,
+                "maps": [],
+                "sipsMode": "NONE",
+                "tags": [],
+                "type": "genericVertex",
+                "useAsEndpoint": false,
+                "vertexType": "BiDirectional"
+              }
+            },
+            {
+              "_id": "video_in",
+              "_vid": "video_in",
+              "label": "Video in",
+              "vertex": {
+                "active": true,
+                "codecFormat": "Video",
+                "configPriority": "off",
+                "control": "off",
+                "custom": {},
+                "descriptor": { "desc": "", "label": "" },
+                "deviceId": "",
+                "extraAlertFilters": [],
+                "fDescriptor": { "desc": "", "label": "Virtual Vertex Template" },
+                "gpid": { "component": 1, "pointId": [] },
+                "imgUrl": "",
+                "isVirtual": true,
+                "maps": [],
+                "sipsMode": "NONE",
+                "tags": [],
+                "type": "codecVertex",
+                "useAsEndpoint": false,
+                "vertexType": "In"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

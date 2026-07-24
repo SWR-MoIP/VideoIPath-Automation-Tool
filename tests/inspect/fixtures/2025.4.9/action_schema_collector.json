@@ -1,0 +1,97 @@
+{
+  "updateTopology": {
+    "actions": {
+      "status": {
+        "collector": {
+          "updateTopology": {
+            "desc": "",
+            "label": "UpdateTopology"
+          }
+        }
+      }
+    },
+    "header": {
+      "auth": true,
+      "caption": "Operation Successful",
+      "code": "OK",
+      "errorCodes": [],
+      "errorDetails": [],
+      "id": "",
+      "msg": [],
+      "ok": true,
+      "user": "api-user"
+    }
+  },
+  "validateTopology": {
+    "actions": {
+      "status": {
+        "collector": {}
+      }
+    },
+    "header": {
+      "auth": true,
+      "caption": "Operation Successful",
+      "code": "OK",
+      "errorCodes": [],
+      "errorDetails": [],
+      "id": "",
+      "msg": [],
+      "ok": true,
+      "user": "api-user"
+    }
+  },
+  "exportTopology": {
+    "actions": {
+      "status": {
+        "collector": {}
+      }
+    },
+    "header": {
+      "auth": true,
+      "caption": "Operation Successful",
+      "code": "OK",
+      "errorCodes": [],
+      "errorDetails": [],
+      "id": "",
+      "msg": [],
+      "ok": true,
+      "user": "api-user"
+    }
+  },
+  "importTopology": {
+    "actions": {
+      "status": {
+        "collector": {}
+      }
+    },
+    "header": {
+      "auth": true,
+      "caption": "Operation Successful",
+      "code": "OK",
+      "errorCodes": [],
+      "errorDetails": [],
+      "id": "",
+      "msg": [],
+      "ok": true,
+      "user": "api-user"
+    }
+  },
+  "discardTopology": {
+    "actions": {
+      "status": {
+        "collector": {}
+      }
+    },
+    "header": {
+      "auth": true,
+      "caption": "Operation Successful",
+      "code": "OK",
+      "errorCodes": [],
+      "errorDetails": [],
+      "id": "",
+      "msg": [],
+      "ok": true,
+      "user": "api-user"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "data": {
+    "items": [],
+    "res": {
+      "msg": [
+        "Validation failed"
+      ],
+      "ok": false
+    },
+    "validation": {
+      "createIds": [],
+      "details": {
+        "booking-1001": {
+          "isCancel": false,
+          "isProduct": false,
+          "resolvable": false,
+          "rev": "2-2026-06-10T19:54:01.297948842Z[UTC]",
+          "status": -22,
+          "type": "generic"
+        },
+        "booking-1002": {
+          "isCancel": false,
+          "isProduct": false,
+          "resolvable": false,
+          "rev": "2-2026-06-16T14:47:24.964022664Z[UTC]",
+          "status": -22,
+          "type": "generic"
+        }
+      },
+      "result": {
+        "msg": [
+          "A required edge was not found. (main); A required edge was not found. (redundant)"
+        ],
+        "ok": false
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

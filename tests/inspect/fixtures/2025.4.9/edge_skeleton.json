@@ -1,0 +1,2259 @@
+{
+  "data": {
+    "status": {
+      "collector": {
+        "externalEdgesByDeviceKey": {
+          "_items": [
+            {
+              "_id": "device-h::device-a",
+              "_vid": "device-h::device-a",
+              "primary": {
+                "data": {
+                  "uuid-0003": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-h",
+                        "modulePid": "device-h.dev.0",
+                        "portPid": "device-a.dev.module-1.port-out-1"
+                      },
+                      "label": "port-out-1 (out)"
+                    },
+                    "id": "uuid-0003",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-h",
+                "label": "Example Device A"
+              },
+              "secondary": {
+                "data": {},
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-i::device-m",
+              "_vid": "device-i::device-m",
+              "primary": {
+                "data": {
+                  "device-i.1.3.out::device-m.1.Ethernet4_42.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-i",
+                        "modulePid": "device-i.dev.1",
+                        "portPid": "device-i.dev.1.3"
+                      },
+                      "label": "eth-0-3"
+                    },
+                    "id": "device-i.1.3.out::device-m.1.Ethernet4_42.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.1",
+                        "portPid": "device-m.dev.1.Ethernet4_42"
+                      },
+                      "label": "port-in-1/42"
+                    }
+                  }
+                },
+                "devicePid": "device-i",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-m.1.Ethernet4_42.out::device-i.1.3.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.1",
+                        "portPid": "device-m.dev.1.Ethernet4_42"
+                      },
+                      "label": "port-in-1/42"
+                    },
+                    "id": "device-m.1.Ethernet4_42.out::device-i.1.3.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-i",
+                        "modulePid": "device-i.dev.1",
+                        "portPid": "device-i.dev.1.3"
+                      },
+                      "label": "eth-0-3"
+                    }
+                  }
+                },
+                "devicePid": "device-m",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-i::device-p",
+              "_vid": "device-i::device-p",
+              "primary": {
+                "data": {
+                  "uuid-0002": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-i",
+                        "modulePid": "device-i.dev.1",
+                        "portPid": "device-i.dev.1.51"
+                      },
+                      "label": "eth-0-51"
+                    },
+                    "id": "uuid-0002",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-p",
+                        "modulePid": "device-p.dev.0",
+                        "portPid": "device-p.dev.0.NMS-RED"
+                      },
+                      "label": "NMS-RED"
+                    }
+                  }
+                },
+                "devicePid": "device-i",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "uuid-0005": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-p",
+                        "modulePid": "device-p.dev.0",
+                        "portPid": "device-p.dev.0.NMS-RED"
+                      },
+                      "label": "NMS-RED"
+                    },
+                    "id": "uuid-0005",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-i",
+                        "modulePid": "device-i.dev.1",
+                        "portPid": "device-i.dev.1.51"
+                      },
+                      "label": "eth-0-51"
+                    }
+                  }
+                },
+                "devicePid": "device-p",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-i::virtual.0",
+              "_vid": "device-i::virtual.0",
+              "primary": {
+                "data": {
+                  "uuid-0010": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-i",
+                        "modulePid": "device-i.dev.1",
+                        "portPid": "device-i.dev.1.51"
+                      },
+                      "label": "eth-0-51"
+                    },
+                    "id": "uuid-0010",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "virtual-0",
+                        "modulePid": "virtual-0.virt.0",
+                        "portPid": "virtual-0.virt.0.1"
+                      },
+                      "label": "Ethernet 1"
+                    }
+                  }
+                },
+                "devicePid": "device-i",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "uuid-0006": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "virtual-0",
+                        "modulePid": "virtual-0.virt.0",
+                        "portPid": "virtual-0.virt.0.3"
+                      },
+                      "label": "Ethernet 1"
+                    },
+                    "id": "uuid-0006",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-i",
+                        "modulePid": "device-i.dev.1",
+                        "portPid": "device-i.dev.1.51"
+                      },
+                      "label": "eth-0-51"
+                    }
+                  }
+                },
+                "devicePid": "virtual-0",
+                "label": "Virtual Device 1"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-j::device-d",
+              "_vid": "device-j::device-d",
+              "primary": {
+                "data": {
+                  "device-j.0.P1.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-j",
+                        "modulePid": "device-j.dev.0",
+                        "portPid": "device-j.dev.0.P1"
+                      },
+                      "label": "P1 (out)"
+                    },
+                    "id": "device-j.0.P1.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-j",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {},
+                "devicePid": "device-d",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-j",
+              "_vid": "device-a::device-j",
+              "primary": {
+                "data": {},
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-j.0.P2.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-j",
+                        "modulePid": "device-j.dev.0",
+                        "portPid": "device-j.dev.0.P2"
+                      },
+                      "label": "P2 (out)"
+                    },
+                    "id": "device-j.0.P2.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-j",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-k",
+              "_vid": "device-a::device-k",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-k.0.P2.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-k.0.P2.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-k",
+                        "modulePid": "device-k.dev.0",
+                        "portPid": "device-k.dev.0.P2"
+                      },
+                      "label": "P2 (in)"
+                    }
+                  }
+                },
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {},
+                "devicePid": "device-k",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-l",
+              "_vid": "device-a::device-l",
+              "primary": {
+                "data": {
+                  "device-a.1.Ethernet54_1.out::device-l.4.Ethernet3_37_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.Ethernet54_1"
+                      },
+                      "label": "port-in-1/1"
+                    },
+                    "id": "device-a.1.Ethernet54_1.out::device-l.4.Ethernet3_37_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_37_1"
+                      },
+                      "label": "port-in-1/37/1"
+                    }
+                  },
+                  "device-a.1.Ethernet56_1.out::device-l.4.Ethernet3_39_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.Ethernet56_1"
+                      },
+                      "label": "port-in-1/1"
+                    },
+                    "id": "device-a.1.Ethernet56_1.out::device-l.4.Ethernet3_39_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_39_1"
+                      },
+                      "label": "port-in-1/39/1"
+                    }
+                  }
+                },
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-l.4.Ethernet3_37_1.out::device-a.1.Ethernet54_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_37_1"
+                      },
+                      "label": "port-in-1/37/1"
+                    },
+                    "id": "device-l.4.Ethernet3_37_1.out::device-a.1.Ethernet54_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.Ethernet54_1"
+                      },
+                      "label": "port-in-1/1"
+                    }
+                  },
+                  "device-l.4.Ethernet3_39_1.out::device-a.1.Ethernet56_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_39_1"
+                      },
+                      "label": "port-in-1/39/1"
+                    },
+                    "id": "device-l.4.Ethernet3_39_1.out::device-a.1.Ethernet56_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.Ethernet56_1"
+                      },
+                      "label": "port-in-1/1"
+                    }
+                  }
+                },
+                "devicePid": "device-l",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-r",
+              "_vid": "device-a::device-r",
+              "primary": {
+                "data": {
+                  "uuid-0004": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "uuid-0004",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-r",
+                        "modulePid": "device-r.dev.0",
+                        "portPid": "device-r.dev.0.P2"
+                      },
+                      "label": "P2 (in)"
+                    }
+                  }
+                },
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {},
+                "devicePid": "device-r",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-s",
+              "_vid": "device-a::device-s",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-s.0.P2.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-s.0.P2.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-s",
+                        "modulePid": "device-s.dev.0",
+                        "portPid": "device-s.dev.0.P2"
+                      },
+                      "label": "P2 (in)"
+                    }
+                  }
+                },
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {},
+                "devicePid": "device-s",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-t",
+              "_vid": "device-a::device-t",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-t.0.mmc1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-t.0.mmc1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-t",
+                        "modulePid": "device-t.dev.0",
+                        "portPid": "device-t.dev.0.mmc1"
+                      },
+                      "label": "mmc1 (in)"
+                    }
+                  }
+                },
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {},
+                "devicePid": "device-t",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-u",
+              "_vid": "device-a::device-u",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-u.3.10006.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-u.3.10006.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-u",
+                        "modulePid": "device-u.dev.3",
+                        "portPid": "device-u.dev.3.10006"
+                      },
+                      "label": "Ethernet 3.4"
+                    }
+                  }
+                },
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-u.3.10006.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-u",
+                        "modulePid": "device-u.dev.3",
+                        "portPid": "device-u.dev.3.10006"
+                      },
+                      "label": "Ethernet 3.4"
+                    },
+                    "id": "device-u.3.10006.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-u",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-f",
+              "_vid": "device-a::device-f",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-f.1.10006.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-f.1.10006.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-f",
+                        "modulePid": "device-f.dev.1",
+                        "portPid": "device-f.dev.1.10006"
+                      },
+                      "label": "Ethernet 1.4"
+                    }
+                  }
+                },
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-f.1.10006.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-f",
+                        "modulePid": "device-f.dev.1",
+                        "portPid": "device-f.dev.1.10006"
+                      },
+                      "label": "Ethernet 1.4"
+                    },
+                    "id": "device-f.1.10006.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-f",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-a::device-g",
+              "_vid": "device-a::device-g",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-g.6.10006.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-g.6.10006.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-g",
+                        "modulePid": "device-g.dev.6",
+                        "portPid": "device-g.dev.6.10006"
+                      },
+                      "label": "Ethernet 6.4"
+                    }
+                  }
+                },
+                "devicePid": "device-a",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-g.6.10006.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-g",
+                        "modulePid": "device-g.dev.6",
+                        "portPid": "device-g.dev.6.10006"
+                      },
+                      "label": "Ethernet 6.4"
+                    },
+                    "id": "device-g.6.10006.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-a",
+                        "modulePid": "device-a.dev.1",
+                        "portPid": "device-a.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-g",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-k::device-d",
+              "_vid": "device-k::device-d",
+              "primary": {
+                "data": {},
+                "devicePid": "device-k",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-k.0.P1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-k.0.P1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-k",
+                        "modulePid": "device-k.dev.0",
+                        "portPid": "device-k.dev.0.P1"
+                      },
+                      "label": "P1 (in)"
+                    }
+                  }
+                },
+                "devicePid": "device-d",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-l::device-n",
+              "_vid": "device-l::device-n",
+              "primary": {
+                "data": {
+                  "device-l.4.Ethernet3_47_1.out::device-n.1.49.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_47_1"
+                      },
+                      "label": "port-in-1/47/1"
+                    },
+                    "id": "device-l.4.Ethernet3_47_1.out::device-n.1.49.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-n",
+                        "modulePid": "device-n.dev.1",
+                        "portPid": "device-n.dev.1.49"
+                      },
+                      "label": "eth-0-49"
+                    }
+                  }
+                },
+                "devicePid": "device-l",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-n.1.49.out::device-l.4.Ethernet3_47_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-n",
+                        "modulePid": "device-n.dev.1",
+                        "portPid": "device-n.dev.1.49"
+                      },
+                      "label": "eth-0-49"
+                    },
+                    "id": "device-n.1.49.out::device-l.4.Ethernet3_47_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_47_1"
+                      },
+                      "label": "port-in-1/47/1"
+                    }
+                  }
+                },
+                "devicePid": "device-n",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-l::device-o",
+              "_vid": "device-l::device-o",
+              "primary": {
+                "data": {
+                  "device-l.4.Ethernet3_1_1.out::device-o.0.p9p1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_1_1"
+                      },
+                      "label": "port-in-1/1/1"
+                    },
+                    "id": "device-l.4.Ethernet3_1_1.out::device-o.0.p9p1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-o",
+                        "modulePid": "device-o.dev.0",
+                        "portPid": "device-o.dev.0.p9p1"
+                      },
+                      "label": "p9p1"
+                    }
+                  }
+                },
+                "devicePid": "device-l",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-o.0.p9p1.out::device-l.4.Ethernet3_1_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-o",
+                        "modulePid": "device-o.dev.0",
+                        "portPid": "device-o.dev.0.p9p1"
+                      },
+                      "label": "p9p1"
+                    },
+                    "id": "device-o.0.p9p1.out::device-l.4.Ethernet3_1_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_1_1"
+                      },
+                      "label": "port-in-1/1/1"
+                    }
+                  }
+                },
+                "devicePid": "device-o",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-l::device-v",
+              "_vid": "device-l::device-v",
+              "primary": {
+                "data": {
+                  "device-l.4.Ethernet3_7_1.out::device-v.0.data1B.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_7_1"
+                      },
+                      "label": "port-in-1/7/1"
+                    },
+                    "id": "device-l.4.Ethernet3_7_1.out::device-v.0.data1B.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-v",
+                        "modulePid": "device-v.dev.0",
+                        "portPid": "device-v.dev.0.data1B"
+                      },
+                      "label": "data1B"
+                    }
+                  }
+                },
+                "devicePid": "device-l",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-v.0.data1B.out::device-l.4.Ethernet3_7_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-v",
+                        "modulePid": "device-v.dev.0",
+                        "portPid": "device-v.dev.0.data1B"
+                      },
+                      "label": "data1B"
+                    },
+                    "id": "device-v.0.data1B.out::device-l.4.Ethernet3_7_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_7_1"
+                      },
+                      "label": "port-in-1/7/1"
+                    }
+                  }
+                },
+                "devicePid": "device-v",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-l::device-y",
+              "_vid": "device-l::device-y",
+              "primary": {
+                "data": {
+                  "device-l.1.Ethernet4_1.out::device-y.0.port-102.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.1",
+                        "portPid": "device-l.dev.1.Ethernet4_1"
+                      },
+                      "label": "port-in-1/1"
+                    },
+                    "id": "device-l.1.Ethernet4_1.out::device-y.0.port-102.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-y",
+                        "modulePid": "device-y.dev.0",
+                        "portPid": "device-y.dev.0.port-102"
+                      },
+                      "label": "port-102"
+                    }
+                  }
+                },
+                "devicePid": "device-l",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-y.0.port-102.out::device-l.1.Ethernet4_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-y",
+                        "modulePid": "device-y.dev.0",
+                        "portPid": "device-y.dev.0.port-102"
+                      },
+                      "label": "port-102"
+                    },
+                    "id": "device-y.0.port-102.out::device-l.1.Ethernet4_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.1",
+                        "portPid": "device-l.dev.1.Ethernet4_1"
+                      },
+                      "label": "port-in-1/1"
+                    }
+                  }
+                },
+                "devicePid": "device-y",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-l::device-e",
+              "_vid": "device-l::device-e",
+              "primary": {
+                "data": {
+                  "device-l.4.Ethernet3_2_1.out::device-e.1000.1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_2_1"
+                      },
+                      "label": "port-in-1/2/1"
+                    },
+                    "id": "device-l.4.Ethernet3_2_1.out::device-e.1000.1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-e",
+                        "modulePid": "device-e.dev.1000",
+                        "portPid": "device-e.dev.1000.1"
+                      },
+                      "label": "IP WAN 1"
+                    }
+                  }
+                },
+                "devicePid": "device-l",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-e.1000.1.out::device-l.4.Ethernet3_2_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-e",
+                        "modulePid": "device-e.dev.1000",
+                        "portPid": "device-e.dev.1000.1"
+                      },
+                      "label": "IP WAN 1"
+                    },
+                    "id": "device-e.1000.1.out::device-l.4.Ethernet3_2_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.4",
+                        "portPid": "device-l.dev.4.Ethernet3_2_1"
+                      },
+                      "label": "port-in-1/2/1"
+                    }
+                  }
+                },
+                "devicePid": "device-e",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-m::device-o",
+              "_vid": "device-m::device-o",
+              "primary": {
+                "data": {
+                  "device-m.4.Ethernet3_1_1.out::device-o.0.p9p2.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_1_1"
+                      },
+                      "label": "port-in-1/1/1"
+                    },
+                    "id": "device-m.4.Ethernet3_1_1.out::device-o.0.p9p2.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-o",
+                        "modulePid": "device-o.dev.0",
+                        "portPid": "device-o.dev.0.p9p2"
+                      },
+                      "label": "p9p2"
+                    }
+                  }
+                },
+                "devicePid": "device-m",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-o.0.p9p2.out::device-m.4.Ethernet3_1_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-o",
+                        "modulePid": "device-o.dev.0",
+                        "portPid": "device-o.dev.0.p9p2"
+                      },
+                      "label": "p9p2"
+                    },
+                    "id": "device-o.0.p9p2.out::device-m.4.Ethernet3_1_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_1_1"
+                      },
+                      "label": "port-in-1/1/1"
+                    }
+                  }
+                },
+                "devicePid": "device-o",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-m::device-c",
+              "_vid": "device-m::device-c",
+              "primary": {
+                "data": {
+                  "device-m.1.Ethernet4_43.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.1",
+                        "portPid": "device-m.dev.1.Ethernet4_43"
+                      },
+                      "label": "port-in-1/43"
+                    },
+                    "id": "device-m.1.Ethernet4_43.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-c",
+                        "modulePid": "device-c.dev.1",
+                        "portPid": "device-c.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-m",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-m.1.Ethernet4_43.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-c",
+                        "modulePid": "device-c.dev.1",
+                        "portPid": "device-c.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-m.1.Ethernet4_43.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.1",
+                        "portPid": "device-m.dev.1.Ethernet4_43"
+                      },
+                      "label": "port-in-1/43"
+                    }
+                  }
+                },
+                "devicePid": "device-c",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-m::device-v",
+              "_vid": "device-m::device-v",
+              "primary": {
+                "data": {
+                  "device-m.4.Ethernet3_7_1.out::device-v.0.data1A.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_7_1"
+                      },
+                      "label": "port-in-1/7/1"
+                    },
+                    "id": "device-m.4.Ethernet3_7_1.out::device-v.0.data1A.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-v",
+                        "modulePid": "device-v.dev.0",
+                        "portPid": "device-v.dev.0.data1A"
+                      },
+                      "label": "data1A"
+                    }
+                  }
+                },
+                "devicePid": "device-m",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-v.0.data1A.out::device-m.4.Ethernet3_7_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-v",
+                        "modulePid": "device-v.dev.0",
+                        "portPid": "device-v.dev.0.data1A"
+                      },
+                      "label": "data1A"
+                    },
+                    "id": "device-v.0.data1A.out::device-m.4.Ethernet3_7_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_7_1"
+                      },
+                      "label": "port-in-1/7/1"
+                    }
+                  }
+                },
+                "devicePid": "device-v",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-m::device-y",
+              "_vid": "device-m::device-y",
+              "primary": {
+                "data": {
+                  "device-m.1.Ethernet4_1.out::device-y.0.port-110.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.1",
+                        "portPid": "device-m.dev.1.Ethernet4_1"
+                      },
+                      "label": "port-in-1/1"
+                    },
+                    "id": "device-m.1.Ethernet4_1.out::device-y.0.port-110.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-y",
+                        "modulePid": "device-y.dev.0",
+                        "portPid": "device-y.dev.0.port-110"
+                      },
+                      "label": "port-110"
+                    }
+                  }
+                },
+                "devicePid": "device-m",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-y.0.port-110.out::device-m.1.Ethernet4_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-y",
+                        "modulePid": "device-y.dev.0",
+                        "portPid": "device-y.dev.0.port-110"
+                      },
+                      "label": "port-110"
+                    },
+                    "id": "device-y.0.port-110.out::device-m.1.Ethernet4_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.1",
+                        "portPid": "device-m.dev.1.Ethernet4_1"
+                      },
+                      "label": "port-in-1/1"
+                    }
+                  }
+                },
+                "devicePid": "device-y",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-m::device-d",
+              "_vid": "device-m::device-d",
+              "primary": {
+                "data": {
+                  "device-m.4.Ethernet3_37_1.out::device-d.1.Ethernet53_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_37_1"
+                      },
+                      "label": "port-in-1/37/1"
+                    },
+                    "id": "device-m.4.Ethernet3_37_1.out::device-d.1.Ethernet53_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.Ethernet53_1"
+                      },
+                      "label": "port-in-1/1"
+                    }
+                  },
+                  "device-m.4.Ethernet3_39_1.out::device-d.1.Ethernet55_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_39_1"
+                      },
+                      "label": "port-in-1/39/1"
+                    },
+                    "id": "device-m.4.Ethernet3_39_1.out::device-d.1.Ethernet55_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.Ethernet55_1"
+                      },
+                      "label": "port-in-1/1"
+                    }
+                  }
+                },
+                "devicePid": "device-m",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-d.1.Ethernet53_1.out::device-m.4.Ethernet3_37_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.Ethernet53_1"
+                      },
+                      "label": "port-in-1/1"
+                    },
+                    "id": "device-d.1.Ethernet53_1.out::device-m.4.Ethernet3_37_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_37_1"
+                      },
+                      "label": "port-in-1/37/1"
+                    }
+                  },
+                  "device-d.1.Ethernet55_1.out::device-m.4.Ethernet3_39_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.Ethernet55_1"
+                      },
+                      "label": "port-in-1/1"
+                    },
+                    "id": "device-d.1.Ethernet55_1.out::device-m.4.Ethernet3_39_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_39_1"
+                      },
+                      "label": "port-in-1/39/1"
+                    }
+                  }
+                },
+                "devicePid": "device-d",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-m::device-e",
+              "_vid": "device-m::device-e",
+              "primary": {
+                "data": {
+                  "device-m.4.Ethernet3_2_1.out::device-e.1000.1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_2_1"
+                      },
+                      "label": "port-in-1/2/1"
+                    },
+                    "id": "device-m.4.Ethernet3_2_1.out::device-e.1000.1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-e",
+                        "modulePid": "device-e.dev.1000",
+                        "portPid": "device-e.dev.1000.1"
+                      },
+                      "label": "IP WAN 1"
+                    }
+                  }
+                },
+                "devicePid": "device-m",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-e.1000.1.out::device-m.4.Ethernet3_2_1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-e",
+                        "modulePid": "device-e.dev.1000",
+                        "portPid": "device-e.dev.1000.1"
+                      },
+                      "label": "IP WAN 1"
+                    },
+                    "id": "device-e.1000.1.out::device-m.4.Ethernet3_2_1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-m",
+                        "modulePid": "device-m.dev.4",
+                        "portPid": "device-m.dev.4.Ethernet3_2_1"
+                      },
+                      "label": "port-in-1/2/1"
+                    }
+                  }
+                },
+                "devicePid": "device-e",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-n::device-p",
+              "_vid": "device-n::device-p",
+              "primary": {
+                "data": {
+                  "uuid-0001": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-n",
+                        "modulePid": "device-n.dev.1",
+                        "portPid": "device-n.dev.1.51"
+                      },
+                      "label": "eth-0-51"
+                    },
+                    "id": "uuid-0001",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-p",
+                        "modulePid": "device-p.dev.0",
+                        "portPid": "device-p.dev.0.NMS-BLUE"
+                      },
+                      "label": "NMS-BLUE"
+                    }
+                  }
+                },
+                "devicePid": "device-n",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "uuid-0008": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-p",
+                        "modulePid": "device-p.dev.0",
+                        "portPid": "device-p.dev.0.NMS-BLUE"
+                      },
+                      "label": "NMS-BLUE"
+                    },
+                    "id": "uuid-0008",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-n",
+                        "modulePid": "device-n.dev.1",
+                        "portPid": "device-n.dev.1.51"
+                      },
+                      "label": "eth-0-51"
+                    }
+                  }
+                },
+                "devicePid": "device-p",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-n::virtual.0",
+              "_vid": "device-n::virtual.0",
+              "primary": {
+                "data": {
+                  "uuid-0007": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-n",
+                        "modulePid": "device-n.dev.1",
+                        "portPid": "device-n.dev.1.51"
+                      },
+                      "label": "eth-0-51"
+                    },
+                    "id": "uuid-0007",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "virtual-0",
+                        "modulePid": "virtual-0.virt.0",
+                        "portPid": "virtual-0.virt.0.2"
+                      },
+                      "label": "Ethernet 2"
+                    }
+                  }
+                },
+                "devicePid": "device-n",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "uuid-0009": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "virtual-0",
+                        "modulePid": "virtual-0.virt.0",
+                        "portPid": "virtual-0.virt.0.4"
+                      },
+                      "label": "Ethernet 2"
+                    },
+                    "id": "uuid-0009",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-n",
+                        "modulePid": "device-n.dev.1",
+                        "portPid": "device-n.dev.1.51"
+                      },
+                      "label": "eth-0-51"
+                    }
+                  }
+                },
+                "devicePid": "virtual-0",
+                "label": "Virtual Device 1"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-q::device-c",
+              "_vid": "device-q::device-c",
+              "primary": {
+                "data": {
+                  "device-q.0.Intel(R) Ethernet Controller (3) I225-LM #2.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-q",
+                        "modulePid": "device-q.dev.0",
+                        "portPid": "device-q.dev.0.Intel(R)-Ethernet-Controller-(3)-I225-LM-#2"
+                      },
+                      "label": "Intel(R) Ethernet Controller (3) I225-LM #2 (out)"
+                    },
+                    "id": "device-q.0.Intel(R) Ethernet Controller (3) I225-LM #2.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-c",
+                        "modulePid": "device-c.dev.1",
+                        "portPid": "device-c.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-q",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {},
+                "devicePid": "device-c",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-b::device-l",
+              "_vid": "device-b::device-l",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-l.1.Ethernet4_43.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-b",
+                        "modulePid": "device-b.dev.1",
+                        "portPid": "device-b.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-l.1.Ethernet4_43.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.1",
+                        "portPid": "device-l.dev.1.Ethernet4_43"
+                      },
+                      "label": "port-in-1/43"
+                    }
+                  }
+                },
+                "devicePid": "device-b",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-l.1.Ethernet4_43.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-l",
+                        "modulePid": "device-l.dev.1",
+                        "portPid": "device-l.dev.1.Ethernet4_43"
+                      },
+                      "label": "port-in-1/43"
+                    },
+                    "id": "device-l.1.Ethernet4_43.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-b",
+                        "modulePid": "device-b.dev.1",
+                        "portPid": "device-b.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-l",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-b::device-q",
+              "_vid": "device-b::device-q",
+              "primary": {
+                "data": {},
+                "devicePid": "device-b",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-q.0.Intel(R) Ethernet Controller (3) I225-LM.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-q",
+                        "modulePid": "device-q.dev.0",
+                        "portPid": "device-q.dev.0.Intel(R)-Ethernet-Controller-(3)-I225-LM"
+                      },
+                      "label": "Intel(R) Ethernet Controller (3) I225-LM (out)"
+                    },
+                    "id": "device-q.0.Intel(R) Ethernet Controller (3) I225-LM.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-b",
+                        "modulePid": "device-b.dev.1",
+                        "portPid": "device-b.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-q",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-b::device-w",
+              "_vid": "device-b::device-w",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-w.0.eth1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-b",
+                        "modulePid": "device-b.dev.1",
+                        "portPid": "device-b.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-w.0.eth1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-w",
+                        "modulePid": "device-w.dev.0",
+                        "portPid": "device-w.dev.0.eth1"
+                      },
+                      "label": "eth1"
+                    }
+                  }
+                },
+                "devicePid": "device-b",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-w.0.eth1.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-w",
+                        "modulePid": "device-w.dev.0",
+                        "portPid": "device-w.dev.0.eth1"
+                      },
+                      "label": "eth1"
+                    },
+                    "id": "device-w.0.eth1.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-b",
+                        "modulePid": "device-b.dev.1",
+                        "portPid": "device-b.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-w",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-b::device-x",
+              "_vid": "device-b::device-x",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-x.0.eth1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-b",
+                        "modulePid": "device-b.dev.1",
+                        "portPid": "device-b.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-x.0.eth1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-x",
+                        "modulePid": "device-x.dev.0",
+                        "portPid": "device-x.dev.0.eth1"
+                      },
+                      "label": "eth1"
+                    }
+                  }
+                },
+                "devicePid": "device-b",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-x.0.eth1.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-x",
+                        "modulePid": "device-x.dev.0",
+                        "portPid": "device-x.dev.0.eth1"
+                      },
+                      "label": "eth1"
+                    },
+                    "id": "device-x.0.eth1.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-b",
+                        "modulePid": "device-b.dev.1",
+                        "portPid": "device-b.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-x",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-s::device-d",
+              "_vid": "device-s::device-d",
+              "primary": {
+                "data": {},
+                "devicePid": "device-s",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-s.0.P1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-s.0.P1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-s",
+                        "modulePid": "device-s.dev.0",
+                        "portPid": "device-s.dev.0.P1"
+                      },
+                      "label": "P1 (in)"
+                    }
+                  }
+                },
+                "devicePid": "device-d",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-t::device-d",
+              "_vid": "device-t::device-d",
+              "primary": {
+                "data": {},
+                "devicePid": "device-t",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-t.0.mmc0.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-t.0.mmc0.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-t",
+                        "modulePid": "device-t.dev.0",
+                        "portPid": "device-t.dev.0.mmc0"
+                      },
+                      "label": "mmc0 (in)"
+                    }
+                  }
+                },
+                "devicePid": "device-d",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-u::device-d",
+              "_vid": "device-u::device-d",
+              "primary": {
+                "data": {
+                  "device-u.3.10004.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-u",
+                        "modulePid": "device-u.dev.3",
+                        "portPid": "device-u.dev.3.10004"
+                      },
+                      "label": "Ethernet 3.3"
+                    },
+                    "id": "device-u.3.10004.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-u",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-u.3.10004.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-u.3.10004.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-u",
+                        "modulePid": "device-u.dev.3",
+                        "portPid": "device-u.dev.3.10004"
+                      },
+                      "label": "Ethernet 3.3"
+                    }
+                  }
+                },
+                "devicePid": "device-d",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-c::device-w",
+              "_vid": "device-c::device-w",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-w.0.eth0.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-c",
+                        "modulePid": "device-c.dev.1",
+                        "portPid": "device-c.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-w.0.eth0.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-w",
+                        "modulePid": "device-w.dev.0",
+                        "portPid": "device-w.dev.0.eth0"
+                      },
+                      "label": "eth0"
+                    }
+                  }
+                },
+                "devicePid": "device-c",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-w.0.eth0.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-w",
+                        "modulePid": "device-w.dev.0",
+                        "portPid": "device-w.dev.0.eth0"
+                      },
+                      "label": "eth0"
+                    },
+                    "id": "device-w.0.eth0.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-c",
+                        "modulePid": "device-c.dev.1",
+                        "portPid": "device-c.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-w",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-c::device-x",
+              "_vid": "device-c::device-x",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-x.0.eth0.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-c",
+                        "modulePid": "device-c.dev.1",
+                        "portPid": "device-c.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-x.0.eth0.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-x",
+                        "modulePid": "device-x.dev.0",
+                        "portPid": "device-x.dev.0.eth0"
+                      },
+                      "label": "eth0"
+                    }
+                  }
+                },
+                "devicePid": "device-c",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-x.0.eth0.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-x",
+                        "modulePid": "device-x.dev.0",
+                        "portPid": "device-x.dev.0.eth0"
+                      },
+                      "label": "eth0"
+                    },
+                    "id": "device-x.0.eth0.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-c",
+                        "modulePid": "device-c.dev.1",
+                        "portPid": "device-c.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-x",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": null,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-d::device-f",
+              "_vid": "device-d::device-f",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-f.1.10004.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-f.1.10004.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-f",
+                        "modulePid": "device-f.dev.1",
+                        "portPid": "device-f.dev.1.10004"
+                      },
+                      "label": "Ethernet 1.3"
+                    }
+                  }
+                },
+                "devicePid": "device-d",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-f.1.10004.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-f",
+                        "modulePid": "device-f.dev.1",
+                        "portPid": "device-f.dev.1.10004"
+                      },
+                      "label": "Ethernet 1.3"
+                    },
+                    "id": "device-f.1.10004.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-f",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            },
+            {
+              "_id": "device-d::device-g",
+              "_vid": "device-d::device-g",
+              "primary": {
+                "data": {
+                  "device-b.dev.module-1.port-in-1.out::device-g.6.10004.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    },
+                    "id": "device-b.dev.module-1.port-in-1.out::device-g.6.10004.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-g",
+                        "modulePid": "device-g.dev.6",
+                        "portPid": "device-g.dev.6.10004"
+                      },
+                      "label": "Ethernet 6.3"
+                    }
+                  }
+                },
+                "devicePid": "device-d",
+                "label": "Example Device"
+              },
+              "secondary": {
+                "data": {
+                  "device-g.6.10004.out::device-b.dev.module-1.port-in-1.in": {
+                    "fromStatus": {
+                      "context": {
+                        "devicePid": "device-g",
+                        "modulePid": "device-g.dev.6",
+                        "portPid": "device-g.dev.6.10004"
+                      },
+                      "label": "Ethernet 6.3"
+                    },
+                    "id": "device-g.6.10004.out::device-b.dev.module-1.port-in-1.in",
+                    "toStatus": {
+                      "context": {
+                        "devicePid": "device-d",
+                        "modulePid": "device-d.dev.1",
+                        "portPid": "device-d.dev.1.port-in-1"
+                      },
+                      "label": "port-in-1"
+                    }
+                  }
+                },
+                "devicePid": "device-g",
+                "label": "Example Device"
+              },
+              "status": {
+                "alarm": 1,
+                "bandwidth": 1,
+                "maintenance": null,
+                "ptp": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

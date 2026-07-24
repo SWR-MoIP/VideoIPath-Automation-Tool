@@ -1,0 +1,40 @@
+{
+  "data": {
+    "items": [
+      {
+        "external": null,
+        "id": "device-a.dev.module-1.port-out-1.out::device-b.dev.module-1.port-in-1.in",
+        "idx": 0,
+        "res": {
+          "msg": [
+            ""
+          ],
+          "ok": true
+        }
+      }
+    ],
+    "res": {
+      "msg": [],
+      "ok": true
+    },
+    "validation": {
+      "createIds": [],
+      "details": {},
+      "result": {
+        "msg": [],
+        "ok": true
+      }
+    }
+  },
+  "header": {
+    "auth": true,
+    "caption": "Operation Successful",
+    "code": "OK",
+    "errorCodes": [],
+    "errorDetails": [],
+    "id": "0",
+    "msg": [],
+    "ok": true,
+    "user": "api-user"
+  }
+}

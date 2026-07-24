@@ -1,5 +1,12 @@
 import re
 
+_VIRTUAL_DEVICE_ID_PATTERN = re.compile(r"virtual\.(0|[1-9]\d*)")
+
+
+def is_virtual_device_id(device_id: str) -> bool:
+    """Return whether ``device_id`` matches the ``virtual.<number>`` topology id form."""
+    return isinstance(device_id, str) and _VIRTUAL_DEVICE_ID_PATTERN.fullmatch(device_id) is not None
+
 
 def validate_virtual_device_id(virtual_device_id: str) -> str:
     """
@@ -17,13 +24,7 @@ def validate_virtual_device_id(virtual_device_id: str) -> str:
     if not isinstance(virtual_device_id, str):
         raise ValueError(f"Each virtual device ID must be a string. Invalid virtual device ID: {virtual_device_id}")
 
-    pattern = r"virtual\.(0|[1-9]\d*)"
-    # Regular expression pattern explanation:
-    # virtual\.(0|[1-9]\d*) - The virtual device ID starts with the word 'virtual.' followed by a number:
-    #                       - '0' or
-    #                       - a positive integer (1-9) followed by zero or more digits between 0 and 9.
-
-    if not re.fullmatch(pattern, virtual_device_id):
+    if not is_virtual_device_id(virtual_device_id):
         raise ValueError(
             f"Invalid virtual device ID syntax: '{virtual_device_id}'. The expected format is: virtual.<number>."
         )

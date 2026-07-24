@@ -6,7 +6,7 @@ The architecture of this Python module is designed for **maintainability** and *
 
 The module consists of multiple layers, as visualized in the diagram below:
 
-![Module Architecture](images/module-architecture.svg)
+![Module Architecture](../images/module-architecture.svg)
 
 ### Business Logic Layer  
 
