@@ -30,15 +30,10 @@ E2E_PREFIX = "E2E-"
 E2E_TAG = "vipat-e2e"
 MOCK_DRIVER = "com.nevion.mock-0.1.0"
 
-# Catalog tags created via simple API requests for the Inspect tag tests. Tag references are
-# ``~~``-joined ids under the default Format tree (e.g. Format~~Video~~E2E-VIDEO-TAG).
-TEST_TAG_PATH = ("Format", "Video")
+# Catalog tags created via simple API requests for the Inspect tag tests. Leaf names are fixed;
+# the format tree root is resolved at runtime (see :func:`_e2e_format_tree_id`).
 TEST_TAG_NAME = "E2E-VIDEO-TAG"
-TEST_TAG_ID = "~~".join((*TEST_TAG_PATH, TEST_TAG_NAME))
-
-MODULE_TEST_TAG_PATH = ("Format", "Video")
 MODULE_TEST_TAG_NAME = "E2E-MODULE-TAG"
-MODULE_TEST_TAG_ID = "~~".join((*MODULE_TEST_TAG_PATH, MODULE_TEST_TAG_NAME))
 
 
 def unique_label(base: str) -> str:
@@ -428,24 +423,81 @@ def delete_catalog_tag(app: "VideoIPathApp", tag_id: str) -> None:
     )
 
 
+def _e2e_format_tree_id(app: "VideoIPathApp") -> str:
+    """Prefer the ``Format`` tree; otherwise the first tree with ``type == format``."""
+    items = _tag_trees(app)
+    for item in items:
+        if item.get("_id") == "Format":
+            return "Format"
+    for item in items:
+        if item.get("type") == "format":
+            tree_id = item.get("_id")
+            if tree_id:
+                return tree_id
+    raise RuntimeError("No format tag tree found on the server.")
+
+
+def test_tag_id(app: "VideoIPathApp") -> str:
+    """Full catalog id for the port/vertex E2E test tag under the resolved format tree."""
+    return f"{_e2e_format_tree_id(app)}~~{TEST_TAG_NAME}"
+
+
+def module_test_tag_id(app: "VideoIPathApp") -> str:
+    """Full catalog id for the module E2E test tag under the resolved format tree."""
+    return f"{_e2e_format_tree_id(app)}~~{MODULE_TEST_TAG_NAME}"
+
+
+def _catalog_tag_ids_by_name(app: "VideoIPathApp", name: str) -> list[str]:
+    """All ``~~``-joined catalog ids whose leaf node matches ``name`` (any tree, any depth)."""
+    results: list[str] = []
+
+    def walk(children: dict[str, Any], path: tuple[str, ...]) -> None:
+        for key, node in children.items():
+            current_path = (*path, key)
+            if key == name:
+                results.append("~~".join(current_path))
+            nested = node.get("children") or {}
+            if nested:
+                walk(nested, current_path)
+
+    for tree in _tag_trees(app):
+        root_id = tree.get("_id")
+        if root_id:
+            walk(tree.get("children") or {}, (root_id,))
+    return results
+
+
+def _delete_catalog_tags_by_name(app: "VideoIPathApp", name: str) -> None:
+    for tag_id in _catalog_tag_ids_by_name(app, name):
+        delete_catalog_tag(app, tag_id)
+
+
 def create_test_tag(app: "VideoIPathApp") -> None:
     """Create the E2E port/vertex test video tag in the catalog (idempotent)."""
-    create_catalog_tag(app, path=TEST_TAG_PATH, name=TEST_TAG_NAME)
+    tree_id = _e2e_format_tree_id(app)
+    path = (tree_id,)
+    if catalog_tag_exists(app, path=path, name=TEST_TAG_NAME):
+        return
+    create_catalog_tag(app, path=path, name=TEST_TAG_NAME)
 
 
 def delete_test_tag(app: "VideoIPathApp") -> None:
     """Force-delete the port/vertex test tag (removes it and any port bindings) if it exists."""
-    delete_catalog_tag(app, TEST_TAG_ID)
+    _delete_catalog_tags_by_name(app, TEST_TAG_NAME)
 
 
 def create_module_test_tag(app: "VideoIPathApp") -> None:
     """Create the E2E module test tag in the catalog (idempotent)."""
-    create_catalog_tag(app, path=MODULE_TEST_TAG_PATH, name=MODULE_TEST_TAG_NAME)
+    tree_id = _e2e_format_tree_id(app)
+    path = (tree_id,)
+    if catalog_tag_exists(app, path=path, name=MODULE_TEST_TAG_NAME):
+        return
+    create_catalog_tag(app, path=path, name=MODULE_TEST_TAG_NAME)
 
 
 def delete_module_test_tag(app: "VideoIPathApp") -> None:
     """Force-delete the module test tag (removes it and any module bindings) if it exists."""
-    delete_catalog_tag(app, MODULE_TEST_TAG_ID)
+    _delete_catalog_tags_by_name(app, MODULE_TEST_TAG_NAME)
 
 
 # --- Internal --------------------------------------------------------------------------------------
@@ -467,9 +519,13 @@ def _raw_request(app: "VideoIPathApp", method: str, path: str, body: dict[str, A
     return response
 
 
-def _tag_category(app: "VideoIPathApp", category: str) -> dict[str, Any] | None:
+def _tag_trees(app: "VideoIPathApp") -> list[dict[str, Any]]:
     trees = app._videoipath_connector.rest.get("/rest/v2/data/config/tags/tagTrees/**")
-    for item in trees.data["config"]["tags"]["tagTrees"].get("_items", []):
+    return trees.data["config"]["tags"]["tagTrees"].get("_items", [])
+
+
+def _tag_category(app: "VideoIPathApp", category: str) -> dict[str, Any] | None:
+    for item in _tag_trees(app):
         if item.get("_id") == category:
             return item
     return None
