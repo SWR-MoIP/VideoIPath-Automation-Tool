@@ -8,9 +8,8 @@ actions (``addDevices``, ``syncDevices``, virtual-device actions).
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
-from . import queries
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiAddDevicesItem,
     InspectApiAddDevicesRequest,
@@ -58,9 +57,11 @@ from videoipath_automation_tool.apps.inspect.model.virtual import (
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 
+from . import queries
+
 
 class InspectAPI:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None) -> None:
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None) -> None:
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_inspect_api")
         self.vip_connector = vip_connector
         self._logger.debug("Inspect API initialized.")
@@ -73,7 +74,7 @@ class InspectAPI:
         items = _extract_items(response.data, "status", "collector", "inspect", "nodeStatus")
         return [InspectApiNodeStatusItem.model_validate(item) for item in items]
 
-    def get_device_detail(self, device_id: str) -> Optional[InspectApiNodeStatusItem]:
+    def get_device_detail(self, device_id: str) -> InspectApiNodeStatusItem | None:
         """One device's full nodeStatus sub-tree (lazy hydration)."""
         response = self.vip_connector.rest.get(queries.device_detail(device_id), allow_projection=True)
         items = _extract_items(response.data, "status", "collector", "inspect", "nodeStatus")
@@ -87,7 +88,7 @@ class InspectAPI:
         items = _extract_items(response.data, "status", "collector", "externalEdgesByDeviceKey")
         return [InspectApiExternalEdgesByDeviceKeyItem.model_validate(item) for item in items]
 
-    def get_edge_pair(self, pair_id: str) -> Optional[InspectApiExternalEdgesByDeviceKeyItem]:
+    def get_edge_pair(self, pair_id: str) -> InspectApiExternalEdgesByDeviceKeyItem | None:
         """A single external-edge device pair (targeted refresh)."""
         response = self.vip_connector.rest.get(queries.edge_pair(pair_id), allow_projection=True)
         items = _extract_items(response.data, "status", "collector", "externalEdgesByDeviceKey")
@@ -125,6 +126,26 @@ class InspectAPI:
         response = self.vip_connector.rest.get(queries.virtual_devices(), allow_projection=True)
         items = _extract_items(response.data, "status", "network", "virtualDevices")
         return [InspectApiVirtualDeviceInstance.model_validate(item) for item in items]
+
+    def get_ngraph_factory_labels(self, *element_ids: str) -> dict[str, str]:
+        """Unchangeable ``fDescriptor.label`` values for the given device/vertex ids.
+
+        Collector ``nodeStatus`` does not populate factory labels on 2025.4.9. The primary source
+        is ``status/network/nGraphFromDrivers`` (driver-reported graph). When that is empty (e.g.
+        topology virtual devices), falls back to ``config/network/nGraphElements``.
+        """
+        if not element_ids:
+            return {}
+        result: dict[str, str] = {}
+        for device_id in _factory_label_device_roots(*element_ids):
+            response = self.vip_connector.rest.get(queries.driver_factory_labels(device_id), allow_projection=True)
+            items = _extract_items(response.data, "status", "network", "nGraphFromDrivers")
+            result.update(_flatten_driver_factory_labels(items))
+        if not result:
+            response = self.vip_connector.rest.get(queries.config_factory_labels(*element_ids), allow_projection=True)
+            items = _extract_items(response.data, "config", "network", "nGraphElements")
+            result.update(_flatten_config_factory_labels(items))
+        return result
 
     # --- Lookups (baselines for compare-and-commit) ---
 
@@ -203,6 +224,65 @@ class InspectAPI:
 
 
 # --- Internal ---
+
+
+def _factory_label_device_roots(*element_ids: str) -> list[str]:
+    """Distinct device ids to query on ``nGraphFromDrivers`` (one GET per device)."""
+    roots: list[str] = []
+    for element_id in element_ids:
+        if "::" in element_id:
+            continue
+        root = _factory_label_device_root(element_id)
+        if root is not None and root not in roots:
+            roots.append(root)
+    return roots
+
+
+def _factory_label_device_root(element_id: str) -> str | None:
+    if "::" in element_id:
+        return None
+    parts = element_id.split(".")
+    if len(parts) == 1:
+        return element_id
+    if parts[0] == "virtual" and len(parts) >= 2 and parts[1].isdigit():
+        return f"{parts[0]}.{parts[1]}" if len(parts) > 2 else element_id
+    if parts[0].startswith("device") and len(parts) > 1 and parts[1].isdigit():
+        return parts[0]
+    return element_id
+
+
+def _flatten_driver_factory_labels(items: list[dict[str, Any]]) -> dict[str, str]:
+    """Map element id → ``fDescriptor.label`` from one ``nGraphFromDrivers`` item."""
+    result: dict[str, str] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        for key, value in item.items():
+            if key in ("_id", "_vid") or not isinstance(value, dict):
+                continue
+            label = _fdescriptor_label(value.get("fDescriptor"))
+            if label:
+                result[key] = label
+    return result
+
+
+def _flatten_config_factory_labels(items: list[dict[str, Any]]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        element_id = item.get("_id")
+        label = _fdescriptor_label(item.get("fDescriptor"))
+        if isinstance(element_id, str) and label:
+            result[element_id] = label
+    return result
+
+
+def _fdescriptor_label(descriptor: Any) -> str | None:
+    if not isinstance(descriptor, dict):
+        return None
+    label = descriptor.get("label")
+    return label if isinstance(label, str) and label else None
 
 
 def _extract_items(data: dict[str, Any], *path: str) -> list[dict[str, Any]]:

@@ -25,13 +25,13 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiSingleVertexInfo
 from videoipath_automation_tool.apps.inspect.model.common import (
+    _STAGED_MISSING,
     InspectCodecFormat,
     InspectControl,
     InspectEditableModel,
     InspectSipsMode,
     InspectVertexKind,
     InspectVertexType,
-    _STAGED_MISSING,
     format_repr,
 )
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
@@ -77,8 +77,12 @@ class InspectVertex(InspectEditableModel):
 
     @property
     def factory_label(self) -> str | None:
-        """Device-reported factory label of the owning port (set when built via a port)."""
-        return self.port_factory_label
+        """Unchangeable factory label of this vertex (driver ``nGraphFromDrivers`` ``fDescriptor.label``).
+
+        When built via a port, the owning port's collector factory label is used if fromDrivers is
+        unavailable (offline tests). Never the editable form ``label``.
+        """
+        return self.snapshot.get_factory_label(self.id) or self.port_factory_label
 
     @property
     def is_active(self) -> bool | None:
@@ -648,10 +652,10 @@ _VERTEX_CLASS_BY_KIND: dict[str | None, type[InspectVertex]] = {
 
 
 __all__ = [
-    "InspectVertex",
+    "InspectCodecVertex",
     "InspectGenericVertex",
     "InspectIpVertex",
-    "InspectCodecVertex",
     "InspectResourceTransformVertex",
+    "InspectVertex",
     "build_vertex",
 ]

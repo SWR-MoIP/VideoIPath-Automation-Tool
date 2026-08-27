@@ -100,6 +100,68 @@ def test_lazy_hydration(app: VideoIPathApp, topology_builder: TopologyBuilder) -
     assert not app.inspect.is_device_hydrated(id_b)
 
 
+def test_factory_labels_are_unchangeable(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
+    """Device, port, and vertex factory labels stay on nGraph fDescriptor through user overrides."""
+    (device_id,) = topology_builder.add_devices([("FACT-A", 2)])
+    user_device_label = topology_builder.labels[device_id]
+    app.inspect.refresh()
+    device = app.inspect.get_device(device_id)
+    assert device is not None
+    assert not app.inspect.is_device_hydrated(device_id)
+
+    device_factory = device.factory_label
+    assert device_factory
+    assert device_factory != user_device_label
+    assert device_factory.startswith("Mock device")
+    assert not app.inspect.is_device_hydrated(device_id)
+    assert app.inventory.get_device(device_id=device_id).factory_label == device_factory
+
+    in_port = next(port for port in device.ports if port.vertex_in is not None)
+    out_port = next(port for port in device.ports if port.vertex_out is not None)
+    vertex_in = in_port.vertex_in
+    vertex_out = out_port.vertex_out
+    assert vertex_in is not None and vertex_out is not None
+
+    in_factory = vertex_in.factory_label
+    out_factory = vertex_out.factory_label
+    assert in_factory and in_factory.startswith("Router In")
+    assert out_factory and out_factory.startswith("Router Out")
+    assert in_port.factory_label == in_factory
+    assert out_port.factory_label == out_factory
+    found_in = device.find_vertex_by_factory_label(in_factory)
+    assert found_in is not None
+    assert found_in.id == vertex_in.id
+
+    override_device = unique_label("FACT-DEV")
+    override_vertex = "E2E-override-label"
+    app.inspect.update_device(device_id, label=override_device)
+    app.inspect.update_vertex(vertex_in.id, label=override_vertex)
+    app.inspect.refresh()
+
+    device = app.inspect.get_device(device_id)
+    in_port = next(port for port in device.ports if port.vertex_in is not None and port.vertex_in.id == vertex_in.id)
+    out_port = next(
+        port for port in device.ports if port.vertex_out is not None and port.vertex_out.id == vertex_out.id
+    )
+    vertex_in = in_port.vertex_in
+    vertex_out = out_port.vertex_out
+    assert vertex_in is not None and vertex_out is not None
+
+    assert device.label == override_device
+    assert device.factory_label == device_factory
+    assert vertex_in.label == override_vertex
+    assert vertex_in.factory_label == in_factory
+    assert vertex_in.factory_label != vertex_in.label
+    assert in_port.factory_label == in_factory
+    assert in_port.factory_label != vertex_in.label
+    assert vertex_out.factory_label == out_factory
+    assert out_port.factory_label == out_factory
+    found_in = device.find_vertex_by_factory_label(in_factory)
+    assert found_in is not None
+    assert found_in.id == vertex_in.id
+    assert device.find_vertex_by_factory_label(override_vertex) is None
+
+
 def test_connectivity_graph(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
     hub, id_b, id_c = topology_builder.add_devices([("HUB-A", 2), ("HUB-B", 2), ("HUB-C", 2)])
     topology_builder.link(hub, id_b)
@@ -124,11 +186,10 @@ def test_transaction_atomicity(app: VideoIPathApp, topology_builder: TopologyBui
     topology_builder.link(id_a, id_b)
     app.inspect.refresh()
     edge_id = edges_between(app, id_a, id_b)[0].id
-    with pytest.raises(InspectCommitError):
-        with app.inspect.transaction() as tx:
-            tx.update_edge(edge_id, weight=13)
-            tx.remove("does-not-exist::also-not-real")
-            tx.commit()
+    with pytest.raises(InspectCommitError), app.inspect.transaction() as tx:
+        tx.update_edge(edge_id, weight=13)
+        tx.remove("does-not-exist::also-not-real")
+        tx.commit()
     app.inspect.refresh()
     assert any(edge.id == edge_id for edge in app.inspect.edges)
 
@@ -238,6 +299,9 @@ def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuil
     assert vertex.park_port == 7
     assert vertex.vertex_kind == "router"
     assert vertex.type_fields is not None and vertex.type_fields.type == "router"
+    assert vertex.factory_label
+    assert vertex.factory_label != vertex.label
+    assert vertex.factory_label.startswith("Router")
 
 
 def test_device_placement(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:

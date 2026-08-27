@@ -80,6 +80,28 @@ def virtual_devices() -> str:
     return _build(_VIRTUAL_DEVICES)
 
 
+def driver_factory_labels(device_id: str) -> str:
+    """GET path for driver-reported ``fDescriptor.label`` values of one device graph.
+
+    Collector ``nodeStatus`` does not populate factory labels on 2025.4.9. The Inspect UI reads
+    the driver graph from ``status/network/nGraphFromDrivers`` (not collector, not config nGraph).
+    One device id returns the baseDevice plus all vertices/edges keyed by element id.
+    """
+    return _build(f"/status/network/nGraphFromDrivers/{device_id}/*/fDescriptor/**")
+
+
+def config_factory_labels(*element_ids: str) -> str:
+    """GET path for persisted ``fDescriptor.label`` values (Topology config nGraph fallback).
+
+    Used when ``nGraphFromDrivers`` has no entry (e.g. topology virtual devices). Each id is
+    matched as ``_id`` (baseDevice / vertex) or ``deviceId`` (all vertices of a device).
+    """
+    if not element_ids:
+        raise ValueError("element_ids must not be empty.")
+    clauses = " or ".join(f"_id='{element_id}' or deviceId='{element_id}'" for element_id in element_ids)
+    return _build(f"/config/network/nGraphElements/* where {clauses} /fDescriptor/**")
+
+
 # --- Internal ---
 
 # Characters that are meaningful in the projection grammar and must survive encoding.
@@ -147,14 +169,16 @@ def _build(path: str) -> str:
 
 __all__ = [
     "MAX_QUERY_LENGTH",
-    "encode",
-    "device_skeleton",
-    "device_detail",
-    "edge_skeleton",
-    "edge_pair",
-    "paths_section",
     "alarms_section",
     "collector_full",
-    "virtual_templates",
+    "config_factory_labels",
+    "device_detail",
+    "device_skeleton",
+    "driver_factory_labels",
+    "edge_pair",
+    "edge_skeleton",
+    "encode",
+    "paths_section",
     "virtual_devices",
+    "virtual_templates",
 ]

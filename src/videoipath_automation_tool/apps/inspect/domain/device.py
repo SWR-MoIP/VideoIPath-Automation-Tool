@@ -72,9 +72,13 @@ class InspectDevice(InspectEditableModel):
 
     @property
     def factory_label(self) -> str | None:
-        """Device-reported factory label (``fDescriptor.label`` / collector ``label``)."""
+        """Unchangeable device-reported factory label (driver ``nGraphFromDrivers`` ``fDescriptor.label``).
+
+        Never the user override (``descriptor.label``). Collector ``nodeStatus`` does not populate
+        this on 2025.4.9, so the snapshot resolves it from fromDrivers (config nGraph fallback).
+        """
         node = self._record().node
-        return node.label
+        return node.factory_label or self.snapshot.get_factory_label(self.id)
 
     @property
     def pid(self) -> str | None:
@@ -159,7 +163,7 @@ class InspectDevice(InspectEditableModel):
     @property
     def local_assigned_tags(self) -> list[str]:
         """Device ``localAssignedTags`` (distinct from collector ``tags`` when both are present)."""
-        return self._staged_or("localAssignedTags", lambda: [], adapt=list)
+        return self._staged_or("localAssignedTags", list, adapt=list)
 
     @local_assigned_tags.setter
     def local_assigned_tags(self, value: list[str]) -> None:
@@ -331,7 +335,7 @@ class InspectDevice(InspectEditableModel):
 
     __str__ = __repr__
 
-    def _record(self) -> "_DeviceRecord":
+    def _record(self) -> _DeviceRecord:
         record = self.snapshot.get_device_record(self.id)
         if record is None:
             raise KeyError(f"Device '{self.id}' is no longer present in the snapshot.")

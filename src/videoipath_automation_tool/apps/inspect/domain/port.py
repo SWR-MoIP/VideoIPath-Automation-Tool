@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, Self
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import Field, model_validator
 
@@ -116,8 +117,20 @@ class InspectPort(InspectFrozenModel):
 
     @property
     def factory_label(self) -> str | None:
-        """The device-reported (factory) port label, even when a manual override is set."""
-        return self.indexed.port.label
+        """The unchangeable device-reported factory port label, even when a manual override is set.
+
+        Collector ``nodeStatus`` exposes this as the top-level ``label`` when present; on 2025.4.9
+        that field is null, so the snapshot resolves ``fDescriptor.label`` from
+        ``nGraphFromDrivers`` (config nGraph fallback) via a vertex on this port.
+        """
+        collector = self.indexed.port.factory_label
+        if collector:
+            return collector
+        for vertex_id, _ in self._vertex_sides():
+            label = self.snapshot.get_factory_label(vertex_id, device_id=self.indexed.device_id)
+            if label:
+                return label
+        return None
 
     @property
     def description(self) -> str | None:

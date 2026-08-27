@@ -11,11 +11,11 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectApiEndpointStatus,
     InspectApiRestV2Header,
     InspectApiStatusContext,
+    InspectApiStatusSummary,
     InspectIconSize,
     InspectIconType,
     InspectSdpStrategy,
     InspectServiceStatus,
-    InspectApiStatusSummary,
     InspectSeverity,
     InspectVertexType,
     map_severity,
@@ -139,6 +139,12 @@ class InspectPortStatus(InspectApiBaseModel):
         return []
 
     @property
+    def factory_label(self) -> str | None:
+        """Device-reported factory port label (top-level ``label``). Distinct from the user
+        override in ``descriptor.label``. Null on 2025.4.9 collector payloads."""
+        return self.label or None
+
+    @property
     def effective_label(self) -> str | None:
         if self.descriptor is not None and self.descriptor.label:
             return self.descriptor.label
@@ -242,6 +248,15 @@ class InspectApiNodeStatusItem(InspectApiBaseModel):
     @classmethod
     def _map_sync_severity(cls, value: Any) -> Any:
         return map_severity(value)
+
+    @property
+    def factory_label(self) -> str | None:
+        """Unchangeable device-reported label: ``fDescriptor.label``, then the legacy top-level
+        ``label``. Never ``descriptor.label`` (the user override). Collector ``nodeStatus`` leaves
+        both empty on 2025.4.9 — domain objects then resolve from nGraph ``fDescriptor``."""
+        if self.fDescriptor is not None and self.fDescriptor.label:
+            return self.fDescriptor.label
+        return self.label or None
 
     @property
     def effective_label(self) -> str | None:
@@ -394,9 +409,9 @@ __all__ = [
     "InspectApiPathSegment",
     "InspectApiPathServiceFields",
     "InspectApiPathStructure",
-    "InspectPortStatus",
     "InspectApiSingleVertexInfo",
     "InspectApiSuperProfileItem",
     "InspectApiTagInfoItem",
     "InspectApiVertexInfoFields",
+    "InspectPortStatus",
 ]
