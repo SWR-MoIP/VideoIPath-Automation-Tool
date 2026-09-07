@@ -21,7 +21,7 @@ keywords = [
 ]
 dependencies = [
     "requests (>=2.34.2,<3.0.0)",
-    "pydantic (>=2.13.3,<3.0.0)",
+    "pydantic (>=2.13.5,<3.0.0)",
     "pydantic-extra-types (>=2.6.0,<3.0.0)",
     "pydantic-settings (>=2.15.0,<3.0.0)",
     "urllib3 (>=2.7.0,<3.0.0)",
@@ -40,13 +40,13 @@ packages = [{ include = "videoipath_automation_tool", from = "src" },
   { include = "vipat_cli_scripts", from = "src" },]
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.16.3"
+ruff = "^0.16.6"
 pre-commit = "^4.6.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^9.1.1"
 pytest-cov = "^7.1.0"
-python-dotenv = "^1.1.0"
+python-dotenv = "^1.2.3"
 
 [tool.pytest.ini_options]
 addopts = "-x -p no:warnings --cov-report=term --cov-report=term-missing --no-cov-on-fail --cov=src --ignore=__intern -m \"not e2e\""
