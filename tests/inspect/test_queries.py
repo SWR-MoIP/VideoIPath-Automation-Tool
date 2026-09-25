@@ -40,6 +40,24 @@ def test_virtual_queries_use_network_namespace() -> None:
     assert "/status/network/virtualDevices/**" in queries.virtual_devices()
 
 
+def test_driver_factory_labels_query_targets_status_ngraphfromdrivers() -> None:
+    path = urllib.parse.unquote(queries.driver_factory_labels("device12"))
+    assert path.startswith("/rest/v2/data/status/network/nGraphFromDrivers/")
+    assert "device12" in path
+    assert "fDescriptor/**" in path
+    assert len(queries.driver_factory_labels("device12")) < queries.MAX_QUERY_LENGTH
+
+
+def test_config_factory_labels_query_targets_config_fdescriptor() -> None:
+    path = urllib.parse.unquote(queries.config_factory_labels("device12", "device12.11.1"))
+    assert path.startswith("/rest/v2/data/config/network/nGraphElements/")
+    assert "_id='device12'" in path
+    assert "deviceId='device12'" in path
+    assert "_id='device12.11.1'" in path
+    assert "fDescriptor/**" in path
+    assert len(queries.config_factory_labels("device12")) < queries.MAX_QUERY_LENGTH
+
+
 def test_device_skeleton_suppresses_modules_and_selects_skeleton_fields() -> None:
     path = queries.device_skeleton()
     decoded = urllib.parse.unquote(path)

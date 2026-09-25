@@ -44,6 +44,60 @@ def test_device_description_from_descriptor(snapshot: tuple[InspectSnapshot, Fak
     assert snap.get_device("leaf-a").description == "LEAF-A description"
 
 
+def test_device_factory_label_ignores_user_override(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    leaf = snap.get_device("leaf-a")
+    assert leaf.label == "LEAF-A"
+    assert leaf.factory_label == "LEAF-A-factory"
+
+
+def test_vertex_factory_label_prefers_ngraph_over_port_collector(
+    snapshot: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, fetcher = snapshot
+    fetcher._ngraph_factory_labels["leaf-a.0.up1"] = "up1-ngraph"
+    port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
+    assert port.factory_label == "up1-factory"  # collector top-level label still wins on the port
+    assert port.vertex_out is not None
+    assert port.vertex_out.factory_label == "up1-ngraph"
+
+
+def test_factory_label_from_ngraph_when_collector_empty(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = InspectApiNodeStatusItem.model_validate(
+        {
+            "_id": "leaf-a",
+            "deviceId": "leaf-a",
+            "descriptor": {"label": "LEAF-A"},
+            "modules": {
+                "leaf-a.dev.0": {
+                    "pid": "leaf-a.dev.0",
+                    "ports": {
+                        "leaf-a.dev.0.up1": {
+                            "pid": "leaf-a.dev.0.up1",
+                            "descriptor": {"label": "up1 (out)"},
+                            "vertexInfo": _single_vertex_info(
+                                "leaf-a.0.up1", "Out", active=True, controlled=True, endpoint=False
+                            ),
+                        }
+                    },
+                }
+            },
+        }
+    )
+    fetcher._ngraph_factory_labels = {"leaf-a": "Mock device 'leaf-a'", "leaf-a.0.up1": "up1"}
+    snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
+    leaf = snap.get_device("leaf-a")
+    assert leaf.label == "LEAF-A"
+    assert leaf.factory_label == "Mock device 'leaf-a'"
+    port = snap.get_port("leaf-a", "leaf-a.dev.0.up1")
+    assert port is not None
+    assert port.label == "up1 (out)"
+    assert port.factory_label == "up1"
+    assert port.vertex_out is not None
+    assert port.vertex_out.factory_label == "up1"
+
+
 def test_ports_trigger_exactly_one_hydration(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
     snap, fetcher = snapshot
     leaf = snap.get_device("leaf-a")
@@ -370,6 +424,7 @@ def _skeleton_node(
             "_vid": device_id,
             "deviceId": device_id,
             "descriptor": {"desc": f"{label} description", "label": label},
+            "fDescriptor": {"desc": "", "label": f"{label}-factory"},
             "meta": {"coordinates": {"x": x, "y": y}, "isVirtual": True, "iconType": "switch"},
             "status": {"sa": 0, "severity": 0},
             "syncSeverity": sync,
@@ -398,6 +453,7 @@ def _detail_node(device_id: str, label: str, port_pids: list[str]) -> InspectApi
             "_vid": device_id,
             "deviceId": device_id,
             "descriptor": {"desc": "", "label": label},
+            "fDescriptor": {"desc": "", "label": f"{label}-factory"},
             "meta": {"coordinates": {"x": 0, "y": 0}},
             "status": {"sa": 0, "severity": 0},
             "syncSeverity": 0,
@@ -475,6 +531,7 @@ def _filter_detail_node(device_id: str, label: str) -> InspectApiNodeStatusItem:
             "_vid": device_id,
             "deviceId": device_id,
             "descriptor": {"desc": "", "label": label},
+            "fDescriptor": {"desc": "", "label": f"{label}-factory"},
             "modules": modules,
         }
     )
@@ -528,6 +585,8 @@ class FakeFetcher:
         self.section_calls = 0
         self.alarm_section_calls = 0
         self.skeleton_calls = 0
+        self.ngraph_factory_calls: list[list[str]] = []
+        self._ngraph_factory_labels: dict[str, str] = {}
         self._details = {
             "spine-a": _detail_node("spine-a", "SPINE-A", ["spine-a.dev.0.swp1", "spine-a.dev.0.swp2"]),
             "leaf-a": _detail_node("leaf-a", "LEAF-A", ["leaf-a.dev.0.up1", "leaf-a.dev.0.host1"]),
@@ -575,6 +634,17 @@ class FakeFetcher:
             for edge_id in edge_ids
         }
         return InspectApiLookupEdgesResponse.model_validate({"data": data, "header": _fetcher_ok_header()})
+
+    def get_ngraph_factory_labels(self, *element_ids: str) -> dict[str, str]:
+        self.ngraph_factory_calls.append(list(element_ids))
+        result: dict[str, str] = {}
+        for element_id in element_ids:
+            if element_id in self._ngraph_factory_labels:
+                result[element_id] = self._ngraph_factory_labels[element_id]
+            for key, label in self._ngraph_factory_labels.items():
+                if key.startswith(element_id + "."):
+                    result[key] = label
+        return result
 
 
 def _fetcher_ok_header() -> dict[str, object]:

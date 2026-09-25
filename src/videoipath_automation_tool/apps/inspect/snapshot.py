@@ -15,10 +15,11 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Iterator, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field
 
@@ -35,14 +36,15 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectPortStatus,
 )
 from videoipath_automation_tool.apps.inspect.model.common import (
+    _STAGED_MISSING,
     InspectFrozenModel,
     InspectInternalModel,
     InspectSeverity,
-    _STAGED_MISSING,
     format_repr,
 )
 
 if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.api import InspectAPI
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
@@ -50,7 +52,6 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
     from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
-    from videoipath_automation_tool.apps.inspect.api import InspectAPI
     from videoipath_automation_tool.apps.inspect.model.actions import (
         InspectApiEdgeForm,
         InspectApiLookupVertexResponseData,
@@ -65,13 +66,13 @@ class HydrationLevel(str, Enum):
 class InspectSnapshot:
     def __init__(
         self,
-        fetcher: Optional["InspectAPI"] = None,
-        device_items: Optional[list[InspectApiNodeStatusItem]] = None,
-        edge_items: Optional[list[InspectApiExternalEdgesByDeviceKeyItem]] = None,
+        fetcher: InspectAPI | None = None,
+        device_items: list[InspectApiNodeStatusItem] | None = None,
+        edge_items: list[InspectApiExternalEdgesByDeviceKeyItem] | None = None,
         *,
         device_level: HydrationLevel = HydrationLevel.SKELETON,
-        path_items: Optional[list[InspectApiPathItem]] = None,
-        alarm_items: Optional[list[InspectApiAlarmItem]] = None,
+        path_items: list[InspectApiPathItem] | None = None,
+        alarm_items: list[InspectApiAlarmItem] | None = None,
     ) -> None:
         self._fetcher = fetcher
         self._lock = threading.RLock()
@@ -92,11 +93,17 @@ class InspectSnapshot:
 
         # Vertex edit-form details, fetched lazily per vertex and invalidated when the
         # owning device's ports are rebuilt after a refresh/commit.
-        self._vertex_details: dict[str, "InspectApiLookupVertexResponseData"] = {}
+        self._vertex_details: dict[str, InspectApiLookupVertexResponseData] = {}
+
+        # Unchangeable fDescriptor.label values from status/network/nGraphFromDrivers (config
+        # nGraphElements when fromDrivers is empty, e.g. virtual devices). Fetched lazily when
+        # collector nodeStatus does not populate factory labels (verified 2025.4.9).
+        self._factory_labels: dict[str, str | None] = {}
+        self._factory_labels_loaded_devices: set[str] = set()
 
         # Edge edit-form details, fetched lazily per edge and invalidated when the
         # owning edge pair is dropped/re-indexed after a refresh/commit.
-        self._edge_details: dict[str, "InspectApiEdgeForm"] = {}
+        self._edge_details: dict[str, InspectApiEdgeForm] = {}
 
         # Section: services / paths
         self._paths_by_booking_id: dict[str, InspectApiPathItem] = {}
@@ -110,10 +117,10 @@ class InspectSnapshot:
         self._alarms_by_resource_key: dict[str, list[InspectApiAlarmItem]] = {}
 
         # Domain-object caches
-        self._device_cache: dict[str, "InspectDevice"] = {}
-        self._module_cache: dict[tuple[str, str], "InspectModule"] = {}
-        self._edge_cache: dict[str, "InspectEdge"] = {}
-        self._service_cache: dict[str, "InspectService"] = {}
+        self._device_cache: dict[str, InspectDevice] = {}
+        self._module_cache: dict[tuple[str, str], InspectModule] = {}
+        self._edge_cache: dict[str, InspectEdge] = {}
+        self._service_cache: dict[str, InspectService] = {}
 
         # Entities whose post-write re-fetch failed; re-fetched lazily on next access.
         self._stale_devices: set[str] = set()
@@ -149,8 +156,8 @@ class InspectSnapshot:
 
     @classmethod
     def from_full_response(
-        cls, response: InspectApiCollectorResponse, fetcher: Optional["InspectAPI"] = None
-    ) -> "InspectSnapshot":
+        cls, response: InspectApiCollectorResponse, fetcher: InspectAPI | None = None
+    ) -> InspectSnapshot:
         """Build a fully-hydrated snapshot from one full collector aggregate (eager / fallback mode)."""
         collector = response.data.status.collector
         return cls(
@@ -183,7 +190,7 @@ class InspectSnapshot:
 
     # --- Device reads ---
 
-    def get_device(self, device_id: str) -> Optional["InspectDevice"]:
+    def get_device(self, device_id: str) -> InspectDevice | None:
         self._reconcile_stale_device(device_id)
         if device_id not in self._devices_by_id:
             return None
@@ -192,51 +199,51 @@ class InspectSnapshot:
     # Backwards-compatible alias.
     get_device_by_id = get_device
 
-    def find_device_by_label(self, label: str) -> Optional["InspectDevice"]:
+    def find_device_by_label(self, label: str) -> InspectDevice | None:
         ids = self._devices_by_label.get(label, [])
         return self._wrap_device(ids[0]) if ids else None
 
-    def find_devices_by_label(self, label: str) -> list["InspectDevice"]:
+    def find_devices_by_label(self, label: str) -> list[InspectDevice]:
         return [self._wrap_device(device_id) for device_id in self._devices_by_label.get(label, [])]
 
     # Backwards-compatible alias.
     find_devices_by_name = find_devices_by_label
 
     @property
-    def devices(self) -> list["InspectDevice"]:
+    def devices(self) -> list[InspectDevice]:
         return [self._wrap_device(device_id) for device_id in self._devices_by_id]
 
-    def get_devices(self, detail: bool = False) -> list["InspectDevice"]:
+    def get_devices(self, detail: bool = False) -> list[InspectDevice]:
         if detail:
             self.preload()
         return self.devices
 
-    def get_device_record(self, device_id: str) -> Optional[_DeviceRecord]:
+    def get_device_record(self, device_id: str) -> _DeviceRecord | None:
         """Internal: return the (possibly hydrated) record for a device; used by domain objects."""
         self._reconcile_stale_device(device_id)
         return self._devices_by_id.get(device_id)
 
     # --- Module + port reads (trigger hydration) ---
 
-    def get_modules_for_device(self, device_id: str) -> list["InspectModule"]:
+    def get_modules_for_device(self, device_id: str) -> list[InspectModule]:
         self._ensure_device_detail(device_id)
         return [self._wrap_module(device_id, module_id) for module_id in self._modules_by_device_id.get(device_id, {})]
 
-    def get_module(self, device_id: str, module_id: str) -> Optional["InspectModule"]:
+    def get_module(self, device_id: str, module_id: str) -> InspectModule | None:
         self._ensure_device_detail(device_id)
         if module_id not in self._modules_by_device_id.get(device_id, {}):
             return None
         return self._wrap_module(device_id, module_id)
 
-    def get_module_status(self, device_id: str, module_id: str) -> Optional[InspectApiModuleStatus]:
+    def get_module_status(self, device_id: str, module_id: str) -> InspectApiModuleStatus | None:
         """The raw module status (for domain objects to resolve live); None if the module is gone."""
         return self._modules_by_device_id.get(device_id, {}).get(module_id)
 
-    def get_ports_for_device(self, device_id: str) -> list["InspectPort"]:
+    def get_ports_for_device(self, device_id: str) -> list[InspectPort]:
         self._ensure_device_detail(device_id)
         return [self._wrap_port(indexed) for indexed in self._ports_by_device_id.get(device_id, [])]
 
-    def get_ports_for_module(self, device_id: str, module_id: str) -> list["InspectPort"]:
+    def get_ports_for_module(self, device_id: str, module_id: str) -> list[InspectPort]:
         self._ensure_device_detail(device_id)
         return [
             self._wrap_port(indexed)
@@ -244,21 +251,21 @@ class InspectSnapshot:
             if indexed.module_id == module_id
         ]
 
-    def get_port(self, device_id: str, port_id: str) -> Optional["InspectPort"]:
+    def get_port(self, device_id: str, port_id: str) -> InspectPort | None:
         self._ensure_device_detail(device_id)
         indexed = self._port_by_key.get((device_id, port_id))
         return self._wrap_port(indexed) if indexed else None
 
-    def find_port_by_id(self, port_id: str) -> Optional["InspectPort"]:
+    def find_port_by_id(self, port_id: str) -> InspectPort | None:
         indexed = self._ports_by_pid.get(port_id)
         return self._wrap_port(indexed[0]) if indexed else None
 
     # --- Vertex detail reads (trigger lookup) ---
 
-    def get_vertex_details(self, vertex_id: str) -> Optional["InspectApiLookupVertexResponseData"]:
+    def get_vertex_details(self, vertex_id: str) -> InspectApiLookupVertexResponseData | None:
         return self.get_vertex_details_many([vertex_id]).get(vertex_id)
 
-    def get_vertex_details_many(self, vertex_ids: list[str]) -> dict[str, "InspectApiLookupVertexResponseData"]:
+    def get_vertex_details_many(self, vertex_ids: list[str]) -> dict[str, InspectApiLookupVertexResponseData]:
         """Batched, cached vertex edit-form lookup (``lookupInspectVertexByIds``). Only uncached ids
         are fetched, in a single call; without a fetcher only cached entries are returned."""
         missing = [vertex_id for vertex_id in vertex_ids if vertex_id not in self._vertex_details]
@@ -273,16 +280,16 @@ class InspectSnapshot:
     def get_vertex(
         self,
         vertex_id: str,
-        vertex_info: Optional["InspectApiSingleVertexInfo"] = None,
+        vertex_info: InspectApiSingleVertexInfo | None = None,
         *,
         port_factory_label: str | None = None,
-    ) -> Optional["InspectVertex"]:
+    ) -> InspectVertex | None:
         """Typed vertex view for ``vertex_id`` (triggers a cached ``lookupInspectVertexById``); the
         concrete subclass is chosen from the edit form's ``typeFields.type``. ``vertex_info`` (the
         owning port's offline ``vertexInfo`` side) supplies the direction/status flags: when it is
         given a base vertex is still returned even if the edit form is unavailable; without it, an
-        unknown vertex returns None. ``port_factory_label`` (when built via a port) is exposed as
-        :attr:`InspectVertex.factory_label`."""
+        unknown vertex returns None. ``port_factory_label`` (when built via a port) is a collector
+        fallback for :attr:`InspectVertex.factory_label` when fromDrivers is unavailable."""
         lookup = self.get_vertex_details(vertex_id)
         if lookup is None and vertex_info is None:
             return None
@@ -292,13 +299,27 @@ class InspectSnapshot:
 
         return build_vertex(self, vertex_id, kind, vertex_info, port_factory_label=port_factory_label)
 
+    def get_factory_label(self, element_id: str, *, device_id: str | None = None) -> str | None:
+        """Unchangeable factory label of a device or vertex (``fDescriptor.label``).
+
+        Collector ``nodeStatus`` does not populate these on 2025.4.9. Resolved from
+        ``status/network/nGraphFromDrivers``, with ``config/network/nGraphElements`` as fallback.
+        Results are cached; one device id loads that device graph in one query.
+        """
+        with self._lock:
+            if element_id in self._factory_labels:
+                return self._factory_labels[element_id]
+        self._load_factory_labels(element_id, device_id=device_id)
+        with self._lock:
+            return self._factory_labels.get(element_id)
+
     # --- Edge reads (no hydration) ---
 
     @property
-    def edges(self) -> list["InspectEdge"]:
+    def edges(self) -> list[InspectEdge]:
         self._reconcile_stale_pairs()
         seen: set[str] = set()
-        result: list["InspectEdge"] = []
+        result: list[InspectEdge] = []
         for indexed_edges in self._edges_by_device_id.values():
             for indexed in indexed_edges:
                 if indexed.edge_id in seen:
@@ -307,13 +328,13 @@ class InspectSnapshot:
                 result.append(self._wrap_edge(indexed))
         return result
 
-    def get_edges(self) -> list["InspectEdge"]:
+    def get_edges(self) -> list[InspectEdge]:
         return self.edges
 
-    def get_edges_for_device(self, device_id: str) -> list["InspectEdge"]:
+    def get_edges_for_device(self, device_id: str) -> list[InspectEdge]:
         self._reconcile_stale_pairs()
         seen: set[str] = set()
-        result: list["InspectEdge"] = []
+        result: list[InspectEdge] = []
         for indexed in self._edges_by_device_id.get(device_id, []):
             if indexed.edge_id in seen:
                 continue
@@ -321,12 +342,12 @@ class InspectSnapshot:
             result.append(self._wrap_edge(indexed))
         return result
 
-    def get_edges_for_port(self, device_id: str, port_id: str) -> list["InspectEdge"]:
+    def get_edges_for_port(self, device_id: str, port_id: str) -> list[InspectEdge]:
         """All edges incident on a port. The read view (``externalEdgesByDeviceKey``) keys edge
         endpoints by *port* (not vertex), so edges are grouped at the port level."""
         self._reconcile_stale_pairs()
         seen: set[str] = set()
-        result: list["InspectEdge"] = []
+        result: list[InspectEdge] = []
         for indexed in self._edges_by_device_id.get(device_id, []):
             on_port = (indexed.from_device_id == device_id and indexed.from_port_id == port_id) or (
                 indexed.to_device_id == device_id and indexed.to_port_id == port_id
@@ -337,15 +358,15 @@ class InspectSnapshot:
             result.append(self._wrap_edge(indexed))
         return result
 
-    def get_edge_for_port(self, device_id: str, port_id: str) -> Optional["InspectEdge"]:
+    def get_edge_for_port(self, device_id: str, port_id: str) -> InspectEdge | None:
         self._reconcile_stale_pairs()
         indexed = self._edge_by_port_key.get((device_id, port_id))
         return self._wrap_edge(indexed) if indexed else None
 
-    def get_edge_details(self, edge_id: str) -> Optional["InspectApiEdgeForm"]:
+    def get_edge_details(self, edge_id: str) -> InspectApiEdgeForm | None:
         return self.get_edge_details_many([edge_id]).get(edge_id)
 
-    def get_edge_details_many(self, edge_ids: list[str]) -> dict[str, "InspectApiEdgeForm"]:
+    def get_edge_details_many(self, edge_ids: list[str]) -> dict[str, InspectApiEdgeForm]:
         """Batched, cached edge edit-form lookup (``lookupInspectEdgesByIds``). Only uncached ids are
         fetched, in a single call; without a fetcher only cached entries are returned."""
         missing = [edge_id for edge_id in edge_ids if edge_id not in self._edge_details]
@@ -356,7 +377,7 @@ class InspectSnapshot:
                     self._edge_details[edge_id] = item.edge
         return {edge_id: detail for edge_id in edge_ids if (detail := self._edge_details.get(edge_id)) is not None}
 
-    def get_linked_devices(self, device_id: str) -> list["InspectDevice"]:
+    def get_linked_devices(self, device_id: str) -> list[InspectDevice]:
         self._reconcile_stale_pairs()
         linked: set[str] = set()
         for indexed in self._edges_by_device_id.get(device_id, []):
@@ -368,21 +389,21 @@ class InspectSnapshot:
     # --- Service reads (section, trigger section load) ---
 
     @property
-    def services(self) -> list["InspectService"]:
+    def services(self) -> list[InspectService]:
         self._ensure_section_paths()
         return [self._wrap_service(item) for item in self._paths_by_booking_id.values()]
 
-    def get_services(self) -> list["InspectService"]:
+    def get_services(self) -> list[InspectService]:
         return self.services
 
-    def get_service_by_booking_id(self, booking_id: str) -> Optional["InspectService"]:
+    def get_service_by_booking_id(self, booking_id: str) -> InspectService | None:
         self._ensure_section_paths()
         item = self._paths_by_booking_id.get(booking_id)
         return self._wrap_service(item) if item else None
 
-    def get_services_for_device(self, device_id: str) -> list["InspectService"]:
+    def get_services_for_device(self, device_id: str) -> list[InspectService]:
         self._ensure_section_paths()
-        result: list["InspectService"] = []
+        result: list[InspectService] = []
         for booking_id in self._services_by_device_id.get(device_id, []):
             item = self._paths_by_booking_id.get(booking_id)
             if item is not None:
@@ -391,39 +412,39 @@ class InspectSnapshot:
 
     # --- Alarm reads (section, trigger section load) ---
 
-    def get_alarms_for_device(self, device_id: str) -> list["InspectAlarm"]:
+    def get_alarms_for_device(self, device_id: str) -> list[InspectAlarm]:
         self._ensure_section_alarms()
         return _sorted_alarms(self._alarms_by_device_id.get(device_id, []))
 
-    def get_alarms_for_resource(self, resource_key: str) -> list["InspectAlarm"]:
+    def get_alarms_for_resource(self, resource_key: str) -> list[InspectAlarm]:
         """Alarms whose joined ``pointId`` equals ``resource_key`` (module/port pid, edge id, …)."""
         self._ensure_section_alarms()
         return _sorted_alarms(self._alarms_by_resource_key.get(resource_key, []))
 
-    def get_alarms_for_module(self, device_id: str, module_id: str) -> list["InspectAlarm"]:
+    def get_alarms_for_module(self, device_id: str, module_id: str) -> list[InspectAlarm]:
         """Alarms whose joined ``pointId`` equals the module pid (device_id reserved for callers)."""
         _ = device_id
         return self.get_alarms_for_resource(module_id)
 
-    def get_alarms_for_port(self, port_id: str | None, *, device_id: str | None = None) -> list["InspectAlarm"]:
+    def get_alarms_for_port(self, port_id: str | None, *, device_id: str | None = None) -> list[InspectAlarm]:
         _ = device_id
         if not port_id:
             return []
         return self.get_alarms_for_resource(port_id)
 
-    def get_alarms_for_edge(self, edge_id: str, *, pair_id: str | None = None) -> list["InspectAlarm"]:
+    def get_alarms_for_edge(self, edge_id: str, *, pair_id: str | None = None) -> list[InspectAlarm]:
         self._ensure_section_alarms()
         items = list(self._alarms_by_resource_key.get(edge_id, []))
         if pair_id and pair_id != edge_id:
             items.extend(self._alarms_by_resource_key.get(pair_id, []))
         return _sorted_alarms(items)
 
-    def get_alarms_for_service(self, booking_id: str) -> list["InspectAlarm"]:
+    def get_alarms_for_service(self, booking_id: str) -> list[InspectAlarm]:
         return self.get_alarms_for_resource(booking_id)
 
     # --- Bulk preload ---
 
-    def preload(self, devices: Optional[list[str]] = None) -> None:
+    def preload(self, devices: list[str] | None = None) -> None:
         """Hydrate multiple devices in parallel to avoid N+1 when detail is needed for many.
 
         Best-effort: a failed per-device fetch is marked stale and logged so the rest of the
@@ -472,7 +493,7 @@ class InspectSnapshot:
         *,
         kind: str | None = None,
         entity_id: str | None = None,
-        entity_ids: Optional[list[str]] = None,
+        entity_ids: list[str] | None = None,
     ) -> None:
         """Clear pending edits. With ``entity_id``/``entity_ids``, clear those keys (optionally
         scoped by ``kind``); with only ``kind``, clear every entity of that kind; with neither,
@@ -497,7 +518,7 @@ class InspectSnapshot:
 
     # --- Refresh ---
 
-    def refresh(self) -> "InspectSnapshot":
+    def refresh(self) -> InspectSnapshot:
         """Return a *new* snapshot from a fresh skeleton read (never mutates this one)."""
         if self._fetcher is None:
             raise RuntimeError("This snapshot has no fetcher and cannot be refreshed; build a new snapshot instead.")
@@ -511,9 +532,9 @@ class InspectSnapshot:
 
     def apply_post_commit(
         self,
-        removed_ids: Optional[list[str]] = None,
-        device_ids: Optional[list[str]] = None,
-        pair_ids: Optional[list[str]] = None,
+        removed_ids: list[str] | None = None,
+        device_ids: list[str] | None = None,
+        pair_ids: list[str] | None = None,
         mark_paths_stale: bool = True,
     ) -> None:
         """Targeted refresh after a successful commit: drop removed entities locally, re-fetch the
@@ -728,6 +749,59 @@ class InspectSnapshot:
         self._rebuild_device_ports(device_id, detail)
         self._stale_devices.discard(device_id)
 
+    def _load_factory_labels(self, element_id: str, *, device_id: str | None = None) -> None:
+        loader = getattr(self._fetcher, "get_ngraph_factory_labels", None) if self._fetcher is not None else None
+        if loader is None:
+            return
+        resolved_device_id = device_id or self._device_id_for_element(element_id)
+        if resolved_device_id and resolved_device_id in self._factory_labels_loaded_devices:
+            with self._lock:
+                self._factory_labels.setdefault(element_id, None)
+            return
+        query_ids = [element_id]
+        if resolved_device_id:
+            query_ids.append(resolved_device_id)
+            record = self._devices_by_id.get(resolved_device_id)
+            node_id = record.node.id if record is not None else None
+            if node_id and node_id not in query_ids:
+                query_ids.append(node_id)
+        unique_ids: list[str] = []
+        for eid in query_ids:
+            if eid not in unique_ids:
+                unique_ids.append(eid)
+        try:
+            mapping = loader(*unique_ids)
+        except Exception as exc:
+            _logger.warning("Inspect snapshot: factory-label fromDrivers/config read failed: %s", exc)
+            return
+        with self._lock:
+            if resolved_device_id:
+                self._factory_labels_loaded_devices.add(resolved_device_id)
+                self._factory_labels.setdefault(resolved_device_id, None)
+            self._factory_labels.setdefault(element_id, None)
+            for eid, label in mapping.items():
+                self._factory_labels[eid] = label or None
+
+    def _invalidate_factory_labels(self, device_id: str) -> None:
+        drop = [eid for eid in self._factory_labels if eid == device_id or eid.startswith(device_id + ".")]
+        record = self._devices_by_id.get(device_id)
+        node_id = record.node.id if record is not None else None
+        if node_id and node_id != device_id:
+            drop.extend(eid for eid in self._factory_labels if eid == node_id or eid.startswith(node_id + "."))
+        for eid in drop:
+            self._factory_labels.pop(eid, None)
+        self._factory_labels_loaded_devices.discard(device_id)
+        if node_id:
+            self._factory_labels_loaded_devices.discard(node_id)
+
+    def _device_id_for_element(self, element_id: str) -> str | None:
+        matches = [
+            device_id
+            for device_id in self._devices_by_id
+            if element_id == device_id or element_id.startswith(device_id + ".")
+        ]
+        return max(matches, key=len) if matches else None
+
     def _ensure_section_paths(self) -> None:
         if self._section_loaded.get("paths") or self._fetcher is None:
             return
@@ -781,6 +855,7 @@ class InspectSnapshot:
                     self._ports_by_pid[port_id] = remaining
                 else:
                     self._ports_by_pid.pop(port_id, None)
+        self._invalidate_factory_labels(device_id)
         # Drop the device's module index + wrappers
         for module_id in self._modules_by_device_id.pop(device_id, {}):
             self._module_cache.pop((device_id, module_id), None)
@@ -924,6 +999,7 @@ class InspectSnapshot:
                     for indexed in self._ports_by_device_id.pop(removed, []):
                         for vertex_id in _vertex_ids_from_status(indexed.port):
                             self._vertex_details.pop(vertex_id, None)
+                    self._invalidate_factory_labels(removed)
                     for module_id in self._modules_by_device_id.pop(removed, {}):
                         self._module_cache.pop((removed, module_id), None)
                     self._edges_by_device_id.pop(removed, None)
@@ -947,7 +1023,7 @@ class InspectSnapshot:
 
     # --- Internal: domain wrappers (cached) ---
 
-    def _wrap_device(self, device_id: str) -> "InspectDevice":
+    def _wrap_device(self, device_id: str) -> InspectDevice:
         from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
 
         cached = self._device_cache.get(device_id)
@@ -957,7 +1033,7 @@ class InspectSnapshot:
         self._device_cache[device_id] = device
         return device
 
-    def _wrap_module(self, device_id: str, module_id: str) -> "InspectModule":
+    def _wrap_module(self, device_id: str, module_id: str) -> InspectModule:
         from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
 
         cached = self._module_cache.get((device_id, module_id))
@@ -967,12 +1043,12 @@ class InspectSnapshot:
         self._module_cache[(device_id, module_id)] = module
         return module
 
-    def _wrap_port(self, indexed: _IndexedPort) -> "InspectPort":
+    def _wrap_port(self, indexed: _IndexedPort) -> InspectPort:
         from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
 
         return InspectPort(snapshot=self, indexed=indexed)
 
-    def _wrap_edge(self, indexed: _IndexedEdge) -> "InspectEdge":
+    def _wrap_edge(self, indexed: _IndexedEdge) -> InspectEdge:
         from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
 
         cached = self._edge_cache.get(indexed.edge_id)
@@ -982,7 +1058,7 @@ class InspectSnapshot:
         self._edge_cache[indexed.edge_id] = edge
         return edge
 
-    def _wrap_service(self, path_item: InspectApiPathItem) -> "InspectService":
+    def _wrap_service(self, path_item: InspectApiPathItem) -> InspectService:
         from videoipath_automation_tool.apps.inspect.domain.service import InspectService
 
         booking_id = path_item.serviceFields.bid
@@ -1002,7 +1078,7 @@ _logger = logging.getLogger("videoipath_automation_tool_inspect_snapshot")
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _severity_rank(value: Any) -> int:
@@ -1014,7 +1090,7 @@ def _severity_rank(value: Any) -> int:
     return -1
 
 
-def _sorted_alarms(items: list[InspectApiAlarmItem]) -> list["InspectAlarm"]:
+def _sorted_alarms(items: list[InspectApiAlarmItem]) -> list[InspectAlarm]:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
 
     ordered = sorted(
@@ -1153,4 +1229,4 @@ def _iter_ports(
     yield from ports
 
 
-__all__ = ["InspectSnapshot", "HydrationLevel", "_STAGED_MISSING"]
+__all__ = ["_STAGED_MISSING", "HydrationLevel", "InspectSnapshot"]

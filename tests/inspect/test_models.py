@@ -62,6 +62,27 @@ def test_node_effective_description_prefers_descriptor_then_fdescriptor() -> Non
     assert InspectApiNodeStatusItem.model_validate({"_id": "device-a"}).effective_description is None
 
 
+def test_node_factory_label_prefers_fdescriptor_not_user_override() -> None:
+    both = InspectApiNodeStatusItem.model_validate(
+        {
+            "_id": "device-a",
+            "descriptor": {"label": "user label"},
+            "fDescriptor": {"label": "factory label"},
+            "label": "legacy label",
+        }
+    )
+    assert both.effective_label == "user label"
+    assert both.factory_label == "factory label"
+
+    legacy = InspectApiNodeStatusItem.model_validate({"_id": "device-a", "label": "legacy label"})
+    assert legacy.factory_label == "legacy label"
+
+    empty = InspectApiNodeStatusItem.model_validate(
+        {"_id": "device-a", "descriptor": {"label": "user label"}, "fDescriptor": {"label": ""}}
+    )
+    assert empty.factory_label is None
+
+
 def test_device_detail_parses_modules_and_ports(load: Callable[[str], dict[str, Any]]) -> None:
     items = _node_items(load("device_hydration_modules_ports.json"))
     node = InspectApiNodeStatusItem.model_validate(items[0])
@@ -76,6 +97,7 @@ def test_device_detail_ports_expose_factory_label_and_override(load: Callable[[s
     ports = next(iter(node.modules.values())).ports
     port = ports["device-a.dev.module-1.port-out-1"]
     assert port.label == "port-out-1"  # factory label survives the override
+    assert port.factory_label == "port-out-1"
     assert port.effective_label == "port-out-1 (out)"
     assert port.effective_description == "Example port description"
 
