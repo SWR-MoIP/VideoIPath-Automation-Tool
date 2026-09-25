@@ -23,14 +23,14 @@ from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 
 from ..helpers import (
     E2E_TAG,
-    MODULE_TEST_TAG_ID,
-    TEST_TAG_ID,
     FetchSpy,
     TopologyBuilder,
     create_module_test_tag,
     create_test_tag,
     edges_between,
+    module_test_tag_id,
     router_ports,
+    test_tag_id,
     unique_label,
 )
 
@@ -213,11 +213,12 @@ def test_conflict_detection(app: VideoIPathApp, topology_builder: TopologyBuilde
 def test_assign_tag_to_port(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
     (device_id,) = topology_builder.add_devices([("TAG-A", 2)])
     create_test_tag(app)
+    tag_id = test_tag_id(app)
     app.inspect.refresh()
     device = app.inspect.get_device(device_id)
     assert device is not None
     _out, in_vertex = router_ports(device)[0]
-    result = app.inspect.update_vertex(in_vertex, tags=[TEST_TAG_ID])
+    result = app.inspect.update_vertex(in_vertex, tags=[tag_id])
     assert result.ok
     app.inspect.refresh()
     port = next(
@@ -225,12 +226,13 @@ def test_assign_tag_to_port(app: VideoIPathApp, topology_builder: TopologyBuilde
         for port in app.inspect.get_device(device_id).ports
         if port.vertex_in is not None and port.vertex_in.id == in_vertex
     )
-    assert TEST_TAG_ID in port.tags
+    assert tag_id in port.tags
 
 
 def test_assign_and_unassign_module_tag(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
     (device_id,) = topology_builder.add_devices([("MOD-TAG-A", 2)])
     create_module_test_tag(app)
+    tag_id = module_test_tag_id(app)
     app.inspect.refresh()
     device = app.inspect.get_device(device_id)
     assert device is not None
@@ -238,14 +240,14 @@ def test_assign_and_unassign_module_tag(app: VideoIPathApp, topology_builder: To
     module = device.modules[0]
     module_id = module.id
 
-    module.tags = [MODULE_TEST_TAG_ID]
+    module.tags = [tag_id]
     result = app.inspect.update(module)
     assert result.ok
 
     app.inspect.refresh()
     module = app.inspect.get_device(device_id).get_module(module_id)
     assert module is not None
-    assert MODULE_TEST_TAG_ID in module.tags
+    assert tag_id in module.tags
 
     module.tags = []
     result = app.inspect.update(module)
@@ -254,7 +256,7 @@ def test_assign_and_unassign_module_tag(app: VideoIPathApp, topology_builder: To
     app.inspect.refresh()
     module = app.inspect.get_device(device_id).get_module(module_id)
     assert module is not None
-    assert MODULE_TEST_TAG_ID not in module.tags
+    assert tag_id not in module.tags
 
 
 def test_update_vertex_fields(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
