@@ -120,6 +120,16 @@ Response models live in `connector/models/` as Pydantic models.
 - `domain/` — thin view objects that hold a back-reference to the snapshot for cross-entity lookups
 - `model/` — raw Pydantic models for the API response (`collector.py`, etc.)
 
+### Blueprints (standalone)
+
+`blueprints/` is a standalone feature (`BlueprintEngine(app)`); `VideoIPathApp` neither imports nor exposes it. Design record: [`docs/architecture/blueprints/`](docs/architecture/blueprints/README.md). YAML parsing (PyYAML, a regular dependency) lives only in `loader.py`.
+- `models.py` / `loader.py` / `resolution.py` — strict document models, safe YAML loading, variant merge + driver/parameter validation, JSON Schema
+- `engine.py` — `BlueprintEngine`, read-only `plan()`, `BlueprintPlan.apply()` executor (phases, conflicts, partial results)
+- `inventory.py` / `inspect.py` — the only modules that call `app.inventory` / `app.inspect` (managed-field diffs, fresh scoped reads, transaction/tag writes)
+- `naming.py` — `Text` / `Field` / `Join` naming blocks; `processors/` — `VertexProcessor` contract, per-engine `ProcessorRegistry`, built-in Matrox processor
+- `schemas/blueprint-v1.schema.json` is generated; `tests/blueprints/test_resolution.py` fails when it is stale. Regenerate with:
+  `poetry run python -c "import json, pathlib; from videoipath_automation_tool.blueprints import Blueprint, ProcessorRegistry; pathlib.Path('src/videoipath_automation_tool/blueprints/schemas/blueprint-v1.schema.json').write_text(json.dumps(Blueprint.json_schema(ProcessorRegistry()), indent=2, sort_keys=True) + '\n')"`
+
 ### Driver versioning
 
 Driver schemas (Pydantic models for device `custom_settings`) are auto-generated from the VideoIPath API's JSON schema and live under `apps/inventory/model/drivers.py`. Run `set-videoipath-version <version>` to regenerate them for a different server version. The CLI scripts are in `src/vipat_cli_scripts/`.

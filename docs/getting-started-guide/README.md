@@ -25,6 +25,7 @@ onboarding is unchanged and remains a prerequisite for both.
    - A. [Topology App](03_A_Topology.md) (classic / legacy)
    - B. [Inspect App](03_B_Inspect.md) (recommended on 2025.4+)
 4. [Configuring Multicast Pools](04_Multicast_Pools.md)
+5. [Blueprint-driven Configuration](05_Blueprints.md) — reusable YAML blueprints, planning, and custom vertex processors
 
 For runnable, task-oriented scripts covering realistic automation scenarios
 (including paired Topology/Inspect examples), see the
