@@ -239,7 +239,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         """Map each of ``addresses`` to the sorted ids of devices whose management or alternate
         address matches it (IP literals normalized, other identifiers case-insensitive).
 
-        One server read for all addresses. An empty inventory response is no match.
+        One server read for all addresses. A response with no item list raises ``ValueError``.
         """
         return self._inventory_api.find_device_ids_by_addresses(addresses)
 

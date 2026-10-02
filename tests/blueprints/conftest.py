@@ -42,6 +42,7 @@ class FakeInventory:
         self.snmp: dict[str, str] = {"default": "Default configuration", "snmp-1": "snmp-a"}
         self.writes: list[tuple[str, str]] = []
         self.address_lookups = 0
+        self.fail_address_read = False
         self.fail_next_write: Exception | None = None
         self._next_id = 100
 
@@ -92,6 +93,8 @@ class FakeInventory:
 
     def find_device_ids_by_addresses(self, addresses: Any) -> dict[str, list[str]]:
         self.address_lookups += 1
+        if self.fail_address_read:
+            raise ValueError("Response data is empty.")
         result: dict[str, list[str]] = {}
         for address in addresses:
             wanted = normalize_address(address)
@@ -132,6 +135,7 @@ class FakeInspectServer:
         self.fail_commit: Exception | None = None
         self.fail_tag: str | None = None
         self.fail_sync_info: Exception | None = None
+        self.fail_sync = False
 
     # Setup
 
@@ -208,6 +212,8 @@ class FakeInspectServer:
     def sync_devices(self, device_ids: list[str], add_only: bool = True, conflict_strategy: int = 0) -> Any:
         for device_id in device_ids:
             self.writes.append(("sync_devices", (device_id, add_only)))
+            if self.fail_sync:
+                return _action(False, ["sync rejected"])
             pending = self.discoverable.pop(device_id, None)
             if pending is not None:
                 self.install(pending)

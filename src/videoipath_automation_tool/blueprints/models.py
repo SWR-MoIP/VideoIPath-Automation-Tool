@@ -521,7 +521,7 @@ class InterfaceBinding(BaseModel):
 class PhaseResult(BaseModel):
     name: PhaseName
     status: Literal["completed", "no_change", "skipped", "failed", "unknown", "not_run", "planned", "deferred"]
-    """``planned`` / ``deferred`` occur only in dry runs (writes that would run / work that needs earlier writes)."""
+    """``planned`` occurs only in dry runs. ``deferred`` also appears when a new plan is required."""
     message: str | None = None
     operations: list[PlannedOperation] = Field(default_factory=list)
 
@@ -531,10 +531,16 @@ class ApplyResult(BaseModel):
 
     In a dry run (``dry_run=True``) nothing is written: ``status`` is ``planned`` when writes would
     run and ``no_change`` otherwise, and write phases report ``planned`` / ``deferred``.
+
+    ``replan_required`` means a topology-affecting Inventory update finished and apply stopped.
+    ``status`` is ``partial`` (``planned`` on a dry run) and the call does not raise. Plan again
+    after the driver has rediscovered the device.
     """
 
     status: Literal["succeeded", "no_change", "failed", "partial", "unknown", "planned"] = "no_change"
     dry_run: bool = False
+    replan_required: bool = False
+    """True when apply stopped after a topology-affecting Inventory update and a new plan is required."""
     source_key: str
     inventory_id: str | None = None
     topology_device_id: str | None = None

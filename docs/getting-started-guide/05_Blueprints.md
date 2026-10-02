@@ -145,7 +145,14 @@ Apply runs these phases in order, skipping any with nothing to do:
 
 When the plan creates the Inventory record, the topology edits cannot be known
 yet. The plan marks them `deferred` and computes them during apply, after
-discovery. If the server changed since planning, apply raises
+discovery.
+
+When an update changes the address, alternate addresses, credentials, generic or
+custom settings, or whether the device is active, apply stops after Inventory.
+The result is `partial` with `replan_required`. Plan again after the driver has
+rediscovered the device.
+
+If the server changed since planning, apply raises
 `BlueprintConflictError`; build a new plan. Behavior is tuned with
 `ApplyOptions` (`sync`, `discovery_timeout`, ...).
 

@@ -75,8 +75,13 @@ def test_find_device_ids_by_addresses_reports_every_match_sorted() -> None:
 
 
 @pytest.mark.parametrize("data", [None, [], {}, {"config": {"devman": {"devices": {}}}}])
-def test_find_device_ids_by_addresses_without_items_is_no_match(data: Any) -> None:
-    assert _api(data).find_device_ids_by_addresses(["192.0.2.1"]) == {"192.0.2.1": []}
+def test_find_device_ids_by_addresses_without_items_raises(data: Any) -> None:
+    with pytest.raises(ValueError, match="Response data is empty"):
+        _api(data).find_device_ids_by_addresses(["192.0.2.1"])
+
+
+def test_find_device_ids_by_addresses_with_empty_item_list_returns_no_match() -> None:
+    assert _api(_devices()).find_device_ids_by_addresses(["192.0.2.1"]) == {"192.0.2.1": []}
 
 
 def test_find_device_ids_by_addresses_without_input_skips_the_read() -> None:

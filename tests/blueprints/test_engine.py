@@ -276,6 +276,7 @@ def test_masked_secrets_on_read_do_not_cause_changes(
             )
         ],
     )
+    engine.apply(device, _blueprint(), scope="inventory")
     engine.apply(device, _blueprint())
     # The server masks secrets on read.
     cinfo = inventory.devices["device1"].configuration.config.cinfo
@@ -365,6 +366,53 @@ def test_create_discover_and_configure(
     assert server.vertex_forms["device100.0.vs.v"]["fields"]["label"] == "device-new-TX-video-01"
 
 
+def _topology_affecting_document() -> Blueprint:
+    return Blueprint.from_dict(
+        {**MATROX, "inventory": {"default": {"driver_id": NMOS, "custom_settings": {"disable_rx_sdp": True}}}}
+    )
+
+
+def test_topology_affecting_update_stops_for_replan(
+    engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _existing(inventory, server)
+    document = _topology_affecting_document()
+    plan = engine.plan(_device(), document)
+    assert not plan.fully_resolved
+    assert plan.phase("topology").status == "deferred"
+    assert "plan again once the driver has rediscovered" in (plan.phase("topology").reason or "")
+    assert "stops after Inventory; replan" in plan.summary()
+    assert "materialized during apply()" not in plan.summary()
+
+    result = plan.apply()
+    assert result.status == "partial" and result.replan_required and not result.ok
+    assert result.phase("inventory").status == "completed" and result.verification == "confirmed"
+    assert {result.phase(name).status for name in ("discovery", "topology_sync", "topology", "module_tags")} == {
+        "deferred"
+    }
+    assert inventory.writes == [("update", "device1")] and server.writes == []
+    assert inventory.devices["device1"].configuration.config.customSettings.disable_rx_sdp is True
+
+    follow_up = engine.plan(_device(), document)
+    assert follow_up.fully_resolved and follow_up.phase("topology").status == "planned"
+    applied = follow_up.apply()
+    assert applied.status == "succeeded" and not applied.replan_required
+    assert "update_topology" in [name for name, _ in server.writes]
+
+
+def test_topology_affecting_update_dry_run_requires_replan(
+    engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _existing(inventory, server)
+    result = engine.apply(_device(), _topology_affecting_document(), dry_run=True)
+    assert result.status == "planned" and result.replan_required and result.dry_run
+    assert {result.phase(name).status for name in ("discovery", "topology_sync", "topology", "module_tags")} == {
+        "deferred"
+    }
+    assert "plan again" in (result.phase("topology").message or "")
+    assert inventory.writes == [] and server.writes == []
+
+
 def test_discovery_timeout_reports_created_id(engine: BlueprintEngine, server: FakeInspectServer) -> None:
     device = BlueprintDevice(key="key-new", label="device-new", management_address="192.0.2.50")
     with pytest.raises(BlueprintApplyError) as info:
@@ -415,6 +463,14 @@ def test_address_conflicts_use_one_lookup_for_all_addresses(engine: BlueprintEng
     assert inventory.address_lookups == 1
 
 
+def test_address_read_failure_fails_planning(engine: BlueprintEngine, inventory: FakeInventory) -> None:
+    inventory.fail_address_read = True
+    device = BlueprintDevice(key="key-new", label="device-new", management_address="192.0.2.50")
+    with pytest.raises(BlueprintError, match="Could not read Inventory addresses") as info:
+        engine.plan(device, _blueprint(), scope="inventory")
+    assert type(info.value) is BlueprintError
+
+
 def test_sync_policies(engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer) -> None:
     inventory.seed("device1", label="device-a", custom={"port": 8080})
     with pytest.raises(BlueprintTargetError, match="not in the topology"):
@@ -441,6 +497,31 @@ def test_sync_lookup_failure_fails_planning(
     assert type(info.value) is BlueprintError
 
 
+def test_sync_failure_is_not_retried(
+    engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _existing(inventory, server)
+    server.sync["device1"] = {"add": {"modules": 1}, "update": {}, "remove": {}}
+    server.fail_sync = True
+    with pytest.raises(BlueprintApplyError) as info:
+        engine.apply(_device(), _blueprint())
+    result = info.value.result
+    assert result.status == "failed"
+    assert [name for name, _ in server.writes] == ["sync_devices"]
+    assert "syncDevices failed" in (result.phase("topology_sync").message or "")
+    assert engine._clock() == 0.0
+
+
+def test_device_form_lookup_failure_fails_planning(
+    engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _existing(inventory, server)
+    del server.device_forms["device1"]
+    with pytest.raises(BlueprintError, match="Inspect edit form") as info:
+        engine.plan(_device(), _blueprint())
+    assert type(info.value) is BlueprintError
+
+
 # --- Conflicts and staged edits ---
 
 
@@ -460,6 +541,21 @@ def test_stale_plans_are_rejected(engine: BlueprintEngine, inventory: FakeInvent
     with pytest.raises(BlueprintApplyError, match="changed since planning"):
         plan.apply()
     assert server.writes == []
+
+
+def test_inventory_update_rechecks_label_conflicts(
+    engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _existing(inventory, server)
+    inventory.devices["device1"].configuration.config.desc.label = "old"
+    plan = engine.plan(_device(), _blueprint())
+    assert plan.fully_resolved and plan.phase("inventory").status == "planned"
+    inventory.seed("device2", label="device-a")
+    with pytest.raises(BlueprintApplyError) as info:
+        plan.apply()
+    assert info.value.result.status == "failed"
+    assert isinstance(info.value.__cause__, BlueprintTargetError)
+    assert inventory.writes == []
 
 
 def test_staged_edits_overlap_is_rejected_and_unrelated_edits_survive(
@@ -920,8 +1016,16 @@ def test_module_with_own_inventory_record_never_touches_the_parent(
     )
     plan = engine.plan(module, _blueprint(device=None))
     assert plan.phase("inventory").status == "planned" and plan.phase("topology").status == "deferred"
-    result = plan.apply()
-    assert result.status == "succeeded" and result.materialized
+    assert "stops after Inventory" in (plan.phase("topology").reason or "")
+    stopped = plan.apply()
+    assert stopped.status == "partial" and stopped.replan_required and not stopped.materialized
+    assert inventory.writes == [("update", "device5")]
+    assert server.writes == []
+
+    follow_up = engine.plan(module, _blueprint(device=None))
+    assert follow_up.fully_resolved
+    result = follow_up.apply()
+    assert result.status == "succeeded" and not result.replan_required
     assert inventory.writes == [("update", "device5")]
     assert not [name for name, _ in server.writes if name in ("add_devices", "sync_devices")]
     delta = next(payload for name, payload in server.writes if name == "update_topology")

@@ -593,14 +593,16 @@ class InventoryAPI:
 
         Addresses are compared after :func:`normalize_address` on both sides (IP literals in compressed
         form, other identifiers case-insensitively). One bulk read for all addresses. Empty addresses
-        are ignored; a missing item list is no match.
+        are ignored. A response with no item list raises ``ValueError``.
         """
         wanted = {address: normalize_address(address) for address in addresses if address}
         if not wanted:
             return {}
+        index = self._read_device_addresses()
+        if index is None:
+            raise ValueError("Response data is empty.")
         normalized_index = [
-            (device_id, {normalize_address(known) for known in known_addresses})
-            for device_id, known_addresses in self._read_device_addresses() or []
+            (device_id, {normalize_address(known) for known in known_addresses}) for device_id, known_addresses in index
         ]
         return {
             address: sorted(device_id for device_id, known in normalized_index if normalized in known)

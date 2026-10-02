@@ -138,8 +138,10 @@ exact edits cannot be known yet, the topology phases are marked `deferred` and
 `fully_resolved` is `False`. That happens when:
 
 - this plan creates the Inventory record the topology device id will come from
-- planned Inventory changes may alter discovery (address, alternate addresses,
-  credentials, generic settings, custom settings, or `active`)
+- an Inventory update may alter discovery (address, alternate addresses,
+  credentials, generic settings, custom settings, or `active`). Apply stops
+  after Inventory, sets `replan_required`, and returns `status="partial"`.
+  Plan again once the driver has rediscovered the device
 - the device is not in the topology yet and `sync` allows adding it
 - synchronization is pending and this target is allowed to perform it
 
@@ -169,23 +171,37 @@ replay in another process.
 5. `module_tags` — `assignTag` / `unassignTag` actions, one tag at a time. These are not part of the topology commit.
 6. `verification` — read back what this apply wrote.
 
+An Inventory update that may alter discovery does not continue into discovery
+or topology in the same apply. Those phases stay `deferred`, the result status
+is `partial`, and `replan_required` is true. The call does not raise. Inventory
+verification still runs. After the driver has rediscovered the device, build a
+new plan. Creating a record still polls for discovery: a new device has no
+previous topology.
+
 `sync` defaults to `add_only`. `none` requires the device to already be in the
 topology. `add_only` adds the device and synchronizes new elements; if the
 pending sync would update or remove elements, apply fails instead of escalating.
 `reconcile` allows a full sync. The gateway calls `sync_devices` without a
 conflict strategy, so Inspect's default `ConflictStrategy.STRICT` applies.
+A reported `syncDevices` failure is an error and is not retried. Adding a
+device that is not discovered yet stays `TopologyNotReadyError` and is retried
+until `discovery_timeout`.
+
 A module target never reaches this add/sync path.
 
 Unchanged phases are skipped. An apply that would change nothing writes nothing.
 
 `dry_run=True` runs the same stale-plan, conflict, and pending-edit checks, then
 returns before any write. Deferred topology stays `deferred` on a dry run,
-because those edits depend on writes the dry run does not perform. `status` is
-`planned` when writes would have run, and `no_change` otherwise.
+because those edits depend on writes the dry run does not perform. A
+topology-affecting update also stays `deferred`, with `replan_required` set.
+`status` is `planned` when writes would have run, and `no_change` otherwise.
 
-Before an Inventory update, the gateway re-reads the record and compares
-fingerprints of the managed fields. Before a topology commit that was fully
-resolved at plan time, it re-reads the scope and compares the fingerprint,
+Before an Inventory update, the gateway re-reads the record, compares
+fingerprints of the managed fields, and repeats the label and address conflict
+check. A response with no address item list fails the check. Before a topology
+commit that was fully resolved at plan time, it re-reads the scope and compares
+the fingerprint,
 including sibling endpoint labels that the collision check depends on.
 Module tags are re-read immediately before their phase. Pending uncommitted
 Inspect edits that overlap the plan's device, vertices, or module are rejected.

@@ -29,6 +29,7 @@ from videoipath_automation_tool.apps.inventory.model.inventory_device_configurat
 from videoipath_automation_tool.blueprints.errors import (
     BlueprintCapabilityError,
     BlueprintConflictError,
+    BlueprintError,
     BlueprintTargetError,
     BlueprintValidationError,
     ValidationIssue,
@@ -107,10 +108,16 @@ class InventoryGateway:
         return _as_list(found)
 
     def ids_by_addresses(self, addresses: list[str]) -> dict[str, list[str]]:
-        """Device ids per address (normalized comparison), in one read."""
+        """Device ids per address (normalized comparison), in one read.
+
+        A response with no item list raises :class:`BlueprintError`.
+        """
         if not addresses:
             return {}
-        return self._app.find_device_ids_by_addresses(addresses)
+        try:
+            return self._app.find_device_ids_by_addresses(addresses)
+        except ValueError as exc:
+            raise BlueprintError(f"Could not read Inventory addresses for the conflict check: {exc}") from exc
 
     def resolve_snmp(self, reference: str | CatalogId) -> str:
         """Exact SNMP configuration id for a label or ``{id: ...}``; missing/ambiguous fail."""
