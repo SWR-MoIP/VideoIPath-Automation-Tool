@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterable
 from typing import List, Literal, Optional
 
 from typing_extensions import deprecated
@@ -230,6 +231,13 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
             return self._inventory_api.get_device_id_by_user_defined_label(label)
         else:
             raise ValueError(f"Invalid label_search_mode: {label_search_mode}")
+
+    def find_device_ids_by_addresses(self, addresses: Iterable[str]) -> list[str]:
+        """Device ids whose management or alternate address matches any of ``addresses``.
+
+        One server read for every candidate spelling. An empty inventory response is no match.
+        """
+        return self._inventory_api.find_device_ids_by_addresses(addresses)
 
     def list_device_ids_by_driver(self, driver: DriverLiteral) -> List[str]:
         """Method to list all device ids by driver id.

@@ -1,6 +1,7 @@
 import logging
 import time
 import urllib.parse
+from collections.abc import Iterable
 from typing import List, Optional, Type
 from uuid import uuid4
 
@@ -574,6 +575,35 @@ class InventoryAPI:
             return device_ids[0]
         else:
             return device_ids
+
+    def find_device_ids_by_addresses(self, addresses: Iterable[str]) -> list[str]:
+        """Device ids whose management or alternate address equals any of ``addresses``.
+
+        One bulk read. A missing item list is no match. A missing ``altAddresses`` list on a device
+        is treated as empty.
+        """
+        wanted = {address for address in addresses if address}
+        if not wanted:
+            return []
+        url = "/rest/v2/data/config/devman/devices/*/config/cinfo/address,altAddresses,altAddresses/**"
+        response = self.vip_connector.rest.get(url)
+        devices = (
+            response.data.get("config", {}).get("devman", {}).get("devices", {}).get("_items")
+            if isinstance(response.data, dict)
+            else None
+        )
+        if not isinstance(devices, list):
+            return []
+        found: set[str] = set()
+        for device in devices:
+            cinfo = device.get("config", {}).get("cinfo", {})
+            known = {cinfo.get("address")}
+            alternates = cinfo.get("altAddresses") or []
+            if isinstance(alternates, list):
+                known.update(alternates)
+            if known & wanted and isinstance(device.get("_id"), str):
+                found.add(device["_id"])
+        return sorted(found)
 
     def get_device_id_by_meta_field_value(self, meta_field: str, value: str) -> Optional[str | List[str]]:
         """Method to get a device id by given meta field value from VideoIPath-Inventory
