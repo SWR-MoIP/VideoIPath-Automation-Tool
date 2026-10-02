@@ -8,6 +8,7 @@ from uuid import uuid4
 from pydantic import IPvAnyAddress
 from typing_extensions import deprecated
 
+from videoipath_automation_tool.apps.inventory.errors import InventoryWriteNotAppliedError
 from videoipath_automation_tool.apps.inventory.inventory_utils import (
     construct_driver_id_from_info,
     extract_driver_info_from_id,
@@ -21,7 +22,11 @@ from videoipath_automation_tool.apps.inventory.model.inventory_discovered_device
 from videoipath_automation_tool.apps.inventory.model.inventory_request_rpc import InventoryRequestRpc
 from videoipath_automation_tool.connector.models.response_rpc import ResponseRPC
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
-from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger, extract_natural_sort_key
+from videoipath_automation_tool.utils.cross_app_utils import (
+    create_fallback_logger,
+    extract_natural_sort_key,
+    normalize_address,
+)
 from videoipath_automation_tool.validators.device_id import validate_device_id
 
 
@@ -167,7 +172,9 @@ class InventoryAPI:
         response = self.vip_connector.rpc.post("/api/updateDevices", body=body)
 
         if response.header.status != "OK":
-            raise ValueError(f"Failed to add device to VideoIPath-Inventory. Error: {response}")
+            raise InventoryWriteNotAppliedError(
+                f"Failed to add device to VideoIPath-Inventory. Error: {response}", operation="add"
+            )
 
         online_device = self._fetch_device_config_by_uuid(uuid=tracking_id)
 
@@ -251,7 +258,9 @@ class InventoryAPI:
         response = self.vip_connector.rpc.post("/api/updateDevices", body=body)
 
         if response.header.status != "OK":
-            raise ValueError(f"Failed to update device in VideoIPath-Inventory. Error: {response}")
+            raise InventoryWriteNotAppliedError(
+                f"Failed to update device in VideoIPath-Inventory. Error: {response}", operation="update"
+            )
 
         online_device = self.get_device(
             device_id=device.configuration.id,
@@ -548,26 +557,28 @@ class InventoryAPI:
             Optional[str | List[str]]: Device id, None if address does not exist, List of device ids if multiple devices with the same address exist
         """
         if include_alt_addresses:
-            url = "/rest/v2/data/config/devman/devices/*/config/cinfo/address,altAddresses,altAddresses/**"
-            # altAddresses contains all addresses from altAddressesWithAuth, therefore no need to fetch altAddressesWithAuth
+            index = self._read_device_addresses()
+            if index is None:
+                raise ValueError("Response data is empty.")
+            device_ids = [device_id for device_id, known in index if address in known]
         else:
             escaped_address = urllib.parse.quote(address, safe="")
             url = f"/rest/v2/data/config/devman/devices/* where config.cinfo.address='{escaped_address}' /_id"
 
-        response = self.vip_connector.rest.get(url)
+            response = self.vip_connector.rest.get(url)
 
-        if response.data and isinstance(response.data["config"]["devman"]["devices"]["_items"], list):
-            devices = response.data["config"]["devman"]["devices"]["_items"]
-        else:
-            raise ValueError("Response data is empty.")
+            if response.data and isinstance(response.data["config"]["devman"]["devices"]["_items"], list):
+                devices = response.data["config"]["devman"]["devices"]["_items"]
+            else:
+                raise ValueError("Response data is empty.")
 
-        device_ids = []
-        for device in devices:
-            if (
-                address in device["config"]["cinfo"].get("altAddresses")
-                or address == device["config"]["cinfo"]["address"]
-            ):
-                device_ids.append(device["_id"])
+            device_ids = []
+            for device in devices:
+                if (
+                    address in device["config"]["cinfo"].get("altAddresses")
+                    or address == device["config"]["cinfo"]["address"]
+                ):
+                    device_ids.append(device["_id"])
 
         if len(device_ids) == 0:
             return None
@@ -576,15 +587,30 @@ class InventoryAPI:
         else:
             return device_ids
 
-    def find_device_ids_by_addresses(self, addresses: Iterable[str]) -> list[str]:
-        """Device ids whose management or alternate address equals any of ``addresses``.
+    def find_device_ids_by_addresses(self, addresses: Iterable[str]) -> dict[str, list[str]]:
+        """Map each of ``addresses`` to the sorted ids of devices whose management or alternate
+        address matches it.
 
-        One bulk read. A missing item list is no match. A missing ``altAddresses`` list on a device
-        is treated as empty.
+        Addresses are compared after :func:`normalize_address` on both sides (IP literals in compressed
+        form, other identifiers case-insensitively). One bulk read for all addresses. Empty addresses
+        are ignored; a missing item list is no match.
         """
-        wanted = {address for address in addresses if address}
+        wanted = {address: normalize_address(address) for address in addresses if address}
         if not wanted:
-            return []
+            return {}
+        normalized_index = [
+            (device_id, {normalize_address(known) for known in known_addresses})
+            for device_id, known_addresses in self._read_device_addresses() or []
+        ]
+        return {
+            address: sorted(device_id for device_id, known in normalized_index if normalized in known)
+            for address, normalized in wanted.items()
+        }
+
+    def _read_device_addresses(self) -> list[tuple[str, list[str]]] | None:
+        """``(device_id, [address, *altAddresses])`` for every Inventory device in one bulk read, or
+        ``None`` when the response carries no item list. A missing ``altAddresses`` list is empty."""
+        # altAddresses contains all addresses from altAddressesWithAuth, therefore no need to fetch altAddressesWithAuth
         url = "/rest/v2/data/config/devman/devices/*/config/cinfo/address,altAddresses,altAddresses/**"
         response = self.vip_connector.rest.get(url)
         devices = (
@@ -593,17 +619,18 @@ class InventoryAPI:
             else None
         )
         if not isinstance(devices, list):
-            return []
-        found: set[str] = set()
+            return None
+        index: list[tuple[str, list[str]]] = []
         for device in devices:
+            if not isinstance(device, dict) or not isinstance(device.get("_id"), str):
+                continue
             cinfo = device.get("config", {}).get("cinfo", {})
-            known = {cinfo.get("address")}
-            alternates = cinfo.get("altAddresses") or []
+            known = [cinfo["address"]] if isinstance(cinfo.get("address"), str) else []
+            alternates = cinfo.get("altAddresses")
             if isinstance(alternates, list):
-                known.update(alternates)
-            if known & wanted and isinstance(device.get("_id"), str):
-                found.add(device["_id"])
-        return sorted(found)
+                known.extend(address for address in alternates if isinstance(address, str))
+            index.append((device["_id"], known))
+        return index
 
     def get_device_id_by_meta_field_value(self, meta_field: str, value: str) -> Optional[str | List[str]]:
         """Method to get a device id by given meta field value from VideoIPath-Inventory

@@ -70,6 +70,14 @@ class ProcessorInputError(BlueprintError):
     """A processor cannot interpret the observed topology (unsupported or incomplete layout)."""
 
 
+class TopologyNotReadyError(BlueprintError):
+    """The discovered topology is still incomplete; waiting for discovery may resolve it.
+
+    While topology work is deferred, ``apply()`` retries this error until ``discovery_timeout``.
+    Every other error fails the attempt immediately.
+    """
+
+
 class BlueprintCapabilityError(BlueprintError):
     """A requested operation is not supported by the adapter or the server."""
 
@@ -99,5 +107,6 @@ __all__ = [
     "BlueprintTargetError",
     "BlueprintValidationError",
     "ProcessorInputError",
+    "TopologyNotReadyError",
     "ValidationIssue",
 ]

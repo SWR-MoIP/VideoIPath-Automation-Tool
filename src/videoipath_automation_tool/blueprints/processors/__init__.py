@@ -203,7 +203,8 @@ class VertexProcessor(ABC, Generic[ParamsT]):
     @abstractmethod
     def process(self, context: ProcessingContext, params: ParamsT) -> ProcessorResult:
         """Interpret the scoped topology and propose configuration. Raise
-        :class:`ProcessorInputError` when the observed topology is unsupported or incomplete."""
+        :class:`TopologyNotReadyError` when discovery is still incomplete (retried while topology work is
+        deferred) and :class:`ProcessorInputError` when the layout is unsupported (fails immediately)."""
 
 
 class ProcessorRegistry:

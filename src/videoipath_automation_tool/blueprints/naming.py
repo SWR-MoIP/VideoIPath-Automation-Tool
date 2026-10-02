@@ -116,7 +116,8 @@ class NameContext(BaseModel):
 class NameRenderer(Protocol):
     """Trusted Python escape hatch for one naming entry; never loaded from YAML."""
 
-    def render(self, context: NameContext) -> str: ...
+    def render(self, context: NameContext) -> str:
+        """Return the name for ``context``."""
 
 
 NamingEntry = NameExpr | InstanceOf[NameRenderer]
@@ -412,7 +413,9 @@ label, an optional ``M<position>`` component, direction, media, and a two-digit 
 
 __all__ = [
     "DEFAULT_NAMING",
+    "INVENTORY_NAMING_ENTRIES",
     "NAMING_ENTRIES",
+    "TOPOLOGY_NAMING_ENTRIES",
     "BlueprintNaming",
     "Field",
     "Join",

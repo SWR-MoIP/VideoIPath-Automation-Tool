@@ -163,7 +163,7 @@ replay in another process.
 [ADR-002](./decisions/002-plan-then-apply.md) fixes the phase order:
 
 1. `inventory` — create or update the one record. A new id is stored on the result immediately.
-2. `discovery` — poll until the scoped topology can be interpreted, bounded by `discovery_timeout` (default 30 seconds, poll every 1 second).
+2. `discovery` — poll while the scoped topology is not ready yet (`TopologyNotReadyError`), bounded by `discovery_timeout` (default 30 seconds, poll every 1 second). Any other error fails at once.
 3. `topology_sync` — add the device or synchronize it, according to `ApplyOptions.sync`.
 4. `topology` — device and vertex edits in one `InspectTransaction`, then commit.
 5. `module_tags` — `assignTag` / `unassignTag` actions, one tag at a time. These are not part of the topology commit.

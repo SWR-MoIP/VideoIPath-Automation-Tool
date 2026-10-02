@@ -27,7 +27,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from videoipath_automation_tool.blueprints.errors import BlueprintCapabilityError, ProcessorInputError
+from videoipath_automation_tool.blueprints.errors import (
+    BlueprintCapabilityError,
+    ProcessorInputError,
+    TopologyNotReadyError,
+)
 from videoipath_automation_tool.blueprints.models import (
     DevicePatch,
     Diagnostic,
@@ -72,13 +76,13 @@ class MatroxConvertIPProcessor(VertexProcessor[MatroxConvertIPParams]):
 
         unknown = [vertex.id for vertex in context.vertices if vertex.kind is None]
         if unknown:
-            raise ProcessorInputError(
+            raise TopologyNotReadyError(
                 f"Matrox ConvertIP: unknown kind for vertices {', '.join(sorted(unknown))} in {context.scope_label} "
                 "(no edit form; incomplete discovery?)."
             )
         codecs = context.find_vertices(kind="codec")
         if not codecs:
-            raise ProcessorInputError(
+            raise TopologyNotReadyError(
                 f"Matrox ConvertIP: no codec vertices in {context.scope_label} (incomplete discovery or unsupported layout)."
             )
         media = self._classify_media(codecs, params, diagnostics)

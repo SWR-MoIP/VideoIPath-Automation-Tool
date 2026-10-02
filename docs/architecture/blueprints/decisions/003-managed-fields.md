@@ -49,3 +49,7 @@ not swallowed by Inventory's own authentication filter.
   value came from a previous blueprint".
 - Secrets are redacted in `FieldChange` and in `summary()`, and they are kept
   on the private captured work used to write.
+- Secrets are write-only. The server masks them on read, so they are never
+  compared and never cause an update on their own. They are written on create
+  and with every update; `ApplyOptions(write_credentials=True)` forces a write
+  for a credential-only change.

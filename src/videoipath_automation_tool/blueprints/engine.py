@@ -25,6 +25,7 @@ from typing import Any, Protocol
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from videoipath_automation_tool.apps.inspect.errors import InspectCommitConflictError, InspectCommitError
+from videoipath_automation_tool.apps.inventory.errors import InventoryWriteNotAppliedError
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.blueprints.errors import (
     BlueprintApplyError,
@@ -33,7 +34,7 @@ from videoipath_automation_tool.blueprints.errors import (
     BlueprintError,
     BlueprintTargetError,
     BlueprintValidationError,
-    ProcessorInputError,
+    TopologyNotReadyError,
 )
 from videoipath_automation_tool.blueprints.inspect import (
     InspectGateway,
@@ -86,10 +87,12 @@ class BlueprintApp(Protocol):
     """The app interface the engine needs; :class:`VideoIPathApp` satisfies it unchanged."""
 
     @property
-    def inventory(self) -> Any: ...
+    def inventory(self) -> Any:
+        """The Inventory app (``InventoryApp``)."""
 
     @property
-    def inspect(self) -> Any: ...
+    def inspect(self) -> Any:
+        """The Inspect app (``InspectApp``)."""
 
 
 class BlueprintPlan(BaseModel):
@@ -443,7 +446,12 @@ class _Planner:
             else None
         )
         work, current = plan_inventory(
-            self._inventory(), resolved.inventory, self._captured.device, label=label, description=description
+            self._inventory(),
+            resolved.inventory,
+            self._captured.device,
+            label=label,
+            description=description,
+            write_credentials=self._captured.options.write_credentials,
         )
         operation = work.operation
         phases.append(
@@ -726,7 +734,7 @@ class _Execution:
             phase.status = "no_change"
 
         self._run_module_tags(gateway, work)
-        if self._wrote and ("topology" in self._wrote or "module_tags" in self._wrote):
+        if "topology" in self._wrote or "module_tags" in self._wrote:
             try:
                 self._mismatches.extend(verify_topology(gateway.read_scope(target), work))
             except Exception as exc:  # noqa: BLE001 - verification never turns an applied write into a failure
@@ -779,13 +787,15 @@ class _Execution:
                 )
                 discovery.status = "completed"
                 return work
-            except (ProcessorInputError, BlueprintTargetError) as exc:
-                if self._unknown or isinstance(exc, _NoRetry):
+            except TopologyNotReadyError as exc:
+                if self._unknown:
                     raise
                 remaining = deadline - self._executor._clock()
                 if remaining <= 0:
                     self._current = "discovery"
-                    raise type(exc)(f"Topology not ready after {options.discovery_timeout:g}s: {exc}") from exc
+                    raise TopologyNotReadyError(
+                        f"Topology not ready after {options.discovery_timeout:g}s: {exc}"
+                    ) from exc
                 self._executor._sleep(min(options.poll_interval, remaining))
 
     def _ensure_membership(self, gateway: InspectGateway, target: TopologyTarget) -> None:
@@ -794,13 +804,13 @@ class _Execution:
         if isinstance(target, ModuleTarget):
             # Never add or synchronize a whole parent device to reach a module target.
             if not gateway.in_topology(target.device_id):
-                raise _NoRetry(
+                raise BlueprintTargetError(
                     f"Parent device '{target.device_id}' of module '{target.module_id}' is not in the topology."
                 )
             return
         if not gateway.in_topology(target.device_id):
             if sync == "none":
-                raise _NoRetry(f"Inspect device '{target.device_id}' is not in the topology (sync='none').")
+                raise BlueprintTargetError(f"Inspect device '{target.device_id}' is not in the topology (sync='none').")
             with self._write():
                 gateway.add_to_topology(target.device_id)
             self._record_sync(phase, "add_to_topology", target.device_id)
@@ -900,27 +910,14 @@ _TOPOLOGY_PHASES: tuple[PhaseName, ...] = ("discovery", "topology_sync", "topolo
 _PHASE_ORDER: tuple[str, ...] = ("inventory", "discovery", "topology_sync", "topology", "module_tags", "verification")
 
 
-class _NoRetry(BlueprintTargetError):
-    """A target error that waiting cannot resolve."""
-
-
 def _known_rejection(exc: Exception, *, create: bool) -> bool:
     """Whether a write error proves the server did not apply the change."""
     if isinstance(exc, (InspectCommitError, InspectCommitConflictError, BlueprintError)):
         return True
-    if isinstance(exc, ValueError):
-        message = str(exc)
-        return (
-            message.startswith("Failed to add device")
-            if create
-            else message.startswith(
-                (
-                    "Failed to update device",
-                    "Failed to add device",
-                    "Failed to retrieve existing device configuration",
-                )
-            )
-        )
+    if isinstance(exc, InventoryWriteNotAppliedError):
+        # A create is only known to be rejected when the add itself failed: the follow-up update
+        # (tracking-id cleanup) runs after the record already exists.
+        return exc.operation == "add" if create else True
     return False
 
 

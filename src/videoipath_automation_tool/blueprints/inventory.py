@@ -7,6 +7,10 @@ record is deep-copied and only managed fields are overlaid, so unrelated setting
 performs). The generic comparison of ``update_device`` is bypassed once a managed change is known, so
 explicit credential changes cannot be swallowed by its authentication filtering.
 
+Secrets (passwords, alternative-address credentials) are write-only: the server masks them on read, so
+they are never compared. They are written on create and with every update, and they cause an update on
+their own only with ``ApplyOptions(write_credentials=True)``.
+
 Conflict detection is client-side (re-read and compare before writing); a read-to-write race remains.
 """
 
@@ -35,7 +39,6 @@ from videoipath_automation_tool.blueprints.models import (
     CatalogId,
     FieldChange,
     PlannedOperation,
-    normalize_address,
 )
 from videoipath_automation_tool.blueprints.resolution import ResolvedInventory
 
@@ -103,9 +106,11 @@ class InventoryGateway:
         found = self._app.find_device_id_by_label(label, label_search_mode="user_defined_label_only")
         return _as_list(found)
 
-    def ids_with_address(self, address: str) -> list[str]:
-        candidates = {address.strip(), normalize_address(address)}
-        return self._app.find_device_ids_by_addresses(candidates)
+    def ids_by_addresses(self, addresses: list[str]) -> dict[str, list[str]]:
+        """Device ids per address (normalized comparison), in one read."""
+        if not addresses:
+            return {}
+        return self._app.find_device_ids_by_addresses(addresses)
 
     def resolve_snmp(self, reference: str | CatalogId) -> str:
         """Exact SNMP configuration id for a label or ``{id: ...}``; missing/ambiguous fail."""
@@ -144,8 +149,13 @@ def plan_inventory(
     *,
     label: str | None,
     description: str | None,
+    write_credentials: bool = False,
 ) -> tuple[InventoryWork, InventoryDevice | None]:
-    """Compute the Inventory work (read-only). Returns the work and the current record (if bound)."""
+    """Compute the Inventory work (read-only). Returns the work and the current record (if bound).
+
+    Secrets are not compared (see the module docstring); for an existing record they are listed as
+    changes only when ``write_credentials`` is set.
+    """
     desired = _desired_values(gateway, resolved, device, label=label, description=description)
 
     current: InventoryDevice | None = None
@@ -174,7 +184,8 @@ def plan_inventory(
     changes = [
         _field_change(key, get_field(current, key) if current is not None else None, item)
         for key, item in desired.items()
-        if current is None or not values_equal(get_field(current, key), item.value)
+        if current is None
+        or (write_credentials if is_sensitive(key) else not values_equal(get_field(current, key), item.value))
     ]
     _check_conflicts(gateway, device, desired, changes, own_id=device.inventory_id)
 
@@ -217,7 +228,7 @@ def check_baseline(work: InventoryWork, fresh: InventoryDevice) -> None:
 
 
 def verify(device: InventoryDevice, desired: dict[str, DesiredValue]) -> list[str]:
-    """Managed fields whose read-back differs (secrets are not compared: the server may mask them)."""
+    """Managed fields whose read-back differs (secrets are not compared: the server masks them)."""
     return sorted(
         key
         for key, item in desired.items()
@@ -332,8 +343,9 @@ def _check_conflicts(
         addresses.append(desired["address"].value)
     if "alt_addresses" in changed:
         addresses.extend(desired["alt_addresses"].value)
+    found = gateway.ids_by_addresses(addresses)
     for address in addresses:
-        others = [i for i in gateway.ids_with_address(address) if i != own_id]
+        others = [i for i in found.get(address, []) if i != own_id]
         if others:
             conflicts.append(f"address '{address}' is used by {', '.join(others)}")
     if conflicts:
@@ -342,7 +354,8 @@ def _check_conflicts(
 
 
 def _baseline(device: InventoryDevice, desired: dict[str, DesiredValue]) -> dict[str, str]:
-    baseline = {key: _digest(get_field(device, key)) for key in desired}
+    """Fingerprints of the managed non-secret values (masked secrets carry no information) and driver."""
+    baseline = {key: _digest(get_field(device, key)) for key in desired if not is_sensitive(key)}
     baseline["driver_id"] = _digest(device.driver_id)
     return baseline
 

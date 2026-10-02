@@ -19,6 +19,7 @@ from videoipath_automation_tool.blueprints.errors import (
     BlueprintTargetError,
     BlueprintValidationError,
     ProcessorInputError,
+    TopologyNotReadyError,
     ValidationIssue,
 )
 from videoipath_automation_tool.blueprints.models import (
@@ -119,6 +120,7 @@ __all__ = [
     "SourceFacts",
     "TagDelta",
     "Text",
+    "TopologyNotReadyError",
     "ValidationIssue",
     "VertexEdit",
     "VertexPatch",
