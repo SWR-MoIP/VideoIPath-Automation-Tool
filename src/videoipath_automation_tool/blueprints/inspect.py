@@ -150,7 +150,7 @@ class InspectGateway:
     def in_topology(self, device_id: str) -> bool:
         if self._detail(device_id) is not None:
             return True
-        return device_id.startswith("virtual.") and self._device_form(device_id) is not None
+        return device_id.startswith("virtual.") and self._device_form(device_id, required=False) is not None
 
     def sync_info(self, device_id: str) -> Any | None:
         """Pending sync for ``device_id``, or ``None`` when the server reports no sync record.
@@ -171,7 +171,7 @@ class InspectGateway:
         device_id = target.device_id
         module_id = target.module_id if isinstance(target, ModuleTarget) else None
         node = self._detail(device_id)
-        form = self._device_form(device_id)
+        form = self._device_form(device_id, required=node is not None)
         if node is None and form is None:
             raise BlueprintTargetError(f"Inspect device '{device_id}' is not in the topology.")
 
@@ -248,7 +248,7 @@ class InspectGateway:
 
     def sync(self, device_id: str, *, add_only: bool) -> None:
         if not self._app.sync_devices([device_id], add_only=add_only):
-            raise TopologyNotReadyError(f"syncDevices reported failure for '{device_id}'.")
+            raise BlueprintError(f"syncDevices failed for '{device_id}'; see the server log / Inspect sync dialog.")
 
     def commit(self, work: TopologyWork) -> Any:
         with self._app.transaction() as tx:
@@ -277,11 +277,15 @@ class InspectGateway:
             node = self._api.get_device_detail(device_id.replace(".", "-"))
         return node
 
-    def _device_form(self, device_id: str) -> Any | None:
+    def _device_form(self, device_id: str, *, required: bool) -> Any | None:
         try:
             return self._api.lookup_inspect_device(device_id).data.fields
-        except Exception:  # noqa: BLE001
-            return None
+        except Exception as exc:
+            if not required:
+                return None
+            raise BlueprintError(
+                f"Could not read the Inspect edit form of device '{device_id}': {type(exc).__name__}: {exc}"
+            ) from exc
 
     def _vertex_forms(self, vertex_ids: list[str]) -> dict[str, Any]:
         if not vertex_ids:

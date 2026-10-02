@@ -34,6 +34,12 @@ for discovery, then computes the edits from the blueprint, parameters, naming,
 and target captured on the plan. A dry run does not invent those edits. It
 reports the phases as `deferred`.
 
+An update of address, alternate addresses, credentials, generic or custom
+settings, or `active` can change the topology the driver discovers. Apply does
+not poll for that. It stops after Inventory, sets `replan_required`, and returns
+`status="partial"`. The caller plans again after rediscovery. Creating a record
+still waits for discovery, because a new device has no previous topology.
+
 `dry_run=True` runs the stale-plan, conflict, and pending-edit checks and
 performs no write.
 
@@ -46,6 +52,8 @@ performs no write.
 - A failure after Inventory create is `partial`. The result carries
   `inventory_id` so the caller can bind it and retry without creating a second
   record.
+- A topology-affecting Inventory update is `partial` with `replan_required`.
+  The Inventory write stands. The next plan sees the updated record.
 - A write that raises, when the client cannot prove the server rejected it, is
   `unknown`. The caller reads the server back (a new plan does that) before
   retrying.

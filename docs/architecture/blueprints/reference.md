@@ -50,7 +50,7 @@ a file path string, a `pathlib.Path` (or another `os.PathLike[str]`), or a
 | `summary()` | Human-readable, redacted before/after listing, bindings, diagnostics, and unresolved work. |
 | `phases`, `phase(name)` | `PlannedPhase` records (`planned`, `no_change`, `deferred`, `skipped`) with their `PlannedOperation`s and `FieldChange`s. |
 | `has_changes` | `True` when any phase is `planned` or `deferred`. |
-| `fully_resolved` | `False` when topology work is deferred until apply. |
+| `fully_resolved` | `False` when topology phases are deferred until apply, or until a new plan after a topology-affecting Inventory update. |
 | `interface_bindings`, `diagnostics`, `skipped_sections` | Resolved `ip_vertex_mapping`, warnings, and sections the scope skipped. |
 | `source_key`, `scope`, `inventory_variant`, `topology_variant`, `inventory_id`, `topology_target`, `driver_id`, `driver_schema_version`, `processor_type`, `blueprint_digest` | Identity of what was planned. |
 
@@ -62,11 +62,12 @@ replay elsewhere.
 
 | Field | Meaning |
 |---|---|
-| `status` | `succeeded`, `no_change`, `planned` (dry run), `failed`, `partial`, or `unknown`. |
+| `status` | `succeeded`, `no_change`, `planned` (dry run), `failed`, `partial`, or `unknown`. `partial` with `replan_required` is returned, not raised. |
 | `ok` | `True` for `succeeded`, `no_change`, and `planned`. |
+| `replan_required` | `True` when an Inventory update may change discovery. Apply stopped after Inventory. `status` is `partial`, or `planned` on a dry run. Plan again after rediscovery. |
 | `inventory_id`, `topology_device_id`, `module_id`, `source_key` | Ids involved. Persist `inventory_id` in your source system. |
-| `phases`, `phase(name)` | `PhaseResult` per phase: `completed`, `no_change`, `skipped`, `failed`, `unknown`, `not_run`, `planned`, or `deferred`. |
-| `interface_bindings`, `diagnostics` | As on the plan, after deferred work was materialized. |
+| `phases`, `phase(name)` | `PhaseResult` per phase: `completed`, `no_change`, `skipped`, `failed`, `unknown`, `not_run`, `planned`, or `deferred`. `deferred` also appears when a new plan is required, not only in a dry run. |
+| `interface_bindings`, `diagnostics` | As on the plan, after deferred work was materialized. Empty when apply stopped for a replan. |
 | `materialized` | `True` when deferred topology work was computed during apply. |
 | `verification`, `verification_detail` | `confirmed`, `unconfirmed`, or `not_applicable`. |
 | `dry_run` | Whether this was a dry run. |
@@ -413,15 +414,21 @@ it writes nothing.
 ### Deferred topology work
 
 Sometimes the topology edits depend on work that has not happened yet: a record
-this plan creates, Inventory changes that may alter discovery (address,
-alternative addresses, credentials, generic or custom settings, `active`), a
-device that is not in the topology yet, or a synchronization that is still
-pending. The plan marks that work `deferred`, and `plan.fully_resolved` is
-`False`. During `apply()` the engine polls for discovery up to
+this plan creates, a device that is not in the topology yet, or a synchronization
+that is still pending. The plan marks that work `deferred`, and `plan.fully_resolved`
+is `False`. During `apply()` the engine polls for discovery up to
 `discovery_timeout`, then computes the exact edits from the blueprint,
 parameters, naming, and target captured on the plan. Those edits are recorded on
 the result. If that later step fails, the earlier phases stay applied, and the
 result says so.
+
+An Inventory update that changes address, alternate addresses, credentials,
+generic or custom settings, or `active` is different. The plan marks the topology
+phases `deferred` with `fully_resolved` false, but `apply()` stops after
+Inventory. It does not poll, and it does not guess when rediscovery has finished.
+The result has `status="partial"` and `replan_required=True`, and the call does
+not raise. Inventory verification still runs. Plan again once the driver has
+rediscovered the device.
 
 If you want to see every write before it happens, split the scopes. Apply
 `scope="inventory"`, add the device with `app.inspect.add_devices_to_topology([...])`,
@@ -432,9 +439,10 @@ then build a fully resolved `scope="topology"` plan, read it, and call
 
 `plan.apply(dry_run=True)` runs the same stale-plan, conflict, and pending-edit
 checks, then returns before any write. Deferred topology stays `deferred`,
-because those edits depend on writes the dry run does not perform. `status` is
-`planned` when writes would have run, and `no_change` otherwise. You can dry-run a
-plan and apply that same plan afterwards.
+because those edits depend on writes the dry run does not perform. A
+topology-affecting update also stays `deferred`, with `replan_required` set.
+`status` is `planned` when writes would have run, and `no_change` otherwise. You
+can dry-run a plan and apply that same plan afterwards.
 
 ### Synchronization
 
@@ -443,6 +451,10 @@ plan and apply that same plan afterwards.
 | `"none"` | The device must already be in the topology. The engine does not add it and does not synchronize it. |
 | `"add_only"` | Default. Adds the device and synchronizes new elements only. If that synchronization would update or remove elements, the apply fails. It does not escalate to a full reconcile. |
 | `"reconcile"` | A full synchronization is allowed. |
+
+A `syncDevices` failure is an error and is not retried. Adding a device that is
+not discovered yet stays `TopologyNotReadyError` and is retried until
+`discovery_timeout`.
 
 Service conflicts fail the apply. The engine does not invalidate or cancel
 services. A module target does not add its parent device to the topology and
@@ -453,7 +465,9 @@ needs a sync, the plan reports a diagnostic.
 
 Before writing, the engine reads the Inventory record and the scoped topology
 again. If anything the plan relied on has changed, it raises
-`BlueprintConflictError`. Build a new plan. The Inspect transaction then checks
+`BlueprintConflictError`. An Inventory update also repeats the label and address
+conflict check. A response with no address item list fails that check. Build a
+new plan. The Inspect transaction then checks
 its own baseline, and module tags are read again immediately before their phase.
 These checks run in the client, so a short gap between the read and the write
 remains. Uncommitted edits on `app.inspect` that overlap the plan are rejected,
@@ -462,11 +476,12 @@ are.
 
 ## 8. Results, errors, and recovery
 
-`plan.apply()` returns an `ApplyResult` when `status` is `succeeded` or
-`no_change` (`planned` on a dry run). On failure it raises `BlueprintApplyError`.
-The exception's `.result` has `status` `failed` (nothing was written), `partial`
-(something was written), or `unknown` (a write raised and the client cannot prove
-the server rejected it). The original error is `__cause__`.
+`plan.apply()` returns an `ApplyResult` when `status` is `succeeded`,
+`no_change`, or `partial` with `replan_required` (`planned` on a dry run). On
+failure it raises `BlueprintApplyError`. The exception's `.result` has `status`
+`failed` (nothing was written), `partial` (something was written), or `unknown`
+(a write raised and the client cannot prove the server rejected it). The
+original error is `__cause__`.
 
 ```python
 from videoipath_automation_tool.blueprints import BlueprintApplyError
@@ -482,6 +497,7 @@ except BlueprintApplyError as error:
 
 What you do next depends on how far the apply got:
 
+- An Inventory update may change the discovered topology. `status` is `partial` and `replan_required` is true. Apply did not raise. Plan again after rediscovery.
 - The record was created, then discovery timed out. `status` is `partial` and `inventory_id` is set. Retry with `BlueprintDevice(..., inventory_id=result.inventory_id)`.
 - Topology committed, then a module tag failed. `status` is `partial`. The result lists the committed edits and the tag operations that finished. Replan to finish the rest.
 - A write timed out. `status` is `unknown`. Read the server back before you retry. Building a new plan does that read.

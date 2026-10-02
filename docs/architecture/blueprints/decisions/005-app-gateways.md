@@ -25,13 +25,18 @@ record, resolves an SNMP configuration by exact label or id, creates with
 `find_device_id_by_label`. Address conflict checks use
 `find_device_ids_by_addresses`: one read for all addresses, compared after
 normalization on both sides (IP literals in compressed form, other identifiers
-case-insensitively). An empty inventory response is no match.
+case-insensitively). An empty item list is no match. A response with no item
+list raises; the gateway turns that into `BlueprintError`.
 
 `InspectGateway` is the only object that calls `app.inspect`. Scope data is
 built from fresh collector and lookup reads (`get_device_detail`,
 `lookup_inspect_device`, `lookup_vertices`), not from the live snapshot's
-domain objects. Pending edits are visible only through `staged_edit_keys()`,
-which is used to reject overlap, not to seed the plan.
+domain objects. If the collector already has the device, a failed edit-form
+lookup is `BlueprintError`. The virtual-device fallback, where there is no
+topology node, still treats a missing form as absent. Pending edits are visible
+only through `staged_edit_keys()`, which is used to reject overlap, not to seed
+the plan. A reported `syncDevices` failure is `BlueprintError` and is not
+retried. `addDevices` failure stays `TopologyNotReadyError`.
 
 Topology writes go through one `InspectTransaction`: `update_device` and
 `update_vertex` intents, then `commit()`. Module tags use `assignTag` and

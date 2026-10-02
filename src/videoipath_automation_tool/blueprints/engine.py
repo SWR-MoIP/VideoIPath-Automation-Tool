@@ -6,6 +6,11 @@ exactly that plan through the shared executor, checking the captured baselines f
 ``engine.apply(...)`` is ``engine.plan(...).apply()``. ``dry_run=True`` runs the same execution path —
 including the stale-plan, conflict, and staged-edit checks — but performs no write.
 
+A topology-affecting Inventory update (address, alternate addresses, credentials, generic or custom
+settings, or ``active``) stops after Inventory. The result is ``partial`` with ``replan_required``;
+plan again after the driver has rediscovered the device. Creating a record still waits for discovery
+during apply, because a new device has no previous topology.
+
 Execution phases (absent or unchanged phases are skipped): Inventory → discovery readiness →
 topology membership/synchronization → topology commit (one ``InspectTransaction``) → module tags
 (separate RPCs) → verification. Inventory and Inspect writes are separate operations; there is no
@@ -98,9 +103,10 @@ class BlueprintApp(Protocol):
 class BlueprintPlan(BaseModel):
     """A reviewed, immutable preview of intended changes. ``apply()`` executes exactly this plan.
 
-    ``fully_resolved`` is ``False`` when topology work depends on earlier phases (Inventory creation,
-    topology-affecting Inventory changes, topology membership, or pending synchronization); that work
-    is materialized during ``apply()`` from the captured configuration and recorded in the result.
+    ``fully_resolved`` is ``False`` when topology work depends on earlier phases. Inventory creation,
+    topology membership, and pending synchronization are materialized during ``apply()`` from the
+    captured configuration. A topology-affecting Inventory update is not: ``apply()`` stops after
+    Inventory and the result asks for a new plan.
     """
 
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
@@ -136,8 +142,12 @@ class BlueprintPlan(BaseModel):
 
         With ``dry_run=True`` every check runs against current server state, but no write, topology
         action, or tag action is performed; the result reports the writes that would run
-        (``status="planned"``). Deferred topology work needs earlier writes and is reported as
+        (``status="planned"``). Deferred topology work that still needs earlier writes is reported as
         ``deferred``.
+
+        A topology-affecting Inventory update stops after Inventory on a real run (``status="partial"``,
+        ``replan_required=True``) and does not raise. A dry run of that plan reports the same phases as
+        ``deferred`` and sets ``replan_required``.
         """
         return self._executor.execute(self, dry_run=dry_run)
 
@@ -163,10 +173,16 @@ class BlueprintPlan(BaseModel):
         for diagnostic in self.diagnostics:
             lines.append(f"[{diagnostic.level}] {diagnostic.code}: {diagnostic.message}")
         if not self.fully_resolved:
-            lines.append(
-                "Not fully resolved: deferred topology work is materialized during apply() after earlier phases; "
-                "if it then fails validation, earlier phases remain applied and are reported."
-            )
+            if self._captured.topology_requires_replan:
+                lines.append(
+                    "Not fully resolved: apply stops after Inventory; replan once the driver has rediscovered "
+                    "the device."
+                )
+            else:
+                lines.append(
+                    "Not fully resolved: deferred topology work is materialized during apply() after earlier phases; "
+                    "if it then fails validation, earlier phases remain applied and are reported."
+                )
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -370,6 +386,7 @@ class _Captured(BaseModel):
     topology_target: TopologyTarget | None = None
     topology_work: TopologyWork | None = None
     topology_deferred: bool = False
+    topology_requires_replan: bool = False
 
     @property
     def source(self) -> SourceFacts:
@@ -401,7 +418,9 @@ class _Planner:
         diagnostics: list[Diagnostic] = []
 
         inventory_work, current = self._plan_inventory(phases)
-        target, deferred_reason, topology_work = self._plan_topology(inventory_work, current, phases, diagnostics)
+        target, deferred_reason, topology_work, topology_requires_replan = self._plan_topology(
+            inventory_work, current, phases, diagnostics
+        )
 
         captured = captured.model_copy(
             update={
@@ -409,6 +428,7 @@ class _Planner:
                 "topology_target": target,
                 "topology_work": topology_work,
                 "topology_deferred": deferred_reason is not None,
+                "topology_requires_replan": topology_requires_replan,
             }
         )
         plan = BlueprintPlan(
@@ -469,13 +489,13 @@ class _Planner:
         current: InventoryDevice | None,
         phases: list[PlannedPhase],
         diagnostics: list[Diagnostic],
-    ) -> tuple[TopologyTarget | None, str | None, TopologyWork | None]:
+    ) -> tuple[TopologyTarget | None, str | None, TopologyWork | None, bool]:
         captured = self._captured
         resolved = captured.resolved
         if resolved.topology is None:
             reason = resolved.skipped.get("topology")
             phases.extend(PlannedPhase(name=name, status="skipped", reason=reason) for name in _TOPOLOGY_PHASES)
-            return None, None, None
+            return None, None, None, False
 
         device = captured.device
         target: TopologyTarget | None = device.topology
@@ -488,8 +508,15 @@ class _Planner:
             )
 
         reason: str | None = None
+        requires_replan = False
         if target is None:
             reason = "the topology device is the Inventory record created by this plan"
+        elif inventory_work is not None and inventory_work.affects_topology and inventory_work.action == "update":
+            reason = (
+                "planned Inventory changes may alter the discovered topology; "
+                "apply stops after Inventory — plan again once the driver has rediscovered the device"
+            )
+            requires_replan = True
         elif inventory_work is not None and inventory_work.affects_topology:
             reason = "planned Inventory changes may alter the discovered topology"
         else:
@@ -497,7 +524,7 @@ class _Planner:
 
         if reason is not None:
             phases.extend(PlannedPhase(name=name, status="deferred", reason=reason) for name in _TOPOLOGY_PHASES)
-            return target, reason, None
+            return target, reason, None, requires_replan
 
         assert target is not None
         work = self._materialize(target, current)
@@ -518,7 +545,7 @@ class _Planner:
                 operations=work.module_operations,
             )
         )
-        return target, None, work
+        return target, None, work, False
 
     def _membership_reason(self, target: TopologyTarget, diagnostics: list[Diagnostic]) -> str | None:
         sync = self._captured.options.sync
@@ -669,6 +696,7 @@ class _Execution:
             assert work.inventory_id is not None
             fresh = gateway.read(work.inventory_id)
             check_baseline(work, fresh)
+            recheck_conflicts(gateway, self._captured.device, work)
             if self._dry_run:
                 self._planned(phase, [work.operation])
                 return
@@ -683,6 +711,16 @@ class _Execution:
 
     def _run_topology(self) -> None:
         captured = self._captured
+        if captured.topology_requires_replan:
+            reason = self._plan.phase("topology").reason if self._plan.phase("topology") else None
+            for name in _TOPOLOGY_PHASES:
+                phase = self._enter(name)
+                phase.status = "deferred"
+                phase.message = reason
+            self._result.replan_required = True
+            if self._dry_run:
+                self._would_write = True
+            return
         if captured.topology_deferred and self._dry_run:
             reason = self._plan.phase("topology").reason if self._plan.phase("topology") else None
             for name in _TOPOLOGY_PHASES:
@@ -894,6 +932,8 @@ class _Execution:
         if self._dry_run:
             result.verification_detail = "dry run: nothing was written"
             result.status = "planned" if self._would_write else "no_change"
+        elif result.replan_required:
+            result.status = "partial"
         else:
             result.status = "succeeded" if self._wrote else "no_change"
         self._executor._logger.info("Blueprint apply for '%s' %s.", result.source_key, result.status)
