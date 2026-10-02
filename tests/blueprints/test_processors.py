@@ -23,6 +23,7 @@ from videoipath_automation_tool.blueprints import (
     ProcessorResult,
     SourceFacts,
     TagDelta,
+    TopologyNotReadyError,
     VertexProcessor,
 )
 from videoipath_automation_tool.blueprints.inspect import InspectGateway, build_context
@@ -181,17 +182,25 @@ def test_processing_is_deterministic_regardless_of_order() -> None:
 
 
 @pytest.mark.parametrize(
-    ("mutate", "message"),
+    ("mutate", "error", "message"),
     [
-        (lambda s: s.vertex_forms.pop("device1.0.ar.v"), "unknown kind"),
-        (lambda s: _relabel(s, "device1.0.vr3.v", "Video Receiver 7"), "indices"),
-        (lambda s: _relabel(s, "device1.0.vr3.v", "Video Receiver"), "no 'Video Receiver <n>' index"),
-        (lambda s: _set_media(s, "device1.0.ar.v", "video"), "unsupported RX layout with 5 video and 0 audio"),
+        (lambda s: s.vertex_forms.pop("device1.0.ar.v"), TopologyNotReadyError, "unknown kind"),
+        (lambda s: _relabel(s, "device1.0.vr3.v", "Video Receiver 7"), ProcessorInputError, "indices"),
+        (
+            lambda s: _relabel(s, "device1.0.vr3.v", "Video Receiver"),
+            ProcessorInputError,
+            "no 'Video Receiver <n>' index",
+        ),
+        (
+            lambda s: _set_media(s, "device1.0.ar.v", "video"),
+            ProcessorInputError,
+            "unsupported RX layout with 5 video and 0 audio",
+        ),
     ],
 )
-def test_invalid_four_split_layouts(mutate: Any, message: str) -> None:
+def test_invalid_four_split_layouts(mutate: Any, error: type[Exception], message: str) -> None:
     context = _context(matrox_layout("device1", "four_split"), mutate=mutate)
-    with pytest.raises(ProcessorInputError, match=message):
+    with pytest.raises(error, match=message):
         _process(context)
 
 
@@ -212,7 +221,7 @@ def test_mixed_directions_and_missing_codecs_fail() -> None:
         for form in server.vertex_forms.values():
             form["fields"]["typeFields"]["type"] = "ip"
 
-    with pytest.raises(ProcessorInputError, match="no codec vertices"):
+    with pytest.raises(TopologyNotReadyError, match="no codec vertices"):
         _process(_context(matrox_layout("device1", "tx"), mutate=no_codecs))
 
 

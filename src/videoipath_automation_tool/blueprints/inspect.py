@@ -31,6 +31,7 @@ from videoipath_automation_tool.blueprints.errors import (
     BlueprintTargetError,
     BlueprintValidationError,
     ProcessorInputError,
+    TopologyNotReadyError,
     ValidationIssue,
 )
 from videoipath_automation_tool.blueprints.models import (
@@ -243,11 +244,11 @@ class InspectGateway:
 
     def add_to_topology(self, device_id: str) -> None:
         if not self._app.add_devices_to_topology([device_id], sync=False):
-            raise BlueprintTargetError(f"addDevices reported failure for '{device_id}' (not discovered yet?).")
+            raise TopologyNotReadyError(f"addDevices reported failure for '{device_id}' (not discovered yet?).")
 
     def sync(self, device_id: str, *, add_only: bool) -> None:
         if not self._app.sync_devices([device_id], add_only=add_only):
-            raise BlueprintTargetError(f"syncDevices reported failure for '{device_id}'.")
+            raise TopologyNotReadyError(f"syncDevices reported failure for '{device_id}'.")
 
     def commit(self, work: TopologyWork) -> Any:
         with self._app.transaction() as tx:
@@ -325,7 +326,9 @@ def resolve_interfaces(
                 )
                 break
         else:
-            raise BlueprintTargetError(
+            # No ports at all means discovery has not produced them yet; a miss among ports is final.
+            error = TopologyNotReadyError if not scope.ports else BlueprintTargetError
+            raise error(
                 f"Interface '{key}': no IP port in {_scope_label(scope)} matches {', '.join(map(repr, attempted))}."
             )
     return bindings

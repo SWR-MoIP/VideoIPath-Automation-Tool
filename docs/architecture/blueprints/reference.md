@@ -82,7 +82,7 @@ your source system knows.
 | `label`, `description` | Instance facts used by naming. |
 | `inventory_id` | The Inventory record that already belongs to this device. If that record is missing, planning fails. The engine will not create a second one in its place. Leave the field out when a selected inventory section should create the record. |
 | `management_address`, `alternative_addresses` | Connection addresses. The driver decides the string format, so these are not always IP addresses. An alternative address is a string or an `AlternativeAddress(address, credentials)`. Leave the field out to leave the server value alone. Pass `[]` to clear alternative addresses. A supplied list is the full desired set and also replaces per-address credentials: a plain string carries none, so an existing credential is cleared unless that address is an `AlternativeAddress`. An address listed twice fails. |
-| `credentials` | Runtime `Credentials(username, password)`. Credentials stay out of YAML, and the engine redacts them in plans, results, and errors. |
+| `credentials` | Runtime `Credentials(username, password)`. Credentials stay out of YAML, and the engine redacts them in plans, results, and errors. Secrets are write-only: the server masks them on read, so a plan never compares them. They are written on create and with every update; a credential change alone needs `ApplyOptions(write_credentials=True)`. |
 | `topology` | `DeviceTarget(device_id)` or `ModuleTarget(device_id, module_id)`, using exact Inspect ids. Leave it out to target the Inventory id, including an id this same plan creates. |
 | `module_position` | Module context you supply for naming and mappings. It is a string, such as `"0"`, `"A1"`, or `"1/2"`. |
 | `inventory_overrides` | Per-device Inventory settings that are not secrets (`InventorySettings`): `custom_settings`, `generic_settings`, `snmp`, `metadata`, `active`. Applied after the selected variant. |
@@ -389,6 +389,7 @@ plan = engine.plan(
 | `discovery_timeout` | `30.0` | Seconds to wait for discovery during apply. |
 | `poll_interval` | `1.0` | Seconds between discovery polls. |
 | `naming_collisions` | `"reject"` | `"allow"` lets duplicate endpoint labels through. |
+| `write_credentials` | `False` | Write the supplied credentials to an existing record even when nothing else changes (password rotation). |
 
 Planning reads the current state. It does not write, synchronize, stage snapshot
 edits, or create catalog entries. The plan lists every phase with the exact
@@ -400,7 +401,7 @@ Apply then runs the phases in this order
 ([ADR-002](./decisions/002-plan-then-apply.md)):
 
 1. `inventory` creates or updates the record. A new id is stored on the result immediately.
-2. `discovery` waits, bounded by `discovery_timeout`.
+2. `discovery` waits while the topology is not ready yet (`TopologyNotReadyError`), bounded by `discovery_timeout`. Other errors fail at once.
 3. `topology_sync` adds the device to the topology, or synchronizes it.
 4. `topology` edits the device and its vertices in one Inspect transaction, with conflict checking.
 5. `module_tags` assigns or unassigns tags as separate actions.
@@ -494,7 +495,8 @@ All errors derive from `BlueprintError`:
 |---|---|
 | `BlueprintValidationError` | A document, naming expression, or parameter is invalid. `.issues` lists `ValidationIssue`s; `.codes` lists their codes. |
 | `BlueprintTargetError` | A binding is missing, ambiguous, or outside the target scope. |
-| `ProcessorInputError` | The discovered topology is unsupported or still incomplete. |
+| `ProcessorInputError` | The discovered topology is unsupported. |
+| `TopologyNotReadyError` | The discovered topology is still incomplete. Retried while topology work is deferred. |
 | `BlueprintCapabilityError` | The engine cannot perform the requested operation. |
 | `BlueprintConflictError` | The plan is stale: the server changed since planning. |
 | `BlueprintApplyError` | An apply failed. `.result` is the `ApplyResult`. |
@@ -580,4 +582,4 @@ Everything below is importable from `videoipath_automation_tool.blueprints`.
 | Options and results | `ApplyOptions`, `ApplyResult`, `PhaseResult`, `PlannedPhase`, `PlannedOperation`, `FieldChange`, `InterfaceBinding`, `Diagnostic` |
 | Naming | `NamingScheme`, `DEFAULT_NAMING`, `Text`, `Field`, `Join`, `NameContext`, `NameRenderer` |
 | Processors | `VertexProcessor`, `ProcessorRegistry`, `ProcessingContext`, `ProcessorResult`, `VertexEdit`, `EndpointIdentity`, `SourceFacts`, `DriverContext`, `DeviceRecord`, `ModuleRecord`, `PortRecord`, `VertexRecord`, `MatroxConvertIPProcessor`, `MatroxConvertIPParams` |
-| Errors | `BlueprintError`, `BlueprintValidationError`, `ValidationIssue`, `BlueprintTargetError`, `ProcessorInputError`, `BlueprintCapabilityError`, `BlueprintConflictError`, `BlueprintApplyError` |
+| Errors | `BlueprintError`, `BlueprintValidationError`, `ValidationIssue`, `BlueprintTargetError`, `ProcessorInputError`, `TopologyNotReadyError`, `BlueprintCapabilityError`, `BlueprintConflictError`, `BlueprintApplyError` |

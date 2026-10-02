@@ -23,8 +23,9 @@ treat a caller's unsaved edits as server truth, or flush them.
 record, resolves an SNMP configuration by exact label or id, creates with
 `add_device`, and updates with `update_device`. Label lookups use
 `find_device_id_by_label`. Address conflict checks use
-`find_device_ids_by_addresses`, one read for every candidate spelling. An empty
-inventory response is no match.
+`find_device_ids_by_addresses`: one read for all addresses, compared after
+normalization on both sides (IP literals in compressed form, other identifiers
+case-insensitively). An empty inventory response is no match.
 
 `InspectGateway` is the only object that calls `app.inspect`. Scope data is
 built from fresh collector and lookup reads (`get_device_detail`,

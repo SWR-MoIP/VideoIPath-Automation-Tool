@@ -10,7 +10,6 @@ would be ambiguous with absence.
 
 from __future__ import annotations
 
-import ipaddress
 from os import PathLike
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Literal
@@ -41,6 +40,7 @@ from videoipath_automation_tool.blueprints.naming import (
     TOPOLOGY_NAMING_ENTRIES,
     BlueprintNaming,
 )
+from videoipath_automation_tool.utils.cross_app_utils import normalize_address
 from videoipath_automation_tool.validators.device_id import validate_device_id
 
 if TYPE_CHECKING:
@@ -459,12 +459,15 @@ class ApplyOptions(_StrictModel):
     elements; ``"reconcile"`` permits a full sync. Service conflicts are always handled strictly.
     ``discovery_timeout`` / ``poll_interval`` bound the wait for driver discovery (seconds).
     ``naming_collisions="allow"`` permits duplicate endpoint labels within a device.
+    ``write_credentials=True`` writes the supplied credentials to an existing Inventory record even when
+    nothing else changes (secrets are masked on read, so a plan cannot tell whether they differ).
     """
 
     sync: SyncPolicy = "add_only"
     discovery_timeout: Annotated[float, Field(gt=0)] = 30.0
     poll_interval: Annotated[float, Field(gt=0)] = 1.0
     naming_collisions: Literal["reject", "allow"] = "reject"
+    write_credentials: bool = False
 
 
 # --- Plan and result records ---
@@ -552,15 +555,6 @@ class ApplyResult(BaseModel):
 
 
 # --- Helpers ---
-
-
-def normalize_address(address: str) -> str:
-    """Normalize IP literals (no DNS); other identifiers compare case-insensitively."""
-    candidate = address.strip()
-    try:
-        return ipaddress.ip_address(candidate.strip("[]")).compressed
-    except ValueError:
-        return candidate.casefold()
 
 
 def issues_from_pydantic(
@@ -675,6 +669,7 @@ __all__ = [
     "PlannedOperation",
     "PlannedPhase",
     "ProcessorResult",
+    "Scope",
     "SnmpSelection",
     "TagDelta",
     "TagSpec",

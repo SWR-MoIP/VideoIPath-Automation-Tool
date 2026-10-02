@@ -27,6 +27,7 @@ from videoipath_automation_tool.apps.inspect.model.common import InspectApiSimpl
 from videoipath_automation_tool.apps.inspect.model.update_topology import InspectApiUpdateTopologyResponse
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 from videoipath_automation_tool.blueprints import BlueprintEngine
+from videoipath_automation_tool.utils.cross_app_utils import normalize_address
 
 NMOS = "com.nevion.NMOS_multidevice-0.1.0"
 HEADER = {"auth": True, "caption": "OK", "code": "OK", "id": "0", "ok": True, "user": "test-user"}
@@ -89,18 +90,24 @@ class FakeInventory:
     def get_global_snmp_config_label_by_id(self, snmp_config_id: str) -> str | None:
         return self.snmp.get(snmp_config_id)
 
-    def find_device_ids_by_addresses(self, addresses: Any) -> list[str]:
+    def find_device_ids_by_addresses(self, addresses: Any) -> dict[str, list[str]]:
         self.address_lookups += 1
-        ids = [
-            i
-            for i, device in self.devices.items()
-            if any(
-                address == device.configuration.config.cinfo.address
-                or address in device.configuration.config.cinfo.altAddresses
-                for address in addresses
+        result: dict[str, list[str]] = {}
+        for address in addresses:
+            wanted = normalize_address(address)
+            result[address] = sorted(
+                i
+                for i, device in self.devices.items()
+                if any(
+                    normalize_address(known) == wanted
+                    for known in [
+                        device.configuration.config.cinfo.address,
+                        *device.configuration.config.cinfo.altAddresses,
+                    ]
+                    if known
+                )
             )
-        ]
-        return sorted(set(ids))
+        return result
 
     def _maybe_fail(self) -> None:
         if self.fail_next_write is not None:

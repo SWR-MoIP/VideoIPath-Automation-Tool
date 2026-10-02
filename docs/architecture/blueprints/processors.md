@@ -99,8 +99,10 @@ Precedence: explicit `topology.device` values override processor defaults,
 naming overrides proposed labels, and explicit `vertices` overrides win over
 both.
 
-Raise `ProcessorInputError` when the layout is unsupported or still incomplete.
-While discovery is deferred, the engine retries until `discovery_timeout`.
+Raise `TopologyNotReadyError` when discovery is still incomplete (for example,
+vertices without an edit form, or no codec vertices yet). While topology work is
+deferred, the engine retries only this error, until `discovery_timeout`. Raise
+`ProcessorInputError` when the layout is unsupported; the apply fails at once.
 
 ## 4. Registration
 

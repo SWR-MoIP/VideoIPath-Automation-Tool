@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict
 
 from tests.blueprints.conftest import NMOS, FakeInspectServer, FakeInventory, make_inspect_app, matrox_layout
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
+from videoipath_automation_tool.apps.inventory.errors import InventoryWriteNotAppliedError
 from videoipath_automation_tool.blueprints import (
     AlternativeAddress,
     ApplyOptions,
@@ -27,6 +28,7 @@ from videoipath_automation_tool.blueprints import (
     BlueprintTargetError,
     BlueprintValidationError,
     Credentials,
+    DeviceRecord,
     DeviceTarget,
     EndpointIdentity,
     ModuleTarget,
@@ -34,11 +36,13 @@ from videoipath_automation_tool.blueprints import (
     ProcessingContext,
     ProcessorInputError,
     ProcessorResult,
+    TopologyNotReadyError,
     VertexEdit,
     VertexPatch,
     VertexProcessor,
     published_json_schema,
 )
+from videoipath_automation_tool.blueprints.inspect import ScopeData, resolve_interfaces
 
 MATROX = {
     "schema_version": 1,
@@ -223,9 +227,17 @@ def test_update_preserves_unmanaged_fields_and_redacts_secrets(
         ],
     )
     plan = engine.plan(device, Blueprint.from_dict(document), scope="inventory")
-    summary = plan.summary()
-    assert "test-password" not in summary and "alt-password" not in summary and "********" in summary
-    assert "test-password" not in repr(device) and "test-password" not in plan.model_dump_json()
+    fields = {change.field for change in plan.phase("inventory").operations[0].changes}
+    assert "credentials.password" not in fields and "alt_addresses_with_auth" not in fields
+    shown = engine.plan(
+        device, Blueprint.from_dict(document), scope="inventory", options=ApplyOptions(write_credentials=True)
+    )
+    for reviewed in (plan, shown):
+        summary = reviewed.summary()
+        assert "test-password" not in summary and "alt-password" not in summary
+        assert "test-password" not in reviewed.model_dump_json()
+    assert "********" in shown.summary()
+    assert "test-password" not in repr(device)
     plan.apply()
     stored = inventory.devices["device1"].configuration
     assert stored.config.customSettings.port == 8080 and stored.config.customSettings.indices_in_ids is False
@@ -235,13 +247,50 @@ def test_update_preserves_unmanaged_fields_and_redacts_secrets(
     assert stored.config.cinfo.altAddressesWithAuth == [
         {"address": "192.0.2.21", "authentication": {"user": "test-user", "password": "alt-password"}}
     ]
-    # A changed password alone still writes; omission preserves it.
+    # Secrets are write-only: a changed password alone writes only with write_credentials; omission preserves it.
     changed = device.model_copy(update={"credentials": Credentials(username="test-user", password="new-password")})
-    assert engine.plan(changed, Blueprint.from_dict(document), scope="inventory").phase("inventory").status == "planned"
+    assert engine.plan(changed, Blueprint.from_dict(document), scope="inventory").phase("inventory").status == (
+        "no_change"
+    )
+    rotate = engine.plan(
+        changed, Blueprint.from_dict(document), scope="inventory", options=ApplyOptions(write_credentials=True)
+    )
+    assert rotate.phase("inventory").status == "planned"
+    rotate.apply()
+    assert inventory.devices["device1"].configuration.config.cinfo.auth.password == "new-password"
     assert (
         engine.plan(_device(), Blueprint.from_dict(document), scope="inventory").phase("inventory").status
         == "no_change"
     )
+
+
+def test_masked_secrets_on_read_do_not_cause_changes(
+    engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _existing(inventory, server)
+    device = _device(
+        credentials=Credentials(username="test-user", password="test-password"),
+        alternative_addresses=[
+            AlternativeAddress(
+                address="192.0.2.21", credentials=Credentials(username="test-user", password="alt-password")
+            )
+        ],
+    )
+    engine.apply(device, _blueprint())
+    # The server masks secrets on read.
+    cinfo = inventory.devices["device1"].configuration.config.cinfo
+    cinfo.auth.password = "********"
+    cinfo.altAddressesWithAuth = [{"address": "192.0.2.21", "authentication": {"user": "test-user", "password": ""}}]
+
+    plan = engine.plan(device, _blueprint())
+    assert plan.fully_resolved and not plan.has_changes
+
+    # Any other managed change writes the supplied secrets along with it.
+    relabelled = device.model_copy(update={"label": "device-renamed"})
+    engine.apply(relabelled, _blueprint(), scope="inventory")
+    cinfo = inventory.devices["device1"].configuration.config.cinfo
+    assert cinfo.auth.password == "test-password"
+    assert cinfo.altAddressesWithAuth[0]["authentication"]["password"] == "alt-password"
 
 
 def test_api_key_is_redacted_in_the_plan(engine: BlueprintEngine) -> None:
@@ -326,6 +375,44 @@ def test_discovery_timeout_reports_created_id(engine: BlueprintEngine, server: F
     assert result.phase("discovery").status == "failed"
     assert "not ready after 3s" in result.phase("discovery").message
     assert [name for name, _ in server.writes].count("add_devices") == 4
+
+
+def test_permanent_errors_during_discovery_fail_without_waiting(
+    engine: BlueprintEngine, server: FakeInspectServer
+) -> None:
+    device = BlueprintDevice(key="key-new", label="device-new", management_address="192.0.2.50")
+    server.discoverable["device100"] = matrox_layout("device100", "tx")
+    wrong_mode = {"processor_type": "matrox.convertip.default", "params": {"mode": "rx"}}
+    with pytest.raises(BlueprintApplyError) as info:
+        engine.apply(device, _blueprint(vertex_processor=wrong_mode))
+    result = info.value.result
+    assert result.status == "partial" and result.inventory_id == "device100"
+    assert "mode 'rx' was requested" in result.phase("topology").message
+    assert "not ready" not in result.phase("topology").message
+    assert engine._clock() == 0.0
+
+
+def test_interface_miss_is_final_only_once_ports_exist(
+    engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _existing(inventory, server)
+    with pytest.raises(BlueprintTargetError, match="no IP port") as info:
+        engine.plan(_device(), _blueprint(ip_vertex_mapping={"stream-a": ["missing"]}))
+    assert not isinstance(info.value, TopologyNotReadyError)
+    empty = ScopeData(device_id="device1", device=DeviceRecord(id="device1"))
+    with pytest.raises(TopologyNotReadyError, match="no IP port"):
+        resolve_interfaces({"stream-a": ["P1"]}, empty, None)
+
+
+def test_address_conflicts_use_one_lookup_for_all_addresses(engine: BlueprintEngine, inventory: FakeInventory) -> None:
+    inventory.seed("device1", label="device-a", address="Device-A.example")
+    inventory.seed("device2", label="device-b", address="2001:db8:0:0::1")
+    new = BlueprintDevice(
+        key="key-c", label="device-c", management_address="device-a.example", alternative_addresses=["2001:db8::1"]
+    )
+    with pytest.raises(BlueprintTargetError, match="'device-a.example' is used by device1; address '2001:db8::1'"):
+        engine.plan(new, _blueprint(), scope="inventory")
+    assert inventory.address_lookups == 1
 
 
 def test_sync_policies(engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer) -> None:
@@ -425,13 +512,38 @@ def test_inventory_preread_failure_is_a_known_rejection(
 ) -> None:
     _existing(inventory, server)
     inventory.devices["device1"].configuration.config.desc.label = "old"
-    inventory.fail_next_write = ValueError("Failed to retrieve existing device configuration from Inventory: timed out")
+    inventory.fail_next_write = InventoryWriteNotAppliedError(
+        "Failed to retrieve existing device configuration from Inventory: timed out", operation="update"
+    )
     with pytest.raises(BlueprintApplyError) as info:
         engine.apply(_device(), _blueprint())
     result = info.value.result
     assert result.status == "failed" and result.phase("inventory").status == "failed"
     assert result.verification == "not_applicable"
     assert inventory.writes == []
+
+
+@pytest.mark.parametrize(("operation", "status"), [("add", "failed"), ("update", "unknown")])
+def test_inventory_create_rejection_outcomes(
+    engine: BlueprintEngine, inventory: FakeInventory, operation: str, status: str
+) -> None:
+    # A rejected add is known; a rejected follow-up update means the record may already exist.
+    inventory.fail_next_write = InventoryWriteNotAppliedError("rejected", operation=operation)  # type: ignore[arg-type]
+    device = BlueprintDevice(key="key-new", label="device-new", management_address="192.0.2.50")
+    with pytest.raises(BlueprintApplyError) as info:
+        engine.apply(device, _blueprint(), scope="inventory")
+    assert info.value.result.status == status
+
+
+def test_untyped_inventory_value_error_is_an_unknown_outcome(
+    engine: BlueprintEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _existing(inventory, server)
+    inventory.devices["device1"].configuration.config.desc.label = "old"
+    inventory.fail_next_write = ValueError("Failed to update device in VideoIPath-Inventory.")
+    with pytest.raises(BlueprintApplyError) as info:
+        engine.apply(_device(), _blueprint())
+    assert info.value.result.status == "unknown"
 
 
 # --- Modules ---
