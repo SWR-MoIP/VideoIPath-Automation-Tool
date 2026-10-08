@@ -3,6 +3,7 @@ from __future__ import annotations
 from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
 from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice, VirtualDeviceSpec
 from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+from videoipath_automation_tool.apps.inspect.domain.maintenance import InspectMaintenanceBooking
 from videoipath_automation_tool.apps.inspect.domain.module import InspectModule, VirtualModuleSpec
 from videoipath_automation_tool.apps.inspect.domain.port import InspectPort, InspectPortTemplate, PortFromTemplate
 from videoipath_automation_tool.apps.inspect.domain.service import InspectService
@@ -21,6 +22,7 @@ __all__ = [
     "InspectEdge",
     "InspectGenericVertex",
     "InspectIpVertex",
+    "InspectMaintenanceBooking",
     "InspectModule",
     "InspectPort",
     "InspectPortTemplate",
