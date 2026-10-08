@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+    from videoipath_automation_tool.apps.inspect.domain.maintenance import InspectMaintenanceBooking
     from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
     from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
     from videoipath_automation_tool.apps.inspect.model.common import InspectApiStatusSummary
@@ -139,6 +140,11 @@ class InspectPort(InspectFrozenModel):
     @property
     def status(self) -> InspectApiStatusSummary | None:
         return self.indexed.port.status
+
+    @property
+    def maintenance_bookings(self) -> list[InspectMaintenanceBooking]:
+        """Bookings selecting this port, including selected edge endpoints."""
+        return self.snapshot.maintenance_for_resource("port", self.id)
 
     @property
     def alarms(self) -> list[InspectAlarm]:

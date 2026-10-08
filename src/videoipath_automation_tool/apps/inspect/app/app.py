@@ -1,6 +1,6 @@
 """InspectApp — the user-facing entry point for the VideoIPath Inspect surface.
 
-Read-only monitoring plus commit-style topology writes, built entirely on the collector API.
+Monitoring, commit-style topology writes, and immediate maintenance operations on the Inspect API surface.
 Composed from focused mixins, mirroring the Inventory/Topology app layout.
 
 This app is currently in beta; the API and behaviour may change in future releases.
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.connector.vip_connector import VideoIPathConnector
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 from .actions import InspectActionsMixin
+from .maintenance import InspectMaintenanceMixin
 from .read import InspectReadMixin, LoadMode
 from .write import InspectWriteMixin
 
@@ -27,11 +28,11 @@ _BETA_MESSAGE = (
 )
 
 
-class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
+class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin, InspectMaintenanceMixin):
     def __init__(
         self,
         vip_connector: VideoIPathConnector,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         load: LoadMode = "skeleton",
     ) -> None:
         """Inspect App (beta): read the topology/status and apply commit-style topology changes.
@@ -53,7 +54,7 @@ class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
         self._inspect_api = InspectAPI(vip_connector=vip_connector, logger=self._logger)
         self._vip_connector = vip_connector
         self._load_mode: LoadMode = load
-        self._snapshot: Optional[InspectSnapshot] = None
+        self._snapshot: InspectSnapshot | None = None
         self._warn_beta()
         self._warn_if_version_unverified()
         self._logger.debug("Inspect APP initialized.")
@@ -76,7 +77,7 @@ class InspectApp(InspectReadMixin, InspectWriteMixin, InspectActionsMixin):
 _MIN_VERIFIED_VERSION = (2025, 4)
 
 
-def _parse_version(version: str) -> Optional[tuple[int, int]]:
+def _parse_version(version: str) -> tuple[int, int] | None:
     parts = version.split(".")
     if len(parts) < 2:
         return None

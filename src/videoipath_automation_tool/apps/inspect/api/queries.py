@@ -65,6 +65,11 @@ def alarms_section() -> str:
     return _build(_ALARMS_SECTION)
 
 
+def maintenance_section() -> str:
+    """Maintenance bookings with their resolved resource contexts (verified 2026.2)."""
+    return _build("/status/collector/maintenanceBookings/**")
+
+
 def collector_full() -> str:
     """GET path for the full collector aggregate (eager / fallback mode)."""
     return _build(_COLLECTOR_FULL)
