@@ -59,9 +59,10 @@ from videoipath_automation_tool.connector.vip_connector import VideoIPathConnect
 from videoipath_automation_tool.utils.cross_app_utils import create_fallback_logger
 
 from . import queries
+from .maintenance import InspectMaintenanceAPI
 
 
-class InspectAPI:
+class InspectAPI(InspectMaintenanceAPI):
     def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None) -> None:
         self._logger = logger or create_fallback_logger("videoipath_automation_tool_inspect_api")
         self.vip_connector = vip_connector

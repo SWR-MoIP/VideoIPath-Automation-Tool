@@ -12,6 +12,7 @@
 | Collector actions | `POST /rest/v2/actions/status/collector/*` (`updateTopology`, lookups, …) |
 | Network actions | `POST /rest/v2/actions/status/network/{addDevices,syncDevices,updateVirtualInstances,updateVirtualTemplates,addVirtualTopology}` |
 | Tag actions | `POST /rest/v2/actions/status/tags/{assignTag,unassignTag}` |
+| Maintenance actions | `POST /rest/v2/actions/status/pathman/{updateMaintenance,validateMaintenanceImpactDetailed,fetchMaintenanceImpact}` (exact allow-list entries) |
 | Alarm reads | `GET /rest/v2/data/status/alarms/current/…` |
 | Virtual reads | `GET /rest/v2/data/status/network/{virtualDevices,virtualTemplates}/**` |
 | System probes | `GET /rest/v2/data/status/system/about/…` (version gating) |
@@ -28,9 +29,14 @@ only. `app.topology` remains the escape hatch for raw, revisioned
 
 ## Consequences
 
-- **No `_rev` is available** to the Inspect package, and the write path
-  enforces none (last-writer-wins). Write consistency is solved client-side —
+- **Topology collector reads have no `_rev`**, and topology writes enforce
+  none (last-writer-wins). Topology write consistency is solved client-side —
   [ADR-007](./007-write-consistency.md).
+- Maintenance collector reads expose `rev`. Maintenance updates use a fresh read
+  and submit that revision; `expected_rev` optionally checks the caller's baseline.
+  These immediate actions run independently of topology transactions. The three
+  pathman actions above were verified on **2026.2.0**; no general pathman prefix
+  is allowed. Compatibility with older versions is untested.
 - Persisted forms for `replace*` payloads come from collector-namespace lookups
   (`lookupInspectDevice`, `lookupInspectVertexByIds`,
   `lookupInspectEdgesByIds`), not from `nGraphElements` reads.
