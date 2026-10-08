@@ -325,6 +325,44 @@ service = app.inspect.get_service_by_booking_id("booking-1001")
 all_services = app.inspect.services
 ```
 
+### Maintenance bookings (`InspectMaintenanceBooking`)
+
+The lazy maintenance snapshot section reads `collector.maintenanceBookings` and
+reuses it when present in a full response. `InspectMaintenanceBooking` exposes
+identity/revision, descriptors, tags, state, lock status, resolved timestamps,
+action settings, and selected topology resources.
+
+`.raw` preserves unresolved IDs.
+Devices, modules, ports, and edges expose related `.maintenance_bookings`.
+
+Use these models to describe a write:
+
+| Model | Purpose |
+| --- | --- |
+| `MaintenanceTargets` | Select devices, modules, ports, and edges by canonical ID or Inspect object. |
+| `MaintenanceOnceSchedule` | Describe one immediate or scheduled window. |
+| `MaintenanceRecurringSchedule` | Describe a finite daily, weekly, or monthly rule. |
+| `MaintenanceBookingSpec` | Combine metadata, targets, a schedule, and action settings. |
+
+Writable schedules are separate from `InspectApiMaintenanceWindow`, which
+represents resolved collector timestamps.
+
+Recurring rules expand into dated one-time bookings because
+native recurrence could not be updated on the verified **2026.2.0** server. Each
+server ID is managed independently with an explicit one-time schedule.
+
+Results and errors have separate roles:
+
+- `MaintenanceResult.details` maps server IDs to typed `MaintenanceChange` objects.
+- `MaintenanceImpact` models service impacts, keeping raw SA codes and timestamp
+  sentinels.
+- `InspectMaintenanceError` carries operation, booking IDs, and response details.
+- `InspectMaintenanceConflictError` adds expected and actual revisions.
+
+The [usage guide](../../getting-started-guide/03_B_Inspect.md#5-maintenance-bookings)
+and [endpoint reference](./endpoints.md#maintenance-actions-statuspathman) describe
+schedule limits, payloads, and the version-specific behavior.
+
 ## Transport DTO Examples
 
 A path item links one service or booking to the devices and ports used to carry
@@ -829,6 +867,7 @@ Transport DTOs are split by payload area under `apps/inspect/model/`:
 - `alarms.py` — current-alarm wire models (`status/alarms/current`)
 - `tags.py` — `assignTag` / `unassignTag` request DTOs
 - `virtual.py` — virtual-device and port-template wire models
+- `maintenance.py` — maintenance collector, schedule, action, result, and impact DTOs
 
 User-facing domain models and the snapshot:
 
@@ -841,6 +880,8 @@ User-facing domain models and the snapshot:
 - `domain/edge.py` — `InspectEdge`
 - `domain/service.py` — `InspectService`
 - `domain/alarm.py` — `InspectAlarm`
+- `domain/maintenance.py` — `InspectMaintenanceBooking`
+- `maintenance.py` — public booking specifications, targets, and schedule expansion
 
 When adding transport fields, prefer extending the nearest existing `InspectApi*`
 DTO. When adding user-facing behaviour, extend the domain layer and snapshot

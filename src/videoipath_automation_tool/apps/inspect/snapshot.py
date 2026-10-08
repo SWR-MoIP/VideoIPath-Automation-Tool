@@ -42,12 +42,14 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectSeverity,
     format_repr,
 )
+from videoipath_automation_tool.apps.inspect.model.maintenance import InspectApiMaintenanceBookingItem
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.api import InspectAPI
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+    from videoipath_automation_tool.apps.inspect.domain.maintenance import InspectMaintenanceBooking
     from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
@@ -73,6 +75,7 @@ class InspectSnapshot:
         device_level: HydrationLevel = HydrationLevel.SKELETON,
         path_items: list[InspectApiPathItem] | None = None,
         alarm_items: list[InspectApiAlarmItem] | None = None,
+        maintenance_items: list[InspectApiMaintenanceBookingItem] | None = None,
     ) -> None:
         self._fetcher = fetcher
         self._lock = threading.RLock()
@@ -111,6 +114,9 @@ class InspectSnapshot:
         self._section_loaded: dict[str, bool] = {"paths": False, "alarms": False}
         self._section_fetched_at: dict[str, datetime] = {}
 
+        self._maintenance_by_id: dict[str, InspectApiMaintenanceBookingItem] = {}
+        self._maintenance_cache: dict[str, InspectMaintenanceBooking] = {}
+
         # Section: current alarms (status/alarms/current), indexed by resource key
         self._alarms: list[InspectApiAlarmItem] = []
         self._alarms_by_device_id: dict[str, list[InspectApiAlarmItem]] = {}
@@ -138,6 +144,10 @@ class InspectSnapshot:
             self._index_paths(path_items)
             self._section_loaded["paths"] = True
             self._section_fetched_at["paths"] = self._created_at
+        if maintenance_items is not None:
+            self._maintenance_by_id = {item.id: item for item in maintenance_items}
+            self._section_loaded["maintenance"] = True
+            self._section_fetched_at["maintenance"] = self._created_at
         if alarm_items is not None:
             self._index_alarms(alarm_items)
             self._section_loaded["alarms"] = True
@@ -166,6 +176,7 @@ class InspectSnapshot:
             edge_items=collector.external_edges_by_device_key_items,
             device_level=HydrationLevel.FULL,
             path_items=collector.inspect.path_items,
+            maintenance_items=collector.maintenance_booking_items,
         )
 
     # Backwards-compatible alias for the original draft API.
@@ -516,6 +527,65 @@ class InspectSnapshot:
                     continue
                 self._pending_edits.pop(key, None)
 
+    # --- Maintenance ---
+
+    @property
+    def maintenance_bookings(self) -> list[InspectMaintenanceBooking]:
+        self._ensure_section_maintenance()
+        return [self.get_maintenance_booking(booking_id) for booking_id in self._maintenance_by_id]
+
+    def get_maintenance_record(self, booking_id: str) -> InspectApiMaintenanceBookingItem | None:
+        self._ensure_section_maintenance()
+        return self._maintenance_by_id.get(booking_id)
+
+    def get_maintenance_booking(self, booking_id: str) -> InspectMaintenanceBooking | None:
+        from videoipath_automation_tool.apps.inspect.domain.maintenance import InspectMaintenanceBooking
+
+        if self.get_maintenance_record(booking_id) is None:
+            return None
+        if booking_id not in self._maintenance_cache:
+            self._maintenance_cache[booking_id] = InspectMaintenanceBooking(snapshot=self, id=booking_id)
+        return self._maintenance_cache[booking_id]
+
+    def maintenance_for_resource(self, kind: str, resource_id: str) -> list[InspectMaintenanceBooking]:
+        """Bookings explicitly selecting a resource or a descendant (device/module).
+
+        Matches use collector contexts, not guessed ID prefixes. This performs no
+        topology hydration. Ancestor-wide bookings remain available on the ancestor.
+        """
+        result = []
+        for booking in self.maintenance_bookings:
+            item = booking.raw
+            if kind == "edge":
+                matched = resource_id in booking.edge_ids
+            else:
+                resources = [*item.devices, *item.modules, *item.ports]
+                resources += [r for edge in item.edges for r in (edge.from_, edge.to)]
+                field = {"device": "devicePid", "module": "modulePid", "port": "portPid"}[kind]
+                values = [getattr(r.context, field) for r in resources]
+                if kind == "device":
+                    values = [self._resolve_device_id(v) for v in values]
+                matched = resource_id in values
+            if matched:
+                result.append(booking)
+        return result
+
+    def invalidate_maintenance(self) -> None:
+        """Invalidate after a successful write without I/O or clearing staged edits.
+
+        Reroutes may change status beyond the selected targets. Re-fetch statuses
+        lazily; a refresh failure cannot turn an accepted write into a failure.
+        """
+        with self._lock:
+            self._section_loaded["maintenance"] = False
+            self._section_fetched_at.pop("maintenance", None)
+            self._maintenance_by_id.clear()
+            self._maintenance_cache.clear()
+            self._stale_devices.update(self._devices_by_id)
+            self._stale_pairs.update(self._edge_pairs)
+            self._mark_paths_stale()
+            self._mark_alarms_stale()
+
     # --- Refresh ---
 
     def refresh(self) -> InspectSnapshot:
@@ -824,6 +894,15 @@ class InspectSnapshot:
             self._index_alarms(items)
             self._section_loaded["alarms"] = True
             self._section_fetched_at["alarms"] = _now()
+
+    def _ensure_section_maintenance(self) -> None:
+        with self._lock:
+            if self._section_loaded.get("maintenance") or self._fetcher is None:
+                return
+            items = self._fetcher.get_maintenance_section()
+            self._maintenance_by_id = {item.id: item for item in items}
+            self._section_loaded["maintenance"] = True
+            self._section_fetched_at["maintenance"] = _now()
 
     # --- Internal: indexing ---
 

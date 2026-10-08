@@ -76,6 +76,9 @@ Each scenario is implemented twice — once with the modern **Inspect** app, onc
   changes; detect concurrent edits and `rebase` + retry.
 - [03_services_and_paths.py](04_inspect/03_services_and_paths.py) — inspect services, their paths, and
   the service-impact guard.
+- [04_maintenance_bookings.py](04_inspect/04_maintenance_bookings.py) — preview, create, update,
+  lock, start, and delete maintenance; daily/weekly/monthly rules expand into dated bookings.
+  Maintenance lifecycle verified on **2026.2.0** only.
 
 ### 05 — Administration
 

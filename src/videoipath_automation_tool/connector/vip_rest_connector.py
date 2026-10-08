@@ -18,7 +18,12 @@ class VideoIPathRestConnector(VideoIPathBaseConnector):
                 "/rest/v2/actions/status/network/",
                 "/rest/v2/actions/status/tags/",
             },
-            "EXACT_MATCHES": {"/rest/v2/actions/status/pathman/validateTopologyUpdate"},
+            "EXACT_MATCHES": {
+                "/rest/v2/actions/status/pathman/validateTopologyUpdate",
+                "/rest/v2/actions/status/pathman/updateMaintenance",
+                "/rest/v2/actions/status/pathman/validateMaintenanceImpactDetailed",
+                "/rest/v2/actions/status/pathman/fetchMaintenanceImpact",
+            },
         },
     }
 
