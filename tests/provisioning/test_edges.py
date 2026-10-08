@@ -475,7 +475,7 @@ def test_local_fallback_module_scope_and_ambiguity(
 def test_invalid_input_scope_and_mapping_keys_fail_before_io() -> None:
     class NoIO:
         def __getattr__(self, key: str) -> Any:
-            raise AssertionError(f"unexpected I/O: {key}")
+            raise AttributeError(f"unexpected I/O: {key}")
 
     engine = ProvisioningEngine(NoIO())
     with pytest.raises(ProvisioningValidationError, match="Unknown local port"):

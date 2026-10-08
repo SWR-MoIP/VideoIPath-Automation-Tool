@@ -128,7 +128,7 @@ defaults:
 
     class NoIO:
         def __getattr__(self, key: str) -> Any:
-            raise AssertionError(f"unexpected I/O: {key}")
+            raise AttributeError(f"unexpected I/O: {key}")
 
     with pytest.raises(ProvisioningValidationError, match="exactly one") as error:
         ProvisioningEngine(NoIO()).plan(
