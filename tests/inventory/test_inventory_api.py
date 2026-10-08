@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from videoipath_automation_tool.apps.inventory.app.app import InventoryApp
 from videoipath_automation_tool.apps.inventory.errors import (
+    InventoryRecordCreatedError,
     InventoryStatusUnavailableError,
     InventoryWriteNotAppliedError,
 )
@@ -122,6 +123,16 @@ def test_get_device_id_by_address_keeps_exact_matching() -> None:
         _api(None).get_device_id_by_address("192.0.2.1")
 
 
+def test_get_device_id_by_address_without_alternates_reads_id_projection() -> None:
+    projected = {"config": {"devman": {"devices": {"_items": [{"_id": "device1"}]}}}}
+    api = _api(projected)
+    assert api.get_device_id_by_address("192.0.2.1", include_alt_addresses=False) == "device1"
+    assert api.vip_connector.rest.get_calls[0].endswith("/_id")
+    assert _api(_devices()).get_device_id_by_address("192.0.2.1", include_alt_addresses=False) is None
+    with pytest.raises(ValueError, match="Response data is empty"):
+        _api(None).get_device_id_by_address("192.0.2.1", include_alt_addresses=False)
+
+
 # --- Write rejections ---
 
 
@@ -138,6 +149,40 @@ def test_rejected_update_is_typed() -> None:
     with pytest.raises(InventoryWriteNotAppliedError, match="Failed to update device") as info:
         _api(rpc_status="ERROR").update_device(device, config_only=True)
     assert info.value.operation == "update"
+    assert info.value.device_id == "device1"
+
+
+def test_rejected_tracking_cleanup_keeps_the_created_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    api = _api()
+    created = InventoryDevice.create(NMOS)
+    created.configuration.id = "device9"
+    created.configuration.meta["uuid"] = "tracking-id"
+    monkeypatch.setattr(api, "_fetch_device_config_by_uuid", lambda uuid: created)
+
+    def reject(*args: Any, **kwargs: Any) -> None:
+        raise InventoryWriteNotAppliedError("rejected", operation="update")
+
+    monkeypatch.setattr(api, "update_device", reject)
+    with pytest.raises(InventoryWriteNotAppliedError, match="rejected") as info:
+        api.add_device(InventoryDevice.create(NMOS), config_only=True)
+    assert info.value.operation == "update"
+    assert info.value.device_id == "device9"
+
+
+def test_tracking_cleanup_timeout_reports_the_created_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    api = _api()
+    created = InventoryDevice.create(NMOS)
+    created.configuration.id = "device9"
+    created.configuration.meta["uuid"] = "tracking-id"
+    monkeypatch.setattr(api, "_fetch_device_config_by_uuid", lambda uuid: created)
+
+    def time_out(*args: Any, **kwargs: Any) -> None:
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(api, "update_device", time_out)
+    with pytest.raises(InventoryRecordCreatedError, match="device9") as info:
+        api.add_device(InventoryDevice.create(NMOS), config_only=True)
+    assert info.value.device_id == "device9"
 
 
 def test_failed_preread_before_update_is_typed(monkeypatch: pytest.MonkeyPatch) -> None:

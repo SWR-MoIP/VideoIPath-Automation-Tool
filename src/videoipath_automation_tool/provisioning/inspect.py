@@ -44,6 +44,7 @@ from videoipath_automation_tool.provisioning.errors import (
     ProvisioningTargetError,
     ProvisioningValidationError,
     TopologyNotReadyError,
+    UndirectedPortError,
     ValidationIssue,
 )
 from videoipath_automation_tool.provisioning.models import (
@@ -309,8 +310,12 @@ class InspectGateway:
             if key not in cache:
                 cache[key] = self.read_peer_scope(target)
             peers[index] = cache[key]
-            if peers[index] is not None:
-                resolve_port(peers[index], [edge.peer.port], key=f"edges.{index}.peer")
+            peer_scope = peers[index]
+            if peer_scope is not None:
+                try:
+                    resolve_port(peer_scope, [edge.peer.port], key=f"edges.{index}.peer")
+                except UndirectedPortError:
+                    peers[index] = None
         return peers
 
     def check_peers(self, edges: list[ProvisioningEdge], peers: dict[int, ScopeData | None]) -> None:
@@ -402,7 +407,12 @@ class InspectGateway:
                 if edge.operation is None:
                     continue
                 if edge.baseline is None:
-                    tx.connect(edge.from_vertex, edge.to_vertex, bidirectional=False, **edge.intents)
+                    try:
+                        tx.connect(edge.from_vertex, edge.to_vertex, bidirectional=False, **edge.intents)
+                    except ValueError as exc:
+                        if "already exists" not in str(exc):
+                            raise
+                        raise ProvisioningConflictError(str(exc)) from exc
                 else:
                     tx.update_edge(edge_id, intents=dict(edge.intents))
             self.check_edges(work.edge_work)

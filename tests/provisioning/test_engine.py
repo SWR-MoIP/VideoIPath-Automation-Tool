@@ -13,7 +13,10 @@ from pydantic import BaseModel, ConfigDict
 
 from tests.provisioning.conftest import NMOS, FakeInspectServer, FakeInventory, make_inspect_app, matrox_layout
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
-from videoipath_automation_tool.apps.inventory.errors import InventoryWriteNotAppliedError
+from videoipath_automation_tool.apps.inventory.errors import (
+    InventoryRecordCreatedError,
+    InventoryWriteNotAppliedError,
+)
 from videoipath_automation_tool.provisioning import (
     AlternativeAddress,
     ApplyOptions,
@@ -655,16 +658,30 @@ def test_inventory_preread_failure_is_a_known_rejection(
     assert inventory.writes == []
 
 
-@pytest.mark.parametrize(("operation", "status"), [("add", "failed"), ("update", "unknown")])
+@pytest.mark.parametrize(
+    ("operation", "status", "device_id"),
+    [("add", "failed", None), ("update", "unknown", "device9")],
+)
 def test_inventory_create_rejection_outcomes(
-    engine: ProvisioningEngine, inventory: FakeInventory, operation: str, status: str
+    engine: ProvisioningEngine, inventory: FakeInventory, operation: str, status: str, device_id: str | None
 ) -> None:
     # A rejected add is known; a rejected follow-up update means the record may already exist.
-    inventory.fail_next_write = InventoryWriteNotAppliedError("rejected", operation=operation)  # type: ignore[arg-type]
+    inventory.fail_next_write = InventoryWriteNotAppliedError("rejected", operation=operation, device_id=device_id)  # type: ignore[arg-type]
     device = ProvisioningDevice(key="key-new", label="device-new", management_address="192.0.2.50")
     with pytest.raises(ProvisioningApplyError) as info:
         engine.apply(device, _blueprint(), scope="inventory")
     assert info.value.result.status == status
+    assert info.value.result.inventory_id == device_id
+
+
+def test_create_cleanup_timeout_reports_the_new_id(engine: ProvisioningEngine, inventory: FakeInventory) -> None:
+    inventory.fail_next_write = InventoryRecordCreatedError("device9", "Tracking-id cleanup failed: timed out")
+    device = ProvisioningDevice(key="key-new", label="device-new", management_address="192.0.2.50")
+    with pytest.raises(ProvisioningApplyError) as info:
+        engine.apply(device, _blueprint(), scope="inventory")
+    result = info.value.result
+    assert result.status == "unknown"
+    assert result.inventory_id == "device9"
 
 
 def test_untyped_inventory_value_error_is_an_unknown_outcome(

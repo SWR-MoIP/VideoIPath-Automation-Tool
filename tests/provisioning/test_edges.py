@@ -24,6 +24,7 @@ from videoipath_automation_tool.provisioning import (
     PeerEndpoint,
     PortSelector,
     ProvisioningApplyError,
+    ProvisioningConflictError,
     ProvisioningDevice,
     ProvisioningEdge,
     ProvisioningEngine,
@@ -32,6 +33,7 @@ from videoipath_automation_tool.provisioning import (
     TagDelta,
     models,
 )
+from videoipath_automation_tool.provisioning.errors import UndirectedPortError
 
 
 def _blueprint(**topology: Any) -> Blueprint:
@@ -305,6 +307,57 @@ def test_peer_selector_miss_and_transport_error_are_not_pending(
     assert not server.writes
 
 
+def test_undirected_peer_port_defers_that_edge(
+    engine: ProvisioningEngine, inventory: FakeInventory, server: FakeInspectServer
+) -> None:
+    _seed(inventory, server)
+    server.nodes["device2"]["modules"]["device2.dev.0"]["ports"]["device2.dev.0.P1"]["vertexInfo"] = {"type": "double"}
+    peer = PeerEndpoint(target=DeviceTarget(device_id="device2"), port=PortSelector(factory_label="P2"))
+    blueprint = _blueprint(port_mapping={"uplink": [{"factory_label": "P1"}], "backup": [{"factory_label": "P2"}]})
+    plan = engine.plan(
+        _device(_edge(), _edge(local="backup", peer=peer)),
+        blueprint,
+    )
+    assert [state.status for state in plan.edges] == ["deferred", "planned"]
+    assert not server.writes
+
+    server.nodes["device1"]["modules"]["device1.dev.0"]["ports"]["device1.dev.0.P1"]["vertexInfo"] = {"type": "double"}
+    with pytest.raises(UndirectedPortError, match="no directed"):
+        engine.plan(_device(_edge()), _blueprint())
+    assert not server.writes
+
+
+def test_edge_appearing_before_connect_is_a_conflict(
+    engine: ProvisioningEngine,
+    inventory: FakeInventory,
+    server: FakeInspectServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _seed(inventory, server)
+    plan = engine.plan(_device(_edge()), _blueprint())
+    lookups = {"count": 0}
+    original = server.lookup_edges
+
+    def lookup(edge_ids: list[str]) -> Any:
+        lookups["count"] += 1
+        if lookups["count"] == 1:
+            result = original(edge_ids)
+            for edge_id in edge_ids:
+                from_id, _, to_id = edge_id.partition("::")
+                server.edge_forms[edge_id] = InspectApiEdgeForm(fromId=from_id, toId=to_id).model_dump()
+            return result
+        return original(edge_ids)
+
+    monkeypatch.setattr(server, "lookup_edges", lookup)
+    with pytest.raises(ProvisioningApplyError) as info:
+        plan.apply()
+    result = info.value.result
+    assert result.status == "failed"
+    assert result.phase("topology").status == "failed"
+    assert isinstance(info.value.__cause__, ProvisioningConflictError)
+    assert not any(name == "update_topology" for name, _ in server.writes)
+
+
 @pytest.mark.parametrize("change", ["peer", "edge_created", "edge_updated", "edge_removed"])
 @pytest.mark.parametrize("dry_run", [False, True])
 def test_stale_peer_and_edge_baselines(
@@ -422,7 +475,7 @@ def test_failure_and_verification_status(
 
     monkeypatch.setattr(server, "update_topology", discard_edges)
     result = engine.apply(_device(_edge()), _blueprint())
-    assert result.status == "succeeded" and result.verification == "unconfirmed"
+    assert result.status == "succeeded" and result.verification == "unconfirmed" and not result.ok
     assert "fromId" in result.verification_detail
 
 

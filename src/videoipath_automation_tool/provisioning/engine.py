@@ -280,7 +280,7 @@ class ProvisioningEngine:
         if options is not _UNSET:
             self._options = options.model_copy() if options is not None else ApplyOptions()
         if naming is not _UNSET:
-            self._naming = naming.model_copy() if naming is not None else None
+            self._naming = NamingScheme.layered(naming) if naming is not None else None
 
     def validate(
         self,
@@ -764,9 +764,6 @@ class _Execution:
             return
         phase = self._enter("inventory")
         gateway = self._inventory()
-        if work.action == "none":
-            phase.status = "no_change"
-            return
         if work.action == "create":
             recheck_conflicts(gateway, self._captured.device, work)
             candidate = build_candidate(new_device(work.driver_id), work.desired)
@@ -774,12 +771,22 @@ class _Execution:
                 self._planned(phase, [work.operation])
                 return
             with self._write(create=True):
-                online = gateway.create(candidate)
+                try:
+                    online = gateway.create(candidate)
+                except Exception as exc:
+                    created_id = getattr(exc, "device_id", None)
+                    if isinstance(created_id, str):
+                        self._result.inventory_id = created_id
+                    raise
             self._result.inventory_id = online.device_id
         else:
             assert work.inventory_id is not None
             fresh = gateway.read(work.inventory_id)
             check_baseline(work, fresh)
+            self._current_inventory = fresh
+            if work.action == "none":
+                phase.status = "no_change"
+                return
             recheck_conflicts(gateway, self._captured.device, work)
             if self._dry_run:
                 self._planned(phase, [work.operation])
@@ -834,6 +841,14 @@ class _Execution:
             assert captured.topology_work is not None
             work = captured.topology_work
             self._enter("topology")
+            if (
+                not isinstance(target, ModuleTarget)
+                and captured.options.sync != "none"
+                and _sync_pending(gateway.sync_info(target.device_id))
+            ):
+                raise ProvisioningConflictError(
+                    f"Topology synchronization for '{target.device_id}' is pending; create a new plan."
+                )
             if gateway.read_scope(target).fingerprint != work.fingerprint:
                 raise ProvisioningConflictError(
                     f"The topology of {_target_label(target)} changed since planning; create a new plan."

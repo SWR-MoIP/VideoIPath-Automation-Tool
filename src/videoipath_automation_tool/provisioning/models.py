@@ -690,7 +690,13 @@ class ApplyResult(BaseModel):
 
     @property
     def ok(self) -> bool:
-        return self.status in ("succeeded", "no_change", "planned")
+        """True when status is a finished non-failure and read-back did not disagree.
+
+        ``succeeded`` with ``verification == "unconfirmed"`` is not ok. ``status`` stays
+        ``succeeded`` because the write was applied; check ``verification`` before treating
+        the outcome as confirmed.
+        """
+        return self.verification != "unconfirmed" and self.status in ("succeeded", "no_change", "planned")
 
     def phase(self, name: PhaseName) -> PhaseResult | None:
         return next((phase for phase in self.phases if phase.name == name), None)

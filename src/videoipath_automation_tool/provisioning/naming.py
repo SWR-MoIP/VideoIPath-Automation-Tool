@@ -119,7 +119,10 @@ class NameContext(BaseModel):
 
 @runtime_checkable
 class NameRenderer(Protocol):
-    """Trusted Python escape hatch for one naming entry; never loaded from YAML."""
+    """Trusted Python escape hatch for one naming entry; never loaded from YAML.
+
+    Renderers are retained by reference; their state and behavior remain caller-controlled.
+    """
 
     def render(self, context: NameContext) -> str:
         """Return the name for ``context``."""
@@ -162,12 +165,21 @@ class NamingScheme(BaseModel):
 
     @classmethod
     def layered(cls, *schemes: NamingScheme | None) -> NamingScheme:
-        """Combine schemes entry by entry; later schemes win for the entries they supply."""
+        """Combine schemes entry by entry; later schemes win for the entries they supply.
+
+        Declarative expressions are deep-copied, including nested lists and mappings. Trusted
+        Python renderers are retained by reference.
+        """
         merged: dict[str, Any] = {}
         for scheme in schemes:
             if scheme is not None:
                 merged.update(scheme.entries())
-        return cls(**merged)
+        return cls(
+            **{
+                name: expression.model_copy(deep=True) if isinstance(expression, (Text, Field, Join)) else expression
+                for name, expression in merged.items()
+            }
+        )
 
 
 class BlueprintNaming(BaseModel):

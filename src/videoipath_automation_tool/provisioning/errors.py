@@ -66,6 +66,10 @@ class ProvisioningTargetError(ProvisioningError):
     """A binding is missing or ambiguous, or a target lies outside the requested scope."""
 
 
+class UndirectedPortError(ProvisioningTargetError):
+    """A matched port has no directed In/Out vertex yet."""
+
+
 class ProcessorInputError(ProvisioningError):
     """A processor cannot interpret the observed topology (unsupported or incomplete layout)."""
 
@@ -113,5 +117,6 @@ __all__ = [
     "ProvisioningTargetError",
     "ProvisioningValidationError",
     "TopologyNotReadyError",
+    "UndirectedPortError",
     "ValidationIssue",
 ]

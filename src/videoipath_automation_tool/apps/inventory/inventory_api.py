@@ -9,6 +9,7 @@ from pydantic import IPvAnyAddress
 from typing_extensions import deprecated
 
 from videoipath_automation_tool.apps.inventory.errors import (
+    InventoryRecordCreatedError,
     InventoryStatusUnavailableError,
     InventoryWriteNotAppliedError,
 )
@@ -193,9 +194,17 @@ class InventoryAPI:
             self._logger.debug(
                 "Remove tracking ID ('uuid' meta field) from device configuration and update device in VideoIPath-Inventory."
             )
-            online_device = self.update_device(
-                device=modified_device, config_only=True
-            )  # Use config_only=True to avoid status fetch and speed up the process
+            try:
+                online_device = self.update_device(device=modified_device, config_only=True)
+            except InventoryWriteNotAppliedError as exc:
+                raise InventoryWriteNotAppliedError(
+                    str(exc), operation=exc.operation, device_id=online_device.configuration.id
+                ) from exc
+            except Exception as exc:
+                raise InventoryRecordCreatedError(
+                    online_device.configuration.id,
+                    f"Tracking-id cleanup failed for '{online_device.configuration.id}': {type(exc).__name__}: {exc}",
+                ) from exc
             self._logger.debug("Tracking ID removed successfully from device configuration.")
 
         if config_only:
@@ -262,7 +271,9 @@ class InventoryAPI:
 
         if response.header.status != "OK":
             raise InventoryWriteNotAppliedError(
-                f"Failed to update device in VideoIPath-Inventory. Error: {response}", operation="update"
+                f"Failed to update device in VideoIPath-Inventory. Error: {response}",
+                operation="update",
+                device_id=device_id,
             )
 
         online_device = self.get_device(
@@ -570,18 +581,20 @@ class InventoryAPI:
 
             response = self.vip_connector.rest.get(url)
 
-            if response.data and isinstance(response.data["config"]["devman"]["devices"]["_items"], list):
-                devices = response.data["config"]["devman"]["devices"]["_items"]
-            else:
+            devices = (
+                response.data.get("config", {}).get("devman", {}).get("devices", {}).get("_items")
+                if isinstance(response.data, dict)
+                else None
+            )
+            if not isinstance(devices, list):
                 raise ValueError("Response data is empty.")
-
             device_ids = []
             for device in devices:
-                if (
-                    address in device["config"]["cinfo"].get("altAddresses")
-                    or address == device["config"]["cinfo"]["address"]
-                ):
-                    device_ids.append(device["_id"])
+                if not isinstance(device, dict):
+                    continue
+                found_id = device.get("_id")
+                if isinstance(found_id, str):
+                    device_ids.append(found_id)
 
         if len(device_ids) == 0:
             return None

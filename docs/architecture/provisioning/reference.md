@@ -65,7 +65,7 @@ replay elsewhere.
 | Field | Meaning |
 |---|---|
 | `status` | `succeeded`, `no_change`, `planned` (dry run), `failed`, `partial`, or `unknown`. `partial` with `replan_required` is returned, not raised. |
-| `ok` | `True` for `succeeded`, `no_change`, and `planned`. |
+| `ok` | `True` for `succeeded`, `no_change`, and `planned`, except when `verification` is `unconfirmed`. A succeeded write with an unconfirmed read-back stays `succeeded`; `ok` is false so it is not treated as confirmed. |
 | `replan_required` | `True` after an Inventory update requiring rediscovery, or when peer edges remain open. Real runs return `partial`; dry runs return `planned`. Create a new plan when discovery is ready. |
 | `inventory_id`, `topology_device_id`, `module_id`, `source_key` | Ids involved. Persist `inventory_id` in your source system. |
 | `phases`, `phase(name)` | `PhaseResult` per phase: `completed`, `no_change`, `skipped`, `failed`, `unknown`, `not_run`, `planned`, or `deferred`. `deferred` reports work still waiting for discovery or a new plan. |
@@ -537,11 +537,16 @@ default, then the engine `naming`, then the blueprint (a topology entry replaces
 the same inventory entry), then the `naming` argument on that call. An entry is
 replaced as a whole; expressions are not merged. Set an entry to `None` to turn
 that name off. `NamingScheme.layered(*schemes)` performs the same combination.
+Declarative expressions are copied recursively when configuring engine defaults
+and capturing a plan, including nested `Join.parts` and `Field.mapping` values.
+Later mutations of caller expressions or engine defaults do not change an
+existing plan's naming, including work deferred until discovery.
 
 When the blocks cannot express a name, put a computed value in `attributes`, or
 pass a Python object with `render(context: NameContext) -> str` (the
 `NameRenderer` protocol) for that entry. Python renderers are not available in
-YAML.
+YAML. These trusted callbacks are retained by reference: their state and behavior
+remain caller-controlled, so keep them stable while a saved plan is pending.
 
 **Checks.** Before any write, every rendered endpoint label is checked. It has to
 be non-empty, it cannot contain control characters, and it cannot duplicate
@@ -679,9 +684,19 @@ needs a sync, the plan reports a diagnostic.
 
 Before writing, the engine reads the Inventory record and the scoped topology
 again. If anything the plan relied on has changed, it raises
-`ProvisioningConflictError`. An Inventory update also repeats the label and address
+`ProvisioningConflictError`. Inventory baseline checks also run when the plan
+requires no Inventory update; the fresh record remains available to deferred
+processors. An Inventory update also repeats the label and address
 conflict check. A response with no address item list fails that check. Build a
-new plan. The Inspect transaction then checks
+new plan.
+
+For fully resolved device topology plans using `add_only` or `reconcile`, apply
+also reads synchronization status again. Pending synchronization invalidates the
+plan and requires a new one; apply does not synchronize and replace the reviewed
+work. Lookup failures propagate. `sync="none"` and module targets retain their
+policy of working against the current topology without synchronization.
+
+The Inspect transaction then checks
 its own baseline, and module tags are read again immediately before their phase.
 These checks run in the client, so a short gap between the read and the write
 remains. Uncommitted edits on `app.inspect` that overlap the plan are rejected,
@@ -721,7 +736,8 @@ What you do next depends on how far the apply got:
 - The record was created, then discovery timed out. `status` is `partial` and `inventory_id` is set. Retry with `ProvisioningDevice(..., inventory_id=result.inventory_id)`.
 - Topology committed, then a module tag failed. `status` is `partial`. The result lists the committed edits and the tag operations that finished. Replan to finish the rest.
 - A write timed out. `status` is `unknown`. Read the server back before you retry. Building a new plan does that read.
-- Verification could not confirm the write, or a later phase failed before the topology read-back ran. The write stays applied, and `verification` is `"unconfirmed"`.
+- The record was inserted and tracking-id cleanup did not finish. `status` is `unknown` and `inventory_id` is set. Bind that id; do not create again.
+- Verification could not confirm the write, or a later phase failed before the topology read-back ran. The write stays applied, `verification` is `"unconfirmed"`, and `ok` is false. `status` stays `succeeded` when the write itself completed. Read the server back before retrying.
 
 The engine does not roll a partial apply back.
 

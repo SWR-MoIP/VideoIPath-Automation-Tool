@@ -12,6 +12,7 @@ from videoipath_automation_tool.provisioning.errors import (
     ProvisioningTargetError,
     ProvisioningValidationError,
     TopologyNotReadyError,
+    UndirectedPortError,
 )
 from videoipath_automation_tool.provisioning.models import (
     EdgePatch,
@@ -103,7 +104,7 @@ def resolve_port(scope: ScopeData, candidates: list[PortSelector], *, key: str) 
                 raise ProvisioningTargetError(f"Port '{port.id}' has multiple '{direction}' vertices.")
             directions[direction] = matches[0] if matches else None
         if not any(directions.values()):
-            raise ProvisioningTargetError(f"Port '{port.id}' has no directed In/Out vertex.")
+            raise UndirectedPortError(f"Port '{port.id}' has no directed In/Out vertex.")
         return PortBinding(
             key=key,
             candidate=candidate.port_id or candidate.factory_label or "",
@@ -143,7 +144,10 @@ def resolve_edges(
                     edge=edge,
                     local=local,
                     status="deferred",
-                    reason="Peer device, module or ports are not discovered in topology; create a new plan when available.",
+                    reason=(
+                        "Peer device, module, ports, or directed vertices are not available in topology; "
+                        "create a new plan when available."
+                    ),
                 )
             )
             continue
