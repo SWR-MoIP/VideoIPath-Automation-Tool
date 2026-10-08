@@ -51,8 +51,8 @@ a file path string, a `pathlib.Path` (or another `os.PathLike[str]`), or a
 | `summary()` | Human-readable, redacted before/after listing, bindings, diagnostics, and unresolved work. |
 | `phases`, `phase(name)` | `PlannedPhase` records (`planned`, `no_change`, `deferred`, `skipped`) with their `PlannedOperation`s and `FieldChange`s. |
 | `has_changes` | `True` when any phase is `planned` or `deferred`. |
-| `fully_resolved` | `False` when local topology work is deferred, an Inventory update requires replanning, or peer connections remain unresolved. |
-| `interface_bindings`, `port_bindings`, `connections` | Legacy IP bindings, generic port bindings, and each connection’s endpoints, edge ids, status and unresolved reason. |
+| `fully_resolved` | `False` when local topology work is deferred, an Inventory update requires replanning, or peer edges remain unresolved. |
+| `interface_bindings`, `port_bindings`, `edges` | Legacy IP bindings, generic port bindings, and each edge’s endpoints, edge ids, status and unresolved reason. |
 | `diagnostics`, `skipped_sections` | Warnings and sections the scope skipped. |
 | `source_key`, `scope`, `variants`, `inventory_id`, `topology_target`, `driver_id`, `driver_schema_version`, `processor_type`, `blueprint_digest` | Identity of what was planned. |
 
@@ -66,10 +66,10 @@ replay elsewhere.
 |---|---|
 | `status` | `succeeded`, `no_change`, `planned` (dry run), `failed`, `partial`, or `unknown`. `partial` with `replan_required` is returned, not raised. |
 | `ok` | `True` for `succeeded`, `no_change`, and `planned`. |
-| `replan_required` | `True` after an Inventory update requiring rediscovery, or when peer connections remain open. Real runs return `partial`; dry runs return `planned`. Create a new plan when discovery is ready. |
+| `replan_required` | `True` after an Inventory update requiring rediscovery, or when peer edges remain open. Real runs return `partial`; dry runs return `planned`. Create a new plan when discovery is ready. |
 | `inventory_id`, `topology_device_id`, `module_id`, `source_key` | Ids involved. Persist `inventory_id` in your source system. |
 | `phases`, `phase(name)` | `PhaseResult` per phase: `completed`, `no_change`, `skipped`, `failed`, `unknown`, `not_run`, `planned`, or `deferred`. `deferred` reports work still waiting for discovery or a new plan. |
-| `interface_bindings`, `port_bindings`, `connections`, `diagnostics` | Resolved bindings and connection outcomes after execution. Deferred connections retain the reason and available endpoint information. |
+| `interface_bindings`, `port_bindings`, `edges`, `diagnostics` | Resolved bindings and edge outcomes after execution. Deferred edges retain the reason and available endpoint information. |
 | `materialized` | `True` when deferred topology work was computed during apply. |
 | `verification`, `verification_detail` | `confirmed`, `unconfirmed`, or `not_applicable`. |
 | `dry_run` | Whether the execution performed checks without writes. |
@@ -89,7 +89,7 @@ your source system knows.
 | `topology` | `DeviceTarget(device_id)` or `ModuleTarget(device_id, module_id)`, using exact Inspect ids. Leave it out to target the Inventory id, including an id this same plan creates. |
 | `module_position` | Module context you supply for naming and mappings. It is a string, such as `"0"`, `"A1"`, or `"1/2"`. |
 | `inventory_overrides` | Per-device Inventory settings that are not secrets (`InventorySettings`): `custom_settings`, `generic_settings`, `snmp`, `metadata`, `active`. Applied after the selected variant. |
-| `connections` | Concrete external connections: local port, peer device/module and port, direction and managed edge fields. Defaults to `[]`; does not remove existing edges. |
+| `edges` | Concrete external edges: local port, peer device/module and port, direction and managed edge fields. Defaults to `[]`; does not remove existing edges. |
 | `attributes` | JSON facts you own. Scalar leaves are available to naming as `attributes.<name>`, and processors see them on `context.source`. |
 
 `ProvisioningDevice.from_inventory(inventory_device, key=None)` binds an existing
@@ -223,7 +223,7 @@ plan = engine.plan(
 | `vertex_processor` | `processor_type` and `params`. The registered processor validates `params`. See [processors.md](./processors.md). |
 | `vertices` | Explicit overrides. Point at the vertex with `vertex_id`, or with `factory_label` (may contain `{module.position}`) optionally narrowed by `kind` and `direction` (`In`, `Out`, `Internal`, `Undecided`), and supply `fields`. Those fields use the same contract as processor output. Each override must match exactly one vertex. |
 | `naming` | `device_label`, `device_description`, `endpoint_label`, `endpoint_description`. |
-| `port_mapping` | Generic local connection names mapped to ordered lists of `PortSelector` objects. Supports typed inputs and variant overlays. Keys must differ from `ip_vertex_mapping`. |
+| `port_mapping` | Generic local port names mapped to ordered lists of `PortSelector` objects. Supports typed inputs and variant overlays. Keys must differ from `ip_vertex_mapping`. |
 
 ### Vertex fields
 
@@ -256,11 +256,16 @@ server. The engine does not store what it applied last time. If a variant should
 turn a stream off, replace a tag set, or clear an endpoint flag, put that new
 value in the variant. Background: [ADR-003](./decisions/003-managed-fields.md).
 
-### External connections
+### External edges
 
-Declare concrete connections on **`ProvisioningDevice.connections`**. The YAML
+Declare concrete edges on **`ProvisioningDevice.edges`**. The YAML
 blueprint provides reusable local port names; peer identities and edge settings
 are instance facts supplied by the caller.
+
+One `ProvisioningEdge` declaration can produce one or both directed VideoIPath
+edges. Its `EdgeState` is available through `plan.edges` and `result.edges`:
+`state.edge` contains the declaration, while `state.edge_ids` lists the directed
+server edges.
 
 ```yaml
 schema_version: 1
@@ -274,15 +279,15 @@ defaults:
 ```python
 from videoipath_automation_tool.provisioning import (
     DeviceTarget, EdgePatch, PeerEndpoint, PortSelector,
-    ProvisioningConnection, ProvisioningDevice, ProvisioningEngine,
+    ProvisioningEdge, ProvisioningDevice, ProvisioningEngine,
 )
 
 device = ProvisioningDevice(
     key="device-a",
     label="device-a",
     inventory_id="device1",
-    connections=[
-        ProvisioningConnection(
+    edges=[
+        ProvisioningEdge(
             local="uplink",
             peer=PeerEndpoint(
                 target=DeviceTarget(device_id="device2"),
@@ -294,11 +299,11 @@ device = ProvisioningDevice(
     ],
 )
 engine = ProvisioningEngine(app)  # an existing VideoIPathApp
-plan = engine.plan(device, "external-connections.yml", scope="topology")
+plan = engine.plan(device, "external-edges.yml", scope="topology")
 print(plan.summary())
 result = plan.apply()
-for connection in result.connections:
-    print(connection.index, connection.status, connection.edge_ids, connection.reason)
+for edge in result.edges:
+    print(edge.index, edge.status, edge.edge_ids, edge.reason)
 ```
 
 Use actual VideoIPath ids and factory labels in place of the synthetic values.
@@ -308,7 +313,7 @@ use a blueprint with Inventory configuration and the default `scope="all"`.
 `local` can also be a direct selector such as
 `PortSelector(port_id="device1.dev.0.port-1")`; no mapping is needed then.
 The selected configuration still needs a topology section (`topology: {}` is
-sufficient). `scope="inventory"` skips all connection work.
+sufficient). `scope="inventory"` skips all edge work.
 
 `PortSelector` takes exactly one of `port_id` or `factory_label`, with optional
 `kind` to select vertices of a particular kind. A peer can use `ModuleTarget`
@@ -321,8 +326,8 @@ either mapping's keys may be used as `local`.
 Schema-v2 inputs work at selector value, selector object, candidate list or
 whole mapping positions. Overlays merge mapping keys and replace candidate
 lists. Input and literal operators retain their existing atomic replacement
-semantics. See [the runnable example](../../examples/07_provisioning/03_external_connections.py)
-and [its input-enabled blueprint](../../examples/07_provisioning/external-connections.yml).
+semantics. See [the runnable example](../../examples/07_provisioning/03_external_edges.py)
+and [its input-enabled blueprint](../../examples/07_provisioning/external-edges.yml).
 
 | Direction | Behavior relative to the local device |
 |---|---|
@@ -340,12 +345,12 @@ directions fail; internal device structure remains driver-owned.
 `conflict_priority`, `include_formats`, `exclude_formats`,
 `bandwidth_weight_factor`, `weight_per_service`, `active`, and `tags`.
 Omitted fields remain unmanaged, explicit `null` is rejected, and tags support
-replacement lists or `TagDelta`. Use two directed connection declarations when
+replacement lists or `TagDelta`. Use two directed edge declarations when
 opposite directions need different settings. Repeated declarations of the same
 directed edge combine compatible fields and reject conflicting requirements.
 
 Missing edges are created; existing edges are updated only where managed values
-differ. Other edges are never removed, including when `connections=[]`.
+differ. Other edges are never removed, including when `edges=[]`.
 Device, vertex and edge changes share the topology transaction. Plans check
 peer/edge baselines and uncommitted edit overlap before writing, and verify
 written edge fields afterward.
@@ -630,7 +635,7 @@ An accepted topology addition is not resubmitted while waiting for visibility.
 An accepted synchronization with the same pending changes is polled; newly
 reported changes can trigger another permitted synchronization. A retry after
 partial discovery binds the known Inventory ID and can plan against incomplete
-local topology without recreating the record. Missing peer connections still
+local topology without recreating the record. Missing peer edges still
 require a new plan when the peers become available.
 
 An Inventory update that changes address, alternate addresses, credentials,
@@ -789,7 +794,7 @@ def to_provisioning_device(record: dict) -> ProvisioningDevice:
 
 You keep the decisions around the engine: which blueprint and variant to use,
 which address role is allowed, where credentials come from, where returned ids
-are stored, which concrete connections to supply, and when the job runs.
+are stored, which concrete edges to supply, and when the job runs.
 
 ## 11. Limits and verification status
 
@@ -810,7 +815,7 @@ Everything below is importable from `videoipath_automation_tool.provisioning`.
 | Engine | `ProvisioningEngine`, `ProvisioningPlan`, `ProvisioningApp` |
 | Document | `Blueprint`, `BlueprintConfiguration`, `InputDefinition`, `InputReference`, `LiteralValue`, `InventorySettings`, `CatalogId`, `published_json_schema` |
 | Device facts | `ProvisioningDevice`, `Credentials`, `AlternativeAddress`, `DeviceTarget`, `ModuleTarget` |
-| Connections | `ProvisioningConnection`, `PeerEndpoint`, `PortSelector`, `ConnectionState`, `PortBinding` |
+| Edges | `ProvisioningEdge`, `PeerEndpoint`, `PortSelector`, `EdgeState`, `PortBinding` |
 | Patches | `DevicePatch`, `ModulePatch`, `VertexPatch`, `EdgePatch`, `Coordinates`, `TagDelta` |
 | Options and results | `ApplyOptions`, `ApplyResult`, `PhaseResult`, `PlannedPhase`, `PlannedOperation`, `FieldChange`, `InterfaceBinding`, `Diagnostic` |
 | Naming | `NamingScheme`, `DEFAULT_NAMING`, `Text`, `Field`, `Join`, `NameContext`, `NameRenderer` |
@@ -831,7 +836,7 @@ aliases.
 | `BlueprintPlan` | `ProvisioningPlan` |
 | `BlueprintApp` | `ProvisioningApp` |
 | `BlueprintDevice` | `ProvisioningDevice` |
-| `BlueprintConnection` | `ProvisioningConnection` |
+| `BlueprintConnection` | `ProvisioningEdge` |
 | `BlueprintError`, `BlueprintValidationError`, `BlueprintTargetError`, `BlueprintCapabilityError`, `BlueprintConflictError`, `BlueprintApplyError` | The same names with the `Provisioning` prefix |
 | Logger `videoipath_automation_tool_blueprints` | `videoipath_automation_tool_provisioning` |
 
@@ -839,6 +844,24 @@ aliases.
 and `blueprint_digest` plan field keep their names. Documents use
 `schema_version: 1`. The packaged schema is
 `videoipath_automation_tool/provisioning/schemas/blueprint-v1.schema.json`.
+
+### Edge names
+
+The former Connection names are removed without compatibility aliases. Update
+constructors, attribute access and serialized field names:
+
+| Former API | Current API |
+|---|---|
+| `ProvisioningConnection` | `ProvisioningEdge` |
+| `ProvisioningDevice.connections` / `connections=` | `ProvisioningDevice.edges` / `edges=` |
+| `ProvisioningPlan.connections` | `ProvisioningPlan.edges` |
+| `ApplyResult.connections` | `ApplyResult.edges` |
+| `ConnectionState` | `EdgeState` |
+| `ConnectionState.connection` | `EdgeState.edge` |
+
+`connections=` is rejected by `ProvisioningDevice`. Blueprint YAML is unchanged;
+concrete edges still belong to the device instance. Direction selection, managed
+fields and deferred peers keep the same behavior. `edges=[]` removes nothing.
 
 ### Readiness options
 

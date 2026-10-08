@@ -63,8 +63,8 @@ the apply writes nothing.
 
 ### External edges
 
-Supply concrete connections through `ProvisioningDevice.connections`. Each
-`ProvisioningConnection` contains a local port (a mapping key or `PortSelector`),
+Supply concrete edges through `ProvisioningDevice.edges`. Each
+`ProvisioningEdge` contains a local port (a mapping key or `PortSelector`),
 a `PeerEndpoint` identifying the other device/module and port, and optional
 `EdgePatch` settings. The blueprint's `defaults.topology.port_mapping` maps
 reusable local names to discovered ports. `plan(...).apply()` creates or updates
@@ -72,11 +72,11 @@ the requested edges along with device and vertex settings.
 
 `direction="auto"` derives one or both directions from the actual port vertices.
 Existing unrelated edges remain unchanged. Missing peers are reported per
-connection as `deferred`; the result is `partial` with `replan_required=True`.
+edge as `deferred`; the result is `partial` with `replan_required=True`.
 Build a new plan after the peer becomes available.
 
-See the [complete example](../examples/07_provisioning/03_external_connections.py)
-and [connection reference](../architecture/provisioning/reference.md#external-connections).
+See the [complete example](../examples/07_provisioning/03_external_edges.py)
+and [edge reference](../architecture/provisioning/reference.md#external-edges).
 
 ## 3. Writing a blueprint
 

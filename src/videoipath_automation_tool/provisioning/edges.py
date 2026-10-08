@@ -14,13 +14,13 @@ from videoipath_automation_tool.provisioning.errors import (
     TopologyNotReadyError,
 )
 from videoipath_automation_tool.provisioning.models import (
-    ConnectionState,
     EdgePatch,
+    EdgeState,
     FieldChange,
     PlannedOperation,
     PortBinding,
     PortSelector,
-    ProvisioningConnection,
+    ProvisioningEdge,
     TagDelta,
 )
 
@@ -40,10 +40,10 @@ class EdgeWork(BaseModel):
     operation: PlannedOperation | None = None
 
 
-class ConnectionWork(BaseModel):
+class EdgeBatchWork(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    states: list[ConnectionState] = Field(default_factory=list)
+    states: list[EdgeState] = Field(default_factory=list)
     edges: dict[str, EdgeWork] = Field(default_factory=dict)
 
     @property
@@ -116,66 +116,66 @@ def resolve_port(scope: ScopeData, candidates: list[PortSelector], *, key: str) 
     raise ProvisioningTargetError(f"Port '{key}' has no match in '{scope.module_id or scope.device_id}'.")
 
 
-def resolve_connections(
-    connections: list[ProvisioningConnection],
+def resolve_edges(
+    edges: list[ProvisioningEdge],
     scope: ScopeData,
     peers: dict[int, ScopeData | None],
     bindings: list[PortBinding],
-) -> ConnectionWork:
+) -> EdgeBatchWork:
     """Resolve concrete endpoints; an absent peer stays deferred until a new plan."""
     by_key = {binding.key: binding for binding in bindings}
-    states: list[ConnectionState] = []
-    edges: dict[str, EdgeWork] = {}
-    for index, connection in enumerate(connections):
-        if connection.peer.target.device_id == scope.device_id:
-            raise ProvisioningTargetError("Connections must target another device; internal topology is driver-owned.")
-        if isinstance(connection.local, str):
-            if connection.local not in by_key:
-                raise ProvisioningValidationError(f"Unknown local port mapping '{connection.local}'.")
-            local = by_key[connection.local]
+    states: list[EdgeState] = []
+    directed_edges: dict[str, EdgeWork] = {}
+    for index, edge in enumerate(edges):
+        if edge.peer.target.device_id == scope.device_id:
+            raise ProvisioningTargetError("Edges must target another device; internal topology is driver-owned.")
+        if isinstance(edge.local, str):
+            if edge.local not in by_key:
+                raise ProvisioningValidationError(f"Unknown local port mapping '{edge.local}'.")
+            local = by_key[edge.local]
         else:
-            local = resolve_port(scope, [connection.local], key=f"connections.{index}.local")
+            local = resolve_port(scope, [edge.local], key=f"edges.{index}.local")
         peer_scope = peers[index]
         if peer_scope is None or not peer_scope.ports:
             states.append(
-                ConnectionState(
+                EdgeState(
                     index=index,
-                    connection=connection,
+                    edge=edge,
                     local=local,
                     status="deferred",
                     reason="Peer device, module or ports are not discovered in topology; create a new plan when available.",
                 )
             )
             continue
-        peer = resolve_port(peer_scope, [connection.peer.port], key=f"connections.{index}.peer")
-        pairs = _directed_pairs(local, peer, connection.direction)
+        peer = resolve_port(peer_scope, [edge.peer.port], key=f"edges.{index}.peer")
+        pairs = _directed_pairs(local, peer, edge.direction)
         edge_ids: list[str] = []
         for from_vertex, to_vertex in pairs:
             edge_id = f"{from_vertex}::{to_vertex}"
             edge_ids.append(edge_id)
-            fields = connection.fields
-            if edge_id in edges:
-                managed = edges[edge_id].fields.managed()
+            fields = edge.fields
+            if edge_id in directed_edges:
+                managed = directed_edges[edge_id].fields.managed()
                 for name, value in fields.managed().items():
                     if name in managed and managed[name] != value:
                         raise ProvisioningValidationError(f"Conflicting '{name}' requirements for edge '{edge_id}'.")
                     managed[name] = value
                 fields = EdgePatch.model_validate(managed)
-            edges[edge_id] = EdgeWork(from_vertex=from_vertex, to_vertex=to_vertex, fields=fields)
+            directed_edges[edge_id] = EdgeWork(from_vertex=from_vertex, to_vertex=to_vertex, fields=fields)
         states.append(
-            ConnectionState(
+            EdgeState(
                 index=index,
-                connection=connection,
+                edge=edge,
                 local=local,
                 peer=peer,
                 edge_ids=edge_ids,
                 status="planned",
             )
         )
-    return ConnectionWork(states=states, edges=edges)
+    return EdgeBatchWork(states=states, edges=directed_edges)
 
 
-def compare_edges(work: ConnectionWork, current: dict[str, InspectApiEdgeForm]) -> ConnectionWork:
+def compare_edges(work: EdgeBatchWork, current: dict[str, InspectApiEdgeForm]) -> EdgeBatchWork:
     """Compare only managed fields while keeping full baselines for conflict checks."""
     edges: dict[str, EdgeWork] = {}
     for edge_id, edge in work.edges.items():
@@ -232,7 +232,7 @@ def compare_edges(work: ConnectionWork, current: dict[str, InspectApiEdgeForm]) 
         )
         for state in work.states
     ]
-    return ConnectionWork(states=states, edges=edges)
+    return EdgeBatchWork(states=states, edges=edges)
 
 
 def edge_value(form: InspectApiEdgeForm, path: str) -> Any:

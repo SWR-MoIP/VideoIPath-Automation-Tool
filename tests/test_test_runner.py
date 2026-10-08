@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize(
     ("selection", "expected"),
     [
-        ([], {"test_provision", "test_connection", "test_other"}),
-        (["tests/e2e/provisioning"], {"test_provision", "test_connection"}),
-        (["tests/e2e/provisioning/test_scenario.py"], {"test_provision", "test_connection"}),
+        ([], {"test_provision", "test_edge", "test_other"}),
+        (["tests/e2e/provisioning"], {"test_provision", "test_edge"}),
+        (["tests/e2e/provisioning/test_scenario.py"], {"test_provision", "test_edge"}),
         (["tests/e2e/provisioning/test_scenario.py::test_provision"], {"test_provision"}),
-        (["-k", "connection"], {"test_connection"}),
+        (["-k", "edge"], {"test_edge"}),
     ],
     ids=["default", "directory", "file", "node", "options-only"],
 )
@@ -31,7 +31,7 @@ def test_e2e_entry_point_selects_only_requested_tests(tmp_path: Path, selection:
     scenarios.mkdir(parents=True)
     prefix = "import pytest\npytestmark = pytest.mark.e2e\n"
     (scenarios / "test_scenario.py").write_text(
-        prefix + "def test_provision(): pass\ndef test_connection(): pass\n", encoding="utf-8"
+        prefix + "def test_provision(): pass\ndef test_edge(): pass\n", encoding="utf-8"
     )
     (scenarios.parent / "test_other.py").write_text(prefix + "def test_other(): pass\n", encoding="utf-8")
     (tmp_path / "tests" / "test_unit.py").write_text("def test_unit(): pass\n", encoding="utf-8")

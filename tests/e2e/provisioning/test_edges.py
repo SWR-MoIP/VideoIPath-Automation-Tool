@@ -12,7 +12,7 @@ from videoipath_automation_tool.provisioning import (
     EdgePatch,
     PeerEndpoint,
     PortSelector,
-    ProvisioningConnection,
+    ProvisioningEdge,
 )
 
 from ..helpers import edges_between
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.e2e
 
 
-def test_directed_connections_and_managed_updates(live: LiveProvisioning) -> None:
+def test_directed_edges_and_managed_updates(live: LiveProvisioning) -> None:
     local = live.onboard("LINK-A")
     peer = live.onboard("LINK-B")
     output, input_port = _ports(live, local)
@@ -35,8 +35,8 @@ def test_directed_connections_and_managed_updates(live: LiveProvisioning) -> Non
     blueprint = Blueprint.from_dict(document)
     local = local.model_copy(
         update={
-            "connections": [
-                ProvisioningConnection(
+            "edges": [
+                ProvisioningEdge(
                     local="send",
                     peer=PeerEndpoint(
                         target=DeviceTarget(device_id=peer.inventory_id), port=PortSelector(port_id=peer_input.id)
@@ -44,7 +44,7 @@ def test_directed_connections_and_managed_updates(live: LiveProvisioning) -> Non
                     direction="outgoing",
                     fields=EdgePatch(label=f"{local.label}-out", weight=7, capacity=1000, tags=[live.tag]),
                 ),
-                ProvisioningConnection(
+                ProvisioningEdge(
                     local=PortSelector(port_id=input_port.id),
                     peer=PeerEndpoint(
                         target=DeviceTarget(device_id=peer.inventory_id), port=PortSelector(port_id=peer_output.id)
@@ -59,15 +59,15 @@ def test_directed_connections_and_managed_updates(live: LiveProvisioning) -> Non
         plan = live.plan(local, blueprint=blueprint, scope="topology")
         assert plan.fully_resolved
         assert plan.port_bindings[0].port_id == output.id
-        assert [c.status for c in plan.connections] == ["planned", "planned"]
+        assert [c.status for c in plan.edges] == ["planned", "planned"]
         assert plan.apply(dry_run=True).status == "planned"
         assert_no_writes(writes)
     live.app.inspect.refresh()
     assert edges_between(live.app, local.inventory_id, peer.inventory_id) == []
     result = plan.apply()
     assert_confirmed(result)
-    assert [c.status for c in result.connections] == ["completed", "completed"]
-    edge_ids = {edge_id for c in result.connections for edge_id in c.edge_ids}
+    assert [c.status for c in result.edges] == ["completed", "completed"]
+    edge_ids = {edge_id for c in result.edges for edge_id in c.edge_ids}
     live.app.inspect.refresh()
     edges = edges_between(live.app, local.inventory_id, peer.inventory_id)
     assert {e.id for e in edges} == edge_ids
@@ -75,7 +75,7 @@ def test_directed_connections_and_managed_updates(live: LiveProvisioning) -> Non
         (output.id, peer_input.id),
         (peer_output.id, input_port.id),
     }
-    outbound_id = result.connections[0].edge_ids[0]
+    outbound_id = result.edges[0].edge_ids[0]
     outbound = next(e for e in edges if e.id == outbound_id)
     assert (outbound.label, outbound.weight, outbound.capacity) == (f"{local.label}-out", 7, 1000)
     assert live.tag in outbound.tags
@@ -88,12 +88,12 @@ def test_directed_connections_and_managed_updates(live: LiveProvisioning) -> Non
     with live.app.inspect.transaction() as tx:
         tx.update_edge(outbound_id, description="E2E preserve-edge-description")
         tx.commit()
-    unchanged_id = result.connections[1].edge_ids[0]
+    unchanged_id = result.edges[1].edge_ids[0]
     live.app.inspect.refresh()
     unchanged = next(e for e in live.app.inspect.edges if e.id == unchanged_id)
     unchanged_before = (unchanged.label, unchanged.weight, unchanged.tags)
-    connection = local.connections[0].model_copy(update={"fields": EdgePatch(weight=0, active=False)})
-    updated = local.model_copy(update={"connections": [connection]})
+    edge = local.edges[0].model_copy(update={"fields": EdgePatch(weight=0, active=False)})
+    updated = local.model_copy(update={"edges": [edge]})
     assert_confirmed(live.plan(updated, blueprint=blueprint, scope="topology").apply())
     live.app.inspect.refresh()
     edges = {e.id: e for e in edges_between(live.app, local.inventory_id, peer.inventory_id)}
@@ -110,8 +110,8 @@ def test_missing_peer_requires_a_new_plan(live: LiveProvisioning) -> None:
     output, _ = _ports(live, local)
     local = local.model_copy(
         update={
-            "connections": [
-                ProvisioningConnection(
+            "edges": [
+                ProvisioningEdge(
                     local=PortSelector(port_id=output.id),
                     peer=PeerEndpoint(
                         target=DeviceTarget(device_id=peer.inventory_id),
@@ -124,18 +124,18 @@ def test_missing_peer_requires_a_new_plan(live: LiveProvisioning) -> None:
         }
     )
     plan = live.plan(local, scope="topology")
-    assert not plan.fully_resolved and plan.connections[0].status == "deferred"
+    assert not plan.fully_resolved and plan.edges[0].status == "deferred"
     with observe_writes(live.app) as writes:
         preview = plan.apply(dry_run=True)
         assert preview.status == "planned" and preview.replan_required
         assert_no_writes(writes)
 
-    # Availability after planning must not silently change the reviewed connection plan.
+    # Availability after planning must not silently change the reviewed edge plan.
     assert_confirmed(live.plan(peer, scope="topology").apply())
     with observe_writes(live.app) as writes:
         pending = plan.apply()
         assert pending.status == "partial" and pending.replan_required
-        assert pending.connections[0].status == "deferred"
+        assert pending.edges[0].status == "deferred"
         assert_no_writes(writes)
     live.app.inspect.refresh()
     assert edges_between(live.app, local.inventory_id, peer.inventory_id) == []
@@ -144,9 +144,9 @@ def test_missing_peer_requires_a_new_plan(live: LiveProvisioning) -> None:
     assert not resolved.replan_required
     live.app.inspect.refresh()
     assert {e.id for e in edges_between(live.app, local.inventory_id, peer.inventory_id)} == set(
-        resolved.connections[0].edge_ids
+        resolved.edges[0].edge_ids
     )
-    assert len(resolved.connections[0].edge_ids) == 1
+    assert len(resolved.edges[0].edge_ids) == 1
 
 
 def _ports(live: LiveProvisioning, device: ProvisioningDevice) -> tuple[InspectPort, InspectPort]:

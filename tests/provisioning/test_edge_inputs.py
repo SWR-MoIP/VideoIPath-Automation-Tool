@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from tests.provisioning.conftest import FakeInspectServer, FakeInventory
-from tests.provisioning.test_connections import _connection, _device, _seed
+from tests.provisioning.test_edges import _device, _edge, _seed
 from videoipath_automation_tool.provisioning import Blueprint, ProvisioningEngine, ProvisioningValidationError
 from videoipath_automation_tool.provisioning.resolution import resolve_blueprint
 
@@ -49,10 +49,10 @@ def test_typed_mapping_input_positions(
     inputs = {"ports": values[position]}
     resolved = resolve_blueprint(blueprint, inputs=inputs)
     assert any("input:ports" in source for source in resolved.topology.provenance.values())
-    plan = engine.plan(_device(_connection()), blueprint, inputs=inputs)
+    plan = engine.plan(_device(_edge()), blueprint, inputs=inputs)
     inputs["ports"] = "changed"
     result = plan.apply()
-    assert result.connections[0].local.port_id == "device1.dev.0.P1"
+    assert result.edges[0].local.port_id == "device1.dev.0.P1"
     assert result.ok and len(server.edge_forms) == 2
 
 
@@ -132,7 +132,7 @@ defaults:
 
     with pytest.raises(ProvisioningValidationError, match="exactly one") as error:
         ProvisioningEngine(NoIO()).plan(
-            _device(_connection()), blueprint, inputs={"selector": {"port_id": "port-a", "factory_label": "P1"}}
+            _device(_edge()), blueprint, inputs={"selector": {"port_id": "port-a", "factory_label": "P1"}}
         )
     issue = error.value.issues[0]
     assert issue.source == "device.yml" and issue.line == 10

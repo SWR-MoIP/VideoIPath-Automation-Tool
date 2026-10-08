@@ -50,7 +50,7 @@ offline/CI test run.
 
 The scenarios cover YAML inputs and variants, preview and dry run, onboarding,
 Inventory/topology scope isolation, managed-field preservation, endpoint naming,
-module-local tags, directed connections, deferred peers, rediscovery and sync
+module-local tags, directed edges, deferred peers, rediscovery and sync
 policies, stale plans, and recovery from an Inventory readiness timeout. Each
 scenario owns its devices and checks persisted values through fresh server reads.
 Mutation spies forward calls to the real SDK and verify that dry runs and
@@ -63,7 +63,7 @@ resources, including resources from other E2E scenarios, before creating new
 ones. Run live sessions serially against an instance. Discovery polling is bounded;
 transport errors and unexpected failures are not retried.
 
-External connection behavior is recorded in [ADR-009](./decisions/009-external-connections.md).
+External edge behavior is recorded in [ADR-009](./decisions/009-external-edges.md).
 
 ## Decision log
 

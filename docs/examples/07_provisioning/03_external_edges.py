@@ -1,6 +1,6 @@
-"""Preview connections between existing devices using a reusable port mapping.
+"""Preview edges between existing devices using a reusable port mapping.
 
-Connection facts and edge settings belong to the device instance. The blueprint
+Edge facts and edge settings belong to the device instance. The blueprint
 maps reusable local port names. Set VideoIPath credentials through the normal
 VIPAT_* environment variables and replace the synthetic device ids/port labels.
 Only planning runs by default; uncomment plan.apply() to execute the changes.
@@ -16,8 +16,8 @@ from videoipath_automation_tool.provisioning import (
     EdgePatch,
     PeerEndpoint,
     PortSelector,
-    ProvisioningConnection,
     ProvisioningDevice,
+    ProvisioningEdge,
     ProvisioningEngine,
 )
 
@@ -28,8 +28,8 @@ def main() -> None:
         key="device-a",
         label="device-a",
         inventory_id="device1",
-        connections=[
-            ProvisioningConnection(
+        edges=[
+            ProvisioningEdge(
                 local="uplink",
                 peer=PeerEndpoint(
                     target=DeviceTarget(device_id="device2"),
@@ -40,13 +40,13 @@ def main() -> None:
             ),
         ],
     )
-    blueprint = Path(__file__).with_name("external-connections.yml")
+    blueprint = Path(__file__).with_name("external-edges.yml")
     plan = engine.plan(device, blueprint, scope="topology")
     print(plan.summary())
 
     # result = plan.apply()
-    # for connection in result.connections:
-    #     print(connection.index, connection.status, connection.edge_ids, connection.reason)
+    # for edge in result.edges:
+    #     print(edge.index, edge.status, edge.edge_ids, edge.reason)
     # A missing peer gives status="partial", replan_required=True. Plan again
     # when it is available. Existing unrelated edges are never removed.
 

@@ -17,7 +17,7 @@ caller can apply that description to many real devices.
 
 The caller supplies the instance facts (`ProvisioningDevice`): source-system id,
 label, addresses, credentials, an optional Inventory id, and an optional
-Inspect target, and concrete external connections. The blueprint supplies the type: driver settings, topology
+Inspect target, and concrete external edges. The blueprint supplies the type: driver settings, topology
 appearance, vertex interpretation, port mapping, and naming. The engine does not know NetBox
 or any other source system. Translation into `ProvisioningDevice` stays outside
 the package.
@@ -75,7 +75,7 @@ keys, or custom tags. Limits are 1 MiB, 32 levels, and 100,000 nodes.
 | `naming.py` | `Text` / `Field` / `Join` expressions and layering. |
 | `processors/` | `VertexProcessor`, detached records, per-engine `ProcessorRegistry`, Matrox built-in. |
 | `inventory.py` | `InventoryGateway`: one Inventory record, managed-field diff, create/update. |
-| `connections.py` | Pure generic port resolution, directional edge selection and managed-field diffs. |
+| `edges.py` | Pure generic port resolution, directional edge selection and managed-field diffs. |
 | `inspect.py` | `InspectGateway`: fresh scoped read, processor run, topology commit, module tags. |
 | `engine.py` | Configuration, `plan()`, captured inputs, phased `apply()`. |
 | `errors.py` | `ProvisioningError` hierarchy. Validation issues carry a path, not raw values. |

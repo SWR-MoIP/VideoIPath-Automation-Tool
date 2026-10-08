@@ -56,7 +56,7 @@ Unknown write outcomes are never automatically retried.
 Planning converts local `TopologyNotReadyError` into deferred topology work,
 including when an earlier rollout already added the device. Planning and dry
 runs never sleep, and dry runs report deferred readiness without rollout actions.
-Missing peer connections continue to require a new plan.
+Missing peer edges continue to require a new plan.
 
 ## Consequences
 

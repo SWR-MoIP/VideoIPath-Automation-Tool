@@ -28,11 +28,11 @@ from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiSingleVertexInfo,
 )
 from videoipath_automation_tool.apps.inspect.model.tags import module_resource_id
-from videoipath_automation_tool.provisioning.connections import (
-    ConnectionWork,
+from videoipath_automation_tool.provisioning.edges import (
+    EdgeBatchWork,
     compare_edges,
     edge_value,
-    resolve_connections,
+    resolve_edges,
     resolve_port,
     same_edge_value,
 )
@@ -57,7 +57,7 @@ from videoipath_automation_tool.provisioning.models import (
     PortBinding,
     PortSelector,
     ProcessorResult,
-    ProvisioningConnection,
+    ProvisioningEdge,
     TagDelta,
     TopologyTarget,
 )
@@ -130,14 +130,14 @@ class TopologyWork(BaseModel):
     expected_module_tags: list[str] | None = None
     bindings: list[InterfaceBinding] = Field(default_factory=list)
     port_bindings: list[PortBinding] = Field(default_factory=list)
-    connections: ConnectionWork = Field(default_factory=ConnectionWork)
+    edge_work: EdgeBatchWork = Field(default_factory=EdgeBatchWork)
     diagnostics: list[Diagnostic] = Field(default_factory=list)
     topology_operations: list[PlannedOperation] = Field(default_factory=list)
     module_operations: list[PlannedOperation] = Field(default_factory=list)
 
     @property
     def has_topology_writes(self) -> bool:
-        return bool(self.device_intents or self.vertex_intents or self.connections.operations)
+        return bool(self.device_intents or self.vertex_intents or self.edge_work.operations)
 
     @property
     def has_module_writes(self) -> bool:
@@ -149,7 +149,7 @@ class TopologyWork(BaseModel):
             keys.add(("device", self.device_id))
         if self.has_module_writes and self.module_id is not None:
             keys.add(("module", self.module_id))
-        keys.update(self.connections.touched_keys())
+        keys.update(self.edge_work.touched_keys())
         return keys
 
 
@@ -300,20 +300,20 @@ class InspectGateway:
         scope = self.read_scope(target)
         return scope if scope.ports else None
 
-    def read_connection_peers(self, connections: list[ProvisioningConnection]) -> dict[int, ScopeData | None]:
+    def read_edge_peers(self, edges: list[ProvisioningEdge]) -> dict[int, ScopeData | None]:
         cache: dict[tuple[str, str | None], ScopeData | None] = {}
         peers: dict[int, ScopeData | None] = {}
-        for index, connection in enumerate(connections):
-            target = connection.peer.target
+        for index, edge in enumerate(edges):
+            target = edge.peer.target
             key = (target.device_id, target.module_id if isinstance(target, ModuleTarget) else None)
             if key not in cache:
                 cache[key] = self.read_peer_scope(target)
             peers[index] = cache[key]
             if peers[index] is not None:
-                resolve_port(peers[index], [connection.peer.port], key=f"connections.{index}.peer")
+                resolve_port(peers[index], [edge.peer.port], key=f"edges.{index}.peer")
         return peers
 
-    def check_peers(self, connections: list[ProvisioningConnection], peers: dict[int, ScopeData | None]) -> None:
+    def check_peers(self, edges: list[ProvisioningEdge], peers: dict[int, ScopeData | None]) -> None:
         checked: set[tuple[str, str | None]] = set()
         for index, baseline in peers.items():
             if baseline is None:
@@ -321,7 +321,7 @@ class InspectGateway:
             key = (baseline.device_id, baseline.module_id)
             if key in checked:
                 continue
-            current = self.read_peer_scope(connections[index].peer.target)
+            current = self.read_peer_scope(edges[index].peer.target)
             if current is None or current.fingerprint != baseline.fingerprint:
                 raise ProvisioningConflictError(
                     f"Peer topology '{baseline.module_id or baseline.device_id}' changed; replan."
@@ -333,21 +333,19 @@ class InspectGateway:
             return {}
         return {key: item.edge for key, item in self._api.lookup_edges(edge_ids).data.items()}
 
-    def plan_connections(
+    def plan_edges(
         self,
         work: TopologyWork,
         scope: ScopeData,
-        connections: list[ProvisioningConnection],
+        edges: list[ProvisioningEdge],
         peers: dict[int, ScopeData | None],
         module_position: str | None,
     ) -> TopologyWork:
         resolved_inputs = [
-            connection.model_copy(
-                update={"local": _port_selector(connection.local, module_position, f"connections.{index}.local")}
-            )
-            if isinstance(connection.local, PortSelector)
-            else connection
-            for index, connection in enumerate(connections)
+            edge.model_copy(update={"local": _port_selector(edge.local, module_position, f"edges.{index}.local")})
+            if isinstance(edge.local, PortSelector)
+            else edge
+            for index, edge in enumerate(edges)
         ]
         legacy = [
             PortBinding(
@@ -357,22 +355,22 @@ class InspectGateway:
             )
             for binding in work.bindings
         ]
-        pending = resolve_connections(resolved_inputs, scope, peers, [*legacy, *work.port_bindings])
+        pending = resolve_edges(resolved_inputs, scope, peers, [*legacy, *work.port_bindings])
         compared = compare_edges(pending, self.read_edges(list(pending.edges)))
         return work.model_copy(
             update={
-                "connections": compared,
+                "edge_work": compared,
                 "topology_operations": [*work.topology_operations, *compared.operations],
             }
         )
 
-    def check_edges(self, work: ConnectionWork) -> None:
+    def check_edges(self, work: EdgeBatchWork) -> None:
         current = self.read_edges(list(work.edges))
         for edge_id, edge in work.edges.items():
             if current.get(edge_id) != edge.baseline:
                 raise ProvisioningConflictError(f"Edge '{edge_id}' changed since planning; create a new plan.")
 
-    def verify_edges(self, work: ConnectionWork) -> list[str]:
+    def verify_edges(self, work: EdgeBatchWork) -> list[str]:
         written = {key: edge for key, edge in work.edges.items() if edge.operation is not None}
         current = self.read_edges(list(written))
         return [
@@ -400,14 +398,14 @@ class InspectGateway:
                 tx.update_device(work.device_id, intents=dict(work.device_intents))
             for vertex_id, intents in sorted(work.vertex_intents.items()):
                 tx.update_vertex(vertex_id, intents=dict(intents))
-            for edge_id, edge in work.connections.edges.items():
+            for edge_id, edge in work.edge_work.edges.items():
                 if edge.operation is None:
                     continue
                 if edge.baseline is None:
                     tx.connect(edge.from_vertex, edge.to_vertex, bidirectional=False, **edge.intents)
                 else:
                     tx.update_edge(edge_id, intents=dict(edge.intents))
-            self.check_edges(work.connections)
+            self.check_edges(work.edge_work)
             return tx.commit()
 
     def assign_tag(self, tag_id: str, module_id: str) -> None:

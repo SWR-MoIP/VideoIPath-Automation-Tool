@@ -16,4 +16,4 @@ than rewriting history.
 | [006](./006-variant-merge.md) | Variants are a fixed patch over `default` | Superseded by ADR-007 |
 | [007](./007-typed-inputs.md) | Typed inputs and ordered overlays | Accepted |
 | [008](./008-staged-readiness.md) | Independent Inventory and topology readiness deadlines | Accepted |
-| [009](./009-external-connections.md) | Concrete external connections belong to the device instance | Accepted |
+| [009](./009-external-edges.md) | Concrete external edges belong to the device instance | Accepted |

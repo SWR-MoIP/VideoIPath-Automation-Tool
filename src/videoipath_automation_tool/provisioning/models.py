@@ -183,7 +183,7 @@ class PortSelector(_StrictModel):
 
 
 class EdgePatch(_PatchModel):
-    """Managed fields of a concrete connection, applied to each requested direction."""
+    """Managed fields of a concrete edge, applied to each requested direction."""
 
     label: str | None = None
     description: str | None = None
@@ -457,8 +457,11 @@ class PeerEndpoint(_StrictModel):
     port: PortSelector
 
 
-class ProvisioningConnection(_StrictModel):
-    """Concrete external connection; directions are relative to the local device."""
+class ProvisioningEdge(_StrictModel):
+    """Concrete external edge declaration; directions are relative to the local device.
+
+    One declaration can resolve to one or both directed VideoIPath edges.
+    """
 
     local: NonEmptyStr | PortSelector
     peer: PeerEndpoint
@@ -476,7 +479,7 @@ class ProvisioningDevice(_StrictModel):
     set and also replaces per-address credentials: a plain string carries none, so an existing
     credential for that address is cleared unless it is repeated as an ``AlternativeAddress``.
     ``attributes`` are caller-owned facts available to naming (scalar leaves) and processors.
-    ``connections`` declares concrete external connections and their managed edge fields.
+    ``edges`` declares concrete external edges and their managed edge fields.
     Missing peer discovery is reported as deferred; it never creates the peer device.
     """
 
@@ -491,7 +494,7 @@ class ProvisioningDevice(_StrictModel):
     module_position: NonEmptyStr | None = None
     inventory_overrides: InventorySettings | None = None
     attributes: dict[str, JsonValue] = Field(default_factory=dict)
-    connections: list[ProvisioningConnection] = Field(default_factory=list)
+    edges: list[ProvisioningEdge] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _unique_addresses(self) -> ProvisioningDevice:
@@ -636,11 +639,11 @@ class PortBinding(InterfaceBinding):
     module_id: str | None = None
 
 
-class ConnectionState(_StrictModel):
-    """One input connection's resolution and execution state, including unresolved work."""
+class EdgeState(_StrictModel):
+    """One input edge's resolution and execution state, including unresolved work."""
 
     index: int
-    connection: ProvisioningConnection
+    edge: ProvisioningEdge
     local: PortBinding | None = None
     peer: PortBinding | None = None
     edge_ids: list[str] = Field(default_factory=list)
@@ -663,7 +666,7 @@ class ApplyResult(BaseModel):
     run and ``no_change`` otherwise, and write phases report ``planned`` / ``deferred``.
 
     ``replan_required`` means a topology-affecting Inventory update finished and apply stopped,
-    or some connections still have undiscovered peers.
+    or some edges still have undiscovered peers.
     ``status`` is ``partial`` (``planned`` on a dry run) and the call does not raise. Plan again
     after the driver has rediscovered the device or the peer topology is available.
     """
@@ -671,7 +674,7 @@ class ApplyResult(BaseModel):
     status: Literal["succeeded", "no_change", "failed", "partial", "unknown", "planned"] = "no_change"
     dry_run: bool = False
     replan_required: bool = False
-    """A new plan is needed after Inventory rediscovery or to resolve open peer connections."""
+    """A new plan is needed after Inventory rediscovery or to resolve open peer edges."""
     source_key: str
     inventory_id: str | None = None
     topology_device_id: str | None = None
@@ -679,7 +682,7 @@ class ApplyResult(BaseModel):
     phases: list[PhaseResult] = Field(default_factory=list)
     interface_bindings: list[InterfaceBinding] = Field(default_factory=list)
     port_bindings: list[PortBinding] = Field(default_factory=list)
-    connections: list[ConnectionState] = Field(default_factory=list)
+    edges: list[EdgeState] = Field(default_factory=list)
     materialized: bool = False
     diagnostics: list[Diagnostic] = Field(default_factory=list)
     verification: Literal["confirmed", "unconfirmed", "not_applicable"] = "not_applicable"
@@ -791,13 +794,13 @@ __all__ = [
     "Blueprint",
     "BlueprintConfiguration",
     "CatalogId",
-    "ConnectionState",
     "Coordinates",
     "Credentials",
     "DevicePatch",
     "DeviceTarget",
     "Diagnostic",
     "EdgePatch",
+    "EdgeState",
     "EndpointIdentity",
     "FieldChange",
     "GenericSettings",
@@ -813,8 +816,8 @@ __all__ = [
     "PortBinding",
     "PortSelector",
     "ProcessorResult",
-    "ProvisioningConnection",
     "ProvisioningDevice",
+    "ProvisioningEdge",
     "Scope",
     "SnmpSelection",
     "TagDelta",

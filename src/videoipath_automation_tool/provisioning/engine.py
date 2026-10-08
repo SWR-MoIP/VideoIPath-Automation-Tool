@@ -65,9 +65,9 @@ from videoipath_automation_tool.provisioning.models import (
     ApplyOptions,
     ApplyResult,
     Blueprint,
-    ConnectionState,
     DeviceTarget,
     Diagnostic,
+    EdgeState,
     InterfaceBinding,
     ModuleTarget,
     PhaseName,
@@ -119,7 +119,7 @@ class ProvisioningPlan(BaseModel):
     topology membership, and pending synchronization are materialized during ``apply()`` from the
     captured configuration. A topology-affecting Inventory update is not: ``apply()`` stops after
     Inventory and the result asks for a new plan. Missing peers stay deferred until a new plan;
-    the remaining local configuration and resolvable connections can still be applied.
+    the remaining local configuration and resolvable edges can still be applied.
     """
 
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
@@ -136,7 +136,7 @@ class ProvisioningPlan(BaseModel):
     phases: list[PlannedPhase]
     interface_bindings: list[InterfaceBinding]
     port_bindings: list[PortBinding] = Field(default_factory=list)
-    connections: list[ConnectionState] = Field(default_factory=list)
+    edges: list[EdgeState] = Field(default_factory=list)
     diagnostics: list[Diagnostic]
     skipped_sections: dict[str, str]
     fully_resolved: bool
@@ -184,19 +184,13 @@ class ProvisioningPlan(BaseModel):
             lines.append(f"interface {binding.key} -> port {binding.port_id} ({binding.candidate})")
         for binding in self.port_bindings:
             lines.append(f"port {binding.key} -> {binding.port_id} ({binding.candidate})")
-        for connection in self.connections:
-            lines.append(
-                f"connection {connection.index} [{connection.status}]: "
-                + (connection.reason or ", ".join(connection.edge_ids))
-            )
+        for edge in self.edges:
+            lines.append(f"edge {edge.index} [{edge.status}]: " + (edge.reason or ", ".join(edge.edge_ids)))
         for diagnostic in self.diagnostics:
             lines.append(f"[{diagnostic.level}] {diagnostic.code}: {diagnostic.message}")
         if not self.fully_resolved:
-            if (
-                any(connection.status == "deferred" for connection in self.connections)
-                and not self._captured.topology_deferred
-            ):
-                lines.append("Connections remain open: create a new plan when the peer topology is available.")
+            if any(edge.status == "deferred" for edge in self.edges) and not self._captured.topology_deferred:
+                lines.append("Edges remain open: create a new plan when the peer topology is available.")
             elif self._captured.topology_requires_replan:
                 lines.append(
                     "Not fully resolved: apply stops after Inventory; replan once the driver has rediscovered "
@@ -348,17 +342,15 @@ class ProvisioningEngine:
             registry=registry,
             overrides=device.inventory_overrides,
         )
-        if device.connections and scope != "inventory":
+        if device.edges and scope != "inventory":
             if resolved.topology is None:
-                raise ProvisioningValidationError(
-                    "Connections require a topology section in the selected configuration."
-                )
+                raise ProvisioningValidationError("Edges require a topology section in the selected configuration.")
             keys = set(resolved.topology.config.ip_vertex_mapping or {}) | set(
                 resolved.topology.config.port_mapping or {}
             )
-            for connection in device.connections:
-                if isinstance(connection.local, str) and connection.local not in keys:
-                    raise ProvisioningValidationError(f"Unknown local port mapping '{connection.local}'.")
+            for edge in device.edges:
+                if isinstance(edge.local, str) and edge.local not in keys:
+                    raise ProvisioningValidationError(f"Unknown local port mapping '{edge.local}'.")
         captured = _Captured(
             device=device,
             resolved=resolved,
@@ -433,7 +425,7 @@ class _Captured(BaseModel):
     topology_work: TopologyWork | None = None
     topology_deferred: bool = False
     topology_requires_replan: bool = False
-    connection_peers: dict[int, ScopeData | None] = Field(default_factory=dict)
+    edge_peers: dict[int, ScopeData | None] = Field(default_factory=dict)
 
     @property
     def source(self) -> SourceFacts:
@@ -464,13 +456,9 @@ class _Planner:
         phases: list[PlannedPhase] = []
         diagnostics: list[Diagnostic] = []
 
-        if resolved.topology is not None and captured.device.connections:
+        if resolved.topology is not None and captured.device.edges:
             captured = captured.model_copy(
-                update={
-                    "connection_peers": InspectGateway(self._app.inspect).read_connection_peers(
-                        captured.device.connections
-                    )
-                }
+                update={"edge_peers": InspectGateway(self._app.inspect).read_edge_peers(captured.device.edges)}
             )
             self._captured = captured
 
@@ -501,16 +489,16 @@ class _Planner:
             phases=phases,
             interface_bindings=list(topology_work.bindings) if topology_work else [],
             port_bindings=list(topology_work.port_bindings) if topology_work else [],
-            connections=[state.model_copy(deep=True) for state in topology_work.connections.states]
+            edges=[state.model_copy(deep=True) for state in topology_work.edge_work.states]
             if topology_work
             else [
-                ConnectionState(index=index, connection=connection, status="deferred", reason=deferred_reason)
-                for index, connection in enumerate(captured.device.connections)
+                EdgeState(index=index, edge=edge, status="deferred", reason=deferred_reason)
+                for index, edge in enumerate(captured.device.edges)
                 if resolved.topology is not None
             ],
             diagnostics=diagnostics + (list(topology_work.diagnostics) if topology_work else []),
             skipped_sections=dict(resolved.skipped),
-            fully_resolved=deferred_reason is None and not (topology_work and topology_work.connections.pending),
+            fully_resolved=deferred_reason is None and not (topology_work and topology_work.edge_work.pending),
         )
         plan._captured = captured
         plan._executor = self._executor
@@ -609,10 +597,8 @@ class _Planner:
                 name="topology",
                 status="planned"
                 if work.has_topology_writes
-                else ("deferred" if work.connections.pending else "no_change"),
-                reason="Peer connections remain open; create a new plan when available."
-                if work.connections.pending
-                else None,
+                else ("deferred" if work.edge_work.pending else "no_change"),
+                reason="Peer edges remain open; create a new plan when available." if work.edge_work.pending else None,
                 operations=work.topology_operations,
             )
         )
@@ -699,9 +685,7 @@ def _materialize_topology(
         inventory=own,
         allow_label_collisions=captured.options.naming_collisions == "allow",
     )
-    return gateway.plan_connections(
-        work, scope, captured.device.connections, captured.connection_peers, captured.device.module_position
-    )
+    return gateway.plan_edges(work, scope, captured.device.edges, captured.edge_peers, captured.device.module_position)
 
 
 # --- Internal: execution ---
@@ -736,11 +720,11 @@ class _Execution:
         self._dry_run = dry_run
         self._would_write = False
         self._result = ApplyResult(source_key=plan.source_key, inventory_id=plan.inventory_id, dry_run=dry_run)
-        self._result.connections = [
+        self._result.edges = [
             state.model_copy(deep=True, update={"status": "not_run"})
             if state.status == "planned"
             else state.model_copy(deep=True)
-            for state in plan.connections
+            for state in plan.edges
         ]
         self._phases: dict[str, PhaseResult] = {
             phase.name: PhaseResult(
@@ -857,19 +841,19 @@ class _Execution:
         self._enter("topology")
         self._result.interface_bindings = list(work.bindings)
         self._result.port_bindings = list(work.port_bindings)
-        self._result.connections = [
+        self._result.edges = [
             state.model_copy(deep=True, update={"status": "not_run"})
             if state.status == "planned" and not self._dry_run
             else state.model_copy(deep=True)
-            for state in work.connections.states
+            for state in work.edge_work.states
         ]
-        self._result.replan_required = work.connections.pending
-        if work.connections.pending and self._dry_run:
+        self._result.replan_required = work.edge_work.pending
+        if work.edge_work.pending and self._dry_run:
             self._would_write = True
         self._result.diagnostics.extend(work.diagnostics)
 
-        gateway.check_peers(captured.device.connections, captured.connection_peers)
-        gateway.check_edges(work.connections)
+        gateway.check_peers(captured.device.edges, captured.edge_peers)
+        gateway.check_edges(work.edge_work)
 
         overlap = gateway.staged_edit_keys() & work.touched_keys()
         if overlap:
@@ -887,20 +871,20 @@ class _Execution:
             phase.status = "completed"
             phase.operations = list(work.topology_operations)
             self._wrote.append("topology")
-            self._result.connections = [
+            self._result.edges = [
                 state.model_copy(update={"status": "completed"}) if state.status == "not_run" else state
-                for state in self._result.connections
+                for state in self._result.edges
             ]
         else:
-            phase.status = "deferred" if work.connections.pending else "no_change"
-        if work.connections.pending:
-            phase.message = "Peer connections remain open; create a new plan when available."
+            phase.status = "deferred" if work.edge_work.pending else "no_change"
+        if work.edge_work.pending:
+            phase.message = "Peer edges remain open; create a new plan when available."
 
         self._run_module_tags(gateway, work)
         if "topology" in self._wrote or "module_tags" in self._wrote:
             try:
                 self._mismatches.extend(verify_topology(gateway.read_scope(target), work))
-                self._mismatches.extend(gateway.verify_edges(work.connections))
+                self._mismatches.extend(gateway.verify_edges(work.edge_work))
             except Exception as exc:  # noqa: BLE001 - verification never turns an applied write into a failure
                 self._verification_errors.append(f"topology read-back failed: {type(exc).__name__}: {exc}")
             finally:
@@ -1088,11 +1072,11 @@ class _Execution:
         phase.status = "unknown" if self._unknown else "failed"
         phase.message = f"{type(exc).__name__}: {exc}"
         if name == "topology":
-            self._result.connections = [
+            self._result.edges = [
                 state.model_copy(update={"status": "unknown" if self._unknown else "failed", "reason": phase.message})
                 if state.status == "not_run"
                 else state
-                for state in self._result.connections
+                for state in self._result.edges
             ]
         if self._unknown:
             self._result.status = "unknown"

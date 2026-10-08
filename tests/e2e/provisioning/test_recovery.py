@@ -18,7 +18,7 @@ from videoipath_automation_tool.provisioning import (
     ProvisioningApplyError,
     ProvisioningCapabilityError,
     ProvisioningConflictError,
-    ProvisioningConnection,
+    ProvisioningEdge,
 )
 
 from .helpers import (
@@ -122,12 +122,12 @@ def test_stale_device_plan_preserves_external_change(live: LiveProvisioning, sco
     assert description == "E2E external-description"
 
 
-def test_stale_connection_plan_preserves_external_change(live: LiveProvisioning) -> None:
+def test_stale_edge_plan_preserves_external_change(live: LiveProvisioning) -> None:
     local, peer = live.onboard("STALE-LINK-A"), live.onboard("STALE-LINK-B")
     local = local.model_copy(
         update={
-            "connections": [
-                ProvisioningConnection(
+            "edges": [
+                ProvisioningEdge(
                     local=PortSelector(factory_label="Router Out 11.1"),
                     peer=PeerEndpoint(
                         target=DeviceTarget(device_id=peer.inventory_id),
@@ -141,10 +141,8 @@ def test_stale_connection_plan_preserves_external_change(live: LiveProvisioning)
     )
     result = live.plan(local, scope="topology").apply()
     assert_confirmed(result)
-    edge_id = result.connections[0].edge_ids[0]
-    desired = local.model_copy(
-        update={"connections": [local.connections[0].model_copy(update={"fields": EdgePatch(weight=5)})]}
-    )
+    edge_id = result.edges[0].edge_ids[0]
+    desired = local.model_copy(update={"edges": [local.edges[0].model_copy(update={"fields": EdgePatch(weight=5)})]})
     plan = live.plan(desired, scope="topology")
     with live.app.inspect.transaction() as tx:
         tx.update_edge(edge_id, weight=11)

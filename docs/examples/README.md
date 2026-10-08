@@ -107,4 +107,4 @@ declarative device configuration through the SDK.
 - [02_custom_processor_and_naming.py](07_provisioning/02_custom_processor_and_naming.py) — register a
   custom vertex processor and a custom endpoint naming convention; device or module scope.
 
-- [03_external_connections.py](07_provisioning/03_external_connections.py) — preview external edges supplied on a device, using [external-connections.yml](07_provisioning/external-connections.yml) for generic port mapping.
+- [03_external_edges.py](07_provisioning/03_external_edges.py) — preview external edges supplied on a device, using [external-edges.yml](07_provisioning/external-edges.yml) for generic port mapping.
