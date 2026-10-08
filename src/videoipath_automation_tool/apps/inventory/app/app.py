@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterable
 from typing import List, Literal, Optional
 
 from typing_extensions import deprecated
@@ -8,6 +9,7 @@ from videoipath_automation_tool.apps.inventory.app.create_device_from_discovered
     InventoryCreateDeviceFromDiscoveredDeviceMixin,
 )
 from videoipath_automation_tool.apps.inventory.app.get_device import InventoryGetDeviceMixin
+from videoipath_automation_tool.apps.inventory.errors import InventoryWriteNotAppliedError
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
 from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettings, CustomSettingsType, DriverLiteral
 from videoipath_automation_tool.apps.inventory.model.global_snmp_config import SnmpConfiguration
@@ -126,7 +128,9 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         try:
             existing_device = self._inventory_api.get_device(device_id=device.device_id, config_only=True)
         except ValueError as e:
-            raise ValueError(f"Failed to retrieve existing device configuration from Inventory: {e}") from None
+            raise InventoryWriteNotAppliedError(
+                f"Failed to retrieve existing device configuration from Inventory: {e}", operation="update"
+            ) from None
 
         if compare_config:
             comparison = self.diff_device_configuration(reference_device=existing_device, staged_device=device)
@@ -230,6 +234,14 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
             return self._inventory_api.get_device_id_by_user_defined_label(label)
         else:
             raise ValueError(f"Invalid label_search_mode: {label_search_mode}")
+
+    def find_device_ids_by_addresses(self, addresses: Iterable[str]) -> dict[str, list[str]]:
+        """Map each of ``addresses`` to the sorted ids of devices whose management or alternate
+        address matches it (IP literals normalized, other identifiers case-insensitive).
+
+        One server read for all addresses. A response with no item list raises ``ValueError``.
+        """
+        return self._inventory_api.find_device_ids_by_addresses(addresses)
 
     def list_device_ids_by_driver(self, driver: DriverLiteral) -> List[str]:
         """Method to list all device ids by driver id.

@@ -9,7 +9,7 @@ import pytest
 from vipat_cli_scripts.project_env import prepare_e2e_env
 
 _UNIT_ARGS = ["-m", "not e2e", "--ignore=tests/e2e"]
-_E2E_ARGS = ["-m", "e2e", "tests/e2e", "--no-cov"]
+_E2E_ARGS = ["-m", "e2e", "-o", "testpaths=tests/e2e", "--no-cov"]
 
 
 def _run(args: list[str], *, extra: list[str] | None = None) -> int:

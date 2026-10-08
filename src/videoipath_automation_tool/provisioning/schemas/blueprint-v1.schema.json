@@ -1,0 +1,2142 @@
+{
+  "$defs": {
+    "BlueprintConfiguration": {
+      "additionalProperties": false,
+      "description": "A configuration or overlay. Section keys are structural, not input references.",
+      "properties": {
+        "inventory": {
+          "$ref": "#/$defs/InventoryConfigTemplate"
+        },
+        "topology": {
+          "$ref": "#/$defs/TopologyConfigTemplate"
+        }
+      },
+      "title": "BlueprintConfiguration",
+      "type": "object"
+    },
+    "BlueprintNamingTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "device_description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/TextTemplate"
+            },
+            {
+              "$ref": "#/$defs/FieldTemplate"
+            },
+            {
+              "$ref": "#/$defs/JoinTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device Description"
+        },
+        "device_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/TextTemplate"
+            },
+            {
+              "$ref": "#/$defs/FieldTemplate"
+            },
+            {
+              "$ref": "#/$defs/JoinTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device Label"
+        },
+        "endpoint_description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/TextTemplate"
+            },
+            {
+              "$ref": "#/$defs/FieldTemplate"
+            },
+            {
+              "$ref": "#/$defs/JoinTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endpoint Description"
+        },
+        "endpoint_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/TextTemplate"
+            },
+            {
+              "$ref": "#/$defs/FieldTemplate"
+            },
+            {
+              "$ref": "#/$defs/JoinTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endpoint Label"
+        },
+        "inventory_description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/TextTemplate"
+            },
+            {
+              "$ref": "#/$defs/FieldTemplate"
+            },
+            {
+              "$ref": "#/$defs/JoinTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inventory Description"
+        },
+        "inventory_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/TextTemplate"
+            },
+            {
+              "$ref": "#/$defs/FieldTemplate"
+            },
+            {
+              "$ref": "#/$defs/JoinTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inventory Label"
+        }
+      },
+      "title": "BlueprintNamingTemplate",
+      "type": "object"
+    },
+    "CatalogIdTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Id"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "CatalogIdTemplate",
+      "type": "object"
+    },
+    "CoordinatesTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "X"
+        },
+        "y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Y"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "CoordinatesTemplate",
+      "type": "object"
+    },
+    "DevicePatchTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "coordinates": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoordinatesTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coordinates"
+        },
+        "icon_size": {
+          "anyOf": [
+            {
+              "enum": [
+                "auto",
+                "large",
+                "medium",
+                "small"
+              ],
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icon Size"
+        },
+        "icon_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "default",
+                "none",
+                "device",
+                "camera",
+                "monitor",
+                "encoder",
+                "decoder",
+                "audioMixer",
+                "videoMixer",
+                "processingDevice",
+                "transportStreamProcessor",
+                "mediaDevice",
+                "server",
+                "gateway",
+                "ipSwitchRouter",
+                "vlanCloud",
+                "videoAudioRouterMatrix",
+                "encoderDecoder"
+              ],
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icon Type"
+        },
+        "sdp_strategy": {
+          "anyOf": [
+            {
+              "enum": [
+                "always",
+                "once",
+                "video"
+              ],
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sdp Strategy"
+        },
+        "site_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Id"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/TagDeltaTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        }
+      },
+      "title": "DevicePatchTemplate",
+      "type": "object"
+    },
+    "FieldTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Field"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Format"
+        },
+        "mapping": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mapping"
+        },
+        "prefix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "default": "",
+          "title": "Prefix"
+        },
+        "suffix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "default": "",
+          "title": "Suffix"
+        }
+      },
+      "required": [
+        "field"
+      ],
+      "title": "FieldTemplate",
+      "type": "object"
+    },
+    "GenericSettingsTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "enable_https": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enable Https"
+        },
+        "http_auth": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Http Auth"
+        },
+        "trust_all_certificates": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trust All Certificates"
+        }
+      },
+      "title": "GenericSettingsTemplate",
+      "type": "object"
+    },
+    "InputDefinition": {
+      "additionalProperties": false,
+      "description": "A small JSON Schema vocabulary; defaults are values, never expressions.",
+      "properties": {
+        "additionalProperties": {
+          "default": false,
+          "title": "Additionalproperties",
+          "type": "boolean"
+        },
+        "default": {
+          "$ref": "#/$defs/JsonValue",
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "enum": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enum"
+        },
+        "items": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InputDefinition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/InputDefinition"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "required": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Required"
+        },
+        "type": {
+          "enum": [
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "null"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "InputDefinition",
+      "type": "object"
+    },
+    "InputReference": {
+      "additionalProperties": false,
+      "properties": {
+        "$input": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$",
+          "title": "$Input",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$input"
+      ],
+      "title": "InputReference",
+      "type": "object"
+    },
+    "InventoryConfigTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active"
+        },
+        "custom_settings": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {},
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custom Settings"
+        },
+        "driver_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Driver Id"
+        },
+        "generic_settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GenericSettingsTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generic Settings"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata"
+        },
+        "naming": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BlueprintNamingTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Naming"
+        },
+        "snmp": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SnmpSelectionTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snmp"
+        }
+      },
+      "title": "InventoryConfigTemplate",
+      "type": "object"
+    },
+    "JoinTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "join": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/TextTemplate"
+                  },
+                  {
+                    "$ref": "#/$defs/FieldTemplate"
+                  },
+                  {
+                    "$ref": "#/$defs/JoinTemplate"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Join"
+        },
+        "separator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "default": "",
+          "title": "Separator"
+        },
+        "skip_missing": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "default": false,
+          "title": "Skip Missing"
+        }
+      },
+      "required": [
+        "join"
+      ],
+      "title": "JoinTemplate",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "LiteralValue": {
+      "additionalProperties": false,
+      "properties": {
+        "$literal": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "$literal"
+      ],
+      "title": "LiteralValue",
+      "type": "object"
+    },
+    "ModulePatchTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/TagDeltaTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        }
+      },
+      "title": "ModulePatchTemplate",
+      "type": "object"
+    },
+    "PortSelectorTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "factory_label": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Factory Label"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        },
+        "port_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Port Id"
+        }
+      },
+      "title": "PortSelectorTemplate",
+      "type": "object"
+    },
+    "SnmpSelectionTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "configuration": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/CatalogIdTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Configuration"
+        },
+        "use_global_settings": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Use Global Settings"
+        }
+      },
+      "title": "SnmpSelectionTemplate",
+      "type": "object"
+    },
+    "TagDeltaTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "add": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Add"
+        },
+        "remove": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Remove"
+        }
+      },
+      "title": "TagDeltaTemplate",
+      "type": "object"
+    },
+    "TextTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Text"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "TextTemplate",
+      "type": "object"
+    },
+    "TopologyConfigTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DevicePatchTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device"
+        },
+        "ip_vertex_mapping": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "anyOf": [
+                        {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        {
+                          "$ref": "#/$defs/InputReference"
+                        },
+                        {
+                          "$ref": "#/$defs/LiteralValue"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ip Vertex Mapping"
+        },
+        "module": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModulePatchTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Module"
+        },
+        "naming": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BlueprintNamingTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Naming"
+        },
+        "port_mapping": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/PortSelectorTemplate"
+                        },
+                        {
+                          "$ref": "#/$defs/InputReference"
+                        },
+                        {
+                          "$ref": "#/$defs/LiteralValue"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Port Mapping"
+        },
+        "vertex_processor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VertexProcessorSpecTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vertex Processor"
+        },
+        "vertices": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/VertexOverrideTemplate"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vertices"
+        }
+      },
+      "title": "TopologyConfigTemplate",
+      "type": "object"
+    },
+    "VertexOverrideTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "anyOf": [
+            {
+              "enum": [
+                "In",
+                "Out",
+                "Internal",
+                "Undecided"
+              ],
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Direction"
+        },
+        "factory_label": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Factory Label"
+        },
+        "fields": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VertexPatchTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Fields"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        },
+        "vertex_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vertex Id"
+        }
+      },
+      "required": [
+        "fields"
+      ],
+      "title": "VertexOverrideTemplate",
+      "type": "object"
+    },
+    "VertexPatchTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "main_destination_port": {
+          "anyOf": [
+            {
+              "maximum": 65535,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Main Destination Port"
+        },
+        "sdp_support": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sdp Support"
+        },
+        "sips_mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "NONE",
+                "SIPSAuto",
+                "SIPSDuplicate",
+                "SIPSMerge",
+                "SIPSSplit"
+              ],
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sips Mode"
+        },
+        "spare_destination_port": {
+          "anyOf": [
+            {
+              "maximum": 65535,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spare Destination Port"
+        },
+        "supports_static_igmp": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supports Static Igmp"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/TagDeltaTemplate"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "use_as_endpoint": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Use As Endpoint"
+        }
+      },
+      "title": "VertexPatchTemplate",
+      "type": "object"
+    },
+    "VertexProcessorSpecTemplate": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "processor_type": {
+                "const": "matrox.convertip.default"
+              }
+            },
+            "required": [
+              "processor_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Parameters. Omitted tag parameters leave local tags unchanged (``[]`` clears them); an omitted\n``redundant_streams`` preserves the SIPS mode (``true`` \u2192 ``SIPSAuto``, ``false`` \u2192 ``NONE``).",
+                    "properties": {
+                      "allow_null_audio_label": {
+                        "anyOf": [
+                          {
+                            "default": false,
+                            "title": "Allow Null Audio Label",
+                            "type": "boolean"
+                          },
+                          {
+                            "$ref": "#/$defs/InputReference"
+                          },
+                          {
+                            "$ref": "#/$defs/LiteralValue"
+                          }
+                        ]
+                      },
+                      "audio_receiver_tags": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    {
+                                      "$ref": "#/$defs/InputReference"
+                                    },
+                                    {
+                                      "$ref": "#/$defs/LiteralValue"
+                                    }
+                                  ]
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "$ref": "#/$defs/matrox.convertip.default.TagDelta"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "default": null,
+                            "title": "Audio Receiver Tags"
+                          },
+                          {
+                            "$ref": "#/$defs/InputReference"
+                          },
+                          {
+                            "$ref": "#/$defs/LiteralValue"
+                          }
+                        ]
+                      },
+                      "audio_sender_tags": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    {
+                                      "$ref": "#/$defs/InputReference"
+                                    },
+                                    {
+                                      "$ref": "#/$defs/LiteralValue"
+                                    }
+                                  ]
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "$ref": "#/$defs/matrox.convertip.default.TagDelta"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "default": null,
+                            "title": "Audio Sender Tags"
+                          },
+                          {
+                            "$ref": "#/$defs/InputReference"
+                          },
+                          {
+                            "$ref": "#/$defs/LiteralValue"
+                          }
+                        ]
+                      },
+                      "configure_control": {
+                        "anyOf": [
+                          {
+                            "default": false,
+                            "title": "Configure Control",
+                            "type": "boolean"
+                          },
+                          {
+                            "$ref": "#/$defs/InputReference"
+                          },
+                          {
+                            "$ref": "#/$defs/LiteralValue"
+                          }
+                        ]
+                      },
+                      "mode": {
+                        "anyOf": [
+                          {
+                            "default": "auto",
+                            "enum": [
+                              "auto",
+                              "tx",
+                              "rx",
+                              "four_split"
+                            ],
+                            "title": "Mode",
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/$defs/InputReference"
+                          },
+                          {
+                            "$ref": "#/$defs/LiteralValue"
+                          }
+                        ]
+                      },
+                      "redundant_streams": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "default": null,
+                            "title": "Redundant Streams"
+                          },
+                          {
+                            "$ref": "#/$defs/InputReference"
+                          },
+                          {
+                            "$ref": "#/$defs/LiteralValue"
+                          }
+                        ]
+                      },
+                      "video_receiver_tags": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    {
+                                      "$ref": "#/$defs/InputReference"
+                                    },
+                                    {
+                                      "$ref": "#/$defs/LiteralValue"
+                                    }
+                                  ]
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "$ref": "#/$defs/matrox.convertip.default.TagDelta"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "default": null,
+                            "title": "Video Receiver Tags"
+                          },
+                          {
+                            "$ref": "#/$defs/InputReference"
+                          },
+                          {
+                            "$ref": "#/$defs/LiteralValue"
+                          }
+                        ]
+                      },
+                      "video_sender_tags": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    {
+                                      "$ref": "#/$defs/InputReference"
+                                    },
+                                    {
+                                      "$ref": "#/$defs/LiteralValue"
+                                    }
+                                  ]
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "$ref": "#/$defs/matrox.convertip.default.TagDelta"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "default": null,
+                            "title": "Video Sender Tags"
+                          },
+                          {
+                            "$ref": "#/$defs/InputReference"
+                          },
+                          {
+                            "$ref": "#/$defs/LiteralValue"
+                          }
+                        ]
+                      }
+                    },
+                    "title": "MatroxConvertIPParams",
+                    "type": "object"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "params": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {},
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ],
+          "title": "Params"
+        },
+        "processor_type": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processor Type"
+        }
+      },
+      "title": "VertexProcessorSpecTemplate",
+      "type": "object"
+    },
+    "matrox.convertip.default.TagDelta": {
+      "additionalProperties": false,
+      "description": "Additive tag change that preserves unrelated local tags. Tag references are exact catalog\ntag ids (for example ``Format~~V_1080p50``); the engine never creates catalog entries.",
+      "properties": {
+        "add": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "title": "Add",
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ]
+        },
+        "remove": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/InputReference"
+                  },
+                  {
+                    "$ref": "#/$defs/LiteralValue"
+                  }
+                ]
+              },
+              "title": "Remove",
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            }
+          ]
+        }
+      },
+      "title": "TagDelta",
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/blueprint-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A reusable configuration with typed inputs and ordered variant overlays.\n\nLoad with :meth:`load` (file), :meth:`from_yaml` (text/bytes), or :meth:`from_dict` (mapping).\nLoading never connects to a server. Variants patch ``defaults`` in caller-selected order.",
+  "properties": {
+    "defaults": {
+      "$ref": "#/$defs/BlueprintConfiguration",
+      "anyOf": [
+        {
+          "required": [
+            "inventory"
+          ]
+        },
+        {
+          "required": [
+            "topology"
+          ]
+        }
+      ]
+    },
+    "inputs": {
+      "patternProperties": {
+        "^[A-Za-z_][A-Za-z0-9_-]*$": {
+          "$ref": "#/$defs/InputDefinition"
+        }
+      },
+      "title": "Inputs",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "variants": {
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9_.-]*$": {
+          "$ref": "#/$defs/BlueprintConfiguration"
+        }
+      },
+      "title": "Variants",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "defaults"
+  ],
+  "title": "VideoIPath Automation Tool blueprint (schema_version 1)",
+  "type": "object"
+}

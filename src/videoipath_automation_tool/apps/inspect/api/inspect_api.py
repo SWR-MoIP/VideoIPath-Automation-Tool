@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from videoipath_automation_tool.apps.inspect.errors import InspectEntityNotFoundError
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiAddDevicesItem,
     InspectApiAddDevicesRequest,
@@ -152,6 +153,8 @@ class InspectAPI:
     def lookup_inspect_device(self, device_id: str) -> InspectApiLookupInspectDeviceResponse:
         request = InspectApiLookupInspectDeviceRequest(data=device_id)
         response = self.vip_connector.rest.post("/rest/v2/actions/status/collector/lookupInspectDevice", request)
+        if response.data is None:
+            raise InspectEntityNotFoundError(device_id, "device")
         return InspectApiLookupInspectDeviceResponse.model_validate(_post_envelope(response))
 
     def lookup_vertices(self, vertex_ids: list[str]) -> InspectApiLookupVerticesResponse:

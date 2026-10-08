@@ -6,7 +6,7 @@ These tests are excluded by default (``-m "not e2e"`` in ``pyproject.toml``) and
 
 Version gates (by VideoIPath major year):
   * Topology e2e (``apps/test_topology.py``) is skipped when major > 2025.
-  * Inspect e2e (``apps/test_inspect.py`` and ``workflows/``) is skipped when major < 2025.
+  * Inspect e2e (``apps/test_inspect.py``, ``workflows/``, and ``provisioning/``) is skipped when major < 2025.
 
 E2e entry points load ``.env`` and enable the suite automatically. E2e runs never collect coverage
 (``--no-cov``).
@@ -15,6 +15,7 @@ Layout of the suite:
   * ``workflows/`` — general, ordered "build the scenario step by step" suites: the generic
     network-builder (one suite per :mod:`networks` architecture) and the cross-app onboarding pipeline.
   * ``apps/`` — focused per-app suites (inventory, inspect, topology, preferences, profile, security).
+  * ``provisioning/`` — independent declarative plan/apply workflows using the server's mock driver.
 
 Everything the suite writes is namespaced (``E2E-`` label prefix + ``vipat-e2e`` tag) so a shared
 local instance is safe. Cleanup is a single session-start sweep that removes every ``E2E-``
@@ -25,9 +26,9 @@ network-builder architectures) in VideoIPath for manual inspection after the run
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from itertools import count
 from pathlib import Path
-from typing import Iterator, Optional
 
 import pytest
 
@@ -51,7 +52,7 @@ def _e2e_enabled() -> bool:
     return os.environ.get("VIPAT_E2E_ENABLED", "").strip() == "1"
 
 
-def _server_major(app: VideoIPathApp) -> Optional[int]:
+def _server_major(app: VideoIPathApp) -> int | None:
     parsed = _parse_version(app._videoipath_connector.videoipath_version)
     return parsed[0] if parsed is not None else None
 
@@ -74,7 +75,7 @@ def _gate_topology_and_inspect_e2e(request: pytest.FixtureRequest, app: VideoIPa
         return
 
     is_topology = path.name == "test_topology.py"
-    is_inspect = path.name == "test_inspect.py" or "workflows" in path.parts
+    is_inspect = path.name == "test_inspect.py" or bool({"workflows", "provisioning"} & set(path.parts))
     version = app._videoipath_connector.videoipath_version
 
     if is_topology and major > _TOPOLOGY_MAX_MAJOR:
