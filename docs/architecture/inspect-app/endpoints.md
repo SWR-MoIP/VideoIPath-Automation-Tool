@@ -608,8 +608,10 @@ document and the known Inspect UI payload shape.
 ## `GET /rest/v2/data/status/collector/maintenanceBookings/**`
 
 Purpose: maintenance booking status relevant to Inspect service/link display.
+Loaded lazily as the maintenance snapshot section; a full collector snapshot can
+provide the same collection. Empty responses contain `maintenanceBookings._items=[]`.
 
-Observed response on this instance:
+Populated shape verified against **VideoIPath 2026.2.0**, anonymized:
 
 ```json
 {
@@ -617,13 +619,283 @@ Observed response on this instance:
     "status": {
       "collector": {
         "maintenanceBookings": {
-          "_items": []
+          "_items": [
+            {
+              "_id": "maintenance-a",
+              "_vid": "maintenance-a-view",
+              "rev": "revision-a",
+              "generic": {
+                "descriptor": {
+                  "label": "maintenance-a",
+                  "desc": "Example window"
+                },
+                "locked": false,
+                "state": 0
+              },
+              "scheduleInfo": {
+                "startTimestamp": 1893456000000,
+                "endTimestamp": 1893459600000,
+                "infinite": false
+              },
+              "action": "nothing",
+              "trigger": "create",
+              "allowOverlap": false,
+              "switchFormatStateOnReroute": false,
+              "tags": [
+                "maintenance-example"
+              ],
+              "devices": [
+                {
+                  "label": "device-a",
+                  "context": {
+                    "devicePid": "device-a"
+                  },
+                  "pid": [
+                    "device-a"
+                  ]
+                }
+              ],
+              "modules": [],
+              "ports": [],
+              "edges": []
+            }
+          ]
         }
       }
     }
   }
 }
 ```
+
+The record has three main groups:
+
+- **Identity and metadata:** `_id`, `rev`, `generic`, and `tags` identify the booking
+  and describe its label, lock, and state.
+- **Timing and behavior:** `scheduleInfo` describes the resolved window; `action`,
+  `trigger`, and the two boolean settings describe its behavior.
+- **Selected resources:** `devices`, `modules`, `ports`, and `edges` identify what
+  the booking affects.
+
+State `0` is Scheduled, `1` Active; preserve unknown values.
+
+Module and port resources include `modulePid` and `portPid` in their contexts. Edges carry `id`,
+`from`, and `to` resources. Resolved collector schedules are distinct from writable
+schedules; `infinite=true` may accompany a large integer end sentinel.
+
+## Maintenance actions (`status/pathman`)
+
+These three exact endpoints, including live writes, were verified on **2026.2.0**.
+Older-version compatibility is untested. Requests use `header: {"id": 0}`.
+
+### `POST /rest/v2/actions/status/pathman/updateMaintenance`
+
+Use the three lists in `data` to select the operation. Keep unused lists empty.
+
+| Operation | Resource field | Other required fields |
+| --- | --- | --- |
+| Create | `serviceDefinition.devicePids` and `edgeIds` | `scheduleInfo` and the complete service definition |
+| Update | `updater.pids` and `edgeIds` | `id`, fresh `rev`, `inheritable`, and the complete updater |
+| Delete | Explicit booking IDs in `delete` | No resource definition |
+
+Device, module, and port targets all use canonical PIDs.
+
+#### Create a booking
+
+`scheduleInfo` defines the window. `serviceDefinition` groups the metadata,
+selected resources, and action settings.
+
+```json
+{
+  "header": {
+    "id": 0
+  },
+  "data": {
+    "create": [
+      {
+        "scheduleInfo": {
+          "type": "once",
+          "startTimestamp": 1893456000000,
+          "endTimestamp": 1893459600000
+        },
+        "serviceDefinition": {
+          "descriptor": {
+            "label": "maintenance-a",
+            "desc": "Example window"
+          },
+          "devicePids": [
+            "device-a"
+          ],
+          "edgeIds": [],
+          "tags": [],
+          "action": "nothing",
+          "trigger": "create",
+          "allowOverlap": false,
+          "switchFormatStateOnReroute": false
+        }
+      }
+    ],
+    "update": [],
+    "delete": []
+  }
+}
+```
+
+#### Update a booking
+
+Place the following entry inside `data.update`, with `create=[]` and `delete=[]`.
+
+The top-level `id` and `rev` select the booking and its revision. `inheritable`
+contains the intended schedule and lock state. `updater` carries the complete
+metadata, resources, and action settings.
+
+```json
+{
+  "id": "maintenance-a",
+  "rev": "revision-a",
+  "inheritable": {
+    "scheduleInfo": {
+      "type": "once",
+      "startTimestamp": null,
+      "endTimestamp": null
+    },
+    "locked": false
+  },
+  "updater": {
+    "descriptor": {
+      "label": "maintenance-a",
+      "desc": "Example window"
+    },
+    "pids": [
+      "device-a"
+    ],
+    "edgeIds": [],
+    "tags": [],
+    "action": "nothing",
+    "trigger": "create",
+    "allowOverlap": false,
+    "switchFormatStateOnReroute": false
+  }
+}
+```
+
+Schedule timestamps are epoch milliseconds:
+
+- `startTimestamp: null` means immediate start.
+- `endTimestamp: null` means open-ended duration.
+
+Valid actions are `nothing`, `invalidate`, `reroute`, and `rerouteSA`. Valid
+triggers are `create` and `active`. The SDK preserves the fresh lock value when
+the public `locked` argument is omitted.
+
+#### Delete bookings
+
+Send this object as `data`. Every entry in `delete` is an explicit server booking ID.
+
+```json
+{
+  "create": [],
+  "update": [],
+  "delete": [
+    "maintenance-a"
+  ]
+}
+```
+
+#### Interpret the result
+
+Success requires both the REST header and `data.result.ok`. The response `data`
+contains an operation result and details keyed by booking ID:
+
+```json
+{
+  "result": {
+    "ok": true,
+    "msg": [
+      "Example success message"
+    ]
+  },
+  "details": {
+    "maintenance-a": {
+      "rev": "revision-b",
+      "isCancel": false,
+      "status": 0,
+      "type": "generic",
+      "resolvable": false
+    }
+  }
+}
+```
+
+The keys of `details` are authoritative booking IDs; never parse messages or infer
+IDs from labels. On deletion `isCancel` is true. The SDK exposes typed result and
+detail objects, and does not retry writes after uncertain transport failures.
+
+### `POST /rest/v2/actions/status/pathman/validateMaintenanceImpactDetailed`
+
+Read-only preview. Data contains `pids`, `edgeIds`, `label`, `scheduleInfo`, and
+`id` (null for creation; the booking ID when editing). Unlike creation it uses
+`pids`. The response data maps service IDs to impact reports; an empty map is valid.
+
+Reports contain `label`, `start`, `end`, `protection`, `maxSaBefore`, `maxSaAfter`,
+and `entries` with time windows, `saBefore`, `saAfter`, and contributors keyed by
+booking ID (`{"label": "maintenance-a"}`). SA codes remain raw values rather than
+being interpreted using Inspect status severity codes.
+
+### `POST /rest/v2/actions/status/pathman/fetchMaintenanceImpact`
+
+Read-only current impact. Data is `{"ids": ["maintenance-a"]}`. Response data is
+keyed first by booking ID, then by service ID, using the same impact report shape.
+
+### Recurrence encoding and the verified server limitation
+
+The UI's native recurrence DTO is preserved in transport models:
+
+```json
+{
+  "type": "recurring",
+  "pattern": {
+    "pattern": 1,
+    "startTime": 1893456000000,
+    "endTime": 1896134400000,
+    "timeZoneId": "Europe/Berlin",
+    "weekDays": [
+      1,
+      5
+    ],
+    "iterationFilter": []
+  },
+  "instance": {
+    "localStartTime": 14400,
+    "localEndTime": 18000,
+    "iterationFilter": []
+  }
+}
+```
+
+The two nested objects describe different parts of the rule:
+
+- **`pattern`:** frequency, recurrence bounds, timezone, and selected weekdays.
+  Frequency `0/1/2` means daily/weekly/monthly; weekdays use ISO numbering 1–7.
+- **`instance`:** the local start and end times for each occurrence, expressed
+  as seconds since midnight.
+
+**Do not use this DTO to assume working native recurrence
+on 2026.2.0**: live creation yielded a broad resolved booking whose updates were
+rejected. The public SDK expands finite rules into dated `once` creates in one
+request and previews each window separately. Updates always address one ID and
+require a one-time schedule. There is no series-management API.
+
+Expansion uses the IANA zone and explicit recurrence bounds, with at most 1,000
+complete windows. Monthly rules use the local start date's day and skip missing
+days.
+
+Overnight windows are supported; DST gaps are rejected and ambiguous times
+use the first occurrence. Transport models preserve iteration filters; high-level
+expansion rejects nonempty filters whose server semantics remain unverified.
+
+Live acceptance covered one-time, daily, weekly, and monthly creation on test-owned
+mock resources, preview/current impact, updates, locking/unlocking, start-now, and
+deletion. Test bookings were removed before their resources.
 
 ## `GET /rest/v2/data/status/collector/superProfiles/**`
 
