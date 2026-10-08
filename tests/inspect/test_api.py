@@ -7,7 +7,11 @@ from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
 
+import pytest
+from pydantic import ValidationError
+
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
+from videoipath_automation_tool.apps.inspect.errors import InspectEntityNotFoundError
 from videoipath_automation_tool.apps.inspect.model.update_topology import InspectApiUpdateTopologyData
 
 
@@ -44,16 +48,31 @@ def test_device_skeleton_uses_projection_and_parses(load: Callable[[str], dict[s
 
 def test_edge_skeleton_parses(load: Callable[[str], dict[str, Any]]) -> None:
     edge_items = load("edge_skeleton.json")["data"]["status"]["collector"]["externalEdgesByDeviceKey"]["_items"]
-    conn, rest = _connector(get_data=_collector(edge_items=edge_items))
+    conn, _ = _connector(get_data=_collector(edge_items=edge_items))
     api = InspectAPI(conn)
     edges = api.get_edge_skeleton()
     assert len(edges) == len(edge_items)
 
 
 def test_device_detail_returns_none_when_absent() -> None:
-    conn, rest = _connector(get_data=_collector(node_items=[]))
+    conn, _ = _connector(get_data=_collector(node_items=[]))
     api = InspectAPI(conn)
     assert api.get_device_detail("deviceX") is None
+
+
+def test_null_device_edit_form_reports_missing_entity() -> None:
+    conn, rest = _connector()
+    rest._post_data = None
+    with pytest.raises(InspectEntityNotFoundError) as caught:
+        InspectAPI(conn).lookup_inspect_device("device-a")
+    assert caught.value.entity_id == "device-a"
+    assert caught.value.kind == "device"
+
+
+def test_malformed_device_edit_form_is_not_reported_as_missing() -> None:
+    conn, _ = _connector(post_data={"fields": {}})
+    with pytest.raises(ValidationError):
+        InspectAPI(conn).lookup_inspect_device("device-a")
 
 
 def test_lookup_edges_hits_correct_endpoint(load: Callable[[str], dict[str, Any]]) -> None:

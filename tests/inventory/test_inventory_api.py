@@ -6,9 +6,13 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from videoipath_automation_tool.apps.inventory.app.app import InventoryApp
-from videoipath_automation_tool.apps.inventory.errors import InventoryWriteNotAppliedError
+from videoipath_automation_tool.apps.inventory.errors import (
+    InventoryStatusUnavailableError,
+    InventoryWriteNotAppliedError,
+)
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
 from videoipath_automation_tool.apps.inventory.model.inventory_device import InventoryDevice
 
@@ -46,6 +50,25 @@ def _device(device_id: str, address: Any, alternates: Any = None) -> dict[str, A
     if alternates is not None:
         cinfo["altAddresses"] = alternates
     return {"_id": device_id, "config": {"cinfo": cinfo}}
+
+
+# --- Single-attempt status reads ---
+
+
+@pytest.mark.parametrize("data", [None, {"status": {"devman": {"devices": {"_items": []}}}}])
+def test_missing_device_status_has_a_typed_retryable_error(data: Any) -> None:
+    api = _api(data)
+    with pytest.raises(InventoryStatusUnavailableError, match="device1") as info:
+        api._fetch_device_status("device1")
+    assert isinstance(info.value, ValueError)
+    assert len(api.vip_connector.rest.get_calls) == 1
+
+
+def test_malformed_status_is_not_reported_as_unavailable() -> None:
+    api = _api({"status": {"devman": {"devices": {"_items": [{"_id": "device1"}]}}}})
+    with pytest.raises(ValidationError):
+        api._fetch_device_status("device1")
+    assert len(api.vip_connector.rest.get_calls) == 1
 
 
 # --- Address lookups ---

@@ -7,6 +7,10 @@ from typing import Literal
 InventoryWriteOperation = Literal["add", "update"]
 
 
+class InventoryStatusUnavailableError(ValueError):
+    """The device has no Inventory status yet; a later single-attempt read may succeed."""
+
+
 class InventoryWriteNotAppliedError(ValueError):
     """An Inventory write was rejected by the server or not attempted, so it did not change the record.
 
@@ -19,4 +23,4 @@ class InventoryWriteNotAppliedError(ValueError):
         super().__init__(message)
 
 
-__all__ = ["InventoryWriteNotAppliedError", "InventoryWriteOperation"]
+__all__ = ["InventoryStatusUnavailableError", "InventoryWriteNotAppliedError", "InventoryWriteOperation"]

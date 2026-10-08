@@ -8,7 +8,10 @@ from uuid import uuid4
 from pydantic import IPvAnyAddress
 from typing_extensions import deprecated
 
-from videoipath_automation_tool.apps.inventory.errors import InventoryWriteNotAppliedError
+from videoipath_automation_tool.apps.inventory.errors import (
+    InventoryStatusUnavailableError,
+    InventoryWriteNotAppliedError,
+)
 from videoipath_automation_tool.apps.inventory.inventory_utils import (
     construct_driver_id_from_info,
     extract_driver_info_from_id,
@@ -339,7 +342,7 @@ class InventoryAPI:
         response = self.vip_connector.rest.get(f"/rest/v2/data/status/devman/devices/* where id='{device_id}' /**")
         if response.data and response.data["status"]["devman"]["devices"]["_items"]:
             return DeviceStatus(**response.data["status"]["devman"]["devices"]["_items"][0])
-        raise ValueError(f"Device with id '{device_id}' not found.")
+        raise InventoryStatusUnavailableError(f"Status for device '{device_id}' is not available yet.")
 
     def _fetch_device_config_by_uuid(self, uuid: str) -> InventoryDevice:
         """Method to receive a device configuration by uuid in Meta field from VideoIPath-Inventory

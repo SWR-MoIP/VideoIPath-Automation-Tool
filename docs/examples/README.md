@@ -95,13 +95,16 @@ Each scenario is implemented twice — once with the modern **Inspect** app, onc
 - [03_bulk_retag_and_relabel.py](06_workflows/03_bulk_retag_and_relabel.py) — apply a naming/tagging
   policy across a fleet with a dry-run report and a single batched commit.
 
-### 07 — Blueprints
+### 07 — Provisioning
 
-See the [Blueprint guide](../getting-started-guide/05_Blueprints.md).
+See the [Provisioning guide](../getting-started-guide/05_Provisioning.md) for
+declarative device configuration through the SDK.
 
-- [matrox-convertip.yml](07_blueprints/matrox-convertip.yml) — example blueprint with Inventory
+- [matrox-convertip.yml](07_provisioning/matrox-convertip.yml) — example blueprint with Inventory
   settings, interface mapping, the Matrox processor, and `receiver` / `four-split` variants.
-- [01_onboard_with_blueprint.py](07_blueprints/01_onboard_with_blueprint.py) — preview and apply a
+- [01_onboard_with_blueprint.py](07_provisioning/01_onboard_with_blueprint.py) — preview and apply a
   blueprint (creation with deferred discovery, idempotent re-runs, partial-failure handling).
-- [02_custom_processor_and_naming.py](07_blueprints/02_custom_processor_and_naming.py) — register a
+- [02_custom_processor_and_naming.py](07_provisioning/02_custom_processor_and_naming.py) — register a
   custom vertex processor and a custom endpoint naming convention; device or module scope.
+
+- [03_external_connections.py](07_provisioning/03_external_connections.py) — preview external edges supplied on a device, using [external-connections.yml](07_provisioning/external-connections.yml) for generic port mapping.
