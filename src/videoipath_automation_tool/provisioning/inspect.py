@@ -985,11 +985,26 @@ def _modules_of(node: InspectApiNodeStatusItem | None) -> dict[str, Any]:
 
 
 def _vertex_sides(info: Any) -> list[tuple[str, InspectApiSingleVertexInfo]]:
+    """Vertices of one port.
+
+    A single vertex keeps its ``vertexType``. On a double vertex the ``in`` and ``out`` keys are
+    the direction when a side omits ``vertexType``. A value that is present still wins.
+    """
     if isinstance(info, InspectApiSingleVertexInfo):
         return [(info.id, info)] if info.id else []
     if isinstance(info, InspectApiDoubleVertexInfo):
-        return [(side.id, side) for side in (info.out, info.in_) if side is not None and side.id]
+        return [
+            (side.id, side)
+            for side in (_side_direction(info.out, "Out"), _side_direction(info.in_, "In"))
+            if side is not None and side.id
+        ]
     return []
+
+
+def _side_direction(side: InspectApiSingleVertexInfo | None, direction: str) -> InspectApiSingleVertexInfo | None:
+    if side is None or side.vertexType:
+        return side
+    return side.model_copy(update={"vertexType": direction})
 
 
 def _local_tags(module: Any) -> tuple[str, ...] | None:
