@@ -191,7 +191,11 @@ class InspectWriteMixin:
         main_destination_port: Optional[int] = None,
         spare_destination_port: Optional[int] = None,
     ) -> CommitResult:
-        """Edit a vertex (single auto-committed change; update-only)."""
+        """Edit a vertex (single auto-committed change; update-only).
+
+        ``control`` accepts full/semi/off and preserves configuration priority; ``control="off"``
+        disables control. ``control_props`` replaces the properties; pass at most one of the two.
+        """
         with self.transaction() as tx:
             tx.update_vertex(
                 vertex_id,

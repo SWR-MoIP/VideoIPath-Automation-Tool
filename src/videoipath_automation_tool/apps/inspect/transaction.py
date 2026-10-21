@@ -29,6 +29,11 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 from pydantic import Field
 
+from videoipath_automation_tool.apps.inspect.control import (
+    control_wire_intents,
+    merge_vertex_intents,
+    validate_vertex_intents,
+)
 from videoipath_automation_tool.apps.inspect.errors import (
     InspectCommitConflictError,
     InspectCommitError,
@@ -39,7 +44,6 @@ from videoipath_automation_tool.apps.inspect.errors import (
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiEdgeForm,
     InspectApiLookupInspectDeviceFields,
-    InspectApiVertexControlProps,
     InspectApiVertexEditForm,
 )
 from videoipath_automation_tool.apps.inspect.model.common import (
@@ -297,7 +301,7 @@ class InspectTransaction:
         spare_dst_info: Optional[dict[str, Any]] = None,
         main_destination_port: Optional[int] = None,
         spare_destination_port: Optional[int] = None,
-        # Raw wire-field intents (used by domain-object flush / update()):
+        # Wire-field intents plus semantic control (used by domain-object flush / update()):
         intents: Optional[dict[str, Any]] = None,
     ) -> "InspectTransaction":
         """Edit a vertex/port (``replaceVertices``; update-only — vertices cannot be created here).
@@ -305,10 +309,21 @@ class InspectTransaction:
         Covers the "Edit vertex" / bulk-edit dialogs: base fields, IP-vertex ``typeFields``, and
         codec ``typeFields.generic`` / ``typeFields.specific``. ``tags`` assigns catalog tags
         (``localAssignedTags``); ``form_tags`` sets the form's distinct ``tags`` list.
+        ``control`` maps to ``controlProps`` at commit, preserving priority; ``control="off"``
+        disables control. ``control_props`` replaces the properties. Pass at most one of them per
+        call; subsequent calls follow assignment order.
         """
+        if control is not None and control_props is not None:
+            raise ValueError("Pass either 'control' or 'control_props' for a vertex update, not both.")
+        updates = list((intents or {}).items())
+        if control is not None:
+            updates.append(("control", control))
+        if control_props is not None:
+            updates.append(("controlProps", control_props))
+        # Validate before staging so a rejected value neither fetches a baseline nor stages an entry.
+        validated = validate_vertex_intents(updates)
         entry = self._stage_vertex(vertex_id)
-        if intents:
-            entry.intents.update(intents)
+        merge_vertex_intents(entry.intents, validated)
         if use_as_endpoint is not None:
             entry.intents["useAsEndpoint"] = use_as_endpoint
         if label is not None:
@@ -325,15 +340,6 @@ class InspectTransaction:
             entry.intents["active"] = active
         if sips_mode is not None:
             entry.intents["sipsMode"] = sips_mode
-        if control is not None:
-            # Best-effort: verified 2025.4.9 form has controlProps, not control; extra="allow"
-            # preserves a top-level control field if the server accepts it.
-            entry.intents["control"] = control
-        if control_props is not None:
-            if isinstance(control_props, dict):
-                entry.intents["controlProps"] = InspectApiVertexControlProps.model_validate(control_props)
-            else:
-                entry.intents["controlProps"] = control_props
         if extra_alert_filters is not None:
             entry.intents["extraAlertFilters"] = list(extra_alert_filters)
         if custom is not None:
@@ -779,7 +785,8 @@ class InspectTransaction:
                 delta.remove.append(entry.entity_id)
                 continue
             form = entry.baseline_form.model_copy(deep=True)
-            _apply_intents(form, entry.intents)
+            intents = control_wire_intents(entry.intents, form.controlProps) if entry.kind == _VERTEX else entry.intents
+            _apply_intents(form, intents)
             if entry.kind == _DEVICE:
                 delta.replaceDevices[entry.entity_id] = form
             elif entry.kind == _VERTEX:

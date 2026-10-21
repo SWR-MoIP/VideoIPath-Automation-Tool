@@ -1,0 +1,17 @@
+# Synthetic port labels; replace them with the factory labels reported by Inspect.
+schema_version: 1
+inputs:
+  uplink_label:
+    type: string
+    default: port-1
+defaults:
+  topology:
+    port_mapping:
+      uplink:
+        - factory_label: {$input: uplink_label}
+variants:
+  second-port:
+    topology:
+      port_mapping:
+        uplink:
+          - factory_label: port-2

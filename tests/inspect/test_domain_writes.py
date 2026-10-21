@@ -5,8 +5,6 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
-import pytest
-
 from videoipath_automation_tool.apps.inspect.app.write import InspectWriteMixin
 from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
 from videoipath_automation_tool.apps.inspect.domain.vertex import InspectCodecVertex, InspectIpVertex, build_vertex
@@ -84,11 +82,12 @@ def test_ip_vertex_supports_static_igmp_alias() -> None:
     assert snapshot.get_staged_value("vertex", "device-a.SwitchingCore", "typeFields.supportsStaticIgmpCfg") is True
 
 
-def test_control_setter_warns() -> None:
+def test_control_setter_stages_supported_control() -> None:
     snapshot = InspectSnapshot()
     vertex = build_vertex(snapshot, "device-a.1.v1", kind="codec")
-    with pytest.warns(UserWarning, match="best-effort"):
-        vertex.control = "full"
+    vertex.control = "full"
+    assert vertex.control == "full"
+    assert vertex.control_props.model_dump() == {"configPriority": "off", "onlyInitial": False}
     assert snapshot.get_staged_value("vertex", "device-a.1.v1", "control") == "full"
 
 
@@ -127,6 +126,7 @@ def test_update_device_cascades_vertex_edits() -> None:
     vertex = build_vertex(snapshot, CODEC_ID, kind="codec")
     assert isinstance(vertex, InspectCodecVertex)
     vertex.sdp_support = True
+    vertex.control = "semi"
     vertex.main_destination_port = 50311
 
     app = _WriteApp(api, snapshot)
@@ -138,6 +138,8 @@ def test_update_device_cascades_vertex_edits() -> None:
     assert delta.replaceDevices[DEVICE_ID].descriptor.label == "Synced"
     assert CODEC_ID in delta.replaceVertices
     form = delta.replaceVertices[CODEC_ID]
+    assert form.controlProps.onlyInitial is True
+    assert "control" not in form.model_dump()
     assert (
         form.typeFields.specific["sdpSupport"] is True
         or getattr(form.typeFields, "specific", {}).get("sdpSupport") is True
