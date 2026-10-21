@@ -31,6 +31,7 @@ from pydantic import (
 
 from videoipath_automation_tool.apps.inspect.model.common import (
     InspectConfigPriority,
+    InspectControl,
     InspectIconSize,
     InspectIconType,
     InspectRedundancyMode,
@@ -142,6 +143,7 @@ class VertexPatch(_PatchModel):
     description: str | None = None
     active: bool | None = None
     sips_mode: InspectSipsMode | None = None
+    control: InspectControl | None = None
     tags: TagSpec | None = None
     sdp_support: bool | None = None
     main_destination_port: Annotated[int, Field(ge=0, le=65535)] | None = None

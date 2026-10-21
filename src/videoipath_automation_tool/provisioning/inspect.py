@@ -20,6 +20,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
+from videoipath_automation_tool.apps.inspect.control import control_from_form
 from videoipath_automation_tool.apps.inspect.errors import InspectEntityNotFoundError
 from videoipath_automation_tool.apps.inspect.model.actions import InspectApiEdgeForm
 from videoipath_automation_tool.apps.inspect.model.collector import (
@@ -706,6 +707,8 @@ _VERTEX_WIRE = {
     "description": "desc",
     "active": "active",
     "sips_mode": "sipsMode",
+    # Semantic intent: InspectTransaction maps this onto the fresh form's controlProps.
+    "control": "control",
     "tags": "localAssignedTags",
     "sdp_support": "typeFields.specific.sdpSupport",
     "main_destination_port": "typeFields.generic.mainDstInfo.port",
@@ -1062,6 +1065,7 @@ def _vertex_record(vertex_id: str, side: InspectApiSingleVertexInfo, port: PortR
         use_as_endpoint=form.useAsEndpoint,
         active=form.active,
         sips_mode=form.sipsMode,
+        control=control_from_form(form),
         tags=tuple(form.localAssignedTags),
         codec_format=generic.get("codecFormat") if isinstance(generic, dict) else None,
         media_type=specific.get("type") if isinstance(specific, dict) else None,

@@ -19,7 +19,6 @@ from videoipath_automation_tool.provisioning import (
     ProcessorInputError,
     ProcessorRegistry,
     ProcessorResult,
-    ProvisioningCapabilityError,
     ProvisioningValidationError,
     SourceFacts,
     TagDelta,
@@ -267,9 +266,16 @@ def test_redundancy_validation() -> None:
     assert any("device1.0.P1.out, device1.0.P2.out" in d.message for d in result.diagnostics)
 
 
-def test_control_configuration_is_an_explicit_capability_error() -> None:
-    with pytest.raises(ProvisioningCapabilityError, match="control"):
-        _process(_context(matrox_layout("device1", "tx")), configure_control=True)
+@pytest.mark.parametrize("layout", ["tx", "rx", "four_split"])
+def test_control_configuration_is_opt_in(layout: str) -> None:
+    context = _context(matrox_layout("device-a", layout))
+    default = _process(context)
+    disabled = _process(context, configure_control=False)
+    enabled = _process(context, configure_control=True)
+    assert all("control" not in edit.fields.managed() for edit in [*default.vertices, *disabled.vertices])
+    assert enabled.vertices
+    assert all(edit.fields.control == "full" for edit in enabled.vertices)
+    assert all(context.vertex(edit.vertex_id).kind == "codec" for edit in enabled.vertices)
 
 
 def test_module_target_proposes_no_device_patch() -> None:

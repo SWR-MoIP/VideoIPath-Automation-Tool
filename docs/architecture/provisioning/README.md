@@ -39,6 +39,7 @@ Run against a configured local test instance:
 poetry run test-e2e tests/e2e/provisioning
 poetry run test-e2e tests/e2e/provisioning/test_lifecycle.py
 poetry run test-e2e tests/e2e/provisioning/test_lifecycle.py::test_preview_apply_and_idempotent_reapply
+poetry run test-e2e tests/e2e/provisioning/test_vertex_control.py
 ```
 
 The entry point loads the gitignored project `.env`, including legacy
@@ -56,8 +57,16 @@ scenario owns its devices and checks persisted values through fresh server reads
 Mutation spies forward calls to the real SDK and verify that dry runs and
 idempotent reapplications issue no writes.
 
+The vertex-control suite exercises `full`, `semi`, and `off` through Inspect
+property setters, direct updates, transactions, and custom processors on mock
+IP switching-core, codec, and router vertices. It checks serialized requests,
+fresh read-back, priority preservation, raw-property writes, conflicts and
+rebasing, override precedence, and idempotent reapplication. Its shared device
+is removed from both Inventory and Inspect at teardown, including after failure.
+
 Devices use unique `E2E-` labels and the resolved `vipat-e2e` catalog tag. They
-remain on the server for manual inspection after success or failure. As with
+normally remain on the server for manual inspection after success or failure;
+the vertex-control suite cleans up its own device. As with
 the rest of the E2E suite, the next E2E session removes **all** prior `E2E-`
 resources, including resources from other E2E scenarios, before creating new
 ones. Run live sessions serially against an instance. Discovery polling is bounded;

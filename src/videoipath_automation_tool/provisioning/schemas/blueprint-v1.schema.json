@@ -1520,6 +1520,29 @@
           "default": null,
           "title": "Active"
         },
+        "control": {
+          "anyOf": [
+            {
+              "enum": [
+                "full",
+                "off",
+                "semi"
+              ],
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/InputReference"
+            },
+            {
+              "$ref": "#/$defs/LiteralValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Control"
+        },
         "description": {
           "anyOf": [
             {

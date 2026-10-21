@@ -72,7 +72,7 @@ run-local state.
 `VertexRecord` carries `id`, `port_id`, `module_id`, `factory_label`,
 `port_label`, `vertex_type` (`In`, `Out`, `Internal`, `Undecided`), `kind`
 (`codec`, `ip`, `router`, `generic`),
-the current `label`, `description`, `use_as_endpoint`, `active`, `sips_mode`,
+the current `label`, `description`, `use_as_endpoint`, `active`, `sips_mode`, `control`,
 `tags`, `codec_format`, `media_type`, and the kind-specific fields.
 
 Helpers:
@@ -96,6 +96,30 @@ The engine rejects ids outside the target scope, device patches on a module
 target, and conflicting proposals. Identical duplicate proposals are merged.
 Kind-specific fields on the wrong vertex kind (for example `sdp_support` on an IP
 vertex) are rejected.
+
+Control is available on all vertex kinds. A processor can configure a switch's IP
+switching core using the same patch as a blueprint override:
+
+```python
+class SwitchingCoreParams(BaseModel):
+    factory_label: str = "Switching Core"
+
+
+class SwitchingCoreProcessor(VertexProcessor[SwitchingCoreParams]):
+    params_model = SwitchingCoreParams
+
+    def process(self, context: ProcessingContext, params: SwitchingCoreParams) -> ProcessorResult:
+        core = context.require_vertex(kind="ip", factory_label=params.factory_label)
+        return ProcessorResult(vertices=[VertexEdit(vertex_id=core.id, fields=VertexPatch(control="full"))])
+
+
+engine.register_processor("example-org.switching-core", SwitchingCoreProcessor)
+```
+
+`VertexRecord.control` exposes `full`, `semi` (initial-only), or `off`; `None` means
+the edit form is unavailable or its control properties lack `onlyInitial`. Omit `VertexPatch.control` to leave
+it unmanaged. The write preserves configuration priority, defaulting to `off` when
+enabling control without an existing priority.
 
 Precedence: explicit `topology.device` values override processor defaults,
 naming overrides proposed labels, and explicit `vertices` overrides win over
@@ -148,7 +172,7 @@ does not recognize.
 | `video_receiver_tags`, `video_sender_tags`, `audio_receiver_tags`, `audio_sender_tags` | omitted | Category tags. Leave the parameter out to leave tags alone, pass `[]` to clear them, or pass `{add, remove}` to add and remove. |
 | `redundant_streams` | omitted | `true` sets `SIPSAuto`, `false` sets `NONE`, and omitting the parameter leaves the value alone. `true` requires exactly two streaming IP vertices. Use `ip_vertex_mapping` when the device also has management ports. The processor does not check that paths actually run through that pair. |
 | `allow_null_audio_label` | `false` | When `true`, the single codec vertex labelled exactly `null`, which cannot be classified, is accepted as audio. The processor emits a warning diagnostic. |
-| `configure_control` | `false` | Not available yet. Setting it raises `ProvisioningCapabilityError`. The Inspect control mapping is still unverified, so control settings on the device stay as they are. |
+| `configure_control` | `false` | `true` proposes full control for the recognized codec endpoints in every supported layout. `false` or omission leaves control unmanaged. Existing configuration priority is preserved. |
 
 The proposal enables the endpoints and assigns an `EndpointIdentity` with engine
 `0` and program `1`. The factory label becomes the description, joined with the

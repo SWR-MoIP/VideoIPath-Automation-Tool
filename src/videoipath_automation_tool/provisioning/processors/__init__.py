@@ -21,6 +21,7 @@ from typing import Any, ClassVar, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, ValidationError
 
+from videoipath_automation_tool.apps.inspect.model.common import InspectControl
 from videoipath_automation_tool.provisioning.errors import (
     ProcessorInputError,
     ProvisioningValidationError,
@@ -58,6 +59,8 @@ class VertexRecord(_Record):
     use_as_endpoint: bool | None = None
     active: bool | None = None
     sips_mode: str | None = None
+    control: InspectControl | None = None
+    """Current control level, or None when the edit form does not establish it."""
     tags: tuple[str, ...] = ()
     codec_format: str | None = None
     """Codec ``typeFields.generic.codecFormat`` (``Video`` / ``Audio`` / …)."""

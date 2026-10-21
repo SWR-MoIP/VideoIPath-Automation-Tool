@@ -46,6 +46,7 @@ def main() -> None:
         vertex.use_as_endpoint = True
         vertex.sips_mode = "SIPSAuto"
         vertex.active = True
+        vertex.control = "full"  # Preserves configuration priority; writes controlProps.
         vertex.tags = profile_tags
         edited.append(vertex)
 
@@ -66,7 +67,7 @@ def main() -> None:
     # --- 5. Alternative: keyword-style update ---------------------------------
     # A single vertex can also be edited without holding the object:
     #
-    #     app.inspect.update_vertex(uplink.id, use_as_endpoint=True, sips_mode="SIPSAuto", tags=profile_tags)
+    #     app.inspect.update_vertex(uplink.id, use_as_endpoint=True, control="full", tags=profile_tags)
 
 
 if __name__ == "__main__":

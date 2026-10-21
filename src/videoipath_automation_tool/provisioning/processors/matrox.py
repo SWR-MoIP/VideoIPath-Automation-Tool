@@ -16,8 +16,8 @@ RX (that is a device/driver change followed by synchronization and replanning).
 Proposed edits: endpoint enablement, semantic endpoint identity (engine ``0``, program ``1``), the
 factory label as description (joined with the caller's device description when given), sender SDP
 support, SIPS mode and category tags only when requested, and a ``gateway`` (TX) / ``monitor`` (RX,
-four-split) icon as a device-target default. Vertex control is not configured: its Inspect mapping
-is unverified, so ``configure_control: true`` fails with a capability error.
+four-split) icon as a device-target default. ``configure_control: true`` enables full control on
+the recognized codec endpoints; omitting it preserves the current control settings.
 """
 
 from __future__ import annotations
@@ -29,7 +29,6 @@ from pydantic import BaseModel, ConfigDict
 
 from videoipath_automation_tool.provisioning.errors import (
     ProcessorInputError,
-    ProvisioningCapabilityError,
     TopologyNotReadyError,
 )
 from videoipath_automation_tool.provisioning.models import (
@@ -67,11 +66,6 @@ class MatroxConvertIPProcessor(VertexProcessor[MatroxConvertIPParams]):
     params_model = MatroxConvertIPParams
 
     def process(self, context: ProcessingContext, params: MatroxConvertIPParams) -> ProcessorResult:
-        if params.configure_control:
-            raise ProvisioningCapabilityError(
-                "Matrox ConvertIP: configuring vertex control is not supported until its Inspect mapping is verified; "
-                "remove 'configure_control' to preserve the current control settings."
-            )
         diagnostics: list[Diagnostic] = []
 
         unknown = [vertex.id for vertex in context.vertices if vertex.kind is None]
@@ -225,6 +219,8 @@ class MatroxConvertIPProcessor(VertexProcessor[MatroxConvertIPParams]):
         if context.source.description:
             description = f"{description} | {context.source.description}" if description else context.source.description
         fields: dict[str, object] = {"use_as_endpoint": True, "description": description}
+        if params.configure_control:
+            fields["control"] = "full"
         if direction == "TX":
             fields["sdp_support"] = True
         if params.redundant_streams is not None:
