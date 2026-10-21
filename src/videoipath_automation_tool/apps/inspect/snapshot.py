@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import Field
 
+from videoipath_automation_tool.apps.inspect.control import merge_vertex_intents
 from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiCollectorResponse,
@@ -462,9 +463,13 @@ class InspectSnapshot:
     # --- Pending domain edits (setters → update()) ---
 
     def stage_edit(self, kind: str, entity_id: str, field: str, value: Any) -> None:
-        """Record a pending wire-field intent for ``entity_id`` (``kind``: device/vertex/edge/module)."""
+        """Record a pending intent; vertex ``control`` is converted to ``controlProps`` at commit."""
         with self._lock:
-            self._pending_edits.setdefault((kind, entity_id), {})[field] = value
+            edits = self._pending_edits.setdefault((kind, entity_id), {})
+            if kind == "vertex":
+                merge_vertex_intents(edits, {field: value})
+            else:
+                edits[field] = value
 
     def get_staged_edits(self, kind: str, entity_id: str) -> dict[str, Any]:
         """Return a copy of the pending intents for ``entity_id``, or an empty dict."""

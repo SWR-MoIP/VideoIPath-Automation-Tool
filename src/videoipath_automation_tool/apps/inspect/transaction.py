@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 from pydantic import Field
 
+from videoipath_automation_tool.apps.inspect.control import control_to_props, merge_vertex_intents
 from videoipath_automation_tool.apps.inspect.errors import (
     InspectCommitConflictError,
     InspectCommitError,
@@ -39,10 +40,10 @@ from videoipath_automation_tool.apps.inspect.errors import (
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiEdgeForm,
     InspectApiLookupInspectDeviceFields,
-    InspectApiVertexControlProps,
     InspectApiVertexEditForm,
 )
 from videoipath_automation_tool.apps.inspect.model.common import (
+    _STAGED_MISSING,
     CONFLICT_PRIORITY_TO_INT,
     InspectApiSimpleActionResponse,
     InspectCodecFormat,
@@ -260,7 +261,7 @@ class InspectTransaction:
         active: Optional[bool] = None,
         sips_mode: Optional[InspectSipsMode | str] = None,
         control: Optional[InspectControl | str] = None,
-        control_props: Optional[Any] = None,
+        control_props: Any = _STAGED_MISSING,
         extra_alert_filters: Optional[list[Any]] = None,
         custom: Optional[dict[str, Any]] = None,
         queueable: Optional[bool] = None,
@@ -297,7 +298,7 @@ class InspectTransaction:
         spare_dst_info: Optional[dict[str, Any]] = None,
         main_destination_port: Optional[int] = None,
         spare_destination_port: Optional[int] = None,
-        # Raw wire-field intents (used by domain-object flush / update()):
+        # Wire-field intents plus semantic control (used by domain-object flush / update()):
         intents: Optional[dict[str, Any]] = None,
     ) -> "InspectTransaction":
         """Edit a vertex/port (``replaceVertices``; update-only — vertices cannot be created here).
@@ -305,10 +306,18 @@ class InspectTransaction:
         Covers the "Edit vertex" / bulk-edit dialogs: base fields, IP-vertex ``typeFields``, and
         codec ``typeFields.generic`` / ``typeFields.specific``. ``tags`` assigns catalog tags
         (``localAssignedTags``); ``form_tags`` sets the form's distinct ``tags`` list.
+        ``control`` maps to ``controlProps`` at commit, preserving priority. If both are supplied,
+        explicit ``control_props`` wins (including ``None`` to disable control); subsequent calls
+        follow assignment order.
         """
+        vertex_intents: dict[str, Any] = {}
+        merge_vertex_intents(vertex_intents, intents or {})
+        if control is not None:
+            merge_vertex_intents(vertex_intents, {"control": control})
+        if control_props is not _STAGED_MISSING:
+            merge_vertex_intents(vertex_intents, {"controlProps": control_props})
         entry = self._stage_vertex(vertex_id)
-        if intents:
-            entry.intents.update(intents)
+        merge_vertex_intents(entry.intents, vertex_intents)
         if use_as_endpoint is not None:
             entry.intents["useAsEndpoint"] = use_as_endpoint
         if label is not None:
@@ -325,15 +334,6 @@ class InspectTransaction:
             entry.intents["active"] = active
         if sips_mode is not None:
             entry.intents["sipsMode"] = sips_mode
-        if control is not None:
-            # Best-effort: verified 2025.4.9 form has controlProps, not control; extra="allow"
-            # preserves a top-level control field if the server accepts it.
-            entry.intents["control"] = control
-        if control_props is not None:
-            if isinstance(control_props, dict):
-                entry.intents["controlProps"] = InspectApiVertexControlProps.model_validate(control_props)
-            else:
-                entry.intents["controlProps"] = control_props
         if extra_alert_filters is not None:
             entry.intents["extraAlertFilters"] = list(extra_alert_filters)
         if custom is not None:
@@ -1013,6 +1013,9 @@ def _apply_intents(form: Any, intents: dict[str, Any]) -> None:
     """Apply wire-field intents onto a baseline form. Supports arbitrary dotted paths and deep-merges
     when the terminal parent is a ``dict`` (e.g. codec ``mainDstInfo.port``, edge ``weightFactors``)."""
     for key, value in intents.items():
+        if key == "control" and isinstance(form, InspectApiVertexEditForm):
+            form.controlProps = control_to_props(value, form.controlProps)
+            continue
         if "." not in key:
             setattr(form, key, value)
             continue

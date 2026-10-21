@@ -232,10 +232,33 @@ On a vertex override or in processor output, `fields` may set:
 | Field | Applies to |
 |---|---|
 | `use_as_endpoint`, `label`, `description`, `active`, `sips_mode`, `tags` | All vertices. `""` clears a label or a description. |
+| `control` | All vertices: `full`, `semi` (initial-only), or `off`. |
 | `sdp_support`, `main_destination_port`, `spare_destination_port` | Codec vertices. Ports are `0`–`65535`. |
 | `supports_static_igmp` | IP vertices. |
 
 Explicit `null` is rejected on any patch field. Omit the field instead.
+
+Control uses the Inspect edit form's `controlProps`: `full` sets `onlyInitial: false`,
+`semi` sets `onlyInitial: true`, and `off` writes `controlProps: null`. Enabling
+control preserves the current configuration priority and other control properties;
+when no priority is set it defaults to `off`. Priority `off` does **not** disable
+vertex control. The engine compares and verifies the control level, so applying
+the same setting again is a no-op.
+
+For example, enable full control on a switch's IP switching core by its factory label:
+
+```yaml
+defaults:
+  topology:
+    vertices:
+      - factory_label: Switching Core
+        kind: ip
+        fields:
+          control: full
+```
+
+Use the factory label reported by the driver, or an exact `vertex_id`. This override
+also takes precedence over a processor's proposed control setting.
 
 ### Tags
 
@@ -818,7 +841,6 @@ are stored, which concrete edges to supply, and when the job runs.
 - `http_auth` is the raw server mode code. Alternative addresses that carry credentials use the `{address, authentication: {user, password}}` entry shape already used by Inventory.
 - Tag references are exact catalog ids. The client does not check that the tag exists.
 - Endpoint label uniqueness is checked per device, not across the whole system.
-- Vertex control configuration waits until its Inspect mapping has been verified.
 - Offline tests cover the feature with synthetic Inspect and Inventory data. Try the writes you care about on a test system before you use them in production.
 - Also outside this feature: picking a processor from the driver automatically, pruning old configuration, rolling back a partial apply, migrating drivers, inferring physical cabling, provisioning services, and scheduling a fleet.
 
