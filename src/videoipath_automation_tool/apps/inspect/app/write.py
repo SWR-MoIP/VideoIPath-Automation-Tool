@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol, Sequence
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.model.common import (
-    _STAGED_MISSING,
     InspectCodecFormat,
     InspectConfigPriority,
     InspectControl,
@@ -156,7 +155,7 @@ class InspectWriteMixin:
         active: Optional[bool] = None,
         sips_mode: Optional[InspectSipsMode | str] = None,
         control: Optional[InspectControl | str] = None,
-        control_props: Any = _STAGED_MISSING,
+        control_props: Optional[Any] = None,
         extra_alert_filters: Optional[list[Any]] = None,
         custom: Optional[dict[str, Any]] = None,
         queueable: Optional[bool] = None,
@@ -194,8 +193,8 @@ class InspectWriteMixin:
     ) -> CommitResult:
         """Edit a vertex (single auto-committed change; update-only).
 
-        ``control`` accepts full/semi/off and preserves configuration priority. Explicit
-        ``control_props`` takes precedence, including ``None`` to disable control.
+        ``control`` accepts full/semi/off and preserves configuration priority; ``control="off"``
+        disables control. ``control_props`` replaces the properties; pass at most one of the two.
         """
         with self.transaction() as tx:
             tx.update_vertex(

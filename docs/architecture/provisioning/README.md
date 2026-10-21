@@ -60,7 +60,7 @@ idempotent reapplications issue no writes.
 The vertex-control suite exercises `full`, `semi`, and `off` through Inspect
 property setters, direct updates, transactions, and custom processors on mock
 IP switching-core, codec, and router vertices. It checks serialized requests,
-fresh read-back, priority preservation, raw-property precedence, conflicts and
+fresh read-back, priority preservation, raw-property writes, conflicts and
 rebasing, override precedence, and idempotent reapplication. Its shared device
 is removed from both Inventory and Inspect at teardown, including after failure.
 

@@ -298,11 +298,13 @@ When enabling control without an existing priority, `configPriority` defaults to
 and transaction updates. No top-level `control` field is added to the request.
 
 Both getters reflect pending assignments. Sequential `control` / `control_props`
-assignments follow assignment order. If both keywords are passed in one update,
-explicit `control_props` takes precedence, including `None` to disable control;
-omitting it leaves the properties unmanaged. Unsupported control strings raise
-`ValueError`. An unavailable form, absent control field, or properties without
-`onlyInitial` yield an unknown control level (`None`).
+assignments follow assignment order. Assigning `vertex.control = None` drops pending
+control edits and leaves control unmanaged. On `update_vertex`, pass at most one of
+`control` and `control_props` (both raise `ValueError`); `control_props=None` means
+unchanged, so disable control with `control="off"`. Unsupported control strings raise
+`ValueError`. A form without `controlProps` reads as `off`, because every write sends
+the field as null. An unavailable form or properties without `onlyInitial` yield an
+unknown control level (`None`).
 
 ### `InspectEdge`
 

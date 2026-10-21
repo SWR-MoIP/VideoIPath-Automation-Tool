@@ -29,7 +29,11 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 from pydantic import Field
 
-from videoipath_automation_tool.apps.inspect.control import control_to_props, merge_vertex_intents
+from videoipath_automation_tool.apps.inspect.control import (
+    control_wire_intents,
+    merge_vertex_intents,
+    validate_vertex_intents,
+)
 from videoipath_automation_tool.apps.inspect.errors import (
     InspectCommitConflictError,
     InspectCommitError,
@@ -43,7 +47,6 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiVertexEditForm,
 )
 from videoipath_automation_tool.apps.inspect.model.common import (
-    _STAGED_MISSING,
     CONFLICT_PRIORITY_TO_INT,
     InspectApiSimpleActionResponse,
     InspectCodecFormat,
@@ -261,7 +264,7 @@ class InspectTransaction:
         active: Optional[bool] = None,
         sips_mode: Optional[InspectSipsMode | str] = None,
         control: Optional[InspectControl | str] = None,
-        control_props: Any = _STAGED_MISSING,
+        control_props: Optional[Any] = None,
         extra_alert_filters: Optional[list[Any]] = None,
         custom: Optional[dict[str, Any]] = None,
         queueable: Optional[bool] = None,
@@ -306,18 +309,21 @@ class InspectTransaction:
         Covers the "Edit vertex" / bulk-edit dialogs: base fields, IP-vertex ``typeFields``, and
         codec ``typeFields.generic`` / ``typeFields.specific``. ``tags`` assigns catalog tags
         (``localAssignedTags``); ``form_tags`` sets the form's distinct ``tags`` list.
-        ``control`` maps to ``controlProps`` at commit, preserving priority. If both are supplied,
-        explicit ``control_props`` wins (including ``None`` to disable control); subsequent calls
-        follow assignment order.
+        ``control`` maps to ``controlProps`` at commit, preserving priority; ``control="off"``
+        disables control. ``control_props`` replaces the properties. Pass at most one of them per
+        call; subsequent calls follow assignment order.
         """
-        vertex_intents: dict[str, Any] = {}
-        merge_vertex_intents(vertex_intents, intents or {})
+        if control is not None and control_props is not None:
+            raise ValueError("Pass either 'control' or 'control_props' for a vertex update, not both.")
+        updates = list((intents or {}).items())
         if control is not None:
-            merge_vertex_intents(vertex_intents, {"control": control})
-        if control_props is not _STAGED_MISSING:
-            merge_vertex_intents(vertex_intents, {"controlProps": control_props})
+            updates.append(("control", control))
+        if control_props is not None:
+            updates.append(("controlProps", control_props))
+        # Validate before staging so a rejected value neither fetches a baseline nor stages an entry.
+        validated = validate_vertex_intents(updates)
         entry = self._stage_vertex(vertex_id)
-        merge_vertex_intents(entry.intents, vertex_intents)
+        merge_vertex_intents(entry.intents, validated)
         if use_as_endpoint is not None:
             entry.intents["useAsEndpoint"] = use_as_endpoint
         if label is not None:
@@ -779,7 +785,8 @@ class InspectTransaction:
                 delta.remove.append(entry.entity_id)
                 continue
             form = entry.baseline_form.model_copy(deep=True)
-            _apply_intents(form, entry.intents)
+            intents = control_wire_intents(entry.intents, form.controlProps) if entry.kind == _VERTEX else entry.intents
+            _apply_intents(form, intents)
             if entry.kind == _DEVICE:
                 delta.replaceDevices[entry.entity_id] = form
             elif entry.kind == _VERTEX:
@@ -1013,9 +1020,6 @@ def _apply_intents(form: Any, intents: dict[str, Any]) -> None:
     """Apply wire-field intents onto a baseline form. Supports arbitrary dotted paths and deep-merges
     when the terminal parent is a ``dict`` (e.g. codec ``mainDstInfo.port``, edge ``weightFactors``)."""
     for key, value in intents.items():
-        if key == "control" and isinstance(form, InspectApiVertexEditForm):
-            form.controlProps = control_to_props(value, form.controlProps)
-            continue
         if "." not in key:
             setattr(form, key, value)
             continue

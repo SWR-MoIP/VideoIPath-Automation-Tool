@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import Field
 
-from videoipath_automation_tool.apps.inspect.control import merge_vertex_intents
+from videoipath_automation_tool.apps.inspect.control import merge_vertex_intents, validate_vertex_intents
 from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiCollectorResponse,
@@ -467,7 +467,7 @@ class InspectSnapshot:
         with self._lock:
             edits = self._pending_edits.setdefault((kind, entity_id), {})
             if kind == "vertex":
-                merge_vertex_intents(edits, {field: value})
+                merge_vertex_intents(edits, validate_vertex_intents([(field, value)]))
             else:
                 edits[field] = value
 

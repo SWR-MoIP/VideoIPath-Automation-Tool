@@ -63,7 +63,7 @@ def test_enable_from_off_uses_exact_verified_payload() -> None:
         ({"controlProps": {"onlyInitial": False}}, "full"),
         ({"controlProps": {"onlyInitial": True}}, "semi"),
         ({"controlProps": {"configPriority": "off"}}, None),
-        ({}, None),
+        ({}, "off"),
     ],
 )
 def test_control_reads_edit_form(fields: dict[str, Any], expected: str | None) -> None:
@@ -89,7 +89,7 @@ def test_repeated_mixed_assignments_keep_latest_order(surface: str) -> None:
         ("control", "full"),
         ("controlProps", {"configPriority": "high", "onlyInitial": True}),
         ("control", "full"),
-        ("controlProps", None),
+        ("controlProps", {"configPriority": "off"}),
         ("control", "semi"),
     ]
     if surface == "domain":
@@ -110,11 +110,47 @@ def test_repeated_mixed_assignments_keep_latest_order(surface: str) -> None:
     }
 
 
-@pytest.mark.parametrize("props", [None, {"configPriority": "low", "onlyInitial": True}])
-def test_explicit_properties_win_over_control_in_one_call(props: dict[str, Any] | None) -> None:
+@pytest.mark.parametrize("surface", ["direct", "transaction"])
+def test_control_and_properties_in_one_call_are_rejected(surface: str) -> None:
     api, snapshot = _setup()
-    _WriteApp(api, snapshot).update_vertex(VERTEX_ID, control="full", control_props=props)
-    assert api.update_calls[0].model_dump(mode="json")["replaceVertices"][VERTEX_ID]["controlProps"] == props
+    props = {"configPriority": "low", "onlyInitial": True}
+    with pytest.raises(ValueError, match="not both"):
+        if surface == "direct":
+            _WriteApp(api, snapshot).update_vertex(VERTEX_ID, control="full", control_props=props)
+        else:
+            with InspectTransaction(api) as tx:
+                tx.update_vertex(VERTEX_ID, control="full", control_props=props)
+    assert api.update_calls == []
+    assert api.lookup_vertices_calls == []
+
+
+def test_none_control_properties_keyword_leaves_control_unchanged() -> None:
+    original = {"configPriority": "high", "onlyInitial": True}
+    api, snapshot = _setup(original)
+    _WriteApp(api, snapshot).update_vertex(VERTEX_ID, label="label-a", control_props=None)
+    assert api.update_calls[0].model_dump(mode="json")["replaceVertices"][VERTEX_ID]["controlProps"] == original
+
+
+@pytest.mark.parametrize("surface", ["domain", "intents"])
+def test_none_control_drops_pending_control_edits(surface: str) -> None:
+    original = {"configPriority": "high", "onlyInitial": True}
+    api, snapshot = _setup(original)
+    if surface == "domain":
+        vertex = build_vertex(snapshot, VERTEX_ID, kind="ip")
+        vertex.control_props = None
+        vertex.control = "full"
+        vertex.control = None
+        assert vertex.control == "semi"
+        vertex.label = "label-a"
+        _WriteApp(api, snapshot).update(vertex)
+    else:
+        with InspectTransaction(api) as tx:
+            tx.update_vertex(VERTEX_ID, control="full")
+            tx.update_vertex(VERTEX_ID, label="label-a", intents={"control": None})
+            tx.commit()
+    wire = api.update_calls[0].model_dump(mode="json")["replaceVertices"][VERTEX_ID]
+    assert wire["controlProps"] == original
+    assert wire["label"] == "label-a"
 
 
 def test_staged_properties_are_detached_from_caller_and_getter() -> None:

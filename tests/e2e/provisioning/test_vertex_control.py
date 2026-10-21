@@ -114,11 +114,17 @@ def test_control_preserves_priority_and_raw_properties_take_precedence(
     assert live.app.inspect.update(vertex).ok
     _assert_control(live, device, vertex_id, "full", priority="high")
 
-    assert live.app.inspect.update_vertex(
-        vertex_id, control="full", control_props={"configPriority": "high", "onlyInitial": True}
-    ).ok
+    with pytest.raises(ValueError, match="not both"):
+        live.app.inspect.update_vertex(
+            vertex_id, control="full", control_props={"configPriority": "high", "onlyInitial": True}
+        )
+    assert live.app.inspect.update_vertex(vertex_id, control_props={"configPriority": "high", "onlyInitial": True}).ok
     _assert_control(live, device, vertex_id, "semi", priority="high")
-    assert live.app.inspect.update_vertex(vertex_id, control="full", control_props=None).ok
+    assert live.app.inspect.update_vertex(vertex_id, description="E2E-control", control_props=None).ok
+    _assert_control(live, device, vertex_id, "semi", priority="high")
+    vertex = _vertex(live, device, vertex_id)
+    vertex.control_props = None
+    assert live.app.inspect.update(vertex).ok
     _assert_control(live, device, vertex_id, "off")
 
 

@@ -22,7 +22,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 
-from videoipath_automation_tool.apps.inspect.control import control_from_form, control_from_props, staged_control_props
+from videoipath_automation_tool.apps.inspect.control import (
+    control_from_form,
+    control_from_props,
+    has_control_intents,
+    needs_control_baseline,
+    staged_control_props,
+)
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiSingleVertexInfo
 from videoipath_automation_tool.apps.inspect.model.common import (
     _STAGED_MISSING,
@@ -164,11 +170,10 @@ class InspectVertex(InspectEditableModel):
 
     @property
     def control_props(self) -> InspectApiVertexControlProps | None:
+        """Raw control properties including pending edits; assigning ``None`` disables control."""
         intents = self.snapshot.get_staged_edits("vertex", self.id)
-        # A replacement object (including null) supplies its own complete baseline.
-        if "controlProps" in intents or intents.get("control") == "off":
-            return staged_control_props(None, intents)
-        return staged_control_props(self._form_get("controlProps"), intents)
+        baseline = self._form_get("controlProps") if needs_control_baseline(intents) else None
+        return staged_control_props(baseline, intents)
 
     @control_props.setter
     def control_props(self, value: Any) -> None:
@@ -179,18 +184,17 @@ class InspectVertex(InspectEditableModel):
         """Control level: ``full``, ``semi`` (initial-only), or ``off``.
 
         Writes use ``controlProps`` and preserve configuration priority. An unavailable form
-        or incomplete control properties return ``None``. Pending assignments are visible here.
+        or incomplete control properties return ``None``. Pending assignments are visible here;
+        assigning ``None`` drops them and leaves control unmanaged.
         """
         intents = self.snapshot.get_staged_edits("vertex", self.id)
-        for field in reversed(intents):
-            if field == "control":
-                return intents[field]
-            if field == "controlProps":
-                return control_from_props(intents[field])
+        if has_control_intents(intents):
+            # The pending level does not depend on the current properties, so no form is needed.
+            return control_from_props(staged_control_props(None, intents))
         return control_from_form(self._form())
 
     @control.setter
-    def control(self, value: InspectControl | str) -> None:
+    def control(self, value: InspectControl | str | None) -> None:
         self._stage("control", value)
 
     @property

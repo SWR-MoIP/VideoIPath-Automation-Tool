@@ -117,7 +117,7 @@ engine.register_processor("example-org.switching-core", SwitchingCoreProcessor)
 ```
 
 `VertexRecord.control` exposes `full`, `semi` (initial-only), or `off`; `None` means
-the edit form did not establish a control level. Omit `VertexPatch.control` to leave
+the edit form is unavailable or its control properties lack `onlyInitial`. Omit `VertexPatch.control` to leave
 it unmanaged. The write preserves configuration priority, defaulting to `off` when
 enabling control without an existing priority.
 
