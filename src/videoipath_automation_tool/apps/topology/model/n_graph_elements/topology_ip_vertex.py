@@ -18,9 +18,11 @@ class IpVertex(Vertex):
         supportsMacForwardingCfg (bool): Supports Mac Forwarding Config
         supportsNsoCfg (bool): Supports Nso Config
         supportsOpenflowCfg (bool): Supports Openflow Config
+        supportsPseudoWiresCfg (bool): Supports PseudoWires Config
         supportsStaticIgmpCfg (bool): Supports Static Igmp Config
         supportsVlanCfg (bool): Supports Vlan Config
         supportsVplsCfg (bool): Supports VPLS Config
+        supportsVxlanCfg (bool): Supports Vxlan Config
         vlanId (Optional[str]): ID of VLAN to use
         vrfId (Optional[str]): ID of VRF to use
     """
@@ -33,9 +35,11 @@ class IpVertex(Vertex):
     supportsMacForwardingCfg: bool = True
     supportsNsoCfg: bool = True
     supportsOpenflowCfg: bool = True
+    supportsPseudoWiresCfg: bool = True
     supportsStaticIgmpCfg: bool = True
     supportsVlanCfg: bool = True
     supportsVplsCfg: bool = True
+    supportsVxlanCfg: bool = True
     vlanId: Optional[str]
     vrfId: Optional[str]
 
@@ -122,6 +126,16 @@ class IpVertex(Vertex):
         self.supportsOpenflowCfg = value
 
     @property
+    def supports_pseudo_wires_config(self) -> bool:
+        """Supports PseudoWires Config"""
+        return self.supportsPseudoWiresCfg
+
+    @supports_pseudo_wires_config.setter
+    def supports_pseudo_wires_config(self, value: bool):
+        """Supports PseudoWires Config"""
+        self.supportsPseudoWiresCfg = value
+
+    @property
     def supports_static_igmp_config(self) -> bool:
         """Supports Static Igmp Config"""
         return self.supportsStaticIgmpCfg
@@ -150,3 +164,13 @@ class IpVertex(Vertex):
     def supports_vpls_config(self, value: bool):
         """Supports VPLS Config"""
         self.supportsVplsCfg = value
+
+    @property
+    def supports_vxlan_config(self) -> bool:
+        """Supports Vxlan Config"""
+        return self.supportsVxlanCfg
+
+    @supports_vxlan_config.setter
+    def supports_vxlan_config(self, value: bool):
+        """Supports Vxlan Config"""
+        self.supportsVxlanCfg = value
