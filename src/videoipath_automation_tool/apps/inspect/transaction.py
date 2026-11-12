@@ -277,9 +277,11 @@ class InspectTransaction:
         supports_mac_forwarding: Optional[bool] = None,
         supports_nso: Optional[bool] = None,
         supports_openflow: Optional[bool] = None,
+        supports_pseudo_wires: Optional[bool] = None,
         supports_static_igmp: Optional[bool] = None,
         supports_vlan: Optional[bool] = None,
         supports_vpls: Optional[bool] = None,
+        supports_vxlan: Optional[bool] = None,
         # Codec-vertex ``typeFields.specific`` / ``typeFields.generic``:
         sdp_support: Optional[bool] = None,
         is_igmp_source: Optional[bool] = None,
@@ -355,9 +357,11 @@ class InspectTransaction:
             (supports_mac_forwarding, "supportsMacForwardingCfg"),
             (supports_nso, "supportsNsoCfg"),
             (supports_openflow, "supportsOpenflowCfg"),
+            (supports_pseudo_wires, "supportsPseudoWiresCfg"),
             (supports_static_igmp, "supportsStaticIgmpCfg"),
             (supports_vlan, "supportsVlanCfg"),
             (supports_vpls, "supportsVplsCfg"),
+            (supports_vxlan, "supportsVxlanCfg"),
         ):
             if value is not None:
                 entry.intents[f"typeFields.{wire_field}"] = value
