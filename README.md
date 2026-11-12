@@ -9,7 +9,7 @@
   
 [![PyPI version](https://img.shields.io/pypi/v/videoipath-automation-tool)](https://pypi.org/project/videoipath-automation-tool/)
 [![GitHub Workflow Status](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/actions/workflows/ci.yml/badge.svg)](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/actions/workflows/ci.yml)
-[![Python Versions](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue)](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool)
+[![Python Versions](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13%20|%203.14-blue)](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
 </div>
