@@ -287,6 +287,24 @@ form's `typeFields.type`. Editable attributes stage pending intents; flush with
 | `is_active` / `is_controlled` / `is_endpoint` | Offline status flags from port `vertexInfo` |
 | `tags` | Locally assigned vertex tags (writable via `localAssignedTags`) |
 | `use_as_endpoint` | Whether usable as a service endpoint |
+| `control` | Writable `full`, `semi` (initial-only), or `off`, backed by `controlProps`; `None` when unknown |
+| `control_props` | Raw control properties; assigning `None` disables control |
+
+Setting `vertex.control = "full"` followed by `app.inspect.update(vertex)` writes
+`controlProps.onlyInitial = false`, preserving configuration priority and unknown
+properties. `semi` sets `onlyInitial = true`; `off` writes `controlProps: null`.
+When enabling control without an existing priority, `configPriority` defaults to
+`"off"`. The same mapping applies to `app.inspect.update_vertex(id, control="full")`
+and transaction updates. No top-level `control` field is added to the request.
+
+Both getters reflect pending assignments. Sequential `control` / `control_props`
+assignments follow assignment order. Assigning `vertex.control = None` drops pending
+control edits and leaves control unmanaged. On `update_vertex`, pass at most one of
+`control` and `control_props` (both raise `ValueError`); `control_props=None` means
+unchanged, so disable control with `control="off"`. Unsupported control strings raise
+`ValueError`. A form without `controlProps` reads as `off`, because every write sends
+the field as null. An unavailable form or properties without `onlyInitial` yield an
+unknown control level (`None`).
 
 ### `InspectEdge`
 

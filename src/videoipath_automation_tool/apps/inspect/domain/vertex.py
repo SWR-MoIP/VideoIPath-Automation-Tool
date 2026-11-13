@@ -20,9 +20,15 @@ or ``tx.update(...)`` inside a transaction.
 
 from __future__ import annotations
 
-import warnings
 from typing import TYPE_CHECKING, Any, Literal
 
+from videoipath_automation_tool.apps.inspect.control import (
+    control_from_form,
+    control_from_props,
+    has_control_intents,
+    needs_control_baseline,
+    staged_control_props,
+)
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiSingleVertexInfo
 from videoipath_automation_tool.apps.inspect.model.common import (
     _STAGED_MISSING,
@@ -164,30 +170,31 @@ class InspectVertex(InspectEditableModel):
 
     @property
     def control_props(self) -> InspectApiVertexControlProps | None:
-        return self._staged_or("controlProps", lambda: self._form_get("controlProps"), adapt=self._as_control_props)
+        """Raw control properties including pending edits; assigning ``None`` disables control."""
+        intents = self.snapshot.get_staged_edits("vertex", self.id)
+        baseline = self._form_get("controlProps") if needs_control_baseline(intents) else None
+        return staged_control_props(baseline, intents)
 
     @control_props.setter
     def control_props(self, value: Any) -> None:
         self._stage("controlProps", value)
 
     @property
-    def control(self) -> InspectControl | str | None:
-        """Best-effort ``control`` scalar (``"full"`` / ``"off"`` / ``"semi"``).
+    def control(self) -> InspectControl | None:
+        """Control level: ``full``, ``semi`` (initial-only), or ``off``.
 
-        The verified 2025.4.9 vertex edit form exposes ``controlProps`` rather than a ``control``
-        scalar; this setter stages a top-level ``control`` intent (allowed by ``extra="allow"``)
-        for servers that accept it. Prefer :attr:`control_props` when targeting the verified form.
+        Writes use ``controlProps`` and preserve configuration priority. An unavailable form
+        or incomplete control properties return ``None``. Pending assignments are visible here;
+        assigning ``None`` drops them and leaves control unmanaged.
         """
-        return self._staged_or("control", lambda: self._form_get("control"))
+        intents = self.snapshot.get_staged_edits("vertex", self.id)
+        if has_control_intents(intents):
+            # The pending level does not depend on the current properties, so no form is needed.
+            return control_from_props(staged_control_props(None, intents))
+        return control_from_form(self._form())
 
     @control.setter
-    def control(self, value: InspectControl | str) -> None:
-        warnings.warn(
-            "InspectVertex.control stages a best-effort top-level 'control' field; the verified "
-            "2025.4.9 edit form exposes controlProps instead. Prefer control_props when possible.",
-            UserWarning,
-            stacklevel=2,
-        )
+    def control(self, value: InspectControl | str | None) -> None:
         self._stage("control", value)
 
     @property
@@ -288,14 +295,6 @@ class InspectVertex(InspectEditableModel):
     def _form_get(self, attr: str, default: Any = None) -> Any:
         form = self._form()
         return getattr(form, attr, default) if form is not None else default
-
-    @staticmethod
-    def _as_control_props(value: Any) -> InspectApiVertexControlProps | None:
-        from videoipath_automation_tool.apps.inspect.model.actions import InspectApiVertexControlProps
-
-        if value is None or isinstance(value, InspectApiVertexControlProps):
-            return value
-        return InspectApiVertexControlProps.model_validate(value)
 
 
 class InspectGenericVertex(InspectVertex):
