@@ -94,3 +94,17 @@ Each scenario is implemented twice — once with the modern **Inspect** app, onc
   report (safe to run against production).
 - [03_bulk_retag_and_relabel.py](06_workflows/03_bulk_retag_and_relabel.py) — apply a naming/tagging
   policy across a fleet with a dry-run report and a single batched commit.
+
+### 07 — Provisioning
+
+See the [Provisioning guide](../getting-started-guide/05_Provisioning.md) for
+declarative device configuration through the SDK.
+
+- [matrox-convertip.yml](07_provisioning/matrox-convertip.yml) — example blueprint with Inventory
+  settings, interface mapping, the Matrox processor, and `receiver` / `four-split` variants.
+- [01_onboard_with_blueprint.py](07_provisioning/01_onboard_with_blueprint.py) — preview and apply a
+  blueprint (creation with deferred discovery, idempotent re-runs, partial-failure handling).
+- [02_custom_processor_and_naming.py](07_provisioning/02_custom_processor_and_naming.py) — register a
+  custom vertex processor and a custom endpoint naming convention; device or module scope.
+
+- [03_external_edges.py](07_provisioning/03_external_edges.py) — preview external edges supplied on a device, using [external-edges.yml](07_provisioning/external-edges.yml) for generic port mapping.

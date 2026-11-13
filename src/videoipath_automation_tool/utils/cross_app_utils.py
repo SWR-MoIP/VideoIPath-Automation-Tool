@@ -1,3 +1,4 @@
+import ipaddress
 import logging
 import re
 import uuid
@@ -18,6 +19,17 @@ def create_fallback_logger(name: str) -> logging.Logger:
 # --- Generate UUID4 ---
 def generate_uuid_4():
     return str(uuid.uuid4())
+
+
+# --- Address comparison ---
+def normalize_address(address: str) -> str:
+    """Normalize a device address for comparison: IP literals in compressed form (no DNS lookup),
+    any other identifier case-insensitively."""
+    candidate = address.strip()
+    try:
+        return ipaddress.ip_address(candidate.strip("[]")).compressed
+    except ValueError:
+        return candidate.casefold()
 
 
 # --- Natural Sort Device ID list ---
