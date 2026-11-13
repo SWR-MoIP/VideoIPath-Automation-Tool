@@ -16,6 +16,7 @@ from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _I
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
+    from videoipath_automation_tool.apps.inspect.domain.maintenance import InspectMaintenanceBooking
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
     from videoipath_automation_tool.apps.inspect.model.actions import InspectApiEdgeForm
@@ -80,6 +81,11 @@ class InspectEdge(InspectEditableModel):
         """Live status for this edge. In the lean skeleton only the pair-level status is present;
         the per-edge status (per direction) appears in the full edge shape."""
         return self.indexed.edge.status or self.indexed.pair_status
+
+    @property
+    def maintenance_bookings(self) -> list[InspectMaintenanceBooking]:
+        """Bookings explicitly selecting this edge; no topology hydration."""
+        return self.snapshot.maintenance_for_resource("edge", self.id)
 
     @property
     def alarms(self) -> list[InspectAlarm]:
@@ -213,7 +219,7 @@ class InspectEdge(InspectEditableModel):
         return self._staged_or("bandwidth", lambda: self._form_get("bandwidth"))
 
     @bandwidth_capacity.setter
-    def bandwidth_capacity(self, value: float | int) -> None:
+    def bandwidth_capacity(self, value: float) -> None:
         self._stage("bandwidth", value)
 
     @property

@@ -206,9 +206,237 @@ info = app.inspect.get_sync_info(["device12"])
 app.inspect.sync_devices(["device12"], add_only=True, conflict_strategy=ConflictStrategy.STRICT)
 ```
 
-## 5. Notes
+## 5. Maintenance bookings
 
-- Inspect uses **only** the collector API surface at runtime; it never calls the
+Maintenance methods execute immediately, independently of `transaction()` and
+`commit()`. These examples use an existing `app` instance and a dedicated test
+device named `device-a`.
+
+### Prepare a one-time booking
+
+Describe the selected resources, the time window, and the booking metadata.
+Creating these Python objects does not change anything on the server.
+
+```python
+from datetime import UTC, datetime, timedelta
+
+from videoipath_automation_tool.apps.inspect import (
+    MaintenanceBookingSpec,
+    MaintenanceOnceSchedule,
+    MaintenanceTargets,
+)
+
+# Select the resources that the maintenance will affect.
+device = app.inspect.get_device("device-a")
+
+if device is None:
+    raise ValueError("Create or select a test device before running this example.")
+
+targets = MaintenanceTargets(devices=[device])
+
+
+# Define one future window using timezone-aware datetimes.
+now = datetime.now(UTC)
+
+schedule = MaintenanceOnceSchedule(
+    start=now + timedelta(days=1),
+    end=now + timedelta(days=1, hours=2),
+)
+
+
+# Combine the metadata, resources, and schedule into a complete specification.
+spec = MaintenanceBookingSpec(
+    label="maintenance-a",
+    tags=["maintenance-example"],
+    targets=targets,
+    schedule=schedule,
+)
+```
+
+Targets accept canonical resource IDs or matching Inspect domain objects. String
+module/port IDs must be globally qualified PIDs, not display labels or local keys.
+
+Defaults match the UI: no overlap, `action="nothing"`, `trigger="create"`, and no
+format switching. Supported actions are `nothing`, `invalidate`, `reroute`, and
+`rerouteSA`; triggers are `create` and `active`.
+
+### Preview and create
+
+Previewing is read-only. Call the creation method separately when ready to write.
+
+```python
+# Preview groups reports by affected service ID, with one report per affected window.
+preview = app.inspect.validate_maintenance_booking(spec)
+print("Preview:", preview)
+
+
+# Create immediately and keep the IDs returned by the server.
+created = app.inspect.create_maintenance_booking(spec)
+booking_ids = list(created.details)
+
+# Do not infer booking IDs from labels or success messages.
+if not booking_ids:
+    raise RuntimeError("No booking IDs returned; inspect server state before retrying.")
+```
+
+### Read and filter
+
+```python
+# Fetch one booking by its server ID.
+booking = app.inspect.get_maintenance_booking(booking_ids[0])
+
+if booking is None:
+    raise RuntimeError("The booking is not visible; refresh before continuing.")
+
+print(booking.label, booking.state, booking.starts_at, booking.ends_at)
+
+
+# Search labels and tags, optionally limiting the state.
+scheduled = app.inspect.find_maintenance_bookings(
+    state="scheduled",
+    search="maintenance-example",
+)
+
+
+# Current impact is grouped by booking ID, then by affected service ID.
+impact = app.inspect.get_maintenance_impact(booking_ids)
+print("Current impact:", impact)
+```
+
+`maintenance_bookings` reads all bookings. `find_maintenance_bookings(state="all",
+search="")` supports `all`, `active`, and `scheduled`, with case-insensitive label/tag
+search. `get_maintenance_booking(id)` returns `None` when absent. The collection is
+loaded once per snapshot without device hydration; full snapshots reuse their
+existing maintenance data. Call `refresh()` to observe changes from other clients.
+
+Bookings expose `rev`, `label`, `description`, `tags`, `state`, `locked`, action
+settings, `starts_at`/`ends_at`, and selected `devices`, `modules`, `ports`, and `edges`.
+Unknown numeric states remain available as integers. `raw` retains unresolved
+resource contexts and PID segments, even if the corresponding topology object is
+missing.
+
+Resource objects expose `.maintenance_bookings`; device/module relationships
+also include explicitly selected descendants and edge endpoints. Ancestor bookings
+are available on that ancestor rather than repeated on every descendant.
+
+### Update, lock, start, and delete
+
+Updates require the complete specification and an explicit one-time schedule for
+the booking ID. They fetch the current booking revision before posting.
+
+`locked=None` preserves its fresh lock state; booleans change it. `expected_rev`
+raises `InspectMaintenanceConflictError` before writing if the revision differs.
+
+```python
+# Lock the booking only if its revision still matches the one we read.
+app.inspect.update_maintenance_booking(
+    booking.id,
+    spec,
+    locked=True,
+    expected_rev=booking.rev,
+)
+
+
+# Reuse the complete specification, changing only the intended schedule.
+# An omitted start means "now" on the server; end is an explicit timestamp.
+immediate_schedule = MaintenanceOnceSchedule(
+    end=datetime.now(UTC) + timedelta(hours=1),
+)
+
+start_now = spec.model_copy(update={"schedule": immediate_schedule})
+
+app.inspect.update_maintenance_booking(
+    booking.id,
+    start_now,
+    locked=False,
+)
+
+
+# Delete the explicit IDs created by this example.
+app.inspect.delete_maintenance_bookings(booking_ids)
+```
+
+`MaintenanceOnceSchedule(start=None, end=...)` starts now; `end=None` is open-ended.
+Supply timezone-aware datetimes; the SDK converts them to epoch milliseconds.
+
+### Recurring schedules
+
+```python
+from datetime import time
+
+from videoipath_automation_tool.apps.inspect import MaintenanceRecurringSchedule
+
+# Define a finite rule. Other supported frequencies are "daily" and "monthly".
+rule = MaintenanceRecurringSchedule(
+    frequency="weekly",
+
+    # Only complete windows within these bounds will be included.
+    start=datetime(2030, 1, 1, tzinfo=UTC),
+    end=datetime(2030, 2, 1, tzinfo=UTC),
+
+    # Repeat the local window every Monday and Friday in this timezone.
+    timezone="Europe/Berlin",
+    local_start=time(4),
+    local_end=time(5),
+    weekdays=[1, 5],  # ISO Monday=1; use weekdays only for weekly rules.
+)
+
+recurring_spec = spec.model_copy(update={"schedule": rule})
+
+
+# Inspect the individual dates before contacting the server.
+windows = rule.expand()
+
+for window in windows:
+    print(window.start, window.end)
+
+
+# Preview each window, then create all dated bookings in one write action.
+preview = app.inspect.validate_maintenance_booking(recurring_spec)
+print("Recurring preview:", preview)
+
+created = app.inspect.create_maintenance_booking(recurring_spec)
+recurring_ids = list(created.details)
+
+
+# Each occurrence has its own ID. Remove the example occurrences when finished.
+if recurring_ids:
+    app.inspect.delete_maintenance_bookings(recurring_ids)
+```
+
+On the verified server, native recurring maintenance requests created a broad window
+that could not subsequently be updated. The SDK therefore expands rules into dated
+one-time bookings and creates them in one action. Each has an independent server ID
+in `created.details`. Preview makes one read-only request per window. Keep the rule
+in your application if needed: collector windows do not preserve recurrence intent.
+
+Update, lock, start, and delete individual IDs; there is no series-management API.
+
+The expansion rules are:
+
+- **Bounds:** include only complete windows within the finite range, up to 1,000.
+- **Monthly dates:** use the local start date's day and skip months without that day.
+- **Overnight windows:** an end time earlier than the start time crosses midnight.
+- **Daylight saving time:** reject missing local times; use the first occurrence
+  when a local time is ambiguous.
+- **Iteration filters:** raw transport models preserve `iterationFilter`, but
+  expansion rejects nonempty filters because their server-specific semantics
+  are unverified.
+
+### Errors and cached reads
+
+`InspectMaintenanceError` includes `operation`, `booking_ids`, `detail`, and
+`response`. Both envelope and operation failures are checked. Writes are never
+automatically retried after an uncertain transport failure.
+
+A successful write invalidates maintenance/status/service caches without clearing staged topology
+edits or making follow-up reads; a later refresh failure cannot hide that success.
+
+See the [complete maintenance example](../examples/04_inspect/04_maintenance_bookings.py).
+
+## 6. Notes
+
+- Inspect uses the Inspect API surface, including its maintenance actions; it never calls the
   legacy `nGraphElements` / `edgesByDevice` endpoints.
 - The topology view is loaded lazily and kept internal to `app.inspect`; a
   pure-write workflow never triggers a read. Reads and hydration are internally

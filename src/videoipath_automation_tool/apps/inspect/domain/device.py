@@ -26,6 +26,7 @@ from videoipath_automation_tool.validators.virtual_device_id import is_virtual_d
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
+    from videoipath_automation_tool.apps.inspect.domain.maintenance import InspectMaintenanceBooking
     from videoipath_automation_tool.apps.inspect.domain.module import InspectModule
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.service import InspectService
@@ -140,6 +141,11 @@ class InspectDevice(InspectEditableModel):
     @property
     def sync_severity(self) -> InspectSeverity | int | str | None:
         return self._record().node.syncSeverity
+
+    @property
+    def maintenance_bookings(self) -> list[InspectMaintenanceBooking]:
+        """Bookings selecting this resource or its descendants; no topology hydration."""
+        return self.snapshot.maintenance_for_resource("device", self.id)
 
     @property
     def alarms(self) -> list[InspectAlarm]:

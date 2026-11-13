@@ -21,6 +21,8 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     map_severity,
 )
 
+from .maintenance import InspectApiMaintenanceBookingItem
+
 
 class InspectApiGenericServiceFields(InspectApiBaseModel):
     allocationState: int | None = None
@@ -318,11 +320,6 @@ class InspectApiExternalEdgesByDeviceKeyItem(InspectApiBaseModel):
     primary: InspectApiExternalEdgeSide
     secondary: InspectApiExternalEdgeSide
     status: InspectApiExternalEdgeLiveStatus | None = None
-
-
-class InspectApiMaintenanceBookingItem(InspectApiBaseModel):
-    id: str = Field(alias="_id")
-    vid: str | None = Field(default=None, alias="_vid")
 
 
 class InspectApiSuperProfileItem(InspectApiBaseModel):
