@@ -385,6 +385,14 @@ class InspectIpVertex(InspectVertex):
         self._stage("typeFields.supportsOpenflowCfg", value)
 
     @property
+    def supports_pseudo_wires(self) -> bool | None:
+        return self._tf("supportsPseudoWiresCfg", "typeFields.supportsPseudoWiresCfg")
+
+    @supports_pseudo_wires.setter
+    def supports_pseudo_wires(self, value: bool) -> None:
+        self._stage("typeFields.supportsPseudoWiresCfg", value)
+
+    @property
     def supports_static_igmp(self) -> bool | None:
         return self._tf("supportsStaticIgmpCfg", "typeFields.supportsStaticIgmpCfg")
 
@@ -416,6 +424,14 @@ class InspectIpVertex(InspectVertex):
     @supports_vpls.setter
     def supports_vpls(self, value: bool) -> None:
         self._stage("typeFields.supportsVplsCfg", value)
+
+    @property
+    def supports_vxlan(self) -> bool | None:
+        return self._tf("supportsVxlanCfg", "typeFields.supportsVxlanCfg")
+
+    @supports_vxlan.setter
+    def supports_vxlan(self, value: bool) -> None:
+        self._stage("typeFields.supportsVxlanCfg", value)
 
     def _tf(self, name: str, staged_field: str) -> Any:
         return self._staged_or(

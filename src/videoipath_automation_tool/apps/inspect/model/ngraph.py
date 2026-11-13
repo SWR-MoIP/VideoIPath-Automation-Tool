@@ -89,9 +89,11 @@ class InspectApiIpVertex(InspectApiVertex):
     supportsMacForwardingCfg: bool | None = None
     supportsNsoCfg: bool | None = None
     supportsOpenflowCfg: bool | None = None
+    supportsPseudoWiresCfg: bool | None = None
     supportsStaticIgmpCfg: bool | None = None
     supportsVlanCfg: bool | None = None
     supportsVplsCfg: bool | None = None
+    supportsVxlanCfg: bool | None = None
     vlanId: str | None = None
     vrfId: str | None = None
 

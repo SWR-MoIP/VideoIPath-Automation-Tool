@@ -9,21 +9,17 @@
   
 [![PyPI version](https://img.shields.io/pypi/v/videoipath-automation-tool)](https://pypi.org/project/videoipath-automation-tool/)
 [![GitHub Workflow Status](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/actions/workflows/ci.yml/badge.svg)](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool/actions/workflows/ci.yml)
-[![Python Versions](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue)](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool)
+[![Python Versions](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13%20|%203.14-blue)](https://github.com/SWR-MoIP/VideoIPath-Automation-Tool)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
 </div>
 
-<hr />
-
-> **⚠️ Attention ⚠️**<br>
->This Python package, the VideoIPath Automation Tool, is still under development and currently in the beta phase. Features and interfaces may change as development progresses. Feel free to use the module and provide feedback, but be aware that breaking changes may occur in future versions.
 
 ## Introduction
 
-The **VideoIPath Automation Tool** is a Python package designed to simplify and optimize interactions with the VideoIPath API. The focus is on providing a user-friendly and efficient way to automate configuration tasks and bulk operations on VideoIPath servers. The package abstracts the complexity of the API and provides a high-level interface. Currently, the package offers methods for managing devices  in the Inventory and Topology apps, as well as the configuration of multicast pools and profiles.
+The **VideoIPath Automation Tool** is a Python package designed to simplify interactions with the VideoIPath API. Its focus is on automating configuration tasks and bulk operations on VideoIPath servers in a user-friendly and efficient way. The package hides the complexity of the API behind a clean, high-level interface – from system-wide **Settings**, through device onboarding in **Inventory**, to network modeling in **Topology** and **Inspect**.
 
-The provided methods and data models ensure easy handling, robust validation, comprehensive logging, and enhanced reliability.
+Its data models provide robust validation and easy handling, complemented by comprehensive logging.
 
 ## Quick Start Guide
 
@@ -41,6 +37,12 @@ The package is available via the [Python Package Index (PyPI)](https://pypi.org/
 
 ```bash
 pip install videoipath-automation-tool
+```
+
+For production use, it is recommended to pin a minor version, as minor releases may contain breaking changes until 1.0:
+
+```bash
+pip install "videoipath-automation-tool~=0.11.0"
 ```
 
 **Note:** By default, the latest Long-Term Support (LTS) version (currently **2024.4.30**) is used for schema validation and IntelliSense.
