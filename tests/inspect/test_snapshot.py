@@ -4,6 +4,7 @@ section laziness, preload fan-out, refresh, and post-commit targeted refresh."""
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -21,6 +22,9 @@ from videoipath_automation_tool.apps.inspect.model.common import InspectSeverity
 from videoipath_automation_tool.apps.inspect.snapshot import HydrationLevel, InspectSnapshot
 
 from .conftest import load_fixture
+
+if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
 
 
 def test_skeleton_indexes_devices_and_edges(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -408,6 +412,179 @@ def test_filter_ports_by_kind_uses_one_batched_lookup(snapshot: tuple[InspectSna
     assert len(fetcher.vertex_lookup_calls) == 1
 
 
+# --- Edge incidence: every directed edge is visible at both of its endpoints ---
+
+
+def test_outgoing_edge_is_visible_at_target_device_port_and_links(
+    snapshot: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, _ = snapshot
+    edge_id = "leaf-a.dev.0.up1::spine-a.dev.0.swp1"  # primary-only pair, sourced at leaf-a
+    assert _ids(snap.get_edges_for_device("leaf-a")) == [edge_id]
+    assert _ids(snap.get_edges_for_device("spine-a")) == [edge_id]
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == [edge_id]
+    assert _ids(snap.get_port("spine-a", "spine-a.dev.0.swp1").edges) == [edge_id]
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-a"}
+
+
+def test_secondary_only_pair_is_visible_at_both_endpoints() -> None:
+    edge = _edge("spine-a", "spine-a.dev.0.swp1", "leaf-a", "leaf-a.dev.0.up1")
+    snap, _ = _edge_snapshot([_pair("leaf-a", "spine-a", secondary=[edge])])
+    for device_id, port_id in (("leaf-a", "leaf-a.dev.0.up1"), ("spine-a", "spine-a.dev.0.swp1")):
+        assert _ids(snap.get_edges_for_device(device_id)) == [edge["id"]]
+        assert _ids(snap.get_edges_for_port(device_id, port_id)) == [edge["id"]]
+    assert {d.id for d in snap.get_device("leaf-a").linked_devices} == {"spine-a"}
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-a"}
+
+
+def test_bidirectional_port_returns_both_directions() -> None:
+    forward = _edge("leaf-a", "leaf-a.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")
+    reverse = _edge("spine-a", "spine-a.dev.0.swp1", "leaf-a", "leaf-a.dev.0.up1")
+    snap, _ = _edge_snapshot([_pair("leaf-a", "spine-a", primary=[forward], secondary=[reverse])])
+    both = sorted([forward["id"], reverse["id"]])
+    assert _ids(snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.up1")) == both
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == both
+    assert _ids(snap.get_edges_for_device("leaf-a")) == both
+    assert _ids(snap.get_edges_for_device("spine-a")) == both
+    assert len(snap.edges) == 2  # each directed edge exactly once
+
+
+def test_separate_in_and_out_ports_each_return_their_edge() -> None:
+    a_to_b = _edge("leaf-a", "leaf-a.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")
+    b_to_a = _edge("spine-a", "spine-a.dev.0.swp2", "leaf-a", "leaf-a.dev.0.host1")
+    snap, _ = _edge_snapshot([_pair("leaf-a", "spine-a", primary=[a_to_b], secondary=[b_to_a])])
+    assert _ids(snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.up1")) == [a_to_b["id"]]
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == [a_to_b["id"]]
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp2")) == [b_to_a["id"]]
+    assert _ids(snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.host1")) == [b_to_a["id"]]
+
+
+def test_port_keeps_multiple_edges_from_different_pairs() -> None:
+    from_a = _edge("leaf-a", "leaf-a.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")
+    from_b = _edge("leaf-b", "leaf-b.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")
+    snap, _ = _edge_snapshot(
+        [_pair("leaf-a", "spine-a", primary=[from_a]), _pair("leaf-b", "spine-a", primary=[from_b])],
+        devices=("leaf-a", "spine-a", "leaf-b"),
+    )
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == sorted([from_a["id"], from_b["id"]])
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-a", "leaf-b"}
+
+
+def test_missing_context_device_falls_back_to_the_edge_side() -> None:
+    edge = _edge(None, "spine-a.dev.0.swp1", None, "leaf-a.dev.0.up1")
+    snap, _ = _edge_snapshot([_pair("leaf-a", "spine-a", secondary=[edge])])
+    (indexed,) = snap.edges
+    assert indexed.from_device is not None and indexed.from_device.id == "spine-a"
+    assert indexed.to_device is not None and indexed.to_device.id == "leaf-a"
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == [edge["id"]]
+    assert _ids(snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.up1")) == [edge["id"]]
+
+
+def test_removing_target_device_drops_its_incoming_edges(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    snap.apply_post_commit(removed_ids=["spine-a"], mark_paths_stale=False)
+    assert snap.edges == []
+    assert snap.get_edges_for_device("leaf-a") == []
+    assert snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.up1") == []
+    assert snap.get_device("leaf-a").linked_devices == []
+
+
+def test_network_refresh_drops_vanished_pair_of_target_only_device(
+    snapshot: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, fetcher = snapshot
+    fetcher.get_edge_skeleton = list
+    snap.apply_network_refresh(["spine-a"])  # spine-a is only the target of leaf-a -> spine-a
+    assert snap.edges == []
+    assert snap.get_edges_for_device("leaf-a") == []
+
+
+def test_edge_skeleton_fixture_edges_are_visible_at_both_endpoints() -> None:
+    items = load_fixture("edge_skeleton.json")["data"]["status"]["collector"]["externalEdgesByDeviceKey"]["_items"]
+    pairs = [InspectApiExternalEdgesByDeviceKeyItem.model_validate(item) for item in items]
+    device_pids = {side.devicePid for pair in pairs for side in (pair.primary, pair.secondary) if side.devicePid}
+    snap = InspectSnapshot(
+        fetcher=None,
+        device_items=[_skeleton_node(_fixture_device_id(pid), pid) for pid in sorted(device_pids)],
+        edge_items=pairs,
+    )
+
+    expected: set[str] = set()
+    for pair in pairs:
+        for side in (pair.primary, pair.secondary):
+            for edge in side.data.values():
+                expected.add(edge.id)
+                for endpoint in (edge.fromStatus, edge.toStatus):
+                    assert endpoint is not None and endpoint.context is not None
+                    device_id = _fixture_device_id(endpoint.context.devicePid or "")
+                    port_id = endpoint.context.portPid or ""
+                    assert edge.id in _ids(snap.get_edges_for_device(device_id)), (edge.id, device_id)
+                    assert edge.id in _ids(snap.get_edges_for_port(device_id, port_id)), (edge.id, port_id)
+    assert sorted(_ids(snap.edges)) == sorted(expected)
+
+    # device-a::device-j only carries device-j -> device-a (in secondary.data).
+    assert "device-j.0.P2.out::device-b.dev.module-1.port-in-1.in" in _ids(snap.get_edges_for_device("device-a"))
+    assert "device-j" in {d.id for d in snap.get_device("device-a").linked_devices}
+    # The virtual device receives on .1/.2 and sends on .3/.4 (dash-form pids in the edge context).
+    assert set(_ids(snap.get_edges_for_device("virtual.0"))) == {"uuid-0006", "uuid-0007", "uuid-0009", "uuid-0010"}
+    assert _ids(snap.get_edges_for_port("virtual.0", "virtual-0.virt.0.1")) == ["uuid-0010"]
+
+
+# --- Blast radius: device-targeted refreshes only touch pairs that contain the target device ---
+
+
+def test_network_refresh_of_one_device_leaves_other_pairs_untouched(
+    star: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, fetcher = star
+    untouched = _pair_edges(snap, "leaf-b::spine-a")
+    snap.apply_network_refresh(["leaf-a"])
+    assert fetcher.device_detail_calls == ["leaf-a"]
+    assert fetcher.edge_pair_calls == []
+    assert snap.is_device_hydrated("spine-a") is False
+    _assert_same_edge_objects(_pair_edges(snap, "leaf-b::spine-a"), untouched)
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-a", "leaf-b"}
+
+
+def test_post_commit_device_refresh_does_not_touch_any_edge(star: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = star
+    before = {e.id: e for e in snap.edges}
+    snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
+    assert fetcher.device_detail_calls == ["leaf-a"]
+    assert fetcher.edge_pair_calls == []
+    _assert_same_edge_objects({e.id: e for e in snap.edges}, before)
+
+
+def test_post_commit_pair_refresh_only_refetches_that_pair(star: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = star
+    untouched = _pair_edges(snap, "leaf-b::spine-a")
+    snap.apply_post_commit(pair_ids=["leaf-a::spine-a"], mark_paths_stale=False)
+    assert fetcher.edge_pair_calls == ["leaf-a::spine-a"]
+    assert fetcher.device_detail_calls == []
+    _assert_same_edge_objects(_pair_edges(snap, "leaf-b::spine-a"), untouched)
+
+
+def test_device_removal_only_drops_the_pairs_of_that_device(star: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = star
+    untouched = _pair_edges(snap, "leaf-b::spine-a")
+    snap.apply_post_commit(removed_ids=["leaf-a"], mark_paths_stale=False)
+    assert fetcher.device_detail_calls == []
+    assert fetcher.edge_pair_calls == []
+    _assert_same_edge_objects({e.id: e for e in snap.get_edges_for_device("spine-a")}, untouched)
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-b"}
+
+
+def test_failed_network_reconcile_marks_only_target_pairs_stale(star: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = star
+
+    def failing_skeleton() -> list[InspectApiExternalEdgesByDeviceKeyItem]:
+        raise RuntimeError("simulated edge skeleton failure")
+
+    fetcher.get_edge_skeleton = failing_skeleton
+    snap.apply_network_refresh(["leaf-a"])
+    assert snap._stale_pairs == {"leaf-a::spine-a"}
+
+
 # --- Internal ---
 
 
@@ -538,26 +715,72 @@ def _filter_detail_node(device_id: str, label: str) -> InspectApiNodeStatusItem:
 
 
 def _edge_pair(dev_a: str, dev_b: str, port_a: str, port_b: str) -> InspectApiExternalEdgesByDeviceKeyItem:
-    edge_id = f"{port_a}::{port_b}"
+    return _pair(dev_a, dev_b, primary=[_edge(dev_a, port_a, dev_b, port_b)])
+
+
+def _pair(
+    dev_a: str,
+    dev_b: str,
+    *,
+    primary: list[dict] | None = None,
+    secondary: list[dict] | None = None,
+) -> InspectApiExternalEdgesByDeviceKeyItem:
+    """A collector edge pair; ``primary`` / ``secondary`` hold the edges sourced at ``dev_a`` / ``dev_b``."""
     return InspectApiExternalEdgesByDeviceKeyItem.model_validate(
         {
             "_id": f"{dev_a}::{dev_b}",
             "_vid": f"{dev_a}::{dev_b}",
-            "primary": {
-                "devicePid": dev_a,
-                "label": dev_a,
-                "data": {
-                    edge_id: {
-                        "id": edge_id,
-                        "fromStatus": {"context": {"devicePid": dev_a, "portPid": port_a}, "label": "out"},
-                        "toStatus": {"context": {"devicePid": dev_b, "portPid": port_b}, "label": "in"},
-                    }
-                },
-            },
-            "secondary": {"devicePid": dev_b, "label": dev_b, "data": {}},
+            "primary": {"devicePid": dev_a, "label": dev_a, "data": {e["id"]: e for e in primary or []}},
+            "secondary": {"devicePid": dev_b, "label": dev_b, "data": {e["id"]: e for e in secondary or []}},
             "status": {"alarm": 0, "bandwidth": 0, "maintenance": 0, "ptp": 0},
         }
     )
+
+
+def _edge(from_device: str | None, from_port: str, to_device: str | None, to_port: str) -> dict:
+    """A directed collector edge; a ``None`` device omits ``context.devicePid`` on that endpoint."""
+
+    def endpoint(device_id: str | None, port_id: str, label: str) -> dict:
+        context = {"portPid": port_id} if device_id is None else {"devicePid": device_id, "portPid": port_id}
+        return {"context": context, "label": label}
+
+    return {
+        "id": f"{from_port}::{to_port}",
+        "fromStatus": endpoint(from_device, from_port, "out"),
+        "toStatus": endpoint(to_device, to_port, "in"),
+    }
+
+
+def _edge_snapshot(
+    pairs: list[InspectApiExternalEdgesByDeviceKeyItem],
+    devices: tuple[str, ...] = ("leaf-a", "spine-a"),
+) -> tuple[InspectSnapshot, FakeFetcher]:
+    fetcher = FakeFetcher()
+    fetcher.get_edge_skeleton = lambda: list(pairs)
+    snap = InspectSnapshot(
+        fetcher=fetcher,
+        device_items=[_skeleton_node(device_id, device_id.upper()) for device_id in devices],
+        edge_items=pairs,
+    )
+    return snap, fetcher
+
+
+def _fixture_device_id(device_pid: str) -> str:
+    """Public device id for a collector ``devicePid`` (virtual devices: ``virtual-0`` -> ``virtual.0``)."""
+    return device_pid.replace("-", ".") if device_pid.startswith("virtual-") else device_pid
+
+
+def _ids(edges: list[InspectEdge]) -> list[str]:
+    return sorted(edge.id for edge in edges)
+
+
+def _pair_edges(snap: InspectSnapshot, pair_id: str) -> dict[str, InspectEdge]:
+    return {edge.id: edge for edge in snap.edges if edge.pair_id == pair_id}
+
+
+def _assert_same_edge_objects(after: dict[str, InspectEdge], before: dict[str, InspectEdge]) -> None:
+    assert after.keys() == before.keys()
+    assert all(after[edge_id] is before[edge_id] for edge_id in before)
 
 
 def _path_item(booking: str, dev_a: str, dev_b: str) -> InspectApiPathItem:
@@ -816,4 +1039,26 @@ def snapshot() -> Iterator[tuple[InspectSnapshot, FakeFetcher]]:
         edge_items=fetcher.get_edge_skeleton(),
     )
     fetcher.skeleton_calls = 0  # reset after construction
+    yield snap, fetcher
+
+
+@pytest.fixture
+def star() -> Iterator[tuple[InspectSnapshot, FakeFetcher]]:
+    """leaf-a and leaf-b, each linked in both directions to the shared partner spine-a."""
+    pairs = [
+        _pair(
+            "leaf-a",
+            "spine-a",
+            primary=[_edge("leaf-a", "leaf-a.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")],
+            secondary=[_edge("spine-a", "spine-a.dev.0.swp1", "leaf-a", "leaf-a.dev.0.up1")],
+        ),
+        _pair(
+            "leaf-b",
+            "spine-a",
+            primary=[_edge("leaf-b", "leaf-b.dev.0.up1", "spine-a", "spine-a.dev.0.swp2")],
+            secondary=[_edge("spine-a", "spine-a.dev.0.swp2", "leaf-b", "leaf-b.dev.0.up1")],
+        ),
+    ]
+    snap, fetcher = _edge_snapshot(pairs, devices=("leaf-a", "spine-a", "leaf-b"))
+    fetcher._details["leaf-b"] = _detail_node("leaf-b", "LEAF-B", ["leaf-b.dev.0.up1"])
     yield snap, fetcher

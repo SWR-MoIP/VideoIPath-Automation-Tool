@@ -27,6 +27,7 @@ from ..helpers import (
     TopologyBuilder,
     create_module_test_tag,
     create_test_tag,
+    discover_port_cursors,
     edges_between,
     module_test_tag_id,
     router_ports,
@@ -169,6 +170,26 @@ def test_connectivity_graph(app: VideoIPathApp, topology_builder: TopologyBuilde
     app.inspect.refresh()
     linked = {device.label for device in app.inspect.get_device(hub).linked_devices}
     assert linked == {topology_builder.labels[id_b], topology_builder.labels[id_c]}
+
+
+def test_incoming_edge_visible_on_target(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
+    """A single directed edge A -> B is exposed on B (device, port, linked devices), not only on A."""
+    id_a, id_b = topology_builder.add_devices([("INCOMING-A", 2), ("INCOMING-B", 2)])
+    cursors = discover_port_cursors(app, [id_a, id_b])
+    a_out, _ = cursors[id_a].next_port()
+    _, b_in = cursors[id_b].next_port()
+    with app.inspect.transaction() as tx:
+        tx.connect(a_out, b_in, bidirectional=False)
+        tx.commit()
+    app.inspect.refresh()
+
+    (edge,) = edges_between(app, id_a, id_b)
+    assert edge.from_device is not None and edge.from_device.id == id_a
+    assert edge.to_port is not None
+    target = app.inspect.get_device(id_b)
+    assert edge.id in {e.id for e in target.edges}
+    assert edge.id in {e.id for e in edge.to_port.edges}
+    assert id_a in {device.id for device in target.linked_devices}
 
 
 def test_edge_pair_refresh(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:

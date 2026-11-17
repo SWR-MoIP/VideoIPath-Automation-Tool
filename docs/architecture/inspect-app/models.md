@@ -218,9 +218,9 @@ Represents one topology device/node with status, sync hints, and relations.
 | `tags` | Assigned tags |
 | `coordinates` | Topology map position when available |
 | `ports` | Ports on this device |
-| `edges` | External edges touching this device |
+| `edges` | External edges touching this device (incoming and outgoing) |
 | `services` | Services whose path includes this device |
-| `linked_devices` | Neighbour devices via edges or shared service paths |
+| `linked_devices` | Neighbour devices connected by an edge in either direction |
 
 Lookup:
 
