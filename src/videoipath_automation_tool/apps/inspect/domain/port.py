@@ -181,9 +181,10 @@ class InspectPort(InspectFrozenModel):
 
     @property
     def edges(self) -> list[InspectEdge]:
-        """The edges incident on this port. The Inspect read view (``externalEdgesByDeviceKey``) keys
-        edge endpoints by *port* — with a UUID edge id and only a direction hint in the endpoint label
-        — so edges are exposed at the port level here, not per vertex."""
+        """The directed edges incident on this port, incoming and outgoing. The Inspect read view
+        (``externalEdgesByDeviceKey``) keys edge endpoints by *port* — with a UUID edge id and only a
+        direction hint in the endpoint label — so edges are exposed at the port level here, not per
+        vertex."""
         port_id = self.id
         if not port_id:
             return []
