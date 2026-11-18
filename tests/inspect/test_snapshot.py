@@ -161,19 +161,64 @@ def test_alarms_section_is_lazy_and_correlates(snapshot: tuple[InspectSnapshot, 
     assert fetcher.alarm_section_calls == 1
     assert len(alarms) == 3
     assert alarms[0].severity == InspectSeverity.MAJOR  # worst first
-    assert alarms[0].message == "Loss of protection"
-    assert device.status_message == "Loss of protection"
+    assert alarms[0].title == "Port Alarm"
+    assert alarms[0].details == "Loss of protection"
+    assert alarms[0].message == "Port Alarm: Loss of protection"
+    assert device.status_message == "Port Alarm: Loss of protection"
     _ = device.alarms
     assert fetcher.alarm_section_calls == 1
 
     module_alarms = snap.get_alarms_for_module("leaf-a", "leaf-a.dev.module-1")
     assert len(module_alarms) == 1
-    assert module_alarms[0].message == "Loss of protection"
+    assert module_alarms[0].message == "Port Alarm: Loss of protection"
 
     port_alarms = snap.get_alarms_for_port("leaf-a.dev.module-1.port-out-1")
     assert len(port_alarms) == 1
-    assert port_alarms[0].message == "Loss of disjunctivity"
+    assert port_alarms[0].message == "Signal: Loss of disjunctivity"
     assert port_alarms[0].severity == InspectSeverity.MINOR
+
+
+@pytest.mark.parametrize(
+    ("alert", "details", "expected"),
+    [
+        (
+            {"label": "No SDI sync", "desc": "The network port is down"},
+            "",
+            ("No SDI sync", None, "The network port is down", "No SDI sync"),
+        ),
+        (
+            {"label": "", "desc": ""},
+            "Mock driver in use",
+            (None, "Mock driver in use", None, "Mock driver in use"),
+        ),
+        (
+            {"label": "port-out-1: Transmitting alternative signal", "desc": ""},
+            "Transmitting test image",
+            (
+                "port-out-1: Transmitting alternative signal",
+                "Transmitting test image",
+                None,
+                "port-out-1: Transmitting alternative signal: Transmitting test image",
+            ),
+        ),
+        (None, None, (None, None, None, None)),
+        ({"label": "", "desc": ""}, "", (None, None, None, None)),
+    ],
+)
+def test_alarm_message_joins_title_and_details(
+    alert: dict[str, str] | None,
+    details: str | None,
+    expected: tuple[str | None, str | None, str | None, str | None],
+) -> None:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
+
+    payload: dict[str, object] = {"_id": "alarm-1"}
+    if alert is not None:
+        payload["desc"] = {"alertId": alert}
+    if details is not None:
+        payload["info"] = {"details": details}
+    alarm = InspectAlarm(item=InspectApiAlarmItem.model_validate(payload))
+    assert (alarm.title, alarm.details, alarm.description, alarm.message) == expected
 
 
 def test_post_commit_marks_alarms_stale(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
