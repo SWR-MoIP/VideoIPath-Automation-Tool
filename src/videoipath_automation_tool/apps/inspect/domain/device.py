@@ -148,7 +148,7 @@ class InspectDevice(InspectEditableModel):
 
     @property
     def status_message(self) -> str | None:
-        """Message of the worst active alarm on this device, if any."""
+        """GUI text of the worst active alarm on this device, if any."""
         alarms = self.alarms
         return alarms[0].message if alarms else None
 
