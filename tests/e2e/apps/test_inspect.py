@@ -377,6 +377,20 @@ def test_full_vs_skeleton_equivalence(app: VideoIPathApp, topology_builder: Topo
         app.inspect.refresh(load="skeleton")
 
 
+def test_bidirectional_port_exposes_both_directions(app: VideoIPathApp) -> None:
+    """A double port with no nested vertexType still exposes vertex_out and vertex_in."""
+    app.inspect.refresh()
+    app.inspect.preload()
+    for device in app.inspect.devices:
+        for port in device.ports:
+            if not port.is_bidirectional:
+                continue
+            assert port.vertex_out is not None and port.vertex_out.vertex_type == "Out"
+            assert port.vertex_in is not None and port.vertex_in.vertex_type == "In"
+            return
+    pytest.skip("No bidirectional port on this server.")
+
+
 def test_create_virtual_device(app: VideoIPathApp, e2e_map_origins) -> None:
     templates = app.inspect.list_port_templates()
     if not templates:
