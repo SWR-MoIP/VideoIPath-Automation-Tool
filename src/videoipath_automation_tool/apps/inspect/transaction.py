@@ -41,6 +41,7 @@ from videoipath_automation_tool.apps.inspect.errors import (
     InspectConflict,
     InspectEntityNotFoundError,
     InspectError,
+    InspectSnapshotReplacedError,
     InspectUnsupportedFieldError,
 )
 from videoipath_automation_tool.apps.inspect.model.actions import (
@@ -195,6 +196,8 @@ class InspectTransaction:
         objects = list(obj) if isinstance(obj, Sequence) and not _is_single_editable(obj) else [obj]  # type: ignore[list-item]
         if not objects:
             raise ValueError("Nothing to update.")
+        for item in objects:
+            _require_live_object(self._snapshot, item)
 
         flushed_keys: list[tuple[str, str]] = []
         for item in objects:
@@ -627,6 +630,8 @@ class InspectTransaction:
             raise RuntimeError("This transaction was already committed; open a new one.")
         if self._discarded:
             raise RuntimeError("This transaction was discarded; open a new one.")
+        if self._snapshot is not None and getattr(self._snapshot, "replaced", False):
+            raise InspectSnapshotReplacedError()
 
     def _stage_device(self, device_id: str) -> _Staged:
         return self._stage(_DEVICE, device_id)
@@ -1004,6 +1009,12 @@ def _is_single_editable(obj: Any) -> bool:
     from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
 
     return isinstance(obj, (InspectDevice, InspectVertex, InspectEdge, InspectModule))
+
+
+def _require_live_object(snapshot: "InspectSnapshot", obj: Editable) -> None:
+    """Reject a domain object that is not bound to ``snapshot``, or a snapshot ``refresh()`` replaced."""
+    if getattr(snapshot, "replaced", False) or obj.snapshot is not snapshot:
+        raise InspectSnapshotReplacedError(obj.id)
 
 
 def _stage_editable(

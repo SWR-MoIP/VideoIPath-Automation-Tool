@@ -14,3 +14,4 @@ Each ADR captures one architectural decision and its consequences.
 | [006](./006-collector-only-endpoints.md) | Collector-only endpoint policy | Accepted |
 | [007](./007-write-consistency.md) | Write consistency (compare-and-commit) | Accepted |
 | [008](./008-post-commit-snapshot-refresh.md) | Post-commit snapshot refresh | Accepted |
+| [009](./009-object-lifetime-after-refresh.md) | Object lifetime after refresh() | Accepted |
