@@ -134,12 +134,14 @@ _EDGE_LEAN_TAIL = (
 )
 _EDGE_SKELETON = "/status/collector/externalEdgesByDeviceKey/*" + _EDGE_LEAN_TAIL
 
-# Services / paths section: serviceFields (endpoints, labels, status) + per-hop path structure.
+# Services / paths section: serviceFields (endpoint pids, labels, status) + per-hop path.
+# Three pops after generic/descriptor/** land back on the path item: two would look up
+# serviceStatus and path under generic, which is empty on 2025.4.9. Verified against full mode.
 _PATHS_SECTION = (
     "/status/collector/inspect/paths/*"
-    "/serviceFields/bid,from,fromLabel,isMain,to,toLabel"
+    "/serviceFields/bid,from,fromLabel,fromPid,isMain,to,toLabel,toPid"
     "/.../generic/descriptor/**"
-    "/.../.../serviceStatus/**"
+    "/.../.../.../serviceStatus/**"
     "/.../.../.../path/*/bid,ipDesc"
     "/.../structure/deviceId,deviceLabel,devicePid"
     "/.../inputStatus,outputStatus/label,pid"

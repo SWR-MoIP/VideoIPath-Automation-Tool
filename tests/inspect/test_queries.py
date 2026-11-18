@@ -78,6 +78,15 @@ def test_edge_pair_targets_single_pair() -> None:
     assert "externalEdgesByDeviceKey/device12::device7" in decoded
 
 
+def test_paths_section_selects_endpoint_pids_status_and_path() -> None:
+    decoded = urllib.parse.unquote(queries.paths_section())
+    assert "/serviceFields/bid,from,fromLabel,fromPid,isMain,to,toLabel,toPid" in decoded
+    assert "/.../generic/descriptor/**" in decoded
+    # Three pops: serviceStatus and path are siblings of generic, not children of it.
+    assert "/.../.../.../serviceStatus/**/.../.../.../path/*/bid,ipDesc" in decoded
+    assert len(queries.paths_section()) < queries.MAX_QUERY_LENGTH
+
+
 def test_encode_preserves_grammar_characters_and_encodes_quotes_and_spaces() -> None:
     encoded = queries.encode("/a b/*/x,y/'z'/\"q\"")
     assert "%20" in encoded  # space encoded
