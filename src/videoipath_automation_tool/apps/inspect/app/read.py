@@ -54,14 +54,12 @@ class InspectReadMixin:
             keys = current.pending_edit_keys()
             if keys:
                 raise InspectPendingEditsError(keys)
-        if load is not None:
-            self._load_mode = load
-        loaded = self._load_snapshot(self._load_mode)
+        mode = load if load is not None else self._load_mode
+        loaded = self._load_snapshot(mode)
         if current is not None:
-            if discard_pending:
-                current.clear_staged()
-            current.mark_replaced()
+            current.mark_replaced(discard_pending=discard_pending)
         self._snapshot = loaded
+        self._load_mode = mode
 
     # --- Devices ---
 

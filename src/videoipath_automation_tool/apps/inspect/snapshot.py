@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import Field
 
 from videoipath_automation_tool.apps.inspect.control import merge_vertex_intents, validate_vertex_intents
-from videoipath_automation_tool.apps.inspect.errors import InspectSnapshotReplacedError
+from videoipath_automation_tool.apps.inspect.errors import InspectPendingEditsError, InspectSnapshotReplacedError
 from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiCollectorResponse,
@@ -443,24 +443,33 @@ class InspectSnapshot:
         with self._lock:
             if self._replaced:
                 raise InspectSnapshotReplacedError(entity_id)
-            edits = self._pending_edits.setdefault((kind, entity_id), {})
             if kind == "vertex":
-                merge_vertex_intents(edits, validate_vertex_intents([(field, value)]))
+                validated = validate_vertex_intents([(field, value)])
+                edits = self._pending_edits.setdefault((kind, entity_id), {})
+                merge_vertex_intents(edits, validated)
+                if not edits:
+                    self._pending_edits.pop((kind, entity_id), None)
             else:
+                edits = self._pending_edits.setdefault((kind, entity_id), {})
                 edits[field] = value
 
     def pending_edit_keys(self) -> list[tuple[str, str]]:
         """``(kind, entity_id)`` pairs that still have staged edits, in stable order."""
         with self._lock:
-            return sorted(self._pending_edits)
+            return sorted(key for key, edits in self._pending_edits.items() if edits)
 
-    def mark_replaced(self) -> None:
+    def mark_replaced(self, *, discard_pending: bool = False) -> None:
         """Mark this snapshot as retired by ``app.inspect.refresh()``.
 
-        Reads stay available. ``stage_edit`` and writes through the app raise
-        ``InspectSnapshotReplacedError``.
+        Check pending edits and retire the snapshot under the staging lock, so edits made
+        during the reload are either preserved by refusing replacement or explicitly discarded.
+        Reads stay available; subsequent writes raise ``InspectSnapshotReplacedError``.
         """
         with self._lock:
+            if discard_pending:
+                self._pending_edits.clear()
+            elif keys := self.pending_edit_keys():
+                raise InspectPendingEditsError(keys)
             self._replaced = True
 
     @property
