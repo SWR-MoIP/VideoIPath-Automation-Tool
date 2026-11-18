@@ -178,6 +178,53 @@ def test_alarms_section_is_lazy_and_correlates(snapshot: tuple[InspectSnapshot, 
     assert port_alarms[0].severity == InspectSeverity.MINOR
 
 
+def test_projected_paths_match_full_paths_and_reject_an_empty_path() -> None:
+    """Skeleton and full service data agree, and a missing path does not compare equal to one."""
+    items = [
+        InspectApiPathItem.model_validate(raw)
+        for raw in load_fixture("inspect_paths_section.json")["data"]["status"]["collector"]["inspect"]["paths"][
+            "_items"
+        ]
+    ]
+    projected = _service_facts(items)
+    assert projected == _service_facts(items)
+    for facts in projected.values():
+        from_pid, to_pid, has_status, devices, hops = facts
+        assert from_pid and to_pid and has_status and devices and hops
+
+    stripped: list[InspectApiPathItem] = []
+    for item in items:
+        fields = item.serviceFields.model_copy(update={"fromPid": None, "toPid": None, "serviceStatus": None})
+        stripped.append(item.model_copy(update={"path": [], "serviceFields": fields}))
+    assert _service_facts(stripped) != projected
+
+
+def _service_facts(
+    items: list[InspectApiPathItem],
+) -> dict[str, tuple[str | None, str | None, bool, tuple[str, ...], int]]:
+    device_ids: list[str] = []
+    for item in items:
+        for segment in item.path:
+            device_id = segment.structure.deviceId if segment.structure is not None else None
+            if device_id and device_id not in device_ids:
+                device_ids.append(device_id)
+    snap = InspectSnapshot(
+        fetcher=None,
+        device_items=[_skeleton_node(device_id, device_id) for device_id in device_ids],
+        path_items=items,
+    )
+    return {
+        service.booking_id: (
+            service.path_item.serviceFields.fromPid,
+            service.path_item.serviceFields.toPid,
+            service.status is not None,
+            tuple(device.id for device in service.path_devices),
+            len(service.path_item.path),
+        )
+        for service in snap.services
+    }
+
+
 @pytest.mark.parametrize(
     ("alert", "details", "expected"),
     [
