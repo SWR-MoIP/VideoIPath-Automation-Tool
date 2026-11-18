@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
-from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, InspectSeverity, format_repr
+from videoipath_automation_tool.apps.inspect.model.common import (
+    InspectApiDescriptor,
+    InspectFrozenModel,
+    InspectSeverity,
+    format_repr,
+)
 
 _ALARM_MESSAGE_REPR_LIMIT = 60
 
@@ -16,9 +21,27 @@ class InspectAlarm(InspectFrozenModel):
         return self.item.id_field
 
     @property
-    def message(self) -> str | None:
+    def title(self) -> str | None:
+        """Alarm title (``desc.alertId.label``). ``None`` when missing or empty."""
+        return _text(self._alert.label if self._alert is not None else None)
+
+    @property
+    def details(self) -> str | None:
+        """Alarm details (``info.details``). ``None`` when missing or empty."""
         info = self.item.info
-        return info.details if info is not None else None
+        return _text(info.details if info is not None else None)
+
+    @property
+    def description(self) -> str | None:
+        """Longer alarm description (``desc.alertId.desc``). ``None`` when missing or empty."""
+        return _text(self._alert.desc if self._alert is not None else None)
+
+    @property
+    def message(self) -> str | None:
+        """The alarm text the GUI shows: the non-empty parts of :attr:`title` and :attr:`details`,
+        joined with ``": "``. ``None`` when both are empty."""
+        parts = [part for part in (self.title, self.details) if part]
+        return ": ".join(parts) or None
 
     @property
     def severity(self) -> InspectSeverity | int | str | None:
@@ -77,6 +100,15 @@ class InspectAlarm(InspectFrozenModel):
         return format_repr(self, id=self.id, severity=self.severity, message=message)
 
     __str__ = __repr__
+
+    @property
+    def _alert(self) -> InspectApiDescriptor | None:
+        desc = self.item.desc
+        return desc.alertId if desc is not None else None
+
+
+def _text(value: str | None) -> str | None:
+    return value or None
 
 
 __all__ = ["InspectAlarm"]

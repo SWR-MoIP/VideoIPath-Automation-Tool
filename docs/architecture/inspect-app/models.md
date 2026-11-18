@@ -197,7 +197,10 @@ snapshot section). Each of `device` / `module` / `port` / `edge` / `service` exp
 
 | Field / property | Meaning |
 | --- | --- |
-| `message` | Alarm text (e.g. `"Mock driver in use"`, `"Loss of protection"`) |
+| `title` | Alarm title (`desc.alertId.label`); `None` when missing or empty |
+| `details` | Alarm details (`info.details`); `None` when missing or empty |
+| `description` | Longer description (`desc.alertId.desc`); not part of the GUI alarm line; `None` when missing or empty |
+| `message` | GUI alarm text: the non-empty parts of `title` and `details`, joined with `": "` (e.g. `"Mock driver in use"`, `"Port Alarm: Loss of protection"`) |
 | `severity` / `sa` | Mapped `InspectSeverity` |
 | `acknowledged` / `hidden` | Alarm acknowledgement flags |
 | `point_labels` | Human labels for the alarm's point path |
@@ -214,7 +217,7 @@ Represents one topology device/node with status, sync hints, and relations.
 | `status` | Device status summary (`sa` / `severity` as `InspectSeverity`) |
 | `sync_severity` | Sync severity from node status (`InspectSeverity`) |
 | `alarms` | Active alarms on this device (worst first) |
-| `status_message` | Message of the worst active alarm, if any |
+| `status_message` | GUI text (`message`) of the worst active alarm, if any |
 | `tags` | Assigned tags |
 | `coordinates` | Topology map position when available |
 | `ports` | Ports on this device |

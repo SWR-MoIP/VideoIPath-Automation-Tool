@@ -377,6 +377,17 @@ def test_full_vs_skeleton_equivalence(app: VideoIPathApp, topology_builder: Topo
         app.inspect.refresh(load="skeleton")
 
 
+def test_alarm_message_joins_title_and_details(app: VideoIPathApp) -> None:
+    """Every active alarm's message is the GUI text: non-empty title and details joined with ': '."""
+    app.inspect.refresh()
+    alarms = [alarm for device in app.inspect.devices for alarm in device.alarms]
+    if not alarms:
+        pytest.skip("No active alarms on this server.")
+    for alarm in alarms:
+        parts = [part for part in (alarm.title, alarm.details) if part]
+        assert alarm.message == (": ".join(parts) or None)
+
+
 def test_bidirectional_port_exposes_both_directions(app: VideoIPathApp) -> None:
     """A double port with no nested vertexType still exposes vertex_out and vertex_in."""
     app.inspect.refresh()
