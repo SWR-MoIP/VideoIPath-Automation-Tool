@@ -30,6 +30,30 @@ class InspectEntityNotFoundError(InspectError):
         super().__init__(f"Inspect {kind} '{entity_id}' was not found on the server.")
 
 
+class InspectMaintenanceError(InspectError):
+    """Maintenance transport, protocol, or server failure. Writes are never retried.
+
+    ``response`` retains server details when available. A transport failure may
+    have happened after the write; re-read before deciding whether to retry.
+    """
+
+    def __init__(self, operation: str, booking_ids: list[str], detail: str, response: object = None) -> None:
+        self.operation = operation
+        self.booking_ids = booking_ids
+        self.detail = detail
+        self.response = response
+        super().__init__(f"Inspect maintenance {operation} failed: {detail}")
+
+
+class InspectMaintenanceConflictError(InspectMaintenanceError):
+    """The caller's expected revision differs from the freshly read booking."""
+
+    def __init__(self, booking_id: str, expected_rev: str, actual_rev: str) -> None:
+        self.expected_rev = expected_rev
+        self.actual_rev = actual_rev
+        super().__init__("update", [booking_id], f"revision changed from {expected_rev!r} to {actual_rev!r}")
+
+
 class InspectQueryTooLongError(InspectError):
     """A scoped collector query URL exceeds the server/proxy URI length limit (HTTP 414).
 
@@ -54,7 +78,7 @@ class InspectCommitError(InspectError):
     typed response so callers can inspect ``validation.details`` and ``res.msg``.
     """
 
-    def __init__(self, response: "InspectApiUpdateTopologyResponse") -> None:
+    def __init__(self, response: InspectApiUpdateTopologyResponse) -> None:
         self.response = response
         self.result = response.data.res
         self.validation = response.data.validation
@@ -94,10 +118,12 @@ class InspectCommitConflictError(InspectError):
 
 
 __all__ = [
-    "InspectError",
-    "InspectEntityNotFoundError",
-    "InspectQueryTooLongError",
+    "InspectCommitConflictError",
     "InspectCommitError",
     "InspectConflict",
-    "InspectCommitConflictError",
+    "InspectEntityNotFoundError",
+    "InspectError",
+    "InspectMaintenanceConflictError",
+    "InspectMaintenanceError",
+    "InspectQueryTooLongError",
 ]

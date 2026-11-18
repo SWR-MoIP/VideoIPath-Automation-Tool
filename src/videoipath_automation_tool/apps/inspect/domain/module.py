@@ -12,11 +12,12 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     format_repr,
 )
 from videoipath_automation_tool.apps.inspect.model.virtual import InspectApiVirtualModule
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _STAGED_MISSING
+from videoipath_automation_tool.apps.inspect.snapshot import _STAGED_MISSING, InspectSnapshot
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
     from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice
+    from videoipath_automation_tool.apps.inspect.domain.maintenance import InspectMaintenanceBooking
     from videoipath_automation_tool.apps.inspect.domain.port import InspectPort
     from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
     from videoipath_automation_tool.apps.inspect.model.collector import InspectApiModuleStatus
@@ -81,6 +82,13 @@ class InspectModule(InspectEditableModel):
     def status(self) -> InspectApiStatusSummary | None:
         status = self._status()
         return status.status if status is not None else None
+
+    @property
+    def maintenance_bookings(self) -> list[InspectMaintenanceBooking]:
+        """Bookings selecting this resource or its descendants; no topology hydration."""
+        status = self._status()
+        pid = (status.context.modulePid if status and status.context else None) or (status.pid if status else None)
+        return self.snapshot.maintenance_for_resource("module", pid or self.id)
 
     @property
     def alarms(self) -> list[InspectAlarm]:
