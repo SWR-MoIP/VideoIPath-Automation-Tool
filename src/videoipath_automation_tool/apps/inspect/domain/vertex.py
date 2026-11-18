@@ -284,7 +284,7 @@ class InspectVertex(InspectEditableModel):
         if field.startswith("typeFields."):
             form = self._cached_form()
             if form is not None:
-                require_supported_type_field(form, field, entity_id=self.id)
+                require_supported_type_field(form, field, value, entity_id=self.id)
         super()._stage(field, value)
 
     def _cached_form(self) -> InspectApiVertexEditForm | None:
