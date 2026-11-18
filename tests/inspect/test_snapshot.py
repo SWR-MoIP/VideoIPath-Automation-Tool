@@ -199,6 +199,121 @@ def test_projected_paths_match_full_paths_and_reject_an_empty_path() -> None:
     assert _service_facts(stripped) != projected
 
 
+def test_redundant_booking_keeps_main_and_spare_paths() -> None:
+    raw_items = load_fixture("inspect_paths_section.json")["data"]["status"]["collector"]["inspect"]["paths"]["_items"]
+    items = [InspectApiPathItem.model_validate(raw) for raw in raw_items]
+    spare = items[1]
+    items.append(
+        spare.model_copy(
+            update={
+                "id": "booking-1003::spare",
+                "vid": "_:booking-1003::spare",
+                "serviceFields": spare.serviceFields.model_copy(update={"bid": "booking-1003"}),
+            }
+        )
+    )
+    items.append(
+        InspectApiPathItem.model_validate(
+            {
+                "_id": "booking-1004::spare",
+                "_vid": "_:booking-1004::spare",
+                "serviceFields": {"bid": "booking-1004"},
+                "path": [{"bid": "booking-1004", "structure": {"deviceId": "device-a"}}],
+            }
+        )
+    )
+    items.append(
+        InspectApiPathItem.model_validate(
+            {
+                "_id": "booking-1005::main",
+                "_vid": "_:booking-1005::main",
+                "serviceFields": {"bid": "booking-1005"},
+                "path": [{"bid": "booking-1005", "structure": {"deviceId": "device-b"}}],
+            }
+        )
+    )
+    snap = _service_snapshot(items)
+    by_id = {service.booking_id: service for service in snap.services}
+    assert set(by_id) == {"booking-1001", "booking-1002", "booking-1003", "booking-1004", "booking-1005"}
+
+    redundant = by_id["booking-1001"]
+    assert redundant.is_redundant is True
+    assert redundant.is_main is True
+    assert [device.id for device in redundant.path_devices] == ["device-a", "device-b"]
+    assert redundant.main_path is not None
+    assert [device.id for device in redundant.main_path.devices] == ["device-a", "device-b"]
+    assert redundant.spare_path is not None and redundant.spare_path.is_main is False
+    assert [device.id for device in redundant.spare_path.devices] == ["device-a", "device-c"]
+    assert redundant.spare_path_item is not None and redundant.spare_path_item.id == "booking-1001::spare"
+
+    assert {service.booking_id for service in snap.get_services_for_device("device-c")} == {
+        "booking-1001",
+        "booking-1002",
+        "booking-1003",
+    }
+    assert {service.booking_id for service in snap.get_services_for_device("device-d")} == {"booking-1002"}
+
+    spare_only = by_id["booking-1003"]
+    assert spare_only.is_redundant is False
+    assert spare_only.main_path is None
+    assert spare_only.is_main is False
+    assert [device.id for device in spare_only.path_devices] == ["device-a", "device-c"]
+
+    assert by_id["booking-1004"].main_path is None and by_id["booking-1004"].spare_path is not None
+    assert by_id["booking-1004"].is_main is False
+    assert by_id["booking-1004"].spare_path.is_main is False
+    assert by_id["booking-1005"].main_path is not None and by_id["booking-1005"].spare_path is None
+    assert by_id["booking-1005"].is_main is True
+    assert by_id["booking-1005"].main_path.is_main is True
+
+
+@pytest.mark.parametrize("explicit_flags", [False, True])
+def test_service_path_roles_match_indexed_roles(explicit_flags: bool) -> None:
+    """Missing flags use the id suffix; explicit flags override even a contradictory suffix."""
+    items = [
+        InspectApiPathItem.model_validate(
+            {
+                "_id": f"booking-1::{suffix}",
+                "_vid": f"_:booking-1::{suffix}",
+                "serviceFields": {"bid": "booking-1", **({"isMain": flag} if explicit_flags else {})},
+            }
+        )
+        for suffix, flag in (("spare", True), ("main", False))
+    ]
+    service = _service_snapshot(items).get_service_by_booking_id("booking-1")
+    assert service is not None and service.is_redundant
+    assert service.is_main is True
+    assert service.main_path is not None and service.main_path.is_main is True
+    assert service.spare_path is not None and service.spare_path.is_main is False
+    assert service.path_item.id == ("booking-1::spare" if explicit_flags else "booking-1::main")
+    assert [item.serviceFields.isMain for item in items] == ([True, False] if explicit_flags else [None, None])
+
+
+def test_non_redundant_service_has_no_spare_path(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    service = snap.get_service_by_booking_id("1001")
+    assert service is not None
+    assert service.is_redundant is False
+    assert service.is_main is True
+    assert service.spare_path is None
+    assert service.main_path is not None
+    assert [device.id for device in service.path_devices] == [device.id for device in service.main_path.devices]
+
+
+def _service_snapshot(items: list[InspectApiPathItem]) -> InspectSnapshot:
+    device_ids: list[str] = []
+    for item in items:
+        for segment in item.path:
+            device_id = segment.structure.deviceId if segment.structure is not None else None
+            if device_id and device_id not in device_ids:
+                device_ids.append(device_id)
+    return InspectSnapshot(
+        fetcher=None,
+        device_items=[_skeleton_node(device_id, device_id) for device_id in device_ids],
+        path_items=items,
+    )
+
+
 def _service_facts(
     items: list[InspectApiPathItem],
 ) -> dict[str, tuple[str | None, str | None, bool, tuple[str, ...], int]]:

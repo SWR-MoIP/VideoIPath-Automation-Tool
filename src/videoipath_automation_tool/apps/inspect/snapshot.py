@@ -107,8 +107,8 @@ class InspectSnapshot:
         # owning edge pair is dropped/re-indexed after a refresh/commit.
         self._edge_details: dict[str, InspectApiEdgeForm] = {}
 
-        # Section: services / paths
-        self._paths_by_booking_id: dict[str, InspectApiPathItem] = {}
+        # Section: services / paths. One record per booking; a redundant booking keeps main and spare.
+        self._services_by_booking_id: dict[str, _IndexedService] = {}
         self._services_by_device_id: dict[str, list[str]] = {}
         self._section_loaded: dict[str, bool] = {"paths": False, "alarms": False}
         self._section_fetched_at: dict[str, datetime] = {}
@@ -366,23 +366,23 @@ class InspectSnapshot:
     @property
     def services(self) -> list[InspectService]:
         self._ensure_section_paths()
-        return [self._wrap_service(item) for item in self._paths_by_booking_id.values()]
+        return [self._wrap_service(indexed) for indexed in self._services_by_booking_id.values()]
 
     def get_services(self) -> list[InspectService]:
         return self.services
 
     def get_service_by_booking_id(self, booking_id: str) -> InspectService | None:
         self._ensure_section_paths()
-        item = self._paths_by_booking_id.get(booking_id)
-        return self._wrap_service(item) if item else None
+        indexed = self._services_by_booking_id.get(booking_id)
+        return self._wrap_service(indexed) if indexed is not None else None
 
     def get_services_for_device(self, device_id: str) -> list[InspectService]:
         self._ensure_section_paths()
         result: list[InspectService] = []
         for booking_id in self._services_by_device_id.get(device_id, []):
-            item = self._paths_by_booking_id.get(booking_id)
-            if item is not None:
-                result.append(self._wrap_service(item))
+            indexed = self._services_by_booking_id.get(booking_id)
+            if indexed is not None:
+                result.append(self._wrap_service(indexed))
         return result
 
     # --- Alarm reads (section, trigger section load) ---
@@ -697,7 +697,7 @@ class InspectSnapshot:
     def _mark_paths_stale(self) -> None:
         with self._lock:
             self._section_loaded["paths"] = False
-            self._paths_by_booking_id.clear()
+            self._services_by_booking_id.clear()
             self._services_by_device_id.clear()
 
     def _mark_alarms_stale(self) -> None:
@@ -948,13 +948,15 @@ class InspectSnapshot:
     def _index_paths(self, path_items: list[InspectApiPathItem]) -> None:
         for item in path_items:
             booking_id = item.serviceFields.bid
-            self._paths_by_booking_id[booking_id] = item
-            device_ids: set[str] = set()
-            for segment in item.path:
-                structure = segment.structure
-                if structure and structure.deviceId:
-                    device_ids.add(structure.deviceId)
-            for device_id in device_ids:
+            indexed = self._services_by_booking_id.get(booking_id)
+            if indexed is None:
+                indexed = _IndexedService(booking_id=booking_id)
+                self._services_by_booking_id[booking_id] = indexed
+            if _path_is_main(item):
+                indexed.main = item
+            else:
+                indexed.spare = item
+            for device_id in _path_device_ids(item):
                 ids = self._services_by_device_id.setdefault(device_id, [])
                 if booking_id not in ids:
                     ids.append(booking_id)
@@ -1056,15 +1058,14 @@ class InspectSnapshot:
             result.append(self._wrap_edge(indexed))
         return result
 
-    def _wrap_service(self, path_item: InspectApiPathItem) -> InspectService:
+    def _wrap_service(self, indexed: _IndexedService) -> InspectService:
         from videoipath_automation_tool.apps.inspect.domain.service import InspectService
 
-        booking_id = path_item.serviceFields.bid
-        cached = self._service_cache.get(booking_id)
+        cached = self._service_cache.get(indexed.booking_id)
         if cached is not None:
             return cached
-        service = InspectService(snapshot=self, path_item=path_item)
-        self._service_cache[booking_id] = service
+        service = InspectService(snapshot=self, main_item=indexed.main, spare_item=indexed.spare)
+        self._service_cache[indexed.booking_id] = service
         return service
 
 
@@ -1097,6 +1098,14 @@ def _sorted_alarms(items: list[InspectApiAlarmItem]) -> list[InspectAlarm]:
         reverse=True,
     )
     return [InspectAlarm(item=item) for item in ordered]
+
+
+class _IndexedService(InspectInternalModel):
+    """Main and spare path items of one booking. ``main`` wins for the unqualified accessors."""
+
+    booking_id: str
+    main: InspectApiPathItem | None = None
+    spare: InspectApiPathItem | None = None
 
 
 class _DeviceRecord(InspectInternalModel):
@@ -1203,6 +1212,21 @@ def _vertex_ids_from_status(port: InspectPortStatus) -> tuple[str, ...]:
     if isinstance(info, InspectApiSingleVertexInfo):
         return (info.id,) if info.id else ()
     return tuple(side.id for side in (info.out, info.in_) if side is not None and side.id)
+
+
+def _path_is_main(item: InspectApiPathItem) -> bool:
+    """Main unless ``isMain`` is false or, when it is unset, the id ends in ``::spare``."""
+    if item.serviceFields.isMain is not None:
+        return item.serviceFields.isMain
+    return not item.id.endswith("::spare")
+
+
+def _path_device_ids(item: InspectApiPathItem) -> set[str]:
+    return {
+        segment.structure.deviceId
+        for segment in item.path
+        if segment.structure is not None and segment.structure.deviceId
+    }
 
 
 def _iter_modules(

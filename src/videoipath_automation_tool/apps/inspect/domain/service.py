@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiPathItem, InspectServiceStatus
 from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, format_repr
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _port_id_from_endpoint
+from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _path_is_main, _port_id_from_endpoint
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
@@ -13,8 +13,13 @@ if TYPE_CHECKING:
 
 
 class InspectService(InspectFrozenModel):
+    """One booking. A redundant booking keeps its main and spare path; the accessors without a
+    path qualifier (``path_devices``, ``status``, ``source_port``, …) read the main path, or the
+    spare path when the booking has no main item."""
+
     snapshot: InspectSnapshot
-    path_item: InspectApiPathItem
+    main_item: InspectApiPathItem | None = None
+    spare_item: InspectApiPathItem | None = None
 
     @property
     def booking_id(self) -> str:
@@ -37,31 +42,29 @@ class InspectService(InspectFrozenModel):
 
     @property
     def source_port(self) -> InspectPort | None:
-        return self._resolve_endpoint_port(self.path_item.serviceFields.fromPid)
+        return self._primary_path.source_port
 
     @property
     def destination_port(self) -> InspectPort | None:
-        return self._resolve_endpoint_port(self.path_item.serviceFields.toPid)
+        return self._primary_path.destination_port
 
     @property
     def source_device(self) -> InspectDevice | None:
-        port = self.source_port
-        if port is not None:
-            return port.device
-        devices = self.path_devices
-        return devices[0] if devices else None
+        return self._primary_path.source_device
 
     @property
     def destination_device(self) -> InspectDevice | None:
-        port = self.destination_port
-        if port is not None:
-            return port.device
-        devices = self.path_devices
-        return devices[-1] if devices else None
+        return self._primary_path.destination_device
 
     @property
-    def is_main(self) -> bool | None:
-        return self.path_item.serviceFields.isMain
+    def is_main(self) -> bool:
+        """Whether :attr:`path_item` is the main path. ``True`` for a redundant booking."""
+        return _path_is_main(self.path_item)
+
+    @property
+    def is_redundant(self) -> bool:
+        """True when the booking has both a main and a spare path."""
+        return self.main_item is not None and self.spare_item is not None
 
     @property
     def status(self) -> InspectServiceStatus | None:
@@ -73,7 +76,90 @@ class InspectService(InspectFrozenModel):
         return self.snapshot.get_alarms_for_service(self.booking_id)
 
     @property
+    def path_item(self) -> InspectApiPathItem:
+        """The main path item, or the spare item when the booking has no main path."""
+        item = self.main_item if self.main_item is not None else self.spare_item
+        if item is None:
+            raise ValueError("Service has no path item.")
+        return item
+
+    @property
+    def spare_path_item(self) -> InspectApiPathItem | None:
+        """The spare path item of a redundant booking; ``None`` otherwise."""
+        return self.spare_item
+
+    @property
+    def main_path(self) -> InspectServicePath | None:
+        """The main path, or ``None`` when the booking only has a spare item."""
+        if self.main_item is None:
+            return None
+        return InspectServicePath(snapshot=self.snapshot, path_item=self.main_item)
+
+    @property
+    def spare_path(self) -> InspectServicePath | None:
+        """The spare path of a redundant booking; ``None`` when there is no spare item."""
+        if self.spare_item is None:
+            return None
+        return InspectServicePath(snapshot=self.snapshot, path_item=self.spare_item)
+
+    @property
     def path_devices(self) -> list[InspectDevice]:
+        return self._primary_path.devices
+
+    @property
+    def path_ports(self) -> list[InspectPort]:
+        return self._primary_path.ports
+
+    def __repr__(self) -> str:
+        return format_repr(self, booking_id=self.booking_id, label=self.label, redundant=self.is_redundant)
+
+    __str__ = __repr__
+
+    @property
+    def _primary_path(self) -> InspectServicePath:
+        return InspectServicePath(snapshot=self.snapshot, path_item=self.path_item)
+
+
+class InspectServicePath(InspectFrozenModel):
+    """One directed path of a booking (main or spare): its hops, endpoints and status."""
+
+    snapshot: InspectSnapshot
+    path_item: InspectApiPathItem
+
+    @property
+    def is_main(self) -> bool:
+        return _path_is_main(self.path_item)
+
+    @property
+    def status(self) -> InspectServiceStatus | None:
+        return self.path_item.serviceFields.serviceStatus
+
+    @property
+    def source_port(self) -> InspectPort | None:
+        return self._resolve_endpoint_port(self.path_item.serviceFields.fromPid)
+
+    @property
+    def destination_port(self) -> InspectPort | None:
+        return self._resolve_endpoint_port(self.path_item.serviceFields.toPid)
+
+    @property
+    def source_device(self) -> InspectDevice | None:
+        port = self.source_port
+        if port is not None:
+            return port.device
+        devices = self.devices
+        return devices[0] if devices else None
+
+    @property
+    def destination_device(self) -> InspectDevice | None:
+        port = self.destination_port
+        if port is not None:
+            return port.device
+        devices = self.devices
+        return devices[-1] if devices else None
+
+    @property
+    def devices(self) -> list[InspectDevice]:
         devices: list[InspectDevice] = []
         seen: set[str] = set()
         for segment in self.path_item.path:
@@ -87,7 +173,7 @@ class InspectService(InspectFrozenModel):
         return devices
 
     @property
-    def path_ports(self) -> list[InspectPort]:
+    def ports(self) -> list[InspectPort]:
         ports: list[InspectPort] = []
         seen: set[tuple[str, str]] = set()
         for segment in self.path_item.path:
@@ -108,14 +194,14 @@ class InspectService(InspectFrozenModel):
         return ports
 
     def __repr__(self) -> str:
-        return format_repr(self, booking_id=self.booking_id, label=self.label)
+        return format_repr(self, booking_id=self.path_item.serviceFields.bid, is_main=self.is_main)
 
     __str__ = __repr__
 
     def _resolve_endpoint_port(self, port_id: str | None) -> InspectPort | None:
         if not port_id:
             return None
-        for device in self.path_devices:
+        for device in self.devices:
             port = self.snapshot.get_port(device.id, port_id)
             if port is not None:
                 return port
