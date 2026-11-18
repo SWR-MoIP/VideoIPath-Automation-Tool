@@ -260,7 +260,33 @@ def test_redundant_booking_keeps_main_and_spare_paths() -> None:
     assert [device.id for device in spare_only.path_devices] == ["device-a", "device-c"]
 
     assert by_id["booking-1004"].main_path is None and by_id["booking-1004"].spare_path is not None
+    assert by_id["booking-1004"].is_main is False
+    assert by_id["booking-1004"].spare_path.is_main is False
     assert by_id["booking-1005"].main_path is not None and by_id["booking-1005"].spare_path is None
+    assert by_id["booking-1005"].is_main is True
+    assert by_id["booking-1005"].main_path.is_main is True
+
+
+@pytest.mark.parametrize("explicit_flags", [False, True])
+def test_service_path_roles_match_indexed_roles(explicit_flags: bool) -> None:
+    """Missing flags use the id suffix; explicit flags override even a contradictory suffix."""
+    items = [
+        InspectApiPathItem.model_validate(
+            {
+                "_id": f"booking-1::{suffix}",
+                "_vid": f"_:booking-1::{suffix}",
+                "serviceFields": {"bid": "booking-1", **({"isMain": flag} if explicit_flags else {})},
+            }
+        )
+        for suffix, flag in (("spare", True), ("main", False))
+    ]
+    service = _service_snapshot(items).get_service_by_booking_id("booking-1")
+    assert service is not None and service.is_redundant
+    assert service.is_main is True
+    assert service.main_path is not None and service.main_path.is_main is True
+    assert service.spare_path is not None and service.spare_path.is_main is False
+    assert service.path_item.id == ("booking-1::spare" if explicit_flags else "booking-1::main")
+    assert [item.serviceFields.isMain for item in items] == ([True, False] if explicit_flags else [None, None])
 
 
 def test_non_redundant_service_has_no_spare_path(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:

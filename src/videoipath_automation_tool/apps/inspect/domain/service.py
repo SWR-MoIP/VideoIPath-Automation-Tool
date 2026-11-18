@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiPathItem, InspectServiceStatus
 from videoipath_automation_tool.apps.inspect.model.common import InspectFrozenModel, format_repr
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _port_id_from_endpoint
+from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _path_is_main, _port_id_from_endpoint
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
@@ -57,9 +57,9 @@ class InspectService(InspectFrozenModel):
         return self._primary_path.destination_device
 
     @property
-    def is_main(self) -> bool | None:
+    def is_main(self) -> bool:
         """Whether :attr:`path_item` is the main path. ``True`` for a redundant booking."""
-        return self.path_item.serviceFields.isMain
+        return _path_is_main(self.path_item)
 
     @property
     def is_redundant(self) -> bool:
@@ -127,8 +127,8 @@ class InspectServicePath(InspectFrozenModel):
     path_item: InspectApiPathItem
 
     @property
-    def is_main(self) -> bool | None:
-        return self.path_item.serviceFields.isMain
+    def is_main(self) -> bool:
+        return _path_is_main(self.path_item)
 
     @property
     def status(self) -> InspectServiceStatus | None:
