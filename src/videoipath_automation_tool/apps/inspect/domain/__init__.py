@@ -5,7 +5,7 @@ from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice,
 from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
 from videoipath_automation_tool.apps.inspect.domain.module import InspectModule, VirtualModuleSpec
 from videoipath_automation_tool.apps.inspect.domain.port import InspectPort, InspectPortTemplate, PortFromTemplate
-from videoipath_automation_tool.apps.inspect.domain.service import InspectService
+from videoipath_automation_tool.apps.inspect.domain.service import InspectService, InspectServicePath
 from videoipath_automation_tool.apps.inspect.domain.vertex import (
     InspectCodecVertex,
     InspectGenericVertex,
@@ -26,6 +26,7 @@ __all__ = [
     "InspectPortTemplate",
     "InspectResourceTransformVertex",
     "InspectService",
+    "InspectServicePath",
     "InspectVertex",
     "PortFromTemplate",
     "VirtualDeviceSpec",

@@ -11,6 +11,7 @@ from videoipath_automation_tool.apps.inspect.domain import InspectModule as Insp
 from videoipath_automation_tool.apps.inspect.domain import InspectPort as InspectPort
 from videoipath_automation_tool.apps.inspect.domain import InspectPortTemplate as InspectPortTemplate
 from videoipath_automation_tool.apps.inspect.domain import InspectService as InspectService
+from videoipath_automation_tool.apps.inspect.domain import InspectServicePath as InspectServicePath
 from videoipath_automation_tool.apps.inspect.domain import PortFromTemplate as PortFromTemplate
 from videoipath_automation_tool.apps.inspect.domain import VirtualDeviceSpec as VirtualDeviceSpec
 from videoipath_automation_tool.apps.inspect.domain import VirtualModuleSpec as VirtualModuleSpec
@@ -43,6 +44,7 @@ __all__ = [
     "InspectPortTemplate",
     "InspectQueryTooLongError",
     "InspectService",
+    "InspectServicePath",
     "InspectTransaction",
     "PortFromTemplate",
     "VirtualDeviceSpec",
