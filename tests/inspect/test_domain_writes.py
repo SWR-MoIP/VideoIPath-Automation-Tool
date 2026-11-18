@@ -2,19 +2,23 @@
 
 from __future__ import annotations
 
+import copy
 from types import SimpleNamespace
 from typing import Any
+
+import pytest
 
 from videoipath_automation_tool.apps.inspect.app.write import InspectWriteMixin
 from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
 from videoipath_automation_tool.apps.inspect.domain.vertex import InspectCodecVertex, InspectIpVertex, build_vertex
+from videoipath_automation_tool.apps.inspect.errors import InspectUnsupportedFieldError
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiLookupEdgeResponseItem,
     InspectApiLookupInspectDeviceResponse,
     InspectApiLookupVertexResponseData,
 )
 from videoipath_automation_tool.apps.inspect.model.update_topology import InspectApiUpdateTopologyResponse
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _IndexedEdge, _STAGED_MISSING
+from videoipath_automation_tool.apps.inspect.snapshot import _STAGED_MISSING, InspectSnapshot, _IndexedEdge
 from videoipath_automation_tool.apps.inspect.transaction import InspectTransaction
 
 from .conftest import load_fixture
@@ -71,6 +75,47 @@ def test_codec_vertex_nested_setters() -> None:
     staged = snapshot.get_staged_edits("vertex", CODEC_ID)
     assert staged["typeFields.specific.sdpSupport"] is False
     assert staged["typeFields.generic.mainDstInfo.port"] == 50311
+
+
+def test_codec_out_setter_rejects_fields_the_form_does_not_have() -> None:
+    snapshot = InspectSnapshot()
+    snapshot._vertex_details[CODEC_ID] = _codec_out_lookup()
+    vertex = build_vertex(snapshot, CODEC_ID, kind="codec")
+    assert isinstance(vertex, InspectCodecVertex)
+
+    with pytest.raises(InspectUnsupportedFieldError) as raised:
+        vertex.sdp_support = True
+    assert raised.value.entity_id == CODEC_ID
+    assert raised.value.field == "typeFields.specific.sdpSupport"
+    assert raised.value.kind == "vertex"
+    assert isinstance(raised.value, ValueError)
+    with pytest.raises(InspectUnsupportedFieldError):
+        vertex.is_igmp_source = True
+    assert snapshot.get_staged_edits("vertex", CODEC_ID) == {}
+
+    vertex.codec_format = "Audio"
+    vertex.control = "full"
+    staged = snapshot.get_staged_edits("vertex", CODEC_ID)
+    assert staged["typeFields.generic.codecFormat"] == "Audio"
+    assert staged["control"] == "full"
+    assert "typeFields.specific.sdpSupport" not in staged
+
+
+def test_ip_setter_rejects_vxlan_and_pseudowires_and_keeps_igmp() -> None:
+    snapshot = InspectSnapshot()
+    fixture = load_fixture("lookup_inspect_vertex_by_id.json")
+    snapshot._vertex_details[CODEC_ID] = InspectApiLookupVertexResponseData.model_validate(fixture["data"])
+    vertex = build_vertex(snapshot, CODEC_ID, kind="ip")
+    assert isinstance(vertex, InspectIpVertex)
+
+    with pytest.raises(InspectUnsupportedFieldError):
+        vertex.supports_vxlan = True
+    with pytest.raises(InspectUnsupportedFieldError):
+        vertex.supports_pseudo_wires = True
+    assert snapshot.get_staged_edits("vertex", CODEC_ID) == {}
+
+    vertex.supports_igmp = False
+    assert snapshot.get_staged_value("vertex", CODEC_ID, "typeFields.supportsIgmpCfg") is False
 
 
 def test_ip_vertex_supports_static_igmp_alias() -> None:
@@ -174,8 +219,8 @@ def test_transaction_codec_nested_intents_round_trip() -> None:
         tx.update_vertex(CODEC_ID, sdp_support=False, main_destination_port=50311)
         tx.commit()
     form = api.update_calls[0].replaceVertices[CODEC_ID]
-    specific = getattr(form.typeFields, "specific")
-    generic = getattr(form.typeFields, "generic")
+    specific = form.typeFields.specific
+    generic = form.typeFields.generic
     if isinstance(specific, dict):
         assert specific["sdpSupport"] is False
     else:
@@ -350,6 +395,15 @@ def _snapshot_with_module(
     record = snapshot._devices_by_id[device_id]
     record.level = HydrationLevel.FULL
     return snapshot
+
+
+def _codec_out_lookup() -> InspectApiLookupVertexResponseData:
+    raw = copy.deepcopy(load_fixture("lookup_inspect_codec_vertex_by_id.json"))
+    specific = raw["data"]["fields"]["typeFields"]["specific"]
+    specific.pop("sdpSupport")
+    specific.pop("isIgmpSource")
+    specific["exclusive"] = True
+    return InspectApiLookupVertexResponseData.model_validate(raw["data"])
 
 
 def _device_response(label: str = "Device A") -> InspectApiLookupInspectDeviceResponse:

@@ -9,6 +9,9 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any, cast, get_args
 
+from pydantic import BaseModel
+
+from videoipath_automation_tool.apps.inspect.errors import InspectUnsupportedFieldError
 from videoipath_automation_tool.apps.inspect.model.actions import InspectApiVertexControlProps, InspectApiVertexEditForm
 from videoipath_automation_tool.apps.inspect.model.common import InspectControl
 
@@ -106,6 +109,45 @@ def staged_control_props(
         elif key == "control":
             result = control_to_props(value, result)
     return result
+
+
+def require_supported_type_field(form: InspectApiVertexEditForm, wire_path: str, *, entity_id: str) -> None:
+    """Reject a ``typeFields.*`` path whose key is absent from the lookup form.
+
+    Only ``typeFields`` paths are checked. Top-level keys such as ``control`` are absent from
+    the form by design and are mapped onto ``controlProps`` at commit.
+    """
+    if not wire_path.startswith("typeFields."):
+        return
+    if _form_has_path(form, wire_path):
+        return
+    raise InspectUnsupportedFieldError(entity_id, wire_path, kind="vertex")
+
+
+def _form_has_path(form: InspectApiVertexEditForm, wire_path: str) -> bool:
+    node: Any = form
+    for key in wire_path.split("."):
+        if not _node_has_key(node, key):
+            return False
+        node = _node_child(node, key)
+    return True
+
+
+def _node_has_key(node: Any, key: str) -> bool:
+    if isinstance(node, BaseModel):
+        return key in node.model_fields_set or key in (node.model_extra or {})
+    if isinstance(node, dict):
+        return key in node
+    return False
+
+
+def _node_child(node: Any, key: str) -> Any:
+    if isinstance(node, BaseModel):
+        extra = node.model_extra or {}
+        if key in extra:
+            return extra[key]
+        return getattr(node, key)
+    return node[key]
 
 
 def control_wire_intents(intents: Mapping[str, Any], props: InspectApiVertexControlProps | None) -> dict[str, Any]:
