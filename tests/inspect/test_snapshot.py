@@ -418,8 +418,20 @@ def test_refresh_returns_new_snapshot(snapshot: tuple[InspectSnapshot, FakeFetch
     snap, fetcher = snapshot
     new = snap.refresh()
     assert new is not snap
+    assert snap.replaced is False
+    assert new.replaced is False
     assert fetcher.skeleton_calls == 1
     assert {d.id for d in new.devices} == {"spine-a", "leaf-a"}
+
+
+def test_post_commit_refresh_does_not_replace_the_snapshot(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    device = snap.get_device("leaf-a")
+    assert device is not None
+    snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
+    assert snap.replaced is False
+    device.label = "after-commit"
+    assert device.label == "after-commit"
 
 
 def test_post_commit_removes_locally_and_refreshes_pair(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:

@@ -34,6 +34,7 @@ from videoipath_automation_tool.apps.inspect.transaction import (
     Editable,
     InspectTransaction,
     _is_single_editable,
+    _require_live_object,
     _stage_editable,
 )
 
@@ -74,6 +75,8 @@ class InspectWriteMixin:
                 "Inspect snapshot is not available; load the topology (e.g. access app.inspect.devices) "
                 "before updating domain objects."
             )
+        for item in objects:
+            _require_live_object(self._snapshot, item)
 
         txn = self.transaction()
         flushed_keys: list[tuple[str, str]] = []

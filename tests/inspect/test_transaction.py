@@ -641,6 +641,7 @@ class FakeAPI:
 class FakeSnapshot:
     def __init__(self) -> None:
         self.calls: list[dict[str, Any]] = []
+        self.replaced = False
 
     def apply_post_commit(self, **kwargs: Any) -> None:
         self.calls.append(kwargs)

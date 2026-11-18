@@ -852,6 +852,16 @@ catches up with **targeted scoped re-reads**
 A failed commit changes nothing server-side (reject-before-apply), so the
 snapshot is left untouched.
 
+## Object Lifetime After refresh()
+
+`refresh()` builds a new snapshot and marks the previous one replaced
+([ADR-009](./decisions/009-object-lifetime-after-refresh.md)). Objects fetched earlier
+keep reading that previous snapshot. Setters, `update()`, and a transaction bound to the
+replaced snapshot raise `InspectSnapshotReplacedError`; re-fetch the object from the app.
+`refresh()` raises `InspectPendingEditsError` when edits are staged, unless
+`refresh(discard_pending=True)`. A commit still updates the same snapshot in place
+(ADR-008), so objects held across a commit stay writable.
+
 ## Python Module Layout
 
 Transport DTOs are split by payload area under `apps/inspect/model/`:
