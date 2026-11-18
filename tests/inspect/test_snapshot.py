@@ -331,6 +331,43 @@ def test_bidirectional_port_vertex_accessors(snapshot: tuple[InspectSnapshot, Fa
     assert port.vertex_in.id == "leaf-a.1.bidi1.in"
 
 
+def test_double_port_direction_comes_from_the_side_key(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    """A double port omits nested vertexType; the out/in key supplies it, an explicit value wins."""
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = _double_port_direction_node("leaf-a")
+
+    omitted = snap.get_port("leaf-a", "leaf-a.dev.0.omitted")
+    assert omitted.vertex_out is not None and omitted.vertex_out.vertex_type == "Out"
+    assert omitted.vertex_in is not None and omitted.vertex_in.vertex_type == "In"
+    assert omitted.vertex_out.id == "leaf-a.0.omitted.out"
+    assert omitted.vertex_in.id == "leaf-a.0.omitted.in"
+
+    explicit = snap.get_port("leaf-a", "leaf-a.dev.0.explicit")
+    assert explicit.vertex_out is not None and explicit.vertex_out.vertex_type == "Out"
+    assert explicit.vertex_in is not None and explicit.vertex_in.vertex_type == "In"
+
+    contradictory = snap.get_port("leaf-a", "leaf-a.dev.0.contradicts")
+    directions = {vertex_id: side.vertexType for vertex_id, side in contradictory._vertex_sides()}
+    assert directions == {"leaf-a.0.contradicts.out": "In", "leaf-a.0.contradicts.in": "Out"}
+
+    single = snap.get_port("leaf-a", "leaf-a.dev.0.single")
+    assert single.vertex_out is not None and single.vertex_out.vertex_type == "Out"
+    assert single.vertex_in is None
+
+    module = snap.get_module("leaf-a", "leaf-a.dev.0")
+    vertex_ids = [vertex.id for vertex in module.vertices]
+    assert len(vertex_ids) == len(set(vertex_ids))
+    assert set(vertex_ids) == {
+        "leaf-a.0.omitted.out",
+        "leaf-a.0.omitted.in",
+        "leaf-a.0.explicit.out",
+        "leaf-a.0.explicit.in",
+        "leaf-a.0.contradicts.out",
+        "leaf-a.0.contradicts.in",
+        "leaf-a.0.single",
+    }
+
+
 def test_vertex_config_attrs_fetch_once_and_cache(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
     snap, fetcher = snapshot
     vertex = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_out
@@ -639,6 +676,52 @@ def _detail_node(device_id: str, label: str, port_pids: list[str]) -> InspectApi
                     "pid": f"{device_id}.dev.0",
                     "descriptor": {"label": "Slot 0"},
                     "ports": ports,
+                }
+            },
+        }
+    )
+
+
+def _double_port_direction_node(device_id: str) -> InspectApiNodeStatusItem:
+    """Double ports with omitted, explicit and contradictory nested vertexType, plus one single port."""
+
+    def side(vertex_id: str, vertex_type: str | None) -> dict:
+        entry: dict = {"type": "single", "id": vertex_id, "fields": {"isActive": True}}
+        if vertex_type is not None:
+            entry["vertexType"] = vertex_type
+        return entry
+
+    def double_port(name: str, out_type: str | None, in_type: str | None) -> dict:
+        return {
+            "pid": f"{device_id}.dev.0.{name}",
+            "descriptor": {"label": name},
+            "vertexInfo": {
+                "type": "double",
+                "out": side(f"{device_id}.0.{name}.out", out_type),
+                "in": side(f"{device_id}.0.{name}.in", in_type),
+            },
+        }
+
+    return InspectApiNodeStatusItem.model_validate(
+        {
+            "_id": device_id,
+            "_vid": device_id,
+            "deviceId": device_id,
+            "descriptor": {"desc": "", "label": "LEAF-A"},
+            "modules": {
+                f"{device_id}.dev.0": {
+                    "pid": f"{device_id}.dev.0",
+                    "descriptor": {"label": "Slot 0"},
+                    "ports": {
+                        f"{device_id}.dev.0.omitted": double_port("omitted", None, None),
+                        f"{device_id}.dev.0.explicit": double_port("explicit", "Out", "In"),
+                        f"{device_id}.dev.0.contradicts": double_port("contradicts", "In", "Out"),
+                        f"{device_id}.dev.0.single": {
+                            "pid": f"{device_id}.dev.0.single",
+                            "descriptor": {"label": "single"},
+                            "vertexInfo": side(f"{device_id}.0.single", "Out"),
+                        },
+                    },
                 }
             },
         }
