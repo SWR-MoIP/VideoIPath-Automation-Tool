@@ -325,7 +325,8 @@ Represents one external edge status entry between two endpoint devices/ports.
 
 ### `InspectService`
 
-Represents one service/booking path across devices and ports.
+Represents one service/booking path across devices and ports. Skeleton and full loads
+return the same service fields (endpoint pids, status, path segments).
 
 | Field / property | Meaning |
 | --- | --- |
