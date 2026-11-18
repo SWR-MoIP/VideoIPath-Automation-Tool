@@ -8,6 +8,7 @@ import pytest
 
 from videoipath_automation_tool.apps.inspect.app.read import InspectReadMixin
 from videoipath_automation_tool.apps.inspect.app.write import InspectWriteMixin
+from videoipath_automation_tool.apps.inspect.domain.vertex import build_vertex
 from videoipath_automation_tool.apps.inspect.errors import InspectPendingEditsError, InspectSnapshotReplacedError
 from videoipath_automation_tool.apps.inspect.model.actions import InspectApiLookupInspectDeviceResponse
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiNodeStatusItem
@@ -59,6 +60,67 @@ def test_refresh_refuses_pending_edits_unless_discarded() -> None:
     assert device.label == "Device A"
     with pytest.raises(InspectSnapshotReplacedError):
         device.label = "after-discard"
+
+
+@pytest.mark.parametrize("edit", ["clear", "reject"])
+def test_refresh_ignores_cleared_or_rejected_vertex_edits(edit: str) -> None:
+    snapshot = _skeleton(label="Device A")
+    app = _App(_Api(), snapshot)
+    vertex = build_vertex(snapshot, "device-a.module-1.port-out-1", kind="ip")
+    if edit == "clear":
+        vertex.control = "full"
+        vertex.control = None
+    else:
+        with pytest.raises(ValueError, match="Unsupported vertex control"):
+            vertex.control = "invalid"
+    assert snapshot.get_staged_edits("vertex", vertex.id) == {}
+    assert snapshot.pending_edit_keys() == []
+    app.refresh()
+    assert snapshot.replaced
+
+
+@pytest.mark.parametrize("discard_pending", [False, True])
+def test_refresh_handles_edits_staged_during_loading(monkeypatch: pytest.MonkeyPatch, discard_pending: bool) -> None:
+    snapshot = _skeleton(label="Device A")
+    app = _App(_Api(), snapshot)
+    device = app.get_device(DEVICE_ID)
+    assert device is not None
+
+    def load_with_pending_edit(load: str) -> InspectSnapshot:
+        device.label = "staged-during-load"
+        return _skeleton(label="Reloaded")
+
+    monkeypatch.setattr(app, "_load_snapshot", load_with_pending_edit)
+    if discard_pending:
+        app.refresh(load="full", discard_pending=True)
+        assert snapshot.replaced
+        assert snapshot.pending_edit_keys() == []
+        assert device.label == "Device A"
+        assert app.get_device(DEVICE_ID).label == "Reloaded"
+        assert app._load_mode == "full"
+    else:
+        with pytest.raises(InspectPendingEditsError) as raised:
+            app.refresh(load="full")
+        assert raised.value.keys == [("device", DEVICE_ID)]
+        assert not snapshot.replaced
+        assert app.get_device(DEVICE_ID) is device
+        assert device.label == "staged-during-load"
+        assert app._load_mode == "skeleton"
+        assert app.update(device).ok
+
+
+def test_failed_refresh_does_not_discard_pending_edits() -> None:
+    snapshot = _skeleton(label="Device A")
+    app = _App(_Api(), snapshot)
+    device = app.get_device(DEVICE_ID)
+    assert device is not None
+    device.label = "pending"
+    app.fail_load = True
+    with pytest.raises(RuntimeError, match="load failed"):
+        app.refresh(discard_pending=True)
+    assert not snapshot.replaced
+    assert device.label == "pending"
+    assert app.update(device).ok
 
 
 def test_transaction_opened_before_refresh_rejects_staging_and_commit() -> None:
