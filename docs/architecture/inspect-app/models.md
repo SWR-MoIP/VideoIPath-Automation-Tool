@@ -325,20 +325,26 @@ Represents one external edge status entry between two endpoint devices/ports.
 
 ### `InspectService`
 
-Represents one service/booking path across devices and ports. Skeleton and full loads
-return the same service fields (endpoint pids, status, path segments).
+Represents one service/booking. A redundant booking keeps both its main and its spare
+path (`main_path` / `spare_path`). Accessors without a path qualifier read the main
+path, or the spare path when the booking has no main item. `get_services_for_device()`
+matches a device on either path. Skeleton and full loads return the same service
+fields (endpoint pids, status, path segments).
 
 | Field / property | Meaning |
 | --- | --- |
 | `booking_id` | Booking identifier |
 | `label` | Service label when available |
-| `source` / `destination` | Endpoint labels |
-| `source_device` / `destination_device` | Endpoint devices |
-| `source_port` / `destination_port` | Endpoint ports |
-| `status` | Service status summary (`InspectSeverity` fields) |
+| `source` / `destination` | Endpoint labels of the main path |
+| `source_device` / `destination_device` | Endpoint devices of the main path |
+| `source_port` / `destination_port` | Endpoint ports of the main path |
+| `is_main` | Whether the unqualified path is the main path |
+| `is_redundant` | True when both a main and a spare path exist |
+| `status` | Status of the main path |
 | `alarms` | Active alarms correlated to this booking |
-| `path_devices` | Ordered devices in the path |
-| `path_ports` | Ports encountered in the path |
+| `path_devices` / `path_ports` | Devices and ports of the main path |
+| `main_path` / `spare_path` | `InspectServicePath` for each role (`devices`, `ports`, `status`, endpoint ports, `is_main`) |
+| `path_item` / `spare_path_item` | Raw path items; `path_item` is the main item, or the spare item when there is no main |
 
 Lookup:
 
