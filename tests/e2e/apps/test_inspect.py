@@ -20,6 +20,7 @@ from videoipath_automation_tool.apps.inspect import VirtualDeviceSpec
 from videoipath_automation_tool.apps.inspect.errors import (
     InspectCommitConflictError,
     InspectCommitError,
+    InspectSnapshotReplacedError,
     InspectUnsupportedFieldError,
 )
 from videoipath_automation_tool.apps.inspect.model.collector import (
@@ -513,6 +514,29 @@ def test_bidirectional_port_exposes_both_directions(app: VideoIPathApp) -> None:
             assert port.vertex_in is not None and port.vertex_in.vertex_type == "In"
             return
     pytest.skip("No bidirectional port on this server.")
+
+
+def test_refresh_rejects_writes_on_the_previous_object(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
+    """A device fetched before refresh() stays readable; changing it requires a re-fetch."""
+    (device_id,) = topology_builder.add_devices([("LIFE-A", 1)])
+    app.inspect.refresh()
+    device = app.inspect.get_device(device_id)
+    assert device is not None
+    label = device.label
+
+    app.inspect.refresh()
+    with pytest.raises(InspectSnapshotReplacedError, match="re-fetch the object after refresh"):
+        device.label = unique_label("OLD")
+    assert device.label == label
+
+    fresh = app.inspect.get_device(device_id)
+    assert fresh is not None and fresh is not device
+    updated = unique_label("NEW")
+    fresh.label = updated
+    result = app.inspect.update(fresh)
+    assert result.ok
+    app.inspect.refresh()
+    assert app.inspect.get_device(device_id).label == updated
 
 
 def test_create_virtual_device(app: VideoIPathApp, e2e_map_origins) -> None:
