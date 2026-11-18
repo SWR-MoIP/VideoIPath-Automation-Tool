@@ -365,9 +365,7 @@ class InspectTransaction:
             main_destination_port=main_destination_port,
             spare_destination_port=spare_destination_port,
         )
-        wire_paths = [path for path, _value in validated if path.startswith("typeFields.")]
-        wire_paths.extend(type_field_intents)
-        self._require_vertex_type_fields(vertex_id, wire_paths)
+        self._require_vertex_type_fields(vertex_id, {**dict(validated), **type_field_intents})
         entry = self._stage_vertex(vertex_id)
         merge_vertex_intents(entry.intents, validated)
         if use_as_endpoint is not None:
@@ -610,6 +608,9 @@ class InspectTransaction:
                     entry.baseline_dump = {"tags": list(tags)}
                 continue
             fresh = self._fetch_baseline(entry.kind, entry.entity_id)
+            if entry.kind == _VERTEX:
+                for path, value in entry.intents.items():
+                    require_supported_type_field(fresh, path, value, entity_id=entry.entity_id)
             entry.baseline_form = fresh
             entry.baseline_dump = fresh.model_dump(mode="json")
         return self
@@ -633,16 +634,19 @@ class InspectTransaction:
     def _stage_vertex(self, vertex_id: str) -> _Staged:
         return self._stage(_VERTEX, vertex_id)
 
-    def _require_vertex_type_fields(self, vertex_id: str, wire_paths: list[str]) -> None:
+    def _require_vertex_type_fields(self, vertex_id: str, intents: dict[str, Any]) -> None:
         """Reject ``typeFields`` paths the baseline form does not contain, without keeping a new entry."""
-        if not wire_paths:
+        type_fields = {
+            path: value for path, value in intents.items() if path == "typeFields" or path.startswith("typeFields.")
+        }
+        if not type_fields:
             return
         key = (_VERTEX, vertex_id)
         previous = self._entries.get(key)
         entry = self._stage_vertex(vertex_id)
         try:
-            for wire_path in wire_paths:
-                require_supported_type_field(entry.baseline_form, wire_path, entity_id=vertex_id)
+            for wire_path, value in type_fields.items():
+                require_supported_type_field(entry.baseline_form, wire_path, value, entity_id=vertex_id)
         except InspectUnsupportedFieldError:
             if previous is None:
                 self._entries.pop(key, None)
@@ -809,6 +813,9 @@ class InspectTransaction:
                 delta.remove.append(entry.entity_id)
                 continue
             form = entry.baseline_form.model_copy(deep=True)
+            if entry.kind == _VERTEX:
+                for path, value in entry.intents.items():
+                    require_supported_type_field(form, path, value, entity_id=entry.entity_id)
             intents = control_wire_intents(entry.intents, form.controlProps) if entry.kind == _VERTEX else entry.intents
             _apply_intents(form, intents)
             if entry.kind == _DEVICE:

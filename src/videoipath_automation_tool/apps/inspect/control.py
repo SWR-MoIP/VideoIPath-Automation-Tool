@@ -111,17 +111,23 @@ def staged_control_props(
     return result
 
 
-def require_supported_type_field(form: InspectApiVertexEditForm, wire_path: str, *, entity_id: str) -> None:
+def require_supported_type_field(form: InspectApiVertexEditForm, wire_path: str, value: Any, *, entity_id: str) -> None:
     """Reject a ``typeFields.*`` path whose key is absent from the lookup form.
 
     Only ``typeFields`` paths are checked. Top-level keys such as ``control`` are absent from
     the form by design and are mapped onto ``controlProps`` at commit.
     """
-    if not wire_path.startswith("typeFields."):
+    if wire_path != "typeFields" and not wire_path.startswith("typeFields."):
         return
-    if _form_has_path(form, wire_path):
-        return
-    raise InspectUnsupportedFieldError(entity_id, wire_path, kind="vertex")
+    if not _form_has_path(form, wire_path):
+        raise InspectUnsupportedFieldError(entity_id, wire_path, kind="vertex")
+    # These blocks describe supported fields. Values below them (e.g. partnerConfig or
+    # endpoint dictionaries) are payloads, whose contents need not already exist on the form.
+    if wire_path in {"typeFields", "typeFields.generic", "typeFields.specific"}:
+        supplied = value.model_dump(exclude_unset=True) if isinstance(value, BaseModel) else value
+        if isinstance(supplied, Mapping):
+            for key, child in supplied.items():
+                require_supported_type_field(form, f"{wire_path}.{key}", child, entity_id=entity_id)
 
 
 def _form_has_path(form: InspectApiVertexEditForm, wire_path: str) -> bool:

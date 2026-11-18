@@ -309,6 +309,65 @@ def test_update_vertex_rejects_type_fields_missing_from_the_form() -> None:
     assert "supportsPseudoWiresCfg" not in (form.typeFields.model_extra or {})
 
 
+@pytest.mark.parametrize(
+    "intents",
+    [
+        {"typeFields.specific": {"sdpSupport": True}},
+        {"typeFields": {"type": "codec", "specific": {"sdpSupport": True}}},
+    ],
+)
+def test_update_vertex_rejects_unsupported_nested_intents(intents: dict[str, Any]) -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    tx = _txn(api)
+    with pytest.raises(InspectUnsupportedFieldError) as raised:
+        tx.update_vertex(A_OUT, intents=intents)
+    assert raised.value.field == "typeFields.specific.sdpSupport"
+    assert tx.staged == []
+    assert api.update_calls == []
+
+
+def test_rebase_rejects_vertex_intents_no_longer_supported() -> None:
+    api = FakeAPI()
+    fixture = load_fixture("lookup_inspect_codec_vertex_by_id.json")
+    api.vertices[A_OUT] = InspectApiLookupVertexResponseData.model_validate(fixture["data"])
+    tx = _txn(api)
+    tx.update_vertex(A_OUT, sdp_support=False)
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    with pytest.raises(InspectCommitConflictError):
+        tx.commit()
+    with pytest.raises(InspectUnsupportedFieldError) as raised:
+        tx.rebase()
+    assert raised.value.field == "typeFields.specific.sdpSupport"
+    assert api.update_calls == []
+
+
+def test_commit_revalidates_mutated_nested_vertex_intents() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    specific: dict[str, Any] = {"type": "video"}
+    tx = _txn(api)
+    tx.update_vertex(A_OUT, intents={"typeFields.specific": specific})
+    specific["sdpSupport"] = True
+    with pytest.raises(InspectUnsupportedFieldError):
+        tx.commit()
+    assert api.update_calls == []
+
+
+def test_supported_parent_intents_preserve_opaque_payloads() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    tx = _txn(api)
+    tx.update_vertex(
+        A_OUT,
+        intents={"typeFields.generic": {"codecFormat": "Audio", "partnerConfig": {"customSetting": True}}},
+    )
+    tx.commit()
+    generic = api.update_calls[0].replaceVertices[A_OUT].typeFields.model_extra["generic"]
+    assert generic["codecFormat"] == "Audio"
+    assert generic["partnerConfig"] == {"customSetting": True}
+
+
 def test_remove_appends_to_remove_list() -> None:
     api = FakeAPI()
     with _txn(api) as tx:
