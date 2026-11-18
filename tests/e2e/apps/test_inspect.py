@@ -17,7 +17,15 @@ from __future__ import annotations
 import pytest
 
 from videoipath_automation_tool.apps.inspect import VirtualDeviceSpec
-from videoipath_automation_tool.apps.inspect.errors import InspectCommitConflictError, InspectCommitError
+from videoipath_automation_tool.apps.inspect.errors import (
+    InspectCommitConflictError,
+    InspectCommitError,
+    InspectUnsupportedFieldError,
+)
+from videoipath_automation_tool.apps.inspect.model.collector import (
+    InspectApiDoubleVertexInfo,
+    InspectApiSingleVertexInfo,
+)
 from videoipath_automation_tool.apps.inspect.model.common import InspectSeverity
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 
@@ -433,6 +441,64 @@ def test_alarm_message_joins_title_and_details(app: VideoIPathApp) -> None:
     for alarm in alarms:
         parts = [part for part in (alarm.title, alarm.details) if part]
         assert alarm.message == (": ".join(parts) or None)
+
+
+def test_unsupported_vertex_field_is_rejected(app: VideoIPathApp) -> None:
+    """A typeFields key the edit form does not have is rejected and nothing is staged."""
+    app.inspect.refresh()
+    snapshot = app.inspect._get_snapshot()
+    codec_out_id: str | None = None
+    ip_id: str | None = None
+    pending: list[str] = []
+
+    def consider(found: dict) -> None:
+        nonlocal codec_out_id, ip_id
+        for vertex_id, item in found.items():
+            fields = item.fields.typeFields
+            if fields is None:
+                continue
+            extra = fields.model_extra or {}
+            if codec_out_id is None and fields.type == "codec":
+                specific = extra.get("specific")
+                if isinstance(specific, dict) and "sdpSupport" not in specific and "isIgmpSource" not in specific:
+                    codec_out_id = vertex_id
+            if ip_id is None and fields.type == "ip":
+                present = fields.model_fields_set | set(extra)
+                if "supportsVxlanCfg" not in present and "supportsPseudoWiresCfg" not in present:
+                    ip_id = vertex_id
+
+    for device in app.inspect.devices:
+        if codec_out_id is not None and ip_id is not None:
+            break
+        for port in device.ports:
+            info = port.indexed.port.parsed_vertex_info
+            if isinstance(info, InspectApiSingleVertexInfo) and info.id:
+                pending.append(info.id)
+            elif isinstance(info, InspectApiDoubleVertexInfo):
+                pending.extend(side.id for side in (info.out, info.in_) if side is not None and side.id)
+        if pending:
+            consider(snapshot.get_vertex_details_many(pending))
+            pending.clear()
+    if codec_out_id is None and ip_id is None:
+        pytest.skip("No codec-out or IP vertex on this server.")
+
+    if codec_out_id is not None:
+        vertex = snapshot.get_vertex(codec_out_id)
+        assert vertex is not None
+        with pytest.raises(InspectUnsupportedFieldError):
+            vertex.sdp_support = True
+        assert vertex.sdp_support is None
+        assert snapshot.get_staged_edits("vertex", codec_out_id) == {}
+
+    if ip_id is not None:
+        vertex = snapshot.get_vertex(ip_id)
+        assert vertex is not None
+        with pytest.raises(InspectUnsupportedFieldError):
+            vertex.supports_vxlan = True
+        with pytest.raises(InspectUnsupportedFieldError):
+            vertex.supports_pseudo_wires = True
+        assert vertex.supports_vxlan is None
+        assert snapshot.get_staged_edits("vertex", ip_id) == {}
 
 
 def test_bidirectional_port_exposes_both_directions(app: VideoIPathApp) -> None:

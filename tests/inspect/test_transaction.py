@@ -7,16 +7,17 @@ bypass, ``rebase``, and the post-commit targeted-refresh hook derivation.
 
 from __future__ import annotations
 
+import copy
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from videoipath_automation_tool.apps.inspect.transaction import InspectTransaction
 from videoipath_automation_tool.apps.inspect.errors import (
     InspectCommitConflictError,
     InspectCommitError,
     InspectEntityNotFoundError,
+    InspectUnsupportedFieldError,
 )
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiLookupEdgeResponseItem,
@@ -24,6 +25,7 @@ from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiLookupVertexResponseData,
 )
 from videoipath_automation_tool.apps.inspect.model.update_topology import InspectApiUpdateTopologyResponse
+from videoipath_automation_tool.apps.inspect.transaction import InspectTransaction
 
 from .conftest import load_fixture
 
@@ -71,9 +73,8 @@ def test_connect_bidirectional_stages_reverse_edge() -> None:
 def test_connect_existing_edge_requires_overwrite() -> None:
     api = FakeAPI()
     api.edges[EDGE_ID] = _edge_item()
-    with _txn(api) as tx:
-        with pytest.raises(ValueError, match="already exists"):
-            tx.connect(A_OUT, B_IN, bidirectional=False)
+    with _txn(api) as tx, pytest.raises(ValueError, match="already exists"):
+        tx.connect(A_OUT, B_IN, bidirectional=False)
 
 
 def test_update_edge_applies_intent() -> None:
@@ -87,9 +88,8 @@ def test_update_edge_applies_intent() -> None:
 
 def test_update_edge_missing_raises_not_found() -> None:
     api = FakeAPI()
-    with _txn(api) as tx:
-        with pytest.raises(InspectEntityNotFoundError):
-            tx.update_edge(EDGE_ID, weight=42)
+    with _txn(api) as tx, pytest.raises(InspectEntityNotFoundError):
+        tx.update_edge(EDGE_ID, weight=42)
 
 
 def test_update_edge_sets_all_config_fields() -> None:
@@ -132,9 +132,8 @@ def test_update_edge_also_opposite_stages_reverse() -> None:
 def test_update_edge_also_opposite_missing_raises() -> None:
     api = FakeAPI()
     api.edges[EDGE_ID] = _edge_item()
-    with _txn(api) as tx:
-        with pytest.raises(InspectEntityNotFoundError):
-            tx.update_edge(EDGE_ID, weight=7, also_opposite=True)
+    with _txn(api) as tx, pytest.raises(InspectEntityNotFoundError):
+        tx.update_edge(EDGE_ID, weight=7, also_opposite=True)
 
 
 def test_update_device_only_changes_label_when_set() -> None:
@@ -270,6 +269,103 @@ def test_update_vertex_sets_ip_typefields() -> None:
     assert form.typeFields.vlanId == "100"
     assert form.typeFields.public is True
     assert form.typeFields.supportsIgmpCfg is False
+
+
+def test_update_vertex_rejects_type_fields_missing_from_the_form() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    with _txn(api) as tx:
+        with pytest.raises(InspectUnsupportedFieldError):
+            tx.update_vertex(A_OUT, sdp_support=True)
+        assert tx.staged == []
+        with pytest.raises(InspectUnsupportedFieldError):
+            tx.update_vertex(A_OUT, intents={"typeFields.specific.isIgmpSource": True})
+        assert tx.staged == []
+        tx.update_vertex(A_OUT, codec_format="Audio", control="full")
+        tx.commit()
+    form = api.update_calls[0].replaceVertices[A_OUT]
+    assert form.typeFields is not None
+    generic = (form.typeFields.model_extra or {})["generic"]
+    assert generic["codecFormat"] == "Audio"
+    assert "sdpSupport" not in (form.typeFields.model_extra or {}).get("specific", {})
+    assert form.controlProps is not None and form.controlProps.onlyInitial is False
+
+    api = FakeAPI()
+    api.vertices[A_OUT] = _vertex_data()
+    with _txn(api) as tx:
+        tx.update_vertex(A_OUT, label="kept")
+        with pytest.raises(InspectUnsupportedFieldError) as raised:
+            tx.update_vertex(A_OUT, supports_vxlan=True)
+        assert raised.value.field == "typeFields.supportsVxlanCfg"
+        with pytest.raises(InspectUnsupportedFieldError):
+            tx.update_vertex(A_OUT, supports_pseudo_wires=True)
+        assert tx.staged == [("vertex", A_OUT)]
+        tx.commit()
+    form = api.update_calls[0].replaceVertices[A_OUT]
+    assert form.label == "kept"
+    assert form.typeFields is not None
+    assert "supportsVxlanCfg" not in form.typeFields.model_fields_set
+    assert "supportsVxlanCfg" not in (form.typeFields.model_extra or {})
+    assert "supportsPseudoWiresCfg" not in (form.typeFields.model_extra or {})
+
+
+@pytest.mark.parametrize(
+    "intents",
+    [
+        {"typeFields.specific": {"sdpSupport": True}},
+        {"typeFields": {"type": "codec", "specific": {"sdpSupport": True}}},
+    ],
+)
+def test_update_vertex_rejects_unsupported_nested_intents(intents: dict[str, Any]) -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    tx = _txn(api)
+    with pytest.raises(InspectUnsupportedFieldError) as raised:
+        tx.update_vertex(A_OUT, intents=intents)
+    assert raised.value.field == "typeFields.specific.sdpSupport"
+    assert tx.staged == []
+    assert api.update_calls == []
+
+
+def test_rebase_rejects_vertex_intents_no_longer_supported() -> None:
+    api = FakeAPI()
+    fixture = load_fixture("lookup_inspect_codec_vertex_by_id.json")
+    api.vertices[A_OUT] = InspectApiLookupVertexResponseData.model_validate(fixture["data"])
+    tx = _txn(api)
+    tx.update_vertex(A_OUT, sdp_support=False)
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    with pytest.raises(InspectCommitConflictError):
+        tx.commit()
+    with pytest.raises(InspectUnsupportedFieldError) as raised:
+        tx.rebase()
+    assert raised.value.field == "typeFields.specific.sdpSupport"
+    assert api.update_calls == []
+
+
+def test_commit_revalidates_mutated_nested_vertex_intents() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    specific: dict[str, Any] = {"type": "video"}
+    tx = _txn(api)
+    tx.update_vertex(A_OUT, intents={"typeFields.specific": specific})
+    specific["sdpSupport"] = True
+    with pytest.raises(InspectUnsupportedFieldError):
+        tx.commit()
+    assert api.update_calls == []
+
+
+def test_supported_parent_intents_preserve_opaque_payloads() -> None:
+    api = FakeAPI()
+    api.vertices[A_OUT] = _codec_out_vertex_data()
+    tx = _txn(api)
+    tx.update_vertex(
+        A_OUT,
+        intents={"typeFields.generic": {"codecFormat": "Audio", "partnerConfig": {"customSetting": True}}},
+    )
+    tx.commit()
+    generic = api.update_calls[0].replaceVertices[A_OUT].typeFields.model_extra["generic"]
+    assert generic["codecFormat"] == "Audio"
+    assert generic["partnerConfig"] == {"customSetting": True}
 
 
 def test_remove_appends_to_remove_list() -> None:
@@ -465,6 +561,17 @@ def _device_response(
             "header": _OK_HEADER,
         }
     )
+
+
+def _codec_out_vertex_data() -> InspectApiLookupVertexResponseData:
+    raw = load_fixture("lookup_inspect_codec_vertex_by_id.json")
+    data = copy.deepcopy(raw["data"])
+    specific = data["fields"]["typeFields"]["specific"]
+    specific.pop("sdpSupport")
+    specific.pop("isIgmpSource")
+    specific["exclusive"] = True
+    data["id"] = A_OUT
+    return InspectApiLookupVertexResponseData.model_validate(data)
 
 
 def _vertex_data() -> InspectApiLookupVertexResponseData:

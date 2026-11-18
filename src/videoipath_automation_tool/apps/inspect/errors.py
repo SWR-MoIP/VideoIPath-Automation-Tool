@@ -76,6 +76,21 @@ class InspectConflict:
         return f"InspectConflict(entity_id={self.entity_id!r}, kind={self.kind!r}, fields={list(self.field_diffs)})"
 
 
+class InspectUnsupportedFieldError(InspectError, ValueError):
+    """A ``typeFields`` write names a key the vertex edit form does not have.
+
+    ``replaceVertices`` silently drops unknown ``typeFields`` keys and still reports success.
+    The assignment is rejected before it is staged. ``entity_id``, ``field`` (the wire path) and
+    ``kind`` identify the rejected write.
+    """
+
+    def __init__(self, entity_id: str, field: str, kind: str = "vertex") -> None:
+        self.entity_id = entity_id
+        self.field = field
+        self.kind = kind
+        super().__init__(f"Inspect {kind} '{entity_id}' has no '{field}' on its edit form; the field was not staged.")
+
+
 class InspectCommitConflictError(InspectError):
     """A concurrent modification was detected before the commit was sent; nothing was written.
 
@@ -100,4 +115,5 @@ __all__ = [
     "InspectCommitError",
     "InspectConflict",
     "InspectCommitConflictError",
+    "InspectUnsupportedFieldError",
 ]
