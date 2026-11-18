@@ -21,6 +21,7 @@ from videoipath_automation_tool.apps.inspect.errors import InspectConflict as In
 from videoipath_automation_tool.apps.inspect.errors import InspectEntityNotFoundError as InspectEntityNotFoundError
 from videoipath_automation_tool.apps.inspect.errors import InspectError as InspectError
 from videoipath_automation_tool.apps.inspect.errors import InspectQueryTooLongError as InspectQueryTooLongError
+from videoipath_automation_tool.apps.inspect.errors import InspectUnsupportedFieldError as InspectUnsupportedFieldError
 from videoipath_automation_tool.apps.inspect.app import InspectApp as InspectApp
 from videoipath_automation_tool.apps.inspect.model import *
 
@@ -43,6 +44,7 @@ __all__ = [
     "InspectPort",
     "InspectPortTemplate",
     "InspectQueryTooLongError",
+    "InspectUnsupportedFieldError",
     "InspectService",
     "InspectServicePath",
     "InspectTransaction",

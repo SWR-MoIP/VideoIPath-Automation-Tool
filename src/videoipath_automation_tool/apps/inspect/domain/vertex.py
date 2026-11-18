@@ -27,6 +27,7 @@ from videoipath_automation_tool.apps.inspect.control import (
     control_from_props,
     has_control_intents,
     needs_control_baseline,
+    require_supported_type_field,
     staged_control_props,
 )
 from videoipath_automation_tool.apps.inspect.model.collector import InspectApiSingleVertexInfo
@@ -278,6 +279,18 @@ class InspectVertex(InspectEditableModel):
     __str__ = __repr__
 
     # --- Internal ---
+
+    def _stage(self, field: str, value: Any) -> None:
+        if field.startswith("typeFields."):
+            form = self._cached_form()
+            if form is not None:
+                require_supported_type_field(form, field, entity_id=self.id)
+        super()._stage(field, value)
+
+    def _cached_form(self) -> InspectApiVertexEditForm | None:
+        """Edit form already loaded for this vertex. Does not trigger a lookup."""
+        lookup = self.snapshot._vertex_details.get(self.id)
+        return lookup.fields if lookup is not None else None
 
     def _info_flag(self, name: str) -> bool | None:
         info = self.vertex_info
