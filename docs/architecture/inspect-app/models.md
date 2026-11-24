@@ -799,6 +799,13 @@ response.header.ok and response.data.res.ok and response.data.validation.result.
 Validation failures can still arrive with `header.ok == true`, so callers must
 inspect `data.res`, `data.validation.result`, and `data.validation.details`.
 
+`CommitResult.applied_ids` lists the entities submitted in that change set. It is not
+proof that each field persisted: `replaceVertices` upserts the whole edit form, and the
+server drops `typeFields` keys the form does not have while still reporting success.
+Those keys are rejected before staging (`InspectUnsupportedFieldError`). Top-level keys
+that are absent from the form by design, such as `control` (written as `controlProps`),
+are not checked.
+
 ### Consistency Against Concurrent Writers
 
 `updateTopology` enforces no revisions (last-writer-wins), `replace*` entries
@@ -844,6 +851,16 @@ catches up with **targeted scoped re-reads**
 
 A failed commit changes nothing server-side (reject-before-apply), so the
 snapshot is left untouched.
+
+## Object Lifetime After refresh()
+
+`refresh()` builds a new snapshot and marks the previous one replaced
+([ADR-009](./decisions/009-object-lifetime-after-refresh.md)). Objects fetched earlier
+keep reading that previous snapshot. Setters, `update()`, and a transaction bound to the
+replaced snapshot raise `InspectSnapshotReplacedError`; re-fetch the object from the app.
+`refresh()` raises `InspectPendingEditsError` when edits are staged, unless
+`refresh(discard_pending=True)`. A commit still updates the same snapshot in place
+(ADR-008), so objects held across a commit stay writable.
 
 ## Python Module Layout
 

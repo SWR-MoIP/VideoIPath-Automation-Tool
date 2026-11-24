@@ -76,6 +76,47 @@ class InspectConflict:
         return f"InspectConflict(entity_id={self.entity_id!r}, kind={self.kind!r}, fields={list(self.field_diffs)})"
 
 
+class InspectUnsupportedFieldError(InspectError, ValueError):
+    """A ``typeFields`` write names a key the vertex edit form does not have.
+
+    ``replaceVertices`` silently drops unknown ``typeFields`` keys and still reports success.
+    The assignment is rejected before it is staged. ``entity_id``, ``field`` (the wire path) and
+    ``kind`` identify the rejected write.
+    """
+
+    def __init__(self, entity_id: str, field: str, kind: str = "vertex") -> None:
+        self.entity_id = entity_id
+        self.field = field
+        self.kind = kind
+        super().__init__(f"Inspect {kind} '{entity_id}' has no '{field}' on its edit form; the field was not staged.")
+
+
+class InspectSnapshotReplacedError(InspectError):
+    """A write targeted a snapshot that ``refresh()`` has already replaced.
+
+    Reads on a held object stay a point-in-time view of that snapshot. Re-fetch the object
+    from the app before changing it.
+    """
+
+    def __init__(self, entity_id: str | None = None) -> None:
+        self.entity_id = entity_id
+        target = f" '{entity_id}'" if entity_id else ""
+        super().__init__(
+            f"Inspect object{target} belongs to a snapshot replaced by refresh(); re-fetch the object after refresh()."
+        )
+
+
+class InspectPendingEditsError(InspectError):
+    """``refresh()`` was called while the current snapshot still has staged edits."""
+
+    def __init__(self, keys: list[tuple[str, str]]) -> None:
+        self.keys = list(keys)
+        listed = ", ".join(f"{kind} {entity_id}" for kind, entity_id in self.keys)
+        super().__init__(
+            f"Cannot refresh while edits are pending ({listed}). Commit them, or call refresh(discard_pending=True)."
+        )
+
+
 class InspectCommitConflictError(InspectError):
     """A concurrent modification was detected before the commit was sent; nothing was written.
 
@@ -100,4 +141,7 @@ __all__ = [
     "InspectCommitError",
     "InspectConflict",
     "InspectCommitConflictError",
+    "InspectUnsupportedFieldError",
+    "InspectSnapshotReplacedError",
+    "InspectPendingEditsError",
 ]
