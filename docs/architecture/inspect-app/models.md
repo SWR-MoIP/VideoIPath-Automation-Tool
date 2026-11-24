@@ -283,7 +283,7 @@ form's `typeFields.type`. Editable attributes stage pending intents; flush with
 | --- | --- |
 | `id` | Vertex id (e.g. `device-a.module-1.port-out-1.out`) |
 | `label` / `description` | Display fields (writable) |
-| `vertex_type` | Direction: `"In"` / `"Out"` / … |
+| `vertex_type` | Direction: `"In"` / `"Out"` / …. On a double port the server omits the nested `vertexType`; the `out` / `in` key supplies it, and an explicit value is kept |
 | `is_active` / `is_controlled` / `is_endpoint` | Offline status flags from port `vertexInfo` |
 | `tags` | Locally assigned vertex tags (writable via `localAssignedTags`) |
 | `use_as_endpoint` | Whether usable as a service endpoint |
