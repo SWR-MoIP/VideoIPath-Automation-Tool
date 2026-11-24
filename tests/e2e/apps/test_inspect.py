@@ -377,6 +377,36 @@ def test_full_vs_skeleton_equivalence(app: VideoIPathApp, topology_builder: Topo
         app.inspect.refresh(load="skeleton")
 
 
+def test_services_skeleton_matches_full(app: VideoIPathApp) -> None:
+    """Skeleton and full mode expose the same service endpoints, status and path."""
+
+    def facts() -> dict[str, tuple[str | None, str | None, bool, tuple[str, ...], int]]:
+        return {
+            service.booking_id: (
+                service.path_item.serviceFields.fromPid,
+                service.path_item.serviceFields.toPid,
+                service.status is not None,
+                tuple(device.id for device in service.path_devices),
+                len(service.path_item.path),
+            )
+            for service in app.inspect.services
+        }
+
+    try:
+        app.inspect.refresh(load="skeleton")
+        skeleton = facts()
+        if not skeleton:
+            pytest.skip("No services on this server.")
+        app.inspect.refresh(load="full")
+        assert facts() == skeleton
+        assert all(
+            from_pid and to_pid and has_status and devices and hops
+            for from_pid, to_pid, has_status, devices, hops in skeleton.values()
+        )
+    finally:
+        app.inspect.refresh(load="skeleton")
+
+
 def test_alarm_message_joins_title_and_details(app: VideoIPathApp) -> None:
     """Every active alarm's message is the GUI text: non-empty title and details joined with ': '."""
     app.inspect.refresh()
