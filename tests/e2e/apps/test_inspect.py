@@ -377,6 +377,23 @@ def test_full_vs_skeleton_equivalence(app: VideoIPathApp, topology_builder: Topo
         app.inspect.refresh(load="skeleton")
 
 
+def test_redundant_service_exposes_main_and_spare(app: VideoIPathApp) -> None:
+    """A redundant booking is one service whose unqualified accessors read the main path."""
+    app.inspect.refresh()
+    services = app.inspect.services
+    if not services:
+        pytest.skip("No services on this server.")
+    assert len({service.booking_id for service in services}) == len(services)
+    redundant = [service for service in services if service.is_redundant]
+    if not redundant:
+        pytest.skip("No redundant booking on this server.")
+    for service in redundant:
+        assert service.is_main is True
+        assert service.main_path is not None and service.spare_path is not None
+        assert service.spare_path.is_main is False
+        assert [device.id for device in service.path_devices] == [device.id for device in service.main_path.devices]
+
+
 def test_services_skeleton_matches_full(app: VideoIPathApp) -> None:
     """Skeleton and full mode expose the same service endpoints, status and path."""
 
