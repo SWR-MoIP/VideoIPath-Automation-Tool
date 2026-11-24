@@ -1,0 +1,174 @@
+{
+  "data": {
+    "status": {
+      "collector": {
+        "inspect": {
+          "paths": {
+            "_items": [
+              {
+                "_id": "booking-1001::main",
+                "_vid": "_:booking-1001::main",
+                "path": [
+                  {
+                    "bid": "booking-1001",
+                    "ipDesc": "233.252.0.1:5000",
+                    "structure": {
+                      "deviceId": "device-a",
+                      "deviceLabel": "device-a",
+                      "devicePid": "device-a",
+                      "inputStatus": {"label": "port-out-1", "pid": "device-a.dev.1.port-out-1"},
+                      "outputStatus": {"label": "port-out-2", "pid": "device-a.dev.1.port-out-2"}
+                    }
+                  },
+                  {
+                    "bid": "booking-1001",
+                    "ipDesc": null,
+                    "structure": {
+                      "deviceId": "device-b",
+                      "deviceLabel": "device-b",
+                      "devicePid": "device-b",
+                      "inputStatus": {"label": "port-in-1", "pid": "device-b.dev.1.port-in-1"},
+                      "outputStatus": {"label": "port-in-2", "pid": "device-b.dev.1.port-in-2"}
+                    }
+                  }
+                ],
+                "serviceFields": {
+                  "bid": "booking-1001",
+                  "from": "topo:device-a.1.port-out-1",
+                  "fromLabel": "port-out-1",
+                  "fromPid": "device-a.dev.1.port-out-1",
+                  "generic": {"descriptor": {"desc": "", "label": "service-a"}},
+                  "isMain": true,
+                  "serviceStatus": {"config": {"sa": 1, "severity": 1}, "total": {"sa": 1, "severity": 1}},
+                  "to": "topo:device-b.1.port-in-1",
+                  "toLabel": "port-in-1",
+                  "toPid": "device-b.dev.1.port-in-1"
+                }
+              },
+              {
+                "_id": "booking-1001::spare",
+                "_vid": "_:booking-1001::spare",
+                "path": [
+                  {
+                    "bid": "booking-1001",
+                    "ipDesc": "233.252.0.2:5000",
+                    "structure": {
+                      "deviceId": "device-a",
+                      "deviceLabel": "device-a",
+                      "devicePid": "device-a",
+                      "inputStatus": {"label": "port-out-1", "pid": "device-a.dev.1.port-out-1"},
+                      "outputStatus": {"label": "port-out-3", "pid": "device-a.dev.1.port-out-3"}
+                    }
+                  },
+                  {
+                    "bid": "booking-1001",
+                    "ipDesc": null,
+                    "structure": {
+                      "deviceId": "device-c",
+                      "deviceLabel": "device-c",
+                      "devicePid": "device-c",
+                      "inputStatus": {"label": "port-in-1", "pid": "device-c.dev.1.port-in-1"},
+                      "outputStatus": {"label": "port-in-2", "pid": "device-c.dev.1.port-in-2"}
+                    }
+                  }
+                ],
+                "serviceFields": {
+                  "bid": "booking-1001",
+                  "from": "topo:device-a.1.port-out-1",
+                  "fromLabel": "port-out-1",
+                  "fromPid": "device-a.dev.1.port-out-1",
+                  "generic": {"descriptor": {"desc": "", "label": "service-a"}},
+                  "isMain": false,
+                  "serviceStatus": {"config": {"sa": 1, "severity": 1}, "total": {"sa": 2, "severity": 2}},
+                  "to": "topo:device-c.1.port-in-1",
+                  "toLabel": "port-in-1",
+                  "toPid": "device-c.dev.1.port-in-1"
+                }
+              },
+              {
+                "_id": "booking-1002::main",
+                "_vid": "_:booking-1002::main",
+                "path": [
+                  {
+                    "bid": "booking-1002",
+                    "ipDesc": "233.252.0.3:5000",
+                    "structure": {
+                      "deviceId": "device-b",
+                      "deviceLabel": "device-b",
+                      "devicePid": "device-b",
+                      "inputStatus": {"label": "port-out-1", "pid": "device-b.dev.2.port-out-1"},
+                      "outputStatus": {"label": "port-out-2", "pid": "device-b.dev.2.port-out-2"}
+                    }
+                  },
+                  {
+                    "bid": "booking-1002",
+                    "ipDesc": null,
+                    "structure": {
+                      "deviceId": "device-d",
+                      "deviceLabel": "device-d",
+                      "devicePid": "device-d",
+                      "inputStatus": {"label": "port-in-1", "pid": "device-d.dev.1.port-in-1"},
+                      "outputStatus": {"label": "port-in-2", "pid": "device-d.dev.1.port-in-2"}
+                    }
+                  }
+                ],
+                "serviceFields": {
+                  "bid": "booking-1002",
+                  "from": "topo:device-b.2.port-out-1",
+                  "fromLabel": "port-out-1",
+                  "fromPid": "device-b.dev.2.port-out-1",
+                  "generic": {"descriptor": {"desc": "", "label": "service-b"}},
+                  "isMain": true,
+                  "serviceStatus": {"config": {"sa": 1, "severity": 1}, "total": {"sa": 1, "severity": 1}},
+                  "to": "topo:device-d.1.port-in-1",
+                  "toLabel": "port-in-1",
+                  "toPid": "device-d.dev.1.port-in-1"
+                }
+              },
+              {
+                "_id": "booking-1002::spare",
+                "_vid": "_:booking-1002::spare",
+                "path": [
+                  {
+                    "bid": "booking-1002",
+                    "ipDesc": "233.252.0.4:5000",
+                    "structure": {
+                      "deviceId": "device-b",
+                      "deviceLabel": "device-b",
+                      "devicePid": "device-b",
+                      "inputStatus": {"label": "port-out-1", "pid": "device-b.dev.2.port-out-1"},
+                      "outputStatus": {"label": "port-out-3", "pid": "device-b.dev.2.port-out-3"}
+                    }
+                  },
+                  {
+                    "bid": "booking-1002",
+                    "ipDesc": null,
+                    "structure": {
+                      "deviceId": "device-c",
+                      "deviceLabel": "device-c",
+                      "devicePid": "device-c",
+                      "inputStatus": {"label": "port-in-3", "pid": "device-c.dev.1.port-in-3"},
+                      "outputStatus": {"label": "port-in-4", "pid": "device-c.dev.1.port-in-4"}
+                    }
+                  }
+                ],
+                "serviceFields": {
+                  "bid": "booking-1002",
+                  "from": "topo:device-b.2.port-out-1",
+                  "fromLabel": "port-out-1",
+                  "fromPid": "device-b.dev.2.port-out-1",
+                  "generic": {"descriptor": {"desc": "", "label": "service-b"}},
+                  "isMain": false,
+                  "serviceStatus": {"config": {"sa": 1, "severity": 1}, "total": {"sa": 1, "severity": 1}},
+                  "to": "topo:device-c.1.port-in-3",
+                  "toLabel": "port-in-3",
+                  "toPid": "device-c.dev.1.port-in-3"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

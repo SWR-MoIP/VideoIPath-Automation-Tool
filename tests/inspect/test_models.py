@@ -155,6 +155,23 @@ def test_paths_fixture_parses(load: Callable[[str], dict[str, Any]]) -> None:
         assert path.serviceFields.bid
 
 
+def test_paths_section_fixture_keeps_endpoints_status_and_path(load: Callable[[str], dict[str, Any]]) -> None:
+    items = load("inspect_paths_section.json")["data"]["status"]["collector"]["inspect"]["paths"]["_items"]
+    parsed = [InspectApiPathItem.model_validate(raw) for raw in items]
+    assert [item.id for item in parsed] == [
+        "booking-1001::main",
+        "booking-1001::spare",
+        "booking-1002::main",
+        "booking-1002::spare",
+    ]
+    for item in parsed:
+        fields = item.serviceFields
+        assert fields.fromPid and fields.toPid
+        assert fields.serviceStatus is not None and fields.serviceStatus.total is not None
+        assert item.path
+        assert all(segment.structure is not None and segment.structure.deviceId for segment in item.path)
+
+
 def test_lookup_edges_returns_full_persisted_edge_form(load: Callable[[str], dict[str, Any]]) -> None:
     resp = InspectApiLookupEdgesResponse.model_validate(load("lookup_inspect_edges_by_ids.json"))
     key = next(iter(resp.data))

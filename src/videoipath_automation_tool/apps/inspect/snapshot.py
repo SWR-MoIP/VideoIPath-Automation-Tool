@@ -15,15 +15,17 @@ from __future__ import annotations
 
 import logging
 import threading
-from collections.abc import Iterator
+from collections.abc import Callable, Iterable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from enum import Enum
+from itertools import chain
 from typing import TYPE_CHECKING, Any
 
 from pydantic import Field
 
 from videoipath_automation_tool.apps.inspect.control import merge_vertex_intents, validate_vertex_intents
+from videoipath_automation_tool.apps.inspect.errors import InspectPendingEditsError, InspectSnapshotReplacedError
 from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
 from videoipath_automation_tool.apps.inspect.model.collector import (
     InspectApiCollectorResponse,
@@ -84,7 +86,7 @@ class InspectSnapshot:
         self._devices_by_label: dict[str, list[str]] = {}
         self._edge_pairs: dict[str, InspectApiExternalEdgesByDeviceKeyItem] = {}
         self._edges_by_device_id: dict[str, list[_IndexedEdge]] = {}
-        self._edge_by_port_key: dict[tuple[str, str], _IndexedEdge] = {}
+        self._edges_by_port_key: dict[tuple[str, str], list[_IndexedEdge]] = {}
 
         # Per-device port + module indexes (populated on hydration)
         self._ports_by_device_id: dict[str, list[_IndexedPort]] = {}
@@ -106,8 +108,8 @@ class InspectSnapshot:
         # owning edge pair is dropped/re-indexed after a refresh/commit.
         self._edge_details: dict[str, InspectApiEdgeForm] = {}
 
-        # Section: services / paths
-        self._paths_by_booking_id: dict[str, InspectApiPathItem] = {}
+        # Section: services / paths. One record per booking; a redundant booking keeps main and spare.
+        self._services_by_booking_id: dict[str, _IndexedService] = {}
         self._services_by_device_id: dict[str, list[str]] = {}
         self._section_loaded: dict[str, bool] = {"paths": False, "alarms": False}
         self._section_fetched_at: dict[str, datetime] = {}
@@ -130,6 +132,7 @@ class InspectSnapshot:
         # Pending domain-object edits (wire-field intents) staged by setters before update()/commit.
         # Keyed by (kind, entity_id) where kind is "device" / "vertex" / "edge".
         self._pending_edits: dict[tuple[str, str], dict[str, Any]] = {}
+        self._replaced = False
 
         for node in device_items or []:
             self._index_device(node, device_level)
@@ -319,50 +322,22 @@ class InspectSnapshot:
     @property
     def edges(self) -> list[InspectEdge]:
         self._reconcile_stale_pairs()
-        seen: set[str] = set()
-        result: list[InspectEdge] = []
-        for indexed_edges in self._edges_by_device_id.values():
-            for indexed in indexed_edges:
-                if indexed.edge_id in seen:
-                    continue
-                seen.add(indexed.edge_id)
-                result.append(self._wrap_edge(indexed))
-        return result
+        return self._wrap_unique_edges(chain.from_iterable(self._edges_by_device_id.values()))
 
     def get_edges(self) -> list[InspectEdge]:
         return self.edges
 
     def get_edges_for_device(self, device_id: str) -> list[InspectEdge]:
+        """All directed edges incident on a device (incoming and outgoing)."""
         self._reconcile_stale_pairs()
-        seen: set[str] = set()
-        result: list[InspectEdge] = []
-        for indexed in self._edges_by_device_id.get(device_id, []):
-            if indexed.edge_id in seen:
-                continue
-            seen.add(indexed.edge_id)
-            result.append(self._wrap_edge(indexed))
-        return result
+        return self._wrap_unique_edges(self._edges_by_device_id.get(device_id, []))
 
     def get_edges_for_port(self, device_id: str, port_id: str) -> list[InspectEdge]:
-        """All edges incident on a port. The read view (``externalEdgesByDeviceKey``) keys edge
-        endpoints by *port* (not vertex), so edges are grouped at the port level."""
+        """All directed edges incident on a port (incoming and outgoing). The read view
+        (``externalEdgesByDeviceKey``) keys edge endpoints by *port* (not vertex), so edges are
+        grouped at the port level."""
         self._reconcile_stale_pairs()
-        seen: set[str] = set()
-        result: list[InspectEdge] = []
-        for indexed in self._edges_by_device_id.get(device_id, []):
-            on_port = (indexed.from_device_id == device_id and indexed.from_port_id == port_id) or (
-                indexed.to_device_id == device_id and indexed.to_port_id == port_id
-            )
-            if not on_port or indexed.edge_id in seen:
-                continue
-            seen.add(indexed.edge_id)
-            result.append(self._wrap_edge(indexed))
-        return result
-
-    def get_edge_for_port(self, device_id: str, port_id: str) -> InspectEdge | None:
-        self._reconcile_stale_pairs()
-        indexed = self._edge_by_port_key.get((device_id, port_id))
-        return self._wrap_edge(indexed) if indexed else None
+        return self._wrap_unique_edges(self._edges_by_port_key.get((device_id, port_id), []))
 
     def get_edge_details(self, edge_id: str) -> InspectApiEdgeForm | None:
         return self.get_edge_details_many([edge_id]).get(edge_id)
@@ -379,6 +354,7 @@ class InspectSnapshot:
         return {edge_id: detail for edge_id in edge_ids if (detail := self._edge_details.get(edge_id)) is not None}
 
     def get_linked_devices(self, device_id: str) -> list[InspectDevice]:
+        """Devices connected to ``device_id`` by at least one edge in either direction."""
         self._reconcile_stale_pairs()
         linked: set[str] = set()
         for indexed in self._edges_by_device_id.get(device_id, []):
@@ -392,23 +368,23 @@ class InspectSnapshot:
     @property
     def services(self) -> list[InspectService]:
         self._ensure_section_paths()
-        return [self._wrap_service(item) for item in self._paths_by_booking_id.values()]
+        return [self._wrap_service(indexed) for indexed in self._services_by_booking_id.values()]
 
     def get_services(self) -> list[InspectService]:
         return self.services
 
     def get_service_by_booking_id(self, booking_id: str) -> InspectService | None:
         self._ensure_section_paths()
-        item = self._paths_by_booking_id.get(booking_id)
-        return self._wrap_service(item) if item else None
+        indexed = self._services_by_booking_id.get(booking_id)
+        return self._wrap_service(indexed) if indexed is not None else None
 
     def get_services_for_device(self, device_id: str) -> list[InspectService]:
         self._ensure_section_paths()
         result: list[InspectService] = []
         for booking_id in self._services_by_device_id.get(device_id, []):
-            item = self._paths_by_booking_id.get(booking_id)
-            if item is not None:
-                result.append(self._wrap_service(item))
+            indexed = self._services_by_booking_id.get(booking_id)
+            if indexed is not None:
+                result.append(self._wrap_service(indexed))
         return result
 
     # --- Alarm reads (section, trigger section load) ---
@@ -465,11 +441,40 @@ class InspectSnapshot:
     def stage_edit(self, kind: str, entity_id: str, field: str, value: Any) -> None:
         """Record a pending intent; vertex ``control`` is converted to ``controlProps`` at commit."""
         with self._lock:
-            edits = self._pending_edits.setdefault((kind, entity_id), {})
+            if self._replaced:
+                raise InspectSnapshotReplacedError(entity_id)
             if kind == "vertex":
-                merge_vertex_intents(edits, validate_vertex_intents([(field, value)]))
+                validated = validate_vertex_intents([(field, value)])
+                edits = self._pending_edits.setdefault((kind, entity_id), {})
+                merge_vertex_intents(edits, validated)
+                if not edits:
+                    self._pending_edits.pop((kind, entity_id), None)
             else:
+                edits = self._pending_edits.setdefault((kind, entity_id), {})
                 edits[field] = value
+
+    def pending_edit_keys(self) -> list[tuple[str, str]]:
+        """``(kind, entity_id)`` pairs that still have staged edits, in stable order."""
+        with self._lock:
+            return sorted(key for key, edits in self._pending_edits.items() if edits)
+
+    def mark_replaced(self, *, discard_pending: bool = False) -> None:
+        """Mark this snapshot as retired by ``app.inspect.refresh()``.
+
+        Check pending edits and retire the snapshot under the staging lock, so edits made
+        during the reload are either preserved by refusing replacement or explicitly discarded.
+        Reads stay available; subsequent writes raise ``InspectSnapshotReplacedError``.
+        """
+        with self._lock:
+            if discard_pending:
+                self._pending_edits.clear()
+            elif keys := self.pending_edit_keys():
+                raise InspectPendingEditsError(keys)
+            self._replaced = True
+
+    @property
+    def replaced(self) -> bool:
+        return self._replaced
 
     def get_staged_edits(self, kind: str, entity_id: str) -> dict[str, Any]:
         """Return a copy of the pending intents for ``entity_id``, or an empty dict."""
@@ -700,7 +705,7 @@ class InspectSnapshot:
         """Reconcile every edge pair touching an affected device from one fresh edge-skeleton read."""
         if self._fetcher is None or not device_ids:
             return
-        affected_pairs = {indexed.pair_id for d in device_ids for indexed in self._edges_by_device_id.get(d, [])}
+        affected_pairs = self._pair_ids_touching(device_ids)
         try:
             pairs = self._fetcher.get_edge_skeleton()
         except Exception as exc:
@@ -723,7 +728,7 @@ class InspectSnapshot:
     def _mark_paths_stale(self) -> None:
         with self._lock:
             self._section_loaded["paths"] = False
-            self._paths_by_booking_id.clear()
+            self._services_by_booking_id.clear()
             self._services_by_device_id.clear()
 
     def _mark_alarms_stale(self) -> None:
@@ -895,26 +900,29 @@ class InspectSnapshot:
         return dotted if dotted in self._devices_by_id else pid
 
     def _index_edge_pair(self, pair_item: InspectApiExternalEdgesByDeviceKeyItem) -> None:
+        """Index every directed edge of a pair under both endpoint devices and both endpoint ports.
+
+        Each side (``primary`` / ``secondary``) holds the edges whose *source* is that side's device,
+        so the side device is the from-fallback and the opposite side the to-fallback.
+        """
         self._edge_pairs[pair_item.id] = pair_item
         primary_device_id = self._resolve_device_id(pair_item.primary.devicePid)
         secondary_device_id = self._resolve_device_id(pair_item.secondary.devicePid)
-        for side, device_id in (
-            (pair_item.primary, primary_device_id),
-            (pair_item.secondary, secondary_device_id),
+        for side, source_device_id, target_device_id in (
+            (pair_item.primary, primary_device_id, secondary_device_id),
+            (pair_item.secondary, secondary_device_id, primary_device_id),
         ):
-            if not device_id:
-                continue
             for edge in side.data.values():
                 from_device_id = (
                     self._resolve_device_id(
                         _device_id_from_context(edge.fromStatus.context if edge.fromStatus else None)
                     )
-                    or primary_device_id
+                    or source_device_id
                 )
                 from_port_id = _port_id_from_endpoint(edge.fromStatus)
                 to_device_id = (
                     self._resolve_device_id(_device_id_from_context(edge.toStatus.context if edge.toStatus else None))
-                    or secondary_device_id
+                    or target_device_id
                 )
                 to_port_id = _port_id_from_endpoint(edge.toStatus)
                 indexed = _IndexedEdge(
@@ -929,13 +937,14 @@ class InspectSnapshot:
                     to_device_id=to_device_id,
                     to_port_id=to_port_id,
                 )
-                self._edges_by_device_id.setdefault(device_id, []).append(indexed)
-                for endpoint_device_id, port_id in (
-                    (from_device_id, from_port_id),
-                    (to_device_id, to_port_id),
+                for endpoint_device_id in dict.fromkeys((from_device_id, to_device_id)):
+                    if endpoint_device_id:
+                        self._edges_by_device_id.setdefault(endpoint_device_id, []).append(indexed)
+                for endpoint_device_id, port_id in dict.fromkeys(
+                    ((from_device_id, from_port_id), (to_device_id, to_port_id))
                 ):
                     if endpoint_device_id and port_id:
-                        self._edge_by_port_key[(endpoint_device_id, port_id)] = indexed
+                        self._edges_by_port_key.setdefault((endpoint_device_id, port_id), []).append(indexed)
 
     def _drop_edge_pair(self, pair_id: str) -> None:
         self._edge_pairs.pop(pair_id, None)
@@ -943,29 +952,42 @@ class InspectSnapshot:
             for edge in edges:
                 if edge.pair_id == pair_id:
                     self._edge_details.pop(edge.edge_id, None)
-        for device_id, edges in list(self._edges_by_device_id.items()):
-            kept = [e for e in edges if e.pair_id != pair_id]
-            if kept:
-                self._edges_by_device_id[device_id] = kept
-            else:
-                self._edges_by_device_id.pop(device_id, None)
-        for key, indexed in list(self._edge_by_port_key.items()):
-            if indexed.pair_id == pair_id:
-                self._edge_by_port_key.pop(key, None)
+        self._prune_edge_indexes(lambda e: e.pair_id == pair_id)
         for edge_id, edge in list(self._edge_cache.items()):
             if edge.pair_id == pair_id:
                 self._edge_cache.pop(edge_id, None)
 
+    def _prune_edge_indexes(self, drop: Callable[[_IndexedEdge], bool]) -> None:
+        """Remove matching edges from the device and port indexes, dropping keys left empty."""
+        for index in (self._edges_by_device_id, self._edges_by_port_key):
+            for key, edges in list(index.items()):
+                kept = [e for e in edges if not drop(e)]
+                if len(kept) == len(edges):
+                    continue
+                if kept:
+                    index[key] = kept
+                else:
+                    index.pop(key, None)
+
+    def _pair_ids_touching(self, device_ids: set[str]) -> set[str]:
+        """Ids of every indexed edge pair with an endpoint device in ``device_ids`` (either side,
+        either direction, including pairs that currently carry no edges)."""
+        pair_ids = {indexed.pair_id for d in device_ids for indexed in self._edges_by_device_id.get(d, [])}
+        pair_ids.update(pair_id for pair_id, pair in self._edge_pairs.items() if self._pair_touches(pair, device_ids))
+        return pair_ids
+
     def _index_paths(self, path_items: list[InspectApiPathItem]) -> None:
         for item in path_items:
             booking_id = item.serviceFields.bid
-            self._paths_by_booking_id[booking_id] = item
-            device_ids: set[str] = set()
-            for segment in item.path:
-                structure = segment.structure
-                if structure and structure.deviceId:
-                    device_ids.add(structure.deviceId)
-            for device_id in device_ids:
+            indexed = self._services_by_booking_id.get(booking_id)
+            if indexed is None:
+                indexed = _IndexedService(booking_id=booking_id)
+                self._services_by_booking_id[booking_id] = indexed
+            if _path_is_main(item):
+                indexed.main = item
+            else:
+                indexed.spare = item
+            for device_id in _path_device_ids(item):
                 ids = self._services_by_device_id.setdefault(device_id, [])
                 if booking_id not in ids:
                     ids.append(booking_id)
@@ -992,7 +1014,9 @@ class InspectSnapshot:
             return
         with self._lock:
             for removed in removed_ids:
-                # Device removal
+                # Device removal; touching pairs are resolved before the record is dropped because
+                # virtual-device pid resolution (dash vs dot form) needs the device to be indexed.
+                touching_pairs = self._pair_ids_touching({removed}) if removed in self._devices_by_id else set()
                 record = self._devices_by_id.pop(removed, None)
                 if record is not None:
                     label = record.label
@@ -1007,22 +1031,14 @@ class InspectSnapshot:
                     self._invalidate_factory_labels(removed)
                     for module_id in self._modules_by_device_id.pop(removed, {}):
                         self._module_cache.pop((removed, module_id), None)
-                    self._edges_by_device_id.pop(removed, None)
+                    for pair_id in touching_pairs:
+                        self._drop_edge_pair(pair_id)
                 # Edge removal by edge id or pair id
                 if "::" in removed:
                     self._drop_edge_id(removed)
 
     def _drop_edge_id(self, edge_or_pair_id: str) -> None:
-        for device_id, edges in list(self._edges_by_device_id.items()):
-            kept = [e for e in edges if e.edge_id != edge_or_pair_id and e.pair_id != edge_or_pair_id]
-            if kept != edges:
-                if kept:
-                    self._edges_by_device_id[device_id] = kept
-                else:
-                    self._edges_by_device_id.pop(device_id, None)
-        for key, indexed in list(self._edge_by_port_key.items()):
-            if indexed.edge_id == edge_or_pair_id or indexed.pair_id == edge_or_pair_id:
-                self._edge_by_port_key.pop(key, None)
+        self._prune_edge_indexes(lambda e: edge_or_pair_id in (e.edge_id, e.pair_id))
         self._edge_cache.pop(edge_or_pair_id, None)
         self._edge_details.pop(edge_or_pair_id, None)
 
@@ -1063,15 +1079,24 @@ class InspectSnapshot:
         self._edge_cache[indexed.edge_id] = edge
         return edge
 
-    def _wrap_service(self, path_item: InspectApiPathItem) -> InspectService:
+    def _wrap_unique_edges(self, indexed_edges: Iterable[_IndexedEdge]) -> list[InspectEdge]:
+        seen: set[str] = set()
+        result: list[InspectEdge] = []
+        for indexed in indexed_edges:
+            if indexed.edge_id in seen:
+                continue
+            seen.add(indexed.edge_id)
+            result.append(self._wrap_edge(indexed))
+        return result
+
+    def _wrap_service(self, indexed: _IndexedService) -> InspectService:
         from videoipath_automation_tool.apps.inspect.domain.service import InspectService
 
-        booking_id = path_item.serviceFields.bid
-        cached = self._service_cache.get(booking_id)
+        cached = self._service_cache.get(indexed.booking_id)
         if cached is not None:
             return cached
-        service = InspectService(snapshot=self, path_item=path_item)
-        self._service_cache[booking_id] = service
+        service = InspectService(snapshot=self, main_item=indexed.main, spare_item=indexed.spare)
+        self._service_cache[indexed.booking_id] = service
         return service
 
 
@@ -1104,6 +1129,14 @@ def _sorted_alarms(items: list[InspectApiAlarmItem]) -> list[InspectAlarm]:
         reverse=True,
     )
     return [InspectAlarm(item=item) for item in ordered]
+
+
+class _IndexedService(InspectInternalModel):
+    """Main and spare path items of one booking. ``main`` wins for the unqualified accessors."""
+
+    booking_id: str
+    main: InspectApiPathItem | None = None
+    spare: InspectApiPathItem | None = None
 
 
 class _DeviceRecord(InspectInternalModel):
@@ -1210,6 +1243,21 @@ def _vertex_ids_from_status(port: InspectPortStatus) -> tuple[str, ...]:
     if isinstance(info, InspectApiSingleVertexInfo):
         return (info.id,) if info.id else ()
     return tuple(side.id for side in (info.out, info.in_) if side is not None and side.id)
+
+
+def _path_is_main(item: InspectApiPathItem) -> bool:
+    """Main unless ``isMain`` is false or, when it is unset, the id ends in ``::spare``."""
+    if item.serviceFields.isMain is not None:
+        return item.serviceFields.isMain
+    return not item.id.endswith("::spare")
+
+
+def _path_device_ids(item: InspectApiPathItem) -> set[str]:
+    return {
+        segment.structure.deviceId
+        for segment in item.path
+        if segment.structure is not None and segment.structure.deviceId
+    }
 
 
 def _iter_modules(

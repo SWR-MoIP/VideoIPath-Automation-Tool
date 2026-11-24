@@ -11,6 +11,7 @@ from videoipath_automation_tool.apps.inspect.domain import InspectModule as Insp
 from videoipath_automation_tool.apps.inspect.domain import InspectPort as InspectPort
 from videoipath_automation_tool.apps.inspect.domain import InspectPortTemplate as InspectPortTemplate
 from videoipath_automation_tool.apps.inspect.domain import InspectService as InspectService
+from videoipath_automation_tool.apps.inspect.domain import InspectServicePath as InspectServicePath
 from videoipath_automation_tool.apps.inspect.domain import PortFromTemplate as PortFromTemplate
 from videoipath_automation_tool.apps.inspect.domain import VirtualDeviceSpec as VirtualDeviceSpec
 from videoipath_automation_tool.apps.inspect.domain import VirtualModuleSpec as VirtualModuleSpec
@@ -19,7 +20,12 @@ from videoipath_automation_tool.apps.inspect.errors import InspectCommitError as
 from videoipath_automation_tool.apps.inspect.errors import InspectConflict as InspectConflict
 from videoipath_automation_tool.apps.inspect.errors import InspectEntityNotFoundError as InspectEntityNotFoundError
 from videoipath_automation_tool.apps.inspect.errors import InspectError as InspectError
+from videoipath_automation_tool.apps.inspect.errors import InspectPendingEditsError as InspectPendingEditsError
 from videoipath_automation_tool.apps.inspect.errors import InspectQueryTooLongError as InspectQueryTooLongError
+from videoipath_automation_tool.apps.inspect.errors import (
+    InspectSnapshotReplacedError as InspectSnapshotReplacedError,
+)
+from videoipath_automation_tool.apps.inspect.errors import InspectUnsupportedFieldError as InspectUnsupportedFieldError
 from videoipath_automation_tool.apps.inspect.app import InspectApp as InspectApp
 from videoipath_automation_tool.apps.inspect.model import *
 
@@ -42,7 +48,11 @@ __all__ = [
     "InspectPort",
     "InspectPortTemplate",
     "InspectQueryTooLongError",
+    "InspectPendingEditsError",
+    "InspectSnapshotReplacedError",
+    "InspectUnsupportedFieldError",
     "InspectService",
+    "InspectServicePath",
     "InspectTransaction",
     "PortFromTemplate",
     "VirtualDeviceSpec",

@@ -197,7 +197,10 @@ snapshot section). Each of `device` / `module` / `port` / `edge` / `service` exp
 
 | Field / property | Meaning |
 | --- | --- |
-| `message` | Alarm text (e.g. `"Mock driver in use"`, `"Loss of protection"`) |
+| `title` | Alarm title (`desc.alertId.label`); `None` when missing or empty |
+| `details` | Alarm details (`info.details`); `None` when missing or empty |
+| `description` | Longer description (`desc.alertId.desc`); not part of the GUI alarm line; `None` when missing or empty |
+| `message` | GUI alarm text: the non-empty parts of `title` and `details`, joined with `": "` (e.g. `"Mock driver in use"`, `"Port Alarm: Loss of protection"`) |
 | `severity` / `sa` | Mapped `InspectSeverity` |
 | `acknowledged` / `hidden` | Alarm acknowledgement flags |
 | `point_labels` | Human labels for the alarm's point path |
@@ -214,13 +217,13 @@ Represents one topology device/node with status, sync hints, and relations.
 | `status` | Device status summary (`sa` / `severity` as `InspectSeverity`) |
 | `sync_severity` | Sync severity from node status (`InspectSeverity`) |
 | `alarms` | Active alarms on this device (worst first) |
-| `status_message` | Message of the worst active alarm, if any |
+| `status_message` | GUI text (`message`) of the worst active alarm, if any |
 | `tags` | Assigned tags |
 | `coordinates` | Topology map position when available |
 | `ports` | Ports on this device |
-| `edges` | External edges touching this device |
+| `edges` | External edges touching this device (incoming and outgoing) |
 | `services` | Services whose path includes this device |
-| `linked_devices` | Neighbour devices via edges or shared service paths |
+| `linked_devices` | Neighbour devices connected by an edge in either direction |
 
 Lookup:
 
@@ -283,7 +286,7 @@ form's `typeFields.type`. Editable attributes stage pending intents; flush with
 | --- | --- |
 | `id` | Vertex id (e.g. `device-a.module-1.port-out-1.out`) |
 | `label` / `description` | Display fields (writable) |
-| `vertex_type` | Direction: `"In"` / `"Out"` / … |
+| `vertex_type` | Direction: `"In"` / `"Out"` / …. On a double port the server omits the nested `vertexType`; the `out` / `in` key supplies it, and an explicit value is kept |
 | `is_active` / `is_controlled` / `is_endpoint` | Offline status flags from port `vertexInfo` |
 | `tags` | Locally assigned vertex tags (writable via `localAssignedTags`) |
 | `use_as_endpoint` | Whether usable as a service endpoint |
@@ -322,19 +325,26 @@ Represents one external edge status entry between two endpoint devices/ports.
 
 ### `InspectService`
 
-Represents one service/booking path across devices and ports.
+Represents one service/booking. A redundant booking keeps both its main and its spare
+path (`main_path` / `spare_path`). Accessors without a path qualifier read the main
+path, or the spare path when the booking has no main item. `get_services_for_device()`
+matches a device on either path. Skeleton and full loads return the same service
+fields (endpoint pids, status, path segments).
 
 | Field / property | Meaning |
 | --- | --- |
 | `booking_id` | Booking identifier |
 | `label` | Service label when available |
-| `source` / `destination` | Endpoint labels |
-| `source_device` / `destination_device` | Endpoint devices |
-| `source_port` / `destination_port` | Endpoint ports |
-| `status` | Service status summary (`InspectSeverity` fields) |
+| `source` / `destination` | Endpoint labels of the main path |
+| `source_device` / `destination_device` | Endpoint devices of the main path |
+| `source_port` / `destination_port` | Endpoint ports of the main path |
+| `is_main` | Whether the unqualified path is the main path |
+| `is_redundant` | True when both a main and a spare path exist |
+| `status` | Status of the main path |
 | `alarms` | Active alarms correlated to this booking |
-| `path_devices` | Ordered devices in the path |
-| `path_ports` | Ports encountered in the path |
+| `path_devices` / `path_ports` | Devices and ports of the main path |
+| `main_path` / `spare_path` | `InspectServicePath` for each role (`devices`, `ports`, `status`, endpoint ports, `is_main`) |
+| `path_item` / `spare_path_item` | Raw path items; `path_item` is the main item, or the spare item when there is no main |
 
 Lookup:
 
@@ -789,6 +799,13 @@ response.header.ok and response.data.res.ok and response.data.validation.result.
 Validation failures can still arrive with `header.ok == true`, so callers must
 inspect `data.res`, `data.validation.result`, and `data.validation.details`.
 
+`CommitResult.applied_ids` lists the entities submitted in that change set. It is not
+proof that each field persisted: `replaceVertices` upserts the whole edit form, and the
+server drops `typeFields` keys the form does not have while still reporting success.
+Those keys are rejected before staging (`InspectUnsupportedFieldError`). Top-level keys
+that are absent from the form by design, such as `control` (written as `controlProps`),
+are not checked.
+
 ### Consistency Against Concurrent Writers
 
 `updateTopology` enforces no revisions (last-writer-wins), `replace*` entries
@@ -834,6 +851,16 @@ catches up with **targeted scoped re-reads**
 
 A failed commit changes nothing server-side (reject-before-apply), so the
 snapshot is left untouched.
+
+## Object Lifetime After refresh()
+
+`refresh()` builds a new snapshot and marks the previous one replaced
+([ADR-009](./decisions/009-object-lifetime-after-refresh.md)). Objects fetched earlier
+keep reading that previous snapshot. Setters, `update()`, and a transaction bound to the
+replaced snapshot raise `InspectSnapshotReplacedError`; re-fetch the object from the app.
+`refresh()` raises `InspectPendingEditsError` when edits are staged, unless
+`refresh(discard_pending=True)`. A commit still updates the same snapshot in place
+(ADR-008), so objects held across a commit stay writable.
 
 ## Python Module Layout
 

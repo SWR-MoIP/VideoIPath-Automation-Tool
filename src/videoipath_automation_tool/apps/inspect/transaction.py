@@ -32,6 +32,7 @@ from pydantic import Field
 from videoipath_automation_tool.apps.inspect.control import (
     control_wire_intents,
     merge_vertex_intents,
+    require_supported_type_field,
     validate_vertex_intents,
 )
 from videoipath_automation_tool.apps.inspect.errors import (
@@ -40,6 +41,8 @@ from videoipath_automation_tool.apps.inspect.errors import (
     InspectConflict,
     InspectEntityNotFoundError,
     InspectError,
+    InspectSnapshotReplacedError,
+    InspectUnsupportedFieldError,
 )
 from videoipath_automation_tool.apps.inspect.model.actions import (
     InspectApiEdgeForm,
@@ -82,6 +85,11 @@ else:
 
 class CommitResult(InspectFrozenModel):
     """Outcome of a successful commit; a failed commit raises ``InspectCommitError``.
+
+    ``applied_ids`` are the entity ids submitted in the committed change set. A successful
+    commit means the server accepted that change set, not that every submitted field was
+    persisted. Unsupported ``typeFields`` keys are rejected before staging
+    (``InspectUnsupportedFieldError``).
 
     ``response`` is ``None`` when the commit only applied module tag assign/unassign ops (no
     ``updateTopology`` call).
@@ -188,6 +196,8 @@ class InspectTransaction:
         objects = list(obj) if isinstance(obj, Sequence) and not _is_single_editable(obj) else [obj]  # type: ignore[list-item]
         if not objects:
             raise ValueError("Nothing to update.")
+        for item in objects:
+            _require_live_object(self._snapshot, item)
 
         flushed_keys: list[tuple[str, str]] = []
         for item in objects:
@@ -322,8 +332,43 @@ class InspectTransaction:
             updates.append(("control", control))
         if control_props is not None:
             updates.append(("controlProps", control_props))
-        # Validate before staging so a rejected value neither fetches a baseline nor stages an entry.
+        # Validate control before staging so a rejected value neither fetches a baseline nor stages an entry.
         validated = validate_vertex_intents(updates)
+        type_field_intents = _type_field_intents(
+            park_port=park_port,
+            ip_address=ip_address,
+            ip_netmask=ip_netmask,
+            public=public,
+            vlan_id=vlan_id,
+            vrf_id=vrf_id,
+            supports_cpipe=supports_cpipe,
+            supports_igmp=supports_igmp,
+            supports_mac_forwarding=supports_mac_forwarding,
+            supports_nso=supports_nso,
+            supports_openflow=supports_openflow,
+            supports_pseudo_wires=supports_pseudo_wires,
+            supports_static_igmp=supports_static_igmp,
+            supports_vlan=supports_vlan,
+            supports_vpls=supports_vpls,
+            supports_vxlan=supports_vxlan,
+            sdp_support=sdp_support,
+            is_igmp_source=is_igmp_source,
+            specific_type=specific_type,
+            codec_format=codec_format,
+            multiplicity=multiplicity,
+            codec_public=codec_public,
+            extra_formats=extra_formats,
+            bidir_partner_id=bidir_partner_id,
+            partner_config=partner_config,
+            service_id=service_id,
+            main_src_info=main_src_info,
+            main_dst_info=main_dst_info,
+            spare_src_info=spare_src_info,
+            spare_dst_info=spare_dst_info,
+            main_destination_port=main_destination_port,
+            spare_destination_port=spare_destination_port,
+        )
+        self._require_vertex_type_fields(vertex_id, {**dict(validated), **type_field_intents})
         entry = self._stage_vertex(vertex_id)
         merge_vertex_intents(entry.intents, validated)
         if use_as_endpoint is not None:
@@ -350,48 +395,7 @@ class InspectTransaction:
             entry.intents["queueable"] = queueable
         if destination_monitor_leader is not None:
             entry.intents["destinationMonitorLeader"] = destination_monitor_leader
-
-        for value, wire_field in (
-            (park_port, "parkPort"),
-            (ip_address, "ipAddress"),
-            (ip_netmask, "ipNetmask"),
-            (public, "public"),
-            (vlan_id, "vlanId"),
-            (vrf_id, "vrfId"),
-            (supports_cpipe, "supportsCpipeCfg"),
-            (supports_igmp, "supportsIgmpCfg"),
-            (supports_mac_forwarding, "supportsMacForwardingCfg"),
-            (supports_nso, "supportsNsoCfg"),
-            (supports_openflow, "supportsOpenflowCfg"),
-            (supports_pseudo_wires, "supportsPseudoWiresCfg"),
-            (supports_static_igmp, "supportsStaticIgmpCfg"),
-            (supports_vlan, "supportsVlanCfg"),
-            (supports_vpls, "supportsVplsCfg"),
-            (supports_vxlan, "supportsVxlanCfg"),
-        ):
-            if value is not None:
-                entry.intents[f"typeFields.{wire_field}"] = value
-
-        for value, wire_path in (
-            (sdp_support, "typeFields.specific.sdpSupport"),
-            (is_igmp_source, "typeFields.specific.isIgmpSource"),
-            (specific_type, "typeFields.specific.type"),
-            (codec_format, "typeFields.generic.codecFormat"),
-            (multiplicity, "typeFields.generic.multiplicity"),
-            (codec_public, "typeFields.generic.public"),
-            (extra_formats, "typeFields.generic.extraFormats"),
-            (bidir_partner_id, "typeFields.generic.bidirPartnerId"),
-            (partner_config, "typeFields.generic.partnerConfig"),
-            (service_id, "typeFields.generic.serviceId"),
-            (main_src_info, "typeFields.generic.mainSrcInfo"),
-            (main_dst_info, "typeFields.generic.mainDstInfo"),
-            (spare_src_info, "typeFields.generic.spareSrcInfo"),
-            (spare_dst_info, "typeFields.generic.spareDstInfo"),
-            (main_destination_port, "typeFields.generic.mainDstInfo.port"),
-            (spare_destination_port, "typeFields.generic.spareDstInfo.port"),
-        ):
-            if value is not None:
-                entry.intents[wire_path] = list(value) if wire_path.endswith("extraFormats") else value
+        entry.intents.update(type_field_intents)
         return self
 
     # --- Staging: edges ---
@@ -607,6 +611,9 @@ class InspectTransaction:
                     entry.baseline_dump = {"tags": list(tags)}
                 continue
             fresh = self._fetch_baseline(entry.kind, entry.entity_id)
+            if entry.kind == _VERTEX:
+                for path, value in entry.intents.items():
+                    require_supported_type_field(fresh, path, value, entity_id=entry.entity_id)
             entry.baseline_form = fresh
             entry.baseline_dump = fresh.model_dump(mode="json")
         return self
@@ -623,12 +630,34 @@ class InspectTransaction:
             raise RuntimeError("This transaction was already committed; open a new one.")
         if self._discarded:
             raise RuntimeError("This transaction was discarded; open a new one.")
+        if self._snapshot is not None and getattr(self._snapshot, "replaced", False):
+            raise InspectSnapshotReplacedError()
 
     def _stage_device(self, device_id: str) -> _Staged:
         return self._stage(_DEVICE, device_id)
 
     def _stage_vertex(self, vertex_id: str) -> _Staged:
         return self._stage(_VERTEX, vertex_id)
+
+    def _require_vertex_type_fields(self, vertex_id: str, intents: dict[str, Any]) -> None:
+        """Reject ``typeFields`` paths the baseline form does not contain, without keeping a new entry."""
+        type_fields = {
+            path: value for path, value in intents.items() if path == "typeFields" or path.startswith("typeFields.")
+        }
+        if not type_fields:
+            return
+        key = (_VERTEX, vertex_id)
+        previous = self._entries.get(key)
+        entry = self._stage_vertex(vertex_id)
+        try:
+            for wire_path, value in type_fields.items():
+                require_supported_type_field(entry.baseline_form, wire_path, value, entity_id=vertex_id)
+        except InspectUnsupportedFieldError:
+            if previous is None:
+                self._entries.pop(key, None)
+            elif previous is not entry:
+                self._entries[key] = previous
+            raise
 
     def _stage_edge(self, edge_id: str) -> _Staged:
         return self._stage(_EDGE, edge_id)
@@ -789,6 +818,9 @@ class InspectTransaction:
                 delta.remove.append(entry.entity_id)
                 continue
             form = entry.baseline_form.model_copy(deep=True)
+            if entry.kind == _VERTEX:
+                for path, value in entry.intents.items():
+                    require_supported_type_field(form, path, value, entity_id=entry.entity_id)
             intents = control_wire_intents(entry.intents, form.controlProps) if entry.kind == _VERTEX else entry.intents
             _apply_intents(form, intents)
             if entry.kind == _DEVICE:
@@ -867,6 +899,86 @@ _EDGE = "edge"
 _MODULE = "module"
 
 
+def _type_field_intents(
+    *,
+    park_port: Any = None,
+    ip_address: Any = None,
+    ip_netmask: Any = None,
+    public: Any = None,
+    vlan_id: Any = None,
+    vrf_id: Any = None,
+    supports_cpipe: Any = None,
+    supports_igmp: Any = None,
+    supports_mac_forwarding: Any = None,
+    supports_nso: Any = None,
+    supports_openflow: Any = None,
+    supports_pseudo_wires: Any = None,
+    supports_static_igmp: Any = None,
+    supports_vlan: Any = None,
+    supports_vpls: Any = None,
+    supports_vxlan: Any = None,
+    sdp_support: Any = None,
+    is_igmp_source: Any = None,
+    specific_type: Any = None,
+    codec_format: Any = None,
+    multiplicity: Any = None,
+    codec_public: Any = None,
+    extra_formats: Any = None,
+    bidir_partner_id: Any = None,
+    partner_config: Any = None,
+    service_id: Any = None,
+    main_src_info: Any = None,
+    main_dst_info: Any = None,
+    spare_src_info: Any = None,
+    spare_dst_info: Any = None,
+    main_destination_port: Any = None,
+    spare_destination_port: Any = None,
+) -> dict[str, Any]:
+    """Wire paths for the ``typeFields`` keyword arguments of ``update_vertex``."""
+    intents: dict[str, Any] = {}
+    for value, wire_field in (
+        (park_port, "parkPort"),
+        (ip_address, "ipAddress"),
+        (ip_netmask, "ipNetmask"),
+        (public, "public"),
+        (vlan_id, "vlanId"),
+        (vrf_id, "vrfId"),
+        (supports_cpipe, "supportsCpipeCfg"),
+        (supports_igmp, "supportsIgmpCfg"),
+        (supports_mac_forwarding, "supportsMacForwardingCfg"),
+        (supports_nso, "supportsNsoCfg"),
+        (supports_openflow, "supportsOpenflowCfg"),
+        (supports_pseudo_wires, "supportsPseudoWiresCfg"),
+        (supports_static_igmp, "supportsStaticIgmpCfg"),
+        (supports_vlan, "supportsVlanCfg"),
+        (supports_vpls, "supportsVplsCfg"),
+        (supports_vxlan, "supportsVxlanCfg"),
+    ):
+        if value is not None:
+            intents[f"typeFields.{wire_field}"] = value
+    for value, wire_path in (
+        (sdp_support, "typeFields.specific.sdpSupport"),
+        (is_igmp_source, "typeFields.specific.isIgmpSource"),
+        (specific_type, "typeFields.specific.type"),
+        (codec_format, "typeFields.generic.codecFormat"),
+        (multiplicity, "typeFields.generic.multiplicity"),
+        (codec_public, "typeFields.generic.public"),
+        (extra_formats, "typeFields.generic.extraFormats"),
+        (bidir_partner_id, "typeFields.generic.bidirPartnerId"),
+        (partner_config, "typeFields.generic.partnerConfig"),
+        (service_id, "typeFields.generic.serviceId"),
+        (main_src_info, "typeFields.generic.mainSrcInfo"),
+        (main_dst_info, "typeFields.generic.mainDstInfo"),
+        (spare_src_info, "typeFields.generic.spareSrcInfo"),
+        (spare_dst_info, "typeFields.generic.spareDstInfo"),
+        (main_destination_port, "typeFields.generic.mainDstInfo.port"),
+        (spare_destination_port, "typeFields.generic.spareDstInfo.port"),
+    ):
+        if value is not None:
+            intents[wire_path] = list(value) if wire_path.endswith("extraFormats") else value
+    return intents
+
+
 class _Staged(InspectInternalModel):
     kind: str
     entity_id: str
@@ -897,6 +1009,12 @@ def _is_single_editable(obj: Any) -> bool:
     from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
 
     return isinstance(obj, (InspectDevice, InspectVertex, InspectEdge, InspectModule))
+
+
+def _require_live_object(snapshot: "InspectSnapshot", obj: Editable) -> None:
+    """Reject a domain object that is not bound to ``snapshot``, or a snapshot ``refresh()`` replaced."""
+    if getattr(snapshot, "replaced", False) or obj.snapshot is not snapshot:
+        raise InspectSnapshotReplacedError(obj.id)
 
 
 def _stage_editable(

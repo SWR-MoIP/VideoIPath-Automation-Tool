@@ -4,6 +4,7 @@ section laziness, preload fan-out, refresh, and post-commit targeted refresh."""
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -21,6 +22,9 @@ from videoipath_automation_tool.apps.inspect.model.common import InspectSeverity
 from videoipath_automation_tool.apps.inspect.snapshot import HydrationLevel, InspectSnapshot
 
 from .conftest import load_fixture
+
+if TYPE_CHECKING:
+    from videoipath_automation_tool.apps.inspect.domain.edge import InspectEdge
 
 
 def test_skeleton_indexes_devices_and_edges(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -157,19 +161,226 @@ def test_alarms_section_is_lazy_and_correlates(snapshot: tuple[InspectSnapshot, 
     assert fetcher.alarm_section_calls == 1
     assert len(alarms) == 3
     assert alarms[0].severity == InspectSeverity.MAJOR  # worst first
-    assert alarms[0].message == "Loss of protection"
-    assert device.status_message == "Loss of protection"
+    assert alarms[0].title == "Port Alarm"
+    assert alarms[0].details == "Loss of protection"
+    assert alarms[0].message == "Port Alarm: Loss of protection"
+    assert device.status_message == "Port Alarm: Loss of protection"
     _ = device.alarms
     assert fetcher.alarm_section_calls == 1
 
     module_alarms = snap.get_alarms_for_module("leaf-a", "leaf-a.dev.module-1")
     assert len(module_alarms) == 1
-    assert module_alarms[0].message == "Loss of protection"
+    assert module_alarms[0].message == "Port Alarm: Loss of protection"
 
     port_alarms = snap.get_alarms_for_port("leaf-a.dev.module-1.port-out-1")
     assert len(port_alarms) == 1
-    assert port_alarms[0].message == "Loss of disjunctivity"
+    assert port_alarms[0].message == "Signal: Loss of disjunctivity"
     assert port_alarms[0].severity == InspectSeverity.MINOR
+
+
+def test_projected_paths_match_full_paths_and_reject_an_empty_path() -> None:
+    """Skeleton and full service data agree, and a missing path does not compare equal to one."""
+    items = [
+        InspectApiPathItem.model_validate(raw)
+        for raw in load_fixture("inspect_paths_section.json")["data"]["status"]["collector"]["inspect"]["paths"][
+            "_items"
+        ]
+    ]
+    projected = _service_facts(items)
+    assert projected == _service_facts(items)
+    for facts in projected.values():
+        from_pid, to_pid, has_status, devices, hops = facts
+        assert from_pid and to_pid and has_status and devices and hops
+
+    stripped: list[InspectApiPathItem] = []
+    for item in items:
+        fields = item.serviceFields.model_copy(update={"fromPid": None, "toPid": None, "serviceStatus": None})
+        stripped.append(item.model_copy(update={"path": [], "serviceFields": fields}))
+    assert _service_facts(stripped) != projected
+
+
+def test_redundant_booking_keeps_main_and_spare_paths() -> None:
+    raw_items = load_fixture("inspect_paths_section.json")["data"]["status"]["collector"]["inspect"]["paths"]["_items"]
+    items = [InspectApiPathItem.model_validate(raw) for raw in raw_items]
+    spare = items[1]
+    items.append(
+        spare.model_copy(
+            update={
+                "id": "booking-1003::spare",
+                "vid": "_:booking-1003::spare",
+                "serviceFields": spare.serviceFields.model_copy(update={"bid": "booking-1003"}),
+            }
+        )
+    )
+    items.append(
+        InspectApiPathItem.model_validate(
+            {
+                "_id": "booking-1004::spare",
+                "_vid": "_:booking-1004::spare",
+                "serviceFields": {"bid": "booking-1004"},
+                "path": [{"bid": "booking-1004", "structure": {"deviceId": "device-a"}}],
+            }
+        )
+    )
+    items.append(
+        InspectApiPathItem.model_validate(
+            {
+                "_id": "booking-1005::main",
+                "_vid": "_:booking-1005::main",
+                "serviceFields": {"bid": "booking-1005"},
+                "path": [{"bid": "booking-1005", "structure": {"deviceId": "device-b"}}],
+            }
+        )
+    )
+    snap = _service_snapshot(items)
+    by_id = {service.booking_id: service for service in snap.services}
+    assert set(by_id) == {"booking-1001", "booking-1002", "booking-1003", "booking-1004", "booking-1005"}
+
+    redundant = by_id["booking-1001"]
+    assert redundant.is_redundant is True
+    assert redundant.is_main is True
+    assert [device.id for device in redundant.path_devices] == ["device-a", "device-b"]
+    assert redundant.main_path is not None
+    assert [device.id for device in redundant.main_path.devices] == ["device-a", "device-b"]
+    assert redundant.spare_path is not None and redundant.spare_path.is_main is False
+    assert [device.id for device in redundant.spare_path.devices] == ["device-a", "device-c"]
+    assert redundant.spare_path_item is not None and redundant.spare_path_item.id == "booking-1001::spare"
+
+    assert {service.booking_id for service in snap.get_services_for_device("device-c")} == {
+        "booking-1001",
+        "booking-1002",
+        "booking-1003",
+    }
+    assert {service.booking_id for service in snap.get_services_for_device("device-d")} == {"booking-1002"}
+
+    spare_only = by_id["booking-1003"]
+    assert spare_only.is_redundant is False
+    assert spare_only.main_path is None
+    assert spare_only.is_main is False
+    assert [device.id for device in spare_only.path_devices] == ["device-a", "device-c"]
+
+    assert by_id["booking-1004"].main_path is None and by_id["booking-1004"].spare_path is not None
+    assert by_id["booking-1004"].is_main is False
+    assert by_id["booking-1004"].spare_path.is_main is False
+    assert by_id["booking-1005"].main_path is not None and by_id["booking-1005"].spare_path is None
+    assert by_id["booking-1005"].is_main is True
+    assert by_id["booking-1005"].main_path.is_main is True
+
+
+@pytest.mark.parametrize("explicit_flags", [False, True])
+def test_service_path_roles_match_indexed_roles(explicit_flags: bool) -> None:
+    """Missing flags use the id suffix; explicit flags override even a contradictory suffix."""
+    items = [
+        InspectApiPathItem.model_validate(
+            {
+                "_id": f"booking-1::{suffix}",
+                "_vid": f"_:booking-1::{suffix}",
+                "serviceFields": {"bid": "booking-1", **({"isMain": flag} if explicit_flags else {})},
+            }
+        )
+        for suffix, flag in (("spare", True), ("main", False))
+    ]
+    service = _service_snapshot(items).get_service_by_booking_id("booking-1")
+    assert service is not None and service.is_redundant
+    assert service.is_main is True
+    assert service.main_path is not None and service.main_path.is_main is True
+    assert service.spare_path is not None and service.spare_path.is_main is False
+    assert service.path_item.id == ("booking-1::spare" if explicit_flags else "booking-1::main")
+    assert [item.serviceFields.isMain for item in items] == ([True, False] if explicit_flags else [None, None])
+
+
+def test_non_redundant_service_has_no_spare_path(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    service = snap.get_service_by_booking_id("1001")
+    assert service is not None
+    assert service.is_redundant is False
+    assert service.is_main is True
+    assert service.spare_path is None
+    assert service.main_path is not None
+    assert [device.id for device in service.path_devices] == [device.id for device in service.main_path.devices]
+
+
+def _service_snapshot(items: list[InspectApiPathItem]) -> InspectSnapshot:
+    device_ids: list[str] = []
+    for item in items:
+        for segment in item.path:
+            device_id = segment.structure.deviceId if segment.structure is not None else None
+            if device_id and device_id not in device_ids:
+                device_ids.append(device_id)
+    return InspectSnapshot(
+        fetcher=None,
+        device_items=[_skeleton_node(device_id, device_id) for device_id in device_ids],
+        path_items=items,
+    )
+
+
+def _service_facts(
+    items: list[InspectApiPathItem],
+) -> dict[str, tuple[str | None, str | None, bool, tuple[str, ...], int]]:
+    device_ids: list[str] = []
+    for item in items:
+        for segment in item.path:
+            device_id = segment.structure.deviceId if segment.structure is not None else None
+            if device_id and device_id not in device_ids:
+                device_ids.append(device_id)
+    snap = InspectSnapshot(
+        fetcher=None,
+        device_items=[_skeleton_node(device_id, device_id) for device_id in device_ids],
+        path_items=items,
+    )
+    return {
+        service.booking_id: (
+            service.path_item.serviceFields.fromPid,
+            service.path_item.serviceFields.toPid,
+            service.status is not None,
+            tuple(device.id for device in service.path_devices),
+            len(service.path_item.path),
+        )
+        for service in snap.services
+    }
+
+
+@pytest.mark.parametrize(
+    ("alert", "details", "expected"),
+    [
+        (
+            {"label": "No SDI sync", "desc": "The network port is down"},
+            "",
+            ("No SDI sync", None, "The network port is down", "No SDI sync"),
+        ),
+        (
+            {"label": "", "desc": ""},
+            "Mock driver in use",
+            (None, "Mock driver in use", None, "Mock driver in use"),
+        ),
+        (
+            {"label": "port-out-1: Transmitting alternative signal", "desc": ""},
+            "Transmitting test image",
+            (
+                "port-out-1: Transmitting alternative signal",
+                "Transmitting test image",
+                None,
+                "port-out-1: Transmitting alternative signal: Transmitting test image",
+            ),
+        ),
+        (None, None, (None, None, None, None)),
+        ({"label": "", "desc": ""}, "", (None, None, None, None)),
+    ],
+)
+def test_alarm_message_joins_title_and_details(
+    alert: dict[str, str] | None,
+    details: str | None,
+    expected: tuple[str | None, str | None, str | None, str | None],
+) -> None:
+    from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
+
+    payload: dict[str, object] = {"_id": "alarm-1"}
+    if alert is not None:
+        payload["desc"] = {"alertId": alert}
+    if details is not None:
+        payload["info"] = {"details": details}
+    alarm = InspectAlarm(item=InspectApiAlarmItem.model_validate(payload))
+    assert (alarm.title, alarm.details, alarm.description, alarm.message) == expected
 
 
 def test_post_commit_marks_alarms_stale(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -207,8 +418,20 @@ def test_refresh_returns_new_snapshot(snapshot: tuple[InspectSnapshot, FakeFetch
     snap, fetcher = snapshot
     new = snap.refresh()
     assert new is not snap
+    assert snap.replaced is False
+    assert new.replaced is False
     assert fetcher.skeleton_calls == 1
     assert {d.id for d in new.devices} == {"spine-a", "leaf-a"}
+
+
+def test_post_commit_refresh_does_not_replace_the_snapshot(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    device = snap.get_device("leaf-a")
+    assert device is not None
+    snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
+    assert snap.replaced is False
+    device.label = "after-commit"
+    assert device.label == "after-commit"
 
 
 def test_post_commit_removes_locally_and_refreshes_pair(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
@@ -327,6 +550,43 @@ def test_bidirectional_port_vertex_accessors(snapshot: tuple[InspectSnapshot, Fa
     assert port.vertex_in.id == "leaf-a.1.bidi1.in"
 
 
+def test_double_port_direction_comes_from_the_side_key(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    """A double port omits nested vertexType; the out/in key supplies it, an explicit value wins."""
+    snap, fetcher = snapshot
+    fetcher._details["leaf-a"] = _double_port_direction_node("leaf-a")
+
+    omitted = snap.get_port("leaf-a", "leaf-a.dev.0.omitted")
+    assert omitted.vertex_out is not None and omitted.vertex_out.vertex_type == "Out"
+    assert omitted.vertex_in is not None and omitted.vertex_in.vertex_type == "In"
+    assert omitted.vertex_out.id == "leaf-a.0.omitted.out"
+    assert omitted.vertex_in.id == "leaf-a.0.omitted.in"
+
+    explicit = snap.get_port("leaf-a", "leaf-a.dev.0.explicit")
+    assert explicit.vertex_out is not None and explicit.vertex_out.vertex_type == "Out"
+    assert explicit.vertex_in is not None and explicit.vertex_in.vertex_type == "In"
+
+    contradictory = snap.get_port("leaf-a", "leaf-a.dev.0.contradicts")
+    directions = {vertex_id: side.vertexType for vertex_id, side in contradictory._vertex_sides()}
+    assert directions == {"leaf-a.0.contradicts.out": "In", "leaf-a.0.contradicts.in": "Out"}
+
+    single = snap.get_port("leaf-a", "leaf-a.dev.0.single")
+    assert single.vertex_out is not None and single.vertex_out.vertex_type == "Out"
+    assert single.vertex_in is None
+
+    module = snap.get_module("leaf-a", "leaf-a.dev.0")
+    vertex_ids = [vertex.id for vertex in module.vertices]
+    assert len(vertex_ids) == len(set(vertex_ids))
+    assert set(vertex_ids) == {
+        "leaf-a.0.omitted.out",
+        "leaf-a.0.omitted.in",
+        "leaf-a.0.explicit.out",
+        "leaf-a.0.explicit.in",
+        "leaf-a.0.contradicts.out",
+        "leaf-a.0.contradicts.in",
+        "leaf-a.0.single",
+    }
+
+
 def test_vertex_config_attrs_fetch_once_and_cache(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
     snap, fetcher = snapshot
     vertex = snap.get_port("leaf-a", "leaf-a.dev.0.up1").vertex_out
@@ -408,6 +668,179 @@ def test_filter_ports_by_kind_uses_one_batched_lookup(snapshot: tuple[InspectSna
     assert len(fetcher.vertex_lookup_calls) == 1
 
 
+# --- Edge incidence: every directed edge is visible at both of its endpoints ---
+
+
+def test_outgoing_edge_is_visible_at_target_device_port_and_links(
+    snapshot: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, _ = snapshot
+    edge_id = "leaf-a.dev.0.up1::spine-a.dev.0.swp1"  # primary-only pair, sourced at leaf-a
+    assert _ids(snap.get_edges_for_device("leaf-a")) == [edge_id]
+    assert _ids(snap.get_edges_for_device("spine-a")) == [edge_id]
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == [edge_id]
+    assert _ids(snap.get_port("spine-a", "spine-a.dev.0.swp1").edges) == [edge_id]
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-a"}
+
+
+def test_secondary_only_pair_is_visible_at_both_endpoints() -> None:
+    edge = _edge("spine-a", "spine-a.dev.0.swp1", "leaf-a", "leaf-a.dev.0.up1")
+    snap, _ = _edge_snapshot([_pair("leaf-a", "spine-a", secondary=[edge])])
+    for device_id, port_id in (("leaf-a", "leaf-a.dev.0.up1"), ("spine-a", "spine-a.dev.0.swp1")):
+        assert _ids(snap.get_edges_for_device(device_id)) == [edge["id"]]
+        assert _ids(snap.get_edges_for_port(device_id, port_id)) == [edge["id"]]
+    assert {d.id for d in snap.get_device("leaf-a").linked_devices} == {"spine-a"}
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-a"}
+
+
+def test_bidirectional_port_returns_both_directions() -> None:
+    forward = _edge("leaf-a", "leaf-a.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")
+    reverse = _edge("spine-a", "spine-a.dev.0.swp1", "leaf-a", "leaf-a.dev.0.up1")
+    snap, _ = _edge_snapshot([_pair("leaf-a", "spine-a", primary=[forward], secondary=[reverse])])
+    both = sorted([forward["id"], reverse["id"]])
+    assert _ids(snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.up1")) == both
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == both
+    assert _ids(snap.get_edges_for_device("leaf-a")) == both
+    assert _ids(snap.get_edges_for_device("spine-a")) == both
+    assert len(snap.edges) == 2  # each directed edge exactly once
+
+
+def test_separate_in_and_out_ports_each_return_their_edge() -> None:
+    a_to_b = _edge("leaf-a", "leaf-a.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")
+    b_to_a = _edge("spine-a", "spine-a.dev.0.swp2", "leaf-a", "leaf-a.dev.0.host1")
+    snap, _ = _edge_snapshot([_pair("leaf-a", "spine-a", primary=[a_to_b], secondary=[b_to_a])])
+    assert _ids(snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.up1")) == [a_to_b["id"]]
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == [a_to_b["id"]]
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp2")) == [b_to_a["id"]]
+    assert _ids(snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.host1")) == [b_to_a["id"]]
+
+
+def test_port_keeps_multiple_edges_from_different_pairs() -> None:
+    from_a = _edge("leaf-a", "leaf-a.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")
+    from_b = _edge("leaf-b", "leaf-b.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")
+    snap, _ = _edge_snapshot(
+        [_pair("leaf-a", "spine-a", primary=[from_a]), _pair("leaf-b", "spine-a", primary=[from_b])],
+        devices=("leaf-a", "spine-a", "leaf-b"),
+    )
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == sorted([from_a["id"], from_b["id"]])
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-a", "leaf-b"}
+
+
+def test_missing_context_device_falls_back_to_the_edge_side() -> None:
+    edge = _edge(None, "spine-a.dev.0.swp1", None, "leaf-a.dev.0.up1")
+    snap, _ = _edge_snapshot([_pair("leaf-a", "spine-a", secondary=[edge])])
+    (indexed,) = snap.edges
+    assert indexed.from_device is not None and indexed.from_device.id == "spine-a"
+    assert indexed.to_device is not None and indexed.to_device.id == "leaf-a"
+    assert _ids(snap.get_edges_for_port("spine-a", "spine-a.dev.0.swp1")) == [edge["id"]]
+    assert _ids(snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.up1")) == [edge["id"]]
+
+
+def test_removing_target_device_drops_its_incoming_edges(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, _ = snapshot
+    snap.apply_post_commit(removed_ids=["spine-a"], mark_paths_stale=False)
+    assert snap.edges == []
+    assert snap.get_edges_for_device("leaf-a") == []
+    assert snap.get_edges_for_port("leaf-a", "leaf-a.dev.0.up1") == []
+    assert snap.get_device("leaf-a").linked_devices == []
+
+
+def test_network_refresh_drops_vanished_pair_of_target_only_device(
+    snapshot: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, fetcher = snapshot
+    fetcher.get_edge_skeleton = list
+    snap.apply_network_refresh(["spine-a"])  # spine-a is only the target of leaf-a -> spine-a
+    assert snap.edges == []
+    assert snap.get_edges_for_device("leaf-a") == []
+
+
+def test_edge_skeleton_fixture_edges_are_visible_at_both_endpoints() -> None:
+    items = load_fixture("edge_skeleton.json")["data"]["status"]["collector"]["externalEdgesByDeviceKey"]["_items"]
+    pairs = [InspectApiExternalEdgesByDeviceKeyItem.model_validate(item) for item in items]
+    device_pids = {side.devicePid for pair in pairs for side in (pair.primary, pair.secondary) if side.devicePid}
+    snap = InspectSnapshot(
+        fetcher=None,
+        device_items=[_skeleton_node(_fixture_device_id(pid), pid) for pid in sorted(device_pids)],
+        edge_items=pairs,
+    )
+
+    expected: set[str] = set()
+    for pair in pairs:
+        for side in (pair.primary, pair.secondary):
+            for edge in side.data.values():
+                expected.add(edge.id)
+                for endpoint in (edge.fromStatus, edge.toStatus):
+                    assert endpoint is not None and endpoint.context is not None
+                    device_id = _fixture_device_id(endpoint.context.devicePid or "")
+                    port_id = endpoint.context.portPid or ""
+                    assert edge.id in _ids(snap.get_edges_for_device(device_id)), (edge.id, device_id)
+                    assert edge.id in _ids(snap.get_edges_for_port(device_id, port_id)), (edge.id, port_id)
+    assert sorted(_ids(snap.edges)) == sorted(expected)
+
+    # device-a::device-j only carries device-j -> device-a (in secondary.data).
+    assert "device-j.0.P2.out::device-b.dev.module-1.port-in-1.in" in _ids(snap.get_edges_for_device("device-a"))
+    assert "device-j" in {d.id for d in snap.get_device("device-a").linked_devices}
+    # The virtual device receives on .1/.2 and sends on .3/.4 (dash-form pids in the edge context).
+    assert set(_ids(snap.get_edges_for_device("virtual.0"))) == {"uuid-0006", "uuid-0007", "uuid-0009", "uuid-0010"}
+    assert _ids(snap.get_edges_for_port("virtual.0", "virtual-0.virt.0.1")) == ["uuid-0010"]
+
+
+# --- Blast radius: device-targeted refreshes only touch pairs that contain the target device ---
+
+
+def test_network_refresh_of_one_device_leaves_other_pairs_untouched(
+    star: tuple[InspectSnapshot, FakeFetcher],
+) -> None:
+    snap, fetcher = star
+    untouched = _pair_edges(snap, "leaf-b::spine-a")
+    snap.apply_network_refresh(["leaf-a"])
+    assert fetcher.device_detail_calls == ["leaf-a"]
+    assert fetcher.edge_pair_calls == []
+    assert snap.is_device_hydrated("spine-a") is False
+    _assert_same_edge_objects(_pair_edges(snap, "leaf-b::spine-a"), untouched)
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-a", "leaf-b"}
+
+
+def test_post_commit_device_refresh_does_not_touch_any_edge(star: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = star
+    before = {e.id: e for e in snap.edges}
+    snap.apply_post_commit(device_ids=["leaf-a"], mark_paths_stale=False)
+    assert fetcher.device_detail_calls == ["leaf-a"]
+    assert fetcher.edge_pair_calls == []
+    _assert_same_edge_objects({e.id: e for e in snap.edges}, before)
+
+
+def test_post_commit_pair_refresh_only_refetches_that_pair(star: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = star
+    untouched = _pair_edges(snap, "leaf-b::spine-a")
+    snap.apply_post_commit(pair_ids=["leaf-a::spine-a"], mark_paths_stale=False)
+    assert fetcher.edge_pair_calls == ["leaf-a::spine-a"]
+    assert fetcher.device_detail_calls == []
+    _assert_same_edge_objects(_pair_edges(snap, "leaf-b::spine-a"), untouched)
+
+
+def test_device_removal_only_drops_the_pairs_of_that_device(star: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = star
+    untouched = _pair_edges(snap, "leaf-b::spine-a")
+    snap.apply_post_commit(removed_ids=["leaf-a"], mark_paths_stale=False)
+    assert fetcher.device_detail_calls == []
+    assert fetcher.edge_pair_calls == []
+    _assert_same_edge_objects({e.id: e for e in snap.get_edges_for_device("spine-a")}, untouched)
+    assert {d.id for d in snap.get_device("spine-a").linked_devices} == {"leaf-b"}
+
+
+def test_failed_network_reconcile_marks_only_target_pairs_stale(star: tuple[InspectSnapshot, FakeFetcher]) -> None:
+    snap, fetcher = star
+
+    def failing_skeleton() -> list[InspectApiExternalEdgesByDeviceKeyItem]:
+        raise RuntimeError("simulated edge skeleton failure")
+
+    fetcher.get_edge_skeleton = failing_skeleton
+    snap.apply_network_refresh(["leaf-a"])
+    assert snap._stale_pairs == {"leaf-a::spine-a"}
+
+
 # --- Internal ---
 
 
@@ -462,6 +895,52 @@ def _detail_node(device_id: str, label: str, port_pids: list[str]) -> InspectApi
                     "pid": f"{device_id}.dev.0",
                     "descriptor": {"label": "Slot 0"},
                     "ports": ports,
+                }
+            },
+        }
+    )
+
+
+def _double_port_direction_node(device_id: str) -> InspectApiNodeStatusItem:
+    """Double ports with omitted, explicit and contradictory nested vertexType, plus one single port."""
+
+    def side(vertex_id: str, vertex_type: str | None) -> dict:
+        entry: dict = {"type": "single", "id": vertex_id, "fields": {"isActive": True}}
+        if vertex_type is not None:
+            entry["vertexType"] = vertex_type
+        return entry
+
+    def double_port(name: str, out_type: str | None, in_type: str | None) -> dict:
+        return {
+            "pid": f"{device_id}.dev.0.{name}",
+            "descriptor": {"label": name},
+            "vertexInfo": {
+                "type": "double",
+                "out": side(f"{device_id}.0.{name}.out", out_type),
+                "in": side(f"{device_id}.0.{name}.in", in_type),
+            },
+        }
+
+    return InspectApiNodeStatusItem.model_validate(
+        {
+            "_id": device_id,
+            "_vid": device_id,
+            "deviceId": device_id,
+            "descriptor": {"desc": "", "label": "LEAF-A"},
+            "modules": {
+                f"{device_id}.dev.0": {
+                    "pid": f"{device_id}.dev.0",
+                    "descriptor": {"label": "Slot 0"},
+                    "ports": {
+                        f"{device_id}.dev.0.omitted": double_port("omitted", None, None),
+                        f"{device_id}.dev.0.explicit": double_port("explicit", "Out", "In"),
+                        f"{device_id}.dev.0.contradicts": double_port("contradicts", "In", "Out"),
+                        f"{device_id}.dev.0.single": {
+                            "pid": f"{device_id}.dev.0.single",
+                            "descriptor": {"label": "single"},
+                            "vertexInfo": side(f"{device_id}.0.single", "Out"),
+                        },
+                    },
                 }
             },
         }
@@ -538,26 +1017,72 @@ def _filter_detail_node(device_id: str, label: str) -> InspectApiNodeStatusItem:
 
 
 def _edge_pair(dev_a: str, dev_b: str, port_a: str, port_b: str) -> InspectApiExternalEdgesByDeviceKeyItem:
-    edge_id = f"{port_a}::{port_b}"
+    return _pair(dev_a, dev_b, primary=[_edge(dev_a, port_a, dev_b, port_b)])
+
+
+def _pair(
+    dev_a: str,
+    dev_b: str,
+    *,
+    primary: list[dict] | None = None,
+    secondary: list[dict] | None = None,
+) -> InspectApiExternalEdgesByDeviceKeyItem:
+    """A collector edge pair; ``primary`` / ``secondary`` hold the edges sourced at ``dev_a`` / ``dev_b``."""
     return InspectApiExternalEdgesByDeviceKeyItem.model_validate(
         {
             "_id": f"{dev_a}::{dev_b}",
             "_vid": f"{dev_a}::{dev_b}",
-            "primary": {
-                "devicePid": dev_a,
-                "label": dev_a,
-                "data": {
-                    edge_id: {
-                        "id": edge_id,
-                        "fromStatus": {"context": {"devicePid": dev_a, "portPid": port_a}, "label": "out"},
-                        "toStatus": {"context": {"devicePid": dev_b, "portPid": port_b}, "label": "in"},
-                    }
-                },
-            },
-            "secondary": {"devicePid": dev_b, "label": dev_b, "data": {}},
+            "primary": {"devicePid": dev_a, "label": dev_a, "data": {e["id"]: e for e in primary or []}},
+            "secondary": {"devicePid": dev_b, "label": dev_b, "data": {e["id"]: e for e in secondary or []}},
             "status": {"alarm": 0, "bandwidth": 0, "maintenance": 0, "ptp": 0},
         }
     )
+
+
+def _edge(from_device: str | None, from_port: str, to_device: str | None, to_port: str) -> dict:
+    """A directed collector edge; a ``None`` device omits ``context.devicePid`` on that endpoint."""
+
+    def endpoint(device_id: str | None, port_id: str, label: str) -> dict:
+        context = {"portPid": port_id} if device_id is None else {"devicePid": device_id, "portPid": port_id}
+        return {"context": context, "label": label}
+
+    return {
+        "id": f"{from_port}::{to_port}",
+        "fromStatus": endpoint(from_device, from_port, "out"),
+        "toStatus": endpoint(to_device, to_port, "in"),
+    }
+
+
+def _edge_snapshot(
+    pairs: list[InspectApiExternalEdgesByDeviceKeyItem],
+    devices: tuple[str, ...] = ("leaf-a", "spine-a"),
+) -> tuple[InspectSnapshot, FakeFetcher]:
+    fetcher = FakeFetcher()
+    fetcher.get_edge_skeleton = lambda: list(pairs)
+    snap = InspectSnapshot(
+        fetcher=fetcher,
+        device_items=[_skeleton_node(device_id, device_id.upper()) for device_id in devices],
+        edge_items=pairs,
+    )
+    return snap, fetcher
+
+
+def _fixture_device_id(device_pid: str) -> str:
+    """Public device id for a collector ``devicePid`` (virtual devices: ``virtual-0`` -> ``virtual.0``)."""
+    return device_pid.replace("-", ".") if device_pid.startswith("virtual-") else device_pid
+
+
+def _ids(edges: list[InspectEdge]) -> list[str]:
+    return sorted(edge.id for edge in edges)
+
+
+def _pair_edges(snap: InspectSnapshot, pair_id: str) -> dict[str, InspectEdge]:
+    return {edge.id: edge for edge in snap.edges if edge.pair_id == pair_id}
+
+
+def _assert_same_edge_objects(after: dict[str, InspectEdge], before: dict[str, InspectEdge]) -> None:
+    assert after.keys() == before.keys()
+    assert all(after[edge_id] is before[edge_id] for edge_id in before)
 
 
 def _path_item(booking: str, dev_a: str, dev_b: str) -> InspectApiPathItem:
@@ -816,4 +1341,26 @@ def snapshot() -> Iterator[tuple[InspectSnapshot, FakeFetcher]]:
         edge_items=fetcher.get_edge_skeleton(),
     )
     fetcher.skeleton_calls = 0  # reset after construction
+    yield snap, fetcher
+
+
+@pytest.fixture
+def star() -> Iterator[tuple[InspectSnapshot, FakeFetcher]]:
+    """leaf-a and leaf-b, each linked in both directions to the shared partner spine-a."""
+    pairs = [
+        _pair(
+            "leaf-a",
+            "spine-a",
+            primary=[_edge("leaf-a", "leaf-a.dev.0.up1", "spine-a", "spine-a.dev.0.swp1")],
+            secondary=[_edge("spine-a", "spine-a.dev.0.swp1", "leaf-a", "leaf-a.dev.0.up1")],
+        ),
+        _pair(
+            "leaf-b",
+            "spine-a",
+            primary=[_edge("leaf-b", "leaf-b.dev.0.up1", "spine-a", "spine-a.dev.0.swp2")],
+            secondary=[_edge("spine-a", "spine-a.dev.0.swp2", "leaf-b", "leaf-b.dev.0.up1")],
+        ),
+    ]
+    snap, fetcher = _edge_snapshot(pairs, devices=("leaf-a", "spine-a", "leaf-b"))
+    fetcher._details["leaf-b"] = _detail_node("leaf-b", "LEAF-B", ["leaf-b.dev.0.up1"])
     yield snap, fetcher

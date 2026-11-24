@@ -335,8 +335,42 @@ def vertex_form(vertex_id: str, vertex_type: str, kind: str, **fields: Any) -> d
     type_fields: dict[str, Any] = {"type": kind}
     if kind == "codec":
         media = fields.pop("media")
-        type_fields["generic"] = {"codecFormat": media.capitalize() if media else None, "multiplicity": 1}
+        # Same generic keys as a real codec edit form (2025.4.9); unsupported keys are rejected (#162).
+        endpoint = {"ip": None, "mac": None, "port": None, "vlan": None}
+        type_fields["generic"] = {
+            "bidirPartnerId": None,
+            "codecFormat": media.capitalize() if media else None,
+            "extraFormats": [],
+            "mainDstInfo": dict(endpoint),
+            "mainSrcInfo": dict(endpoint),
+            "multiplicity": 1,
+            "partnerConfig": None,
+            "public": False,
+            "serviceId": None,
+            "spareDstInfo": dict(endpoint),
+            "spareSrcInfo": dict(endpoint),
+        }
         type_fields["specific"] = {"type": media, "sdpSupport": False, "isIgmpSource": False}
+    elif kind == "ip":
+        # Same typeFields keys as a real IP edit form (2025.4.9); unsupported keys are rejected (#162).
+        type_fields.update(
+            {
+                "ipAddress": None,
+                "ipNetmask": None,
+                "parkPort": None,
+                "public": False,
+                "supportsCpipeCfg": False,
+                "supportsIgmpCfg": False,
+                "supportsMacForwardingCfg": False,
+                "supportsNsoCfg": False,
+                "supportsOpenflowCfg": False,
+                "supportsStaticIgmpCfg": False,
+                "supportsVlanCfg": False,
+                "supportsVplsCfg": False,
+                "vlanId": None,
+                "vrfId": None,
+            }
+        )
     form = {
         "active": True,
         "controlProps": {"configPriority": "off", "onlyInitial": False},

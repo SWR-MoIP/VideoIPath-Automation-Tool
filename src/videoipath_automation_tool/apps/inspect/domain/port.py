@@ -181,9 +181,10 @@ class InspectPort(InspectFrozenModel):
 
     @property
     def edges(self) -> list[InspectEdge]:
-        """The edges incident on this port. The Inspect read view (``externalEdgesByDeviceKey``) keys
-        edge endpoints by *port* — with a UUID edge id and only a direction hint in the endpoint label
-        — so edges are exposed at the port level here, not per vertex."""
+        """The directed edges incident on this port, incoming and outgoing. The Inspect read view
+        (``externalEdgesByDeviceKey``) keys edge endpoints by *port* — with a UUID edge id and only a
+        direction hint in the endpoint label — so edges are exposed at the port level here, not per
+        vertex."""
         port_id = self.id
         if not port_id:
             return []
@@ -214,13 +215,21 @@ class InspectPort(InspectFrozenModel):
         ]
 
     def _vertex_sides(self) -> list[tuple[str, InspectApiSingleVertexInfo]]:
-        """(vertex id, its offline ``vertexInfo`` side) for each vertex the port carries."""
+        """(vertex id, its offline ``vertexInfo`` side) for each vertex the port carries.
+
+        A single vertex keeps its ``vertexType``. On a double vertex the ``out`` and ``in`` keys are
+        the direction when a side omits ``vertexType``; an explicit value still wins.
+        """
         info = self.indexed.port.parsed_vertex_info
         if info is None:
             return []
         if isinstance(info, InspectApiSingleVertexInfo):
             return [(info.id, info)] if info.id else []
-        return [(side.id, side) for side in (info.out, info.in_) if side is not None and side.id]
+        return [
+            (side.id, side)
+            for side in (_side_with_direction(info.out, "Out"), _side_with_direction(info.in_, "In"))
+            if side is not None and side.id
+        ]
 
     def _offline_vertices(self) -> list[InspectVertex]:
         """Base vertex views built purely from the offline ``vertexInfo`` (no lookup). Used for
@@ -228,6 +237,13 @@ class InspectPort(InspectFrozenModel):
         from videoipath_automation_tool.apps.inspect.domain.vertex import InspectVertex
 
         return [InspectVertex(snapshot=self.snapshot, id=vid, vertex_info=side) for vid, side in self._vertex_sides()]
+
+
+def _side_with_direction(side: InspectApiSingleVertexInfo | None, direction: str) -> InspectApiSingleVertexInfo | None:
+    """Fill a missing ``vertexType`` from the double-port side key (``out`` -> ``Out``, ``in`` -> ``In``)."""
+    if side is None or side.vertexType:
+        return side
+    return side.model_copy(update={"vertexType": direction})
 
 
 def _ports_to_count_by_template(

@@ -17,7 +17,16 @@ from __future__ import annotations
 import pytest
 
 from videoipath_automation_tool.apps.inspect import VirtualDeviceSpec
-from videoipath_automation_tool.apps.inspect.errors import InspectCommitConflictError, InspectCommitError
+from videoipath_automation_tool.apps.inspect.errors import (
+    InspectCommitConflictError,
+    InspectCommitError,
+    InspectSnapshotReplacedError,
+    InspectUnsupportedFieldError,
+)
+from videoipath_automation_tool.apps.inspect.model.collector import (
+    InspectApiDoubleVertexInfo,
+    InspectApiSingleVertexInfo,
+)
 from videoipath_automation_tool.apps.inspect.model.common import InspectSeverity
 from videoipath_automation_tool.apps.videoipath_app import VideoIPathApp
 
@@ -27,6 +36,7 @@ from ..helpers import (
     TopologyBuilder,
     create_module_test_tag,
     create_test_tag,
+    discover_port_cursors,
     edges_between,
     module_test_tag_id,
     router_ports,
@@ -169,6 +179,26 @@ def test_connectivity_graph(app: VideoIPathApp, topology_builder: TopologyBuilde
     app.inspect.refresh()
     linked = {device.label for device in app.inspect.get_device(hub).linked_devices}
     assert linked == {topology_builder.labels[id_b], topology_builder.labels[id_c]}
+
+
+def test_incoming_edge_visible_on_target(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
+    """A single directed edge A -> B is exposed on B (device, port, linked devices), not only on A."""
+    id_a, id_b = topology_builder.add_devices([("INCOMING-A", 2), ("INCOMING-B", 2)])
+    cursors = discover_port_cursors(app, [id_a, id_b])
+    a_out, _ = cursors[id_a].next_port()
+    _, b_in = cursors[id_b].next_port()
+    with app.inspect.transaction() as tx:
+        tx.connect(a_out, b_in, bidirectional=False)
+        tx.commit()
+    app.inspect.refresh()
+
+    (edge,) = edges_between(app, id_a, id_b)
+    assert edge.from_device is not None and edge.from_device.id == id_a
+    assert edge.to_port is not None
+    target = app.inspect.get_device(id_b)
+    assert edge.id in {e.id for e in target.edges}
+    assert edge.id in {e.id for e in edge.to_port.edges}
+    assert id_a in {device.id for device in target.linked_devices}
 
 
 def test_edge_pair_refresh(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
@@ -354,6 +384,159 @@ def test_full_vs_skeleton_equivalence(app: VideoIPathApp, topology_builder: Topo
         assert skeleton == full
     finally:
         app.inspect.refresh(load="skeleton")
+
+
+def test_redundant_service_exposes_main_and_spare(app: VideoIPathApp) -> None:
+    """A redundant booking is one service whose unqualified accessors read the main path."""
+    app.inspect.refresh()
+    services = app.inspect.services
+    if not services:
+        pytest.skip("No services on this server.")
+    assert len({service.booking_id for service in services}) == len(services)
+    redundant = [service for service in services if service.is_redundant]
+    if not redundant:
+        pytest.skip("No redundant booking on this server.")
+    for service in redundant:
+        assert service.is_main is True
+        assert service.main_path is not None and service.spare_path is not None
+        assert service.spare_path.is_main is False
+        assert [device.id for device in service.path_devices] == [device.id for device in service.main_path.devices]
+
+
+def test_services_skeleton_matches_full(app: VideoIPathApp) -> None:
+    """Skeleton and full mode expose the same service endpoints, status and path."""
+
+    def facts() -> dict[str, tuple[str | None, str | None, bool, tuple[str, ...], int]]:
+        return {
+            service.booking_id: (
+                service.path_item.serviceFields.fromPid,
+                service.path_item.serviceFields.toPid,
+                service.status is not None,
+                tuple(device.id for device in service.path_devices),
+                len(service.path_item.path),
+            )
+            for service in app.inspect.services
+        }
+
+    try:
+        app.inspect.refresh(load="skeleton")
+        skeleton = facts()
+        if not skeleton:
+            pytest.skip("No services on this server.")
+        app.inspect.refresh(load="full")
+        assert facts() == skeleton
+        assert all(
+            from_pid and to_pid and has_status and devices and hops
+            for from_pid, to_pid, has_status, devices, hops in skeleton.values()
+        )
+    finally:
+        app.inspect.refresh(load="skeleton")
+
+
+def test_alarm_message_joins_title_and_details(app: VideoIPathApp) -> None:
+    """Every active alarm's message is the GUI text: non-empty title and details joined with ': '."""
+    app.inspect.refresh()
+    alarms = [alarm for device in app.inspect.devices for alarm in device.alarms]
+    if not alarms:
+        pytest.skip("No active alarms on this server.")
+    for alarm in alarms:
+        parts = [part for part in (alarm.title, alarm.details) if part]
+        assert alarm.message == (": ".join(parts) or None)
+
+
+def test_unsupported_vertex_field_is_rejected(app: VideoIPathApp) -> None:
+    """A typeFields key the edit form does not have is rejected and nothing is staged."""
+    app.inspect.refresh()
+    snapshot = app.inspect._get_snapshot()
+    codec_out_id: str | None = None
+    ip_id: str | None = None
+    pending: list[str] = []
+
+    def consider(found: dict) -> None:
+        nonlocal codec_out_id, ip_id
+        for vertex_id, item in found.items():
+            fields = item.fields.typeFields
+            if fields is None:
+                continue
+            extra = fields.model_extra or {}
+            if codec_out_id is None and fields.type == "codec":
+                specific = extra.get("specific")
+                if isinstance(specific, dict) and "sdpSupport" not in specific and "isIgmpSource" not in specific:
+                    codec_out_id = vertex_id
+            if ip_id is None and fields.type == "ip":
+                present = fields.model_fields_set | set(extra)
+                if "supportsVxlanCfg" not in present and "supportsPseudoWiresCfg" not in present:
+                    ip_id = vertex_id
+
+    for device in app.inspect.devices:
+        if codec_out_id is not None and ip_id is not None:
+            break
+        for port in device.ports:
+            info = port.indexed.port.parsed_vertex_info
+            if isinstance(info, InspectApiSingleVertexInfo) and info.id:
+                pending.append(info.id)
+            elif isinstance(info, InspectApiDoubleVertexInfo):
+                pending.extend(side.id for side in (info.out, info.in_) if side is not None and side.id)
+        if pending:
+            consider(snapshot.get_vertex_details_many(pending))
+            pending.clear()
+    if codec_out_id is None and ip_id is None:
+        pytest.skip("No codec-out or IP vertex on this server.")
+
+    if codec_out_id is not None:
+        vertex = snapshot.get_vertex(codec_out_id)
+        assert vertex is not None
+        with pytest.raises(InspectUnsupportedFieldError):
+            vertex.sdp_support = True
+        assert vertex.sdp_support is None
+        assert snapshot.get_staged_edits("vertex", codec_out_id) == {}
+
+    if ip_id is not None:
+        vertex = snapshot.get_vertex(ip_id)
+        assert vertex is not None
+        with pytest.raises(InspectUnsupportedFieldError):
+            vertex.supports_vxlan = True
+        with pytest.raises(InspectUnsupportedFieldError):
+            vertex.supports_pseudo_wires = True
+        assert vertex.supports_vxlan is None
+        assert snapshot.get_staged_edits("vertex", ip_id) == {}
+
+
+def test_bidirectional_port_exposes_both_directions(app: VideoIPathApp) -> None:
+    """A double port with no nested vertexType still exposes vertex_out and vertex_in."""
+    app.inspect.refresh()
+    app.inspect.preload()
+    for device in app.inspect.devices:
+        for port in device.ports:
+            if not port.is_bidirectional:
+                continue
+            assert port.vertex_out is not None and port.vertex_out.vertex_type == "Out"
+            assert port.vertex_in is not None and port.vertex_in.vertex_type == "In"
+            return
+    pytest.skip("No bidirectional port on this server.")
+
+
+def test_refresh_rejects_writes_on_the_previous_object(app: VideoIPathApp, topology_builder: TopologyBuilder) -> None:
+    """A device fetched before refresh() stays readable; changing it requires a re-fetch."""
+    (device_id,) = topology_builder.add_devices([("LIFE-A", 1)])
+    app.inspect.refresh()
+    device = app.inspect.get_device(device_id)
+    assert device is not None
+    label = device.label
+
+    app.inspect.refresh()
+    with pytest.raises(InspectSnapshotReplacedError, match="re-fetch the object after refresh"):
+        device.label = unique_label("OLD")
+    assert device.label == label
+
+    fresh = app.inspect.get_device(device_id)
+    assert fresh is not None and fresh is not device
+    updated = unique_label("NEW")
+    fresh.label = updated
+    result = app.inspect.update(fresh)
+    assert result.ok
+    app.inspect.refresh()
+    assert app.inspect.get_device(device_id).label == updated
 
 
 def test_create_virtual_device(app: VideoIPathApp, e2e_map_origins) -> None:

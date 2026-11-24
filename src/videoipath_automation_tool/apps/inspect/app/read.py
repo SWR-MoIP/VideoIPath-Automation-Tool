@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Literal, Optional, Protocol
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
+from videoipath_automation_tool.apps.inspect.errors import InspectPendingEditsError
 from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
 
 if TYPE_CHECKING:
@@ -36,16 +37,29 @@ class InspectReadMixin:
     _snapshot: Optional[InspectSnapshot]
     _load_mode: LoadMode
 
-    def refresh(self: _HasInspectState, load: Optional[LoadMode] = None) -> None:
+    def refresh(self: _HasInspectState, load: Optional[LoadMode] = None, *, discard_pending: bool = False) -> None:
         """Reload the topology from the server, discarding the current internal view.
+
+        Objects already fetched keep reading the previous snapshot. Writes on those objects
+        raise ``InspectSnapshotReplacedError``; re-fetch them from the app. Pending edits block
+        the reload unless ``discard_pending`` is true.
 
         Args:
             load: ``"skeleton"`` (fast; lazy detail) or ``"full"`` (eager, point-in-time). Defaults
                 to the mode the app was last using.
+            discard_pending: Drop staged edits instead of refusing the reload.
         """
-        if load is not None:
-            self._load_mode = load
-        self._snapshot = self._load_snapshot(self._load_mode)
+        current = self._snapshot
+        if current is not None and not discard_pending:
+            keys = current.pending_edit_keys()
+            if keys:
+                raise InspectPendingEditsError(keys)
+        mode = load if load is not None else self._load_mode
+        loaded = self._load_snapshot(mode)
+        if current is not None:
+            current.mark_replaced(discard_pending=discard_pending)
+        self._snapshot = loaded
+        self._load_mode = mode
 
     # --- Devices ---
 
