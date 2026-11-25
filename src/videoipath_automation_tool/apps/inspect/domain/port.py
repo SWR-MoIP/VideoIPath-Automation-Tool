@@ -99,7 +99,9 @@ class InspectPort(InspectFrozenModel):
     ``factory_label`` are read-only. Navigate to the owning module via :attr:`module` (use
     ``port.module.id``). All vertex-specific configuration (direction, active/controlled/endpoint,
     IP/codec fields, SIPS, control, …) lives on the vertices reachable via :attr:`vertex_out` /
-    :attr:`vertex_in`.
+    :attr:`vertex_in` (double ports and single ``Out`` / ``In`` vertices), :attr:`vertex_internal`,
+    :attr:`vertex_bidirectional` (a *single* vertex of that type), or :attr:`vertices` (all of them,
+    whatever their type).
     """
 
     snapshot: InspectSnapshot
@@ -180,6 +182,31 @@ class InspectPort(InspectFrozenModel):
         return self._vertex_by_type("In")
 
     @property
+    def vertex_internal(self) -> InspectVertex | None:
+        """The single vertex whose ``vertexType`` is ``Internal`` (e.g. on network switches);
+        ``None`` otherwise."""
+        return self._vertex_by_type("Internal")
+
+    @property
+    def vertex_bidirectional(self) -> InspectVertex | None:
+        """The *single* vertex whose ``vertexType`` is ``BiDirectional``; ``None`` otherwise.
+
+        Always ``None`` on a double port (:attr:`is_bidirectional`): its two vertices are reached
+        via :attr:`vertex_out` / :attr:`vertex_in`.
+        """
+        if self.is_bidirectional:
+            return None
+        return self._vertex_by_type("BiDirectional")
+
+    @property
+    def vertices(self) -> list[InspectVertex]:
+        """Every vertex this port carries, whatever its ``vertexType`` (``Out`` / ``In`` /
+        ``Internal`` / ``BiDirectional`` / ``Undecided`` / future types). Vertex lookups are batched,
+        as for :attr:`InspectModule.vertices`."""
+        self.snapshot.get_vertex_details_many([vertex_id for vertex_id, _ in self._vertex_sides()])
+        return self._vertices()
+
+    @property
     def edges(self) -> list[InspectEdge]:
         """The directed edges incident on this port, incoming and outgoing. The Inspect read view
         (``externalEdgesByDeviceKey``) keys edge endpoints by *port* — with a UUID edge id and only a
@@ -207,8 +234,8 @@ class InspectPort(InspectFrozenModel):
         return None
 
     def _vertices(self) -> list[InspectVertex]:
-        """All typed vertex views this port carries (including Internal/Undecided). Prefer
-        :attr:`vertex_out` / :attr:`vertex_in` for the public API."""
+        """All typed vertex views this port carries, without batching the lookups first. Public
+        callers use :attr:`vertices`."""
         return [
             self.snapshot.get_vertex(vid, vertex_info=side, port_factory_label=self.factory_label)
             for vid, side in self._vertex_sides()

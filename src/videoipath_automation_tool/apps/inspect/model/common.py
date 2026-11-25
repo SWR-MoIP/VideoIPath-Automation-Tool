@@ -81,8 +81,10 @@ InspectIconSize = Literal["auto", "large", "medium", "small"]
 # Video, Confirm Others). Mirrors the topology app's ``SdpStrategy``.
 InspectSdpStrategy = Literal["always", "once", "video"]
 
-# Vertex direction as reported in ``vertexInfo.vertexType`` (a "double" vertexInfo is the
-# bidirectional case and is surfaced as "BiDirectional").
+# Vertex direction as reported in ``vertexInfo.vertexType``. "BiDirectional" has two meanings:
+# the server reports it as the ``vertexType`` of a *single* vertex, and ``filter_ports(vertex_type=...)``
+# also uses it as the port-level direction of a "double" port (separate out and in vertices). Use
+# ``InspectPort.is_bidirectional`` to tell them apart.
 InspectVertexType = Literal["BiDirectional", "In", "Internal", "Out", "Undecided"]
 
 # Vertex kind from the vertex edit form's ``typeFields.type``. "ip", "codec" and "router" are
