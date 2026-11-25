@@ -143,7 +143,9 @@ Key variables:
 ## Release process
 
 1. Update `version` in `pyproject.toml`
-2. Create a GitHub Release with a `v*` tag
-3. CI builds and publishes to PyPI automatically
+2. Create a GitHub Release with a `v<version>` tag (must match `pyproject.toml`, otherwise the release workflow fails)
+3. `release.yml` runs CI, builds and publishes to PyPI via Trusted Publishing
 
-Hotfix branches must use the `hotfix/` prefix. Development builds are published automatically for every commit on `main` or open PRs with a `.dev<run_id>` suffix.
+Hotfix branches must use the `hotfix/` prefix. Every push to `main` publishes a development build `<next-patch>.dev<run_number>` (ordered above the latest release). Pull requests are never published; `ci.yml` attaches the package as a workflow artifact instead.
+
+CI (`ci.yml`) runs `ruff check`, `ruff format --check` and the unit tests on `pull_request` with a read-only token. Ruff comes from `poetry.lock` for CI, pre-commit and local runs alike.

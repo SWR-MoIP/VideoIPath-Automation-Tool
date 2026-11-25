@@ -22,9 +22,16 @@ For stable/official versions, the common semver pattern is used:
 For development versions, there are multiple options - since this package doesn't have a complex testing and verification process for release,
 a simple format is used:
 
-`<Major>.<Minor>.<Patch>.dev<GitHub Action Run ID>`
+`<Major>.<Minor>.<Patch>.dev<GitHub Actions run number>`
+
+Development builds are published for every push to `main`. If the version in `pyproject.toml` has already been released
+(a tag `v<version>` exists), the dev build is based on the next patch version, e.g. `0.14.2.dev12` after release `0.14.1`.
+This keeps dev builds ordered above the latest release (PEP 440: `0.14.1.devN < 0.14.1 < 0.14.2.devN`).
 
 Pip won't treat those versions as stable, they can only be installed by specifying the exact version or using the `--pre` flag.
+
+Pull requests are **not** published to PyPI. The CI attaches the built package (`dist-pr<number>`) as a workflow artifact
+to the PR run instead.
 
 ## Git Flow
 
@@ -107,44 +114,64 @@ Committed fixtures and examples must be anonymized — see `AGENTS.md` for place
 
 ## Publishing / Releasing new Package Versions
 
-In order to publish a new version of the package, update the version in the `pyproject.toml` and create a new GitHub Release associated with a version tag. The release notes should contain all relevant changes, especially breaking changes, features & bug fixes.
+In order to publish a new version of the package, update the version in the `pyproject.toml` and create a new GitHub Release associated with a version tag `v<version>`. The tag must match the version in `pyproject.toml`, otherwise the release workflow fails before building. The release notes should contain all relevant changes, especially breaking changes, features & bug fixes.
 
-The CI/CD pipeline listens on created tags and builds an publishes a new package version to the registry. Additionally, for each commit in a Merge-Request or on the main and hotfix branches that is not a release, development versions are published.
+### Workflows
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `ci.yml` | Pull requests to `main`; called by `release.yml` | Ruff lint + format check, unit tests (Python 3.11–3.14), PR package artifact. Read-only token, no secrets. |
+| `release.yml` | Push to `main`, tags `v*` | Runs `ci.yml`, builds the package (tag/version check or dev version), publishes to PyPI via Trusted Publishing. |
+
+Publishing uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC) from the GitHub environment `pypi`; no PyPI API token is stored in the repository.
+
+### Linting
+
+Ruff runs from the Poetry environment (`poetry.lock`) in CI, pre-commit and locally, so all three use the same version:
+
+```bash
+poetry run ruff check
+poetry run ruff format --check
+```
 
 ```mermaid
 flowchart TD
     checkout-feature-branch["Checkout Feature Branch [Developer]"]
     commit["Commit changes [Developer]"]
     open-mr["Open Pull-Request [Developer]"]
-    use-test-build["Test with Dev Version [Developer]"]
     merge["Merge [Developer]"]
     update-stable-version["Update Stable Version [Developer]"]
-    create-release["Create Release [Developer]"]
+    create-release["Create Release / Tag v1.3.6 [Developer]"]
 
-    subgraph run-mr-pipeline["Run Merge-Request Pipeline"]
-        mr-tests["Run Tests [Pipeline]"]
-        mr-build["Build the Package [Pipeline]"]
-        publish-dev-version["Publish Dev Version, e.g. 1.3.6.dev256 [Pipeline]"]
+    subgraph run-pr-pipeline["CI (pull request)"]
+        pr-checks["Lint + Tests [Pipeline]"]
+        pr-artifact["Package as workflow artifact [Pipeline]"]
 
-        mr-tests --> mr-build
-        mr-build --> publish-dev-version
+        pr-checks --> pr-artifact
     end
 
-    subgraph run-main-pipeline["Run Release Pipeline [Pipeline]"]
-        tests["Run Tests [Pipeline]"]
-        build["Build the Package [Pipeline]"]
+    subgraph run-main-pipeline["Release (push to main)"]
+        main-checks["Lint + Tests [Pipeline]"]
+        publish-dev-version["Publish Dev Version, e.g. 1.3.6.dev256 [Pipeline]"]
+
+        main-checks --> publish-dev-version
+    end
+
+    subgraph run-tag-pipeline["Release (tag)"]
+        tag-checks["Lint + Tests [Pipeline]"]
+        tag-version-check["Check tag = pyproject version [Pipeline]"]
         publish-stable-version["Publish Stable Version, e.g. 1.3.6 [Pipeline]"]
 
-        tests --> build
-        build --> publish-stable-version
+        tag-checks --> tag-version-check
+        tag-version-check --> publish-stable-version
     end
 
     checkout-feature-branch --> commit
     commit --> open-mr
-    open-mr --> run-mr-pipeline
-    run-mr-pipeline --> use-test-build
-    use-test-build --> merge
-    merge --> update-stable-version
+    open-mr --> run-pr-pipeline
+    run-pr-pipeline --> merge
+    merge --> run-main-pipeline
+    run-main-pipeline --> update-stable-version
     update-stable-version --> create-release
-    create-release --> run-main-pipeline
+    create-release --> run-tag-pipeline
 ```

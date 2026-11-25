@@ -1,0 +1,101 @@
+name: Release
+
+# Publishing only - never triggered by pull requests.
+# - Tag v<version>: stable release; the tag must match the version in pyproject.toml.
+# - Push to main: development build <next-patch>.dev<run_number>, which sorts above the last release.
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  POETRY_VERSION: "2.5.2"
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+    needs:
+      - ci
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # tags are needed to derive the dev version
+          persist-credentials: false
+
+      - name: Install Poetry
+        run: pipx install "poetry==${POETRY_VERSION}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Determine version
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          PROJECT_VERSION="$(poetry version --short)"
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            if [[ "${GITHUB_REF_NAME}" != "v${PROJECT_VERSION}" ]]; then
+              echo "::error::Tag '${GITHUB_REF_NAME}' does not match pyproject.toml version '${PROJECT_VERSION}' (expected 'v${PROJECT_VERSION}')."
+              exit 1
+            fi
+            echo "Stable release: ${PROJECT_VERSION}"
+          else
+            # If pyproject still holds an already released version, base the dev build on the
+            # next patch so that PEP 440 orders it above the release (X.Y.Z.devN < X.Y.Z).
+            BASE_VERSION="${PROJECT_VERSION}"
+            if git rev-parse -q --verify "refs/tags/v${PROJECT_VERSION}" >/dev/null; then
+              BASE_VERSION="$(poetry version patch --dry-run --short)"
+            fi
+            DEV_VERSION="${BASE_VERSION}.dev${RUN_NUMBER}"
+            echo "Development build: ${DEV_VERSION}"
+            poetry version "${DEV_VERSION}"
+          fi
+
+      - name: Build the package
+        run: poetry build
+
+      - name: Upload distribution
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    environment:
+      name: pypi
+      url: https://pypi.org/project/videoipath-automation-tool/
+    permissions:
+      id-token: write # PyPI Trusted Publishing (OIDC), no API token
+    steps:
+      - name: Download distribution
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.14.3
