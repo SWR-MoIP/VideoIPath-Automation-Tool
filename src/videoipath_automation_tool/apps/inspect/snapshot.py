@@ -1123,12 +1123,29 @@ def _severity_rank(value: Any) -> int:
 def _sorted_alarms(items: list[InspectApiAlarmItem]) -> list[InspectAlarm]:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm
 
-    ordered = sorted(
-        items,
-        key=lambda item: _severity_rank(item.info.severity if item.info is not None else None),
-        reverse=True,
+    return [InspectAlarm(item=item) for item in sorted(items, key=_alarm_sort_key)]
+
+
+def _alarm_sort_key(item: InspectApiAlarmItem) -> tuple[int, int, str, tuple[str, ...], int, str]:
+    """Documented, server-order-independent alarm order (see ``models.md``, "Active alarms"):
+
+    1. worst ``severity`` first,
+    2. then worst service-affecting severity (``sa``) first,
+    3. then ascending by the alarm identity: ``alertId``, ``pointId``, ``component``, ``_id``.
+
+    Missing values sort after present ones. ``time`` is deliberately not used: it changes whenever
+    an alarm is raised again, which would make the order (and ``status_message``) flap.
+    """
+    info = item.info
+    alarm_id = item.id
+    return (
+        -_severity_rank(info.severity if info is not None else None),
+        -_severity_rank(info.sa if info is not None else None),
+        (alarm_id.alertId if alarm_id is not None else None) or "",
+        tuple(alarm_id.pointId) if alarm_id is not None else (),
+        alarm_id.component if alarm_id is not None and alarm_id.component is not None else -1,
+        item.id_field or "",
     )
-    return [InspectAlarm(item=item) for item in ordered]
 
 
 class _IndexedService(InspectInternalModel):

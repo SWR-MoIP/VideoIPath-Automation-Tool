@@ -84,7 +84,7 @@ class InspectModule(InspectEditableModel):
 
     @property
     def alarms(self) -> list[InspectAlarm]:
-        """Active alarms correlated to this module (worst severity first)."""
+        """Active alarms correlated to this module, in the same order as :attr:`InspectDevice.alarms`."""
         return self.snapshot.get_alarms_for_module(self.device_id, self.module_id)
 
     @property

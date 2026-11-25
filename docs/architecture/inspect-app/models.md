@@ -206,6 +206,17 @@ snapshot section). Each of `device` / `module` / `port` / `edge` / `service` exp
 | `point_labels` | Human labels for the alarm's point path |
 | `alert_id` / `component` | Alarm identity |
 
+Alarm order is the same for every `.alarms` list and does not depend on the order the
+server returns the alarms in:
+
+1. worst `severity` first;
+2. on equal severity, worst service-affecting severity (`sa`) first;
+3. then ascending by alarm identity: `alert_id`, the point path (`pointId`), `component`,
+   and the alarm `id`.
+
+Missing values sort last. `time` is not used, because it changes each time an alarm is
+raised again. `status_message` is the `message` of the first alarm in that order.
+
 ### `InspectDevice`
 
 Represents one topology device/node with status, sync hints, and relations.
@@ -216,8 +227,8 @@ Represents one topology device/node with status, sync hints, and relations.
 | `label` | Display label |
 | `status` | Device status summary (`sa` / `severity` as `InspectSeverity`) |
 | `sync_severity` | Sync severity from node status (`InspectSeverity`) |
-| `alarms` | Active alarms on this device (worst first) |
-| `status_message` | GUI text (`message`) of the worst active alarm, if any |
+| `alarms` | Active alarms on this device (worst first; tie-break see *Active alarms*) |
+| `status_message` | GUI text (`message`) of the first alarm in `alarms`, if any |
 | `tags` | Assigned tags |
 | `coordinates` | Topology map position when available |
 | `ports` | Ports on this device |

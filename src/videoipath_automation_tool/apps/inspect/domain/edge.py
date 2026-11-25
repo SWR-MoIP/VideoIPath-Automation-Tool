@@ -83,7 +83,8 @@ class InspectEdge(InspectEditableModel):
 
     @property
     def alarms(self) -> list[InspectAlarm]:
-        """Active alarms correlated to this edge or its pair (worst severity first)."""
+        """Active alarms correlated to this edge or its pair, in the same order as
+        :attr:`InspectDevice.alarms`."""
         return self.snapshot.get_alarms_for_edge(self.id, pair_id=self.pair_id)
 
     @property
