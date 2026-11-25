@@ -119,7 +119,7 @@ class ProfileAPI:
         elif len(data) == 1:
             self._logger.debug(f"Profile found with name '{name}'. Returning Profile.")
             return Profile(**data[0])
-        elif len(data) > 1:
+        else:
             self._logger.warning(f"Multiple Profiles found with name '{name}'. Returning list of Profiles.")
             return [Profile.model_validate(item) for item in data]
 

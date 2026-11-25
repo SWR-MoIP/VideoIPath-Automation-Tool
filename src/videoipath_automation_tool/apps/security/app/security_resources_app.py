@@ -96,23 +96,21 @@ class SecurityResources:
                 memberships.resource_type, memberships.resource_id
             )
         except MembershipsNotFoundError:
-            existing_membership = None
             return self._security_api.add_memberships(memberships)
 
-        if existing_membership is not None:
-            if existing_membership.rev != memberships.rev:
-                raise ValueError(
-                    f"Membership with ID '{memberships.id}' has a different revision. "
-                    f"Expected: {memberships.rev}, Found: {existing_membership.rev}"
-                )
-            if memberships.domains == []:
-                # Empty Domains will result in VALIDATION_ERROR: "Cannot update to empty domain set. Remove the key instead."
-                self._logger.info(
-                    f"Membership for resource ID '{memberships.resource_id}' contains no domains. Removing membership via API instead of updating."
-                )
-                return self._security_api.remove_memberships(memberships)
+        if existing_membership.rev != memberships.rev:
+            raise ValueError(
+                f"Membership with ID '{memberships.id}' has a different revision. "
+                f"Expected: {memberships.rev}, Found: {existing_membership.rev}"
+            )
+        if memberships.domains == []:
+            # Empty Domains will result in VALIDATION_ERROR: "Cannot update to empty domain set. Remove the key instead."
+            self._logger.info(
+                f"Membership for resource ID '{memberships.resource_id}' contains no domains. Removing membership via API instead of updating."
+            )
+            return self._security_api.remove_memberships(memberships)
 
-            return self._security_api.update_memberships(memberships)
+        return self._security_api.update_memberships(memberships)
 
     def convert_domain_ids_to_names(self, domain_ids: list[str]) -> list[str]:
         """

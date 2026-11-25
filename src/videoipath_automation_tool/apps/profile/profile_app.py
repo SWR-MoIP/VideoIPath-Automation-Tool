@@ -67,6 +67,7 @@ class ProfileApp:
             return None
         elif isinstance(data, (Profile, list)):
             return data
+        return None
 
     def get_profile_by_id(self, id: str) -> Profile | None:
         """Get a VideoIPath Profile by its ID.
