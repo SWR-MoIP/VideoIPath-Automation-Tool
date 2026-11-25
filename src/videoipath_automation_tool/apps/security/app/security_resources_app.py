@@ -1,5 +1,4 @@
 from logging import Logger
-from typing import Optional
 
 from videoipath_automation_tool.apps.security.model.domain_membership_model import LocalMemberships, ResourceType
 from videoipath_automation_tool.apps.security.security_api import SecurityAPI
@@ -79,7 +78,7 @@ class SecurityResources:
             self._logger.error(f"Error retrieving memberships for profile ID '{profile_id}': {e}")
             raise
 
-    def update_memberships(self, memberships: LocalMemberships) -> Optional[LocalMemberships]:
+    def update_memberships(self, memberships: LocalMemberships) -> LocalMemberships | None:
         """
         Updates the memberships for a resource.
 

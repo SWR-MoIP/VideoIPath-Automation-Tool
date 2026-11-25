@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from videoipath_automation_tool.apps.inventory.model.drivers import CustomSettings
@@ -16,4 +14,4 @@ class DiscoveredInventoryDevice(BaseModel):
     exists: list[str]
     ipAddressOpt: str
     source: str
-    suggestedConfigs: List[Config[CustomSettings]]
+    suggestedConfigs: list[Config[CustomSettings]]

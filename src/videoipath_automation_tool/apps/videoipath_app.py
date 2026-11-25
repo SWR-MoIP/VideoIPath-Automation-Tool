@@ -1,5 +1,5 @@
 import logging
-from typing import Literal, Optional
+from typing import Literal
 
 from videoipath_automation_tool.apps.inspect.app import InspectApp
 from videoipath_automation_tool.apps.inventory import InventoryApp
@@ -24,17 +24,17 @@ class VideoIPathApp:
 
     def __init__(
         self,
-        server_address: Optional[str] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        use_https: Optional[bool] = None,
-        verify_ssl_cert: Optional[bool] = None,
-        log_level: Optional[Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]] = None,
-        environment: Optional[str] = None,
-        advanced_driver_schema_check: Optional[bool] = None,
-        timeout_http_get: Optional[int] = None,
-        timeout_http_patch: Optional[int] = None,
-        timeout_http_post: Optional[int] = None,
+        server_address: str | None = None,
+        username: str | None = None,
+        password: str | None = None,
+        use_https: bool | None = None,
+        verify_ssl_cert: bool | None = None,
+        log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None = None,
+        environment: str | None = None,
+        advanced_driver_schema_check: bool | None = None,
+        timeout_http_get: int | None = None,
+        timeout_http_patch: int | None = None,
+        timeout_http_post: int | None = None,
     ):
         """
         Initialize the VideoIPath Automation Tool, establish connection to the VideoIPath-Server and initialize the Apps for interaction.
@@ -283,7 +283,7 @@ class VideoIPathApp:
         return self._inspect
 
     # --- Basic Methods ---
-    def _determine_fallback_driver_schema_version(self) -> Optional[str]:
+    def _determine_fallback_driver_schema_version(self) -> str | None:
         """
         Determine the fallback driver schema version based on the VideoIPath Server version.
 

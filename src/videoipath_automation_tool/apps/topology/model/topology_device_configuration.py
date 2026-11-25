@@ -1,6 +1,6 @@
 import warnings
 from itertools import chain
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 from typing_extensions import deprecated
@@ -41,12 +41,12 @@ class TopologyDeviceConfiguration(BaseModel):
     """
 
     base_device: BaseDevice
-    generic_vertices: List[GenericVertex] = Field(default_factory=list)
-    ip_vertices: List[IpVertex] = Field(default_factory=list)
-    codec_vertices: List[CodecVertex] = Field(default_factory=list)
-    internal_edges: List[UnidirectionalEdge] = Field(default_factory=list)
-    external_edges: List[UnidirectionalEdge] = Field(default_factory=list)
-    resource_transform_edges: List[NGraphResourceTransform] = Field(default_factory=list)
+    generic_vertices: list[GenericVertex] = Field(default_factory=list)
+    ip_vertices: list[IpVertex] = Field(default_factory=list)
+    codec_vertices: list[CodecVertex] = Field(default_factory=list)
+    internal_edges: list[UnidirectionalEdge] = Field(default_factory=list)
+    external_edges: list[UnidirectionalEdge] = Field(default_factory=list)
+    resource_transform_edges: list[NGraphResourceTransform] = Field(default_factory=list)
 
     # --- Setters and Getters ---
 
@@ -135,12 +135,12 @@ class TopologyDeviceConfiguration(BaseModel):
             self.base_device.maps[0].y = value
 
     @property
-    def tags(self) -> List[str]:
+    def tags(self) -> list[str]:
         """Tags associated with the device"""
         return self.base_device.tags
 
     @tags.setter
-    def tags(self, value: List[str]) -> None:
+    def tags(self, value: list[str]) -> None:
         """Tags associated with the device"""
         self.base_device.tags = value
 
@@ -163,7 +163,7 @@ class TopologyDeviceConfiguration(BaseModel):
         self.base_device.sdpStrategy = value
 
     @property
-    def site_id(self) -> Optional[str]:
+    def site_id(self) -> str | None:
         """Site ID of the device"""
         return self.base_device.siteId
 
@@ -250,7 +250,7 @@ class TopologyDeviceConfiguration(BaseModel):
 
     def get_nGraphElement_by_id(
         self, element_id: str
-    ) -> Optional[BaseDevice | GenericVertex | IpVertex | CodecVertex | UnidirectionalEdge | NGraphResourceTransform]:
+    ) -> BaseDevice | GenericVertex | IpVertex | CodecVertex | UnidirectionalEdge | NGraphResourceTransform | None:
         """Get an nGraphElement by its ID. Method will return the first element found with the specified ID.
 
         Args:
@@ -281,7 +281,7 @@ class TopologyDeviceConfiguration(BaseModel):
         label: str,
         label_type: Literal["user_defined", "factory", "all"] = "user_defined",
         vertex_type: Literal["all", "codec_vertex", "ip_vertex", "generic_vertex"] = "all",
-    ) -> Optional[GenericVertex | IpVertex | CodecVertex]:
+    ) -> GenericVertex | IpVertex | CodecVertex | None:
         """Get a codec, ip or generic vertex by its label. The search can be filtered by vertex type and label type.
         Method will return the first vertex found with the specified label.
 
@@ -362,7 +362,7 @@ class TopologyDeviceConfiguration(BaseModel):
         return return_value
 
     # --- Experimental Methods ---
-    def get_internal_edges_connected_to_vertex(self, vertex_id: str) -> Optional[list[UnidirectionalEdge]]:
+    def get_internal_edges_connected_to_vertex(self, vertex_id: str) -> list[UnidirectionalEdge] | None:
         """
         Get all internal edges connected to a vertex.
 
@@ -378,7 +378,7 @@ class TopologyDeviceConfiguration(BaseModel):
                 edges.append(edge)
         return edges
 
-    def get_internal_vertices_connected_to_edge(self, edge_id: str) -> Optional[list[GenericVertex | IpVertex]]:
+    def get_internal_vertices_connected_to_edge(self, edge_id: str) -> list[GenericVertex | IpVertex] | None:
         """
         Get the vertices connected to an internal edge.
 

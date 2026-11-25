@@ -213,7 +213,7 @@ class InspectEdge(InspectEditableModel):
         return self._staged_or("bandwidth", lambda: self._form_get("bandwidth"))
 
     @bandwidth_capacity.setter
-    def bandwidth_capacity(self, value: float | int) -> None:
+    def bandwidth_capacity(self, value: float) -> None:
         self._stage("bandwidth", value)
 
     @property

@@ -1,7 +1,4 @@
-from typing import Tuple
-
-
-def extract_driver_info_from_id(driver_id: str) -> Tuple[str, str, str]:
+def extract_driver_info_from_id(driver_id: str) -> tuple[str, str, str]:
     """
     Extracts driver_organization, driver_name, and driver_version from driver_id.
 

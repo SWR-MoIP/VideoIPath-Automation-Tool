@@ -4,6 +4,6 @@ from videoipath_automation_tool.validators.virtual_device_id import validate_vir
 
 __all__ = [
     "validate_device_id",
-    "validate_virtual_device_id",
     "validate_device_id_including_virtual",
+    "validate_virtual_device_id",
 ]

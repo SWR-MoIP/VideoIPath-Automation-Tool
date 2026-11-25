@@ -124,7 +124,7 @@ class InventoryDeviceComparison(BaseModel):
                 "attribute_value_changed",  # Indicates changes in the value of an attribute
             ]
 
-            if any([diff_type in difference_keys for diff_type in disallowed_diff_types]):
+            if any(diff_type in difference_keys for diff_type in disallowed_diff_types):
                 raise ValueError(f"Disallowed differences: {difference_keys} - {element_differences}")
 
             # Check allowed diff types

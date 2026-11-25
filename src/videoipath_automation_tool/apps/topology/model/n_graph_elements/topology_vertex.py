@@ -1,5 +1,3 @@
-from typing import Union, Optional
-
 from pydantic import Field, field_validator
 
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_n_graph_element import (
@@ -39,7 +37,7 @@ class Vertex(NGraphElement, validate_assignment=True):
     active: bool = True
     configPriority: ConfigPriority = "off"
     control: Control = "off"
-    custom: dict[str, Union[str, int, bool]] = Field(default_factory=dict)
+    custom: dict[str, str | int | bool] = Field(default_factory=dict)
     deviceId: str
     extraAlertFilters: list[str] = Field(default_factory=list)
     gpid: Gpid
@@ -120,7 +118,7 @@ class Vertex(NGraphElement, validate_assignment=True):
         return self.deviceId
 
     @property
-    def module_id(self) -> Optional[str]:
+    def module_id(self) -> str | None:
         """Module identifier this vertex belongs to, or None for common vertices (e.g. SwitchingCore)."""
         pid = self.gpid.pointId
         if len(pid) >= 4 and pid[1] in ("dev", "virt"):

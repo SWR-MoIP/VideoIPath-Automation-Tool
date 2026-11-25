@@ -90,7 +90,7 @@ class PydanticModelField(BaseModel):
 
     def _parse_type(self) -> str:
         if self.is_optional:
-            return f"Optional[{self._parse_raw_type()}]"
+            return f"{self._parse_raw_type()} | None"
         return self._parse_raw_type()
 
     def _parse_raw_type(self) -> str:

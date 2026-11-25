@@ -9,9 +9,9 @@ from typing import Any
 
 import pytest
 
+from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.app.actions import InspectActionsMixin
 from videoipath_automation_tool.apps.inspect.app.write import InspectWriteMixin
-from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.domain.device import InspectDevice, VirtualDeviceSpec
 from videoipath_automation_tool.apps.inspect.domain.port import (
     InspectPortTemplate,

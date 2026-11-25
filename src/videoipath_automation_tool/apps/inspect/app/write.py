@@ -16,7 +16,8 @@ workflow never triggers an unnecessary topology read.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Protocol, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Protocol
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.model.common import (
@@ -45,13 +46,13 @@ if TYPE_CHECKING:
 class _HasInspectState(Protocol):
     _inspect_api: InspectAPI
     _logger: logging.Logger
-    _snapshot: Optional[InspectSnapshot]
+    _snapshot: InspectSnapshot | None
 
 
 class InspectWriteMixin:
     _inspect_api: InspectAPI
     _logger: logging.Logger
-    _snapshot: Optional[InspectSnapshot]
+    _snapshot: InspectSnapshot | None
 
     def transaction(self: _HasInspectState) -> InspectTransaction:
         """Open a batched, atomic transaction bound to the app's internal snapshot."""
@@ -100,15 +101,15 @@ class InspectWriteMixin:
         self: _HasInspectState,
         device_id: str,
         *,
-        label: Optional[str] = None,
-        description: Optional[str] = None,
-        icon_type: Optional[InspectIconType | str] = None,
-        icon_size: Optional[InspectIconSize | str] = None,
-        sdp_strategy: Optional[InspectSdpStrategy | str] = None,
-        site_id: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        local_assigned_tags: Optional[list[str]] = None,
-        coordinates: Optional[dict[str, float]] = None,
+        label: str | None = None,
+        description: str | None = None,
+        icon_type: InspectIconType | str | None = None,
+        icon_size: InspectIconSize | str | None = None,
+        sdp_strategy: InspectSdpStrategy | str | None = None,
+        site_id: str | None = None,
+        tags: list[str] | None = None,
+        local_assigned_tags: list[str] | None = None,
+        coordinates: dict[str, float] | None = None,
     ) -> CommitResult:
         """Edit a device's "Edit Device" dialog fields (single auto-committed change)."""
         with self.transaction() as tx:
@@ -130,7 +131,7 @@ class InspectWriteMixin:
         self: _HasInspectState,
         module_id: str,
         *,
-        tags: Optional[list[str]] = None,
+        tags: list[str] | None = None,
     ) -> CommitResult:
         """Edit a module's locally assigned tags (single auto-committed change).
 
@@ -150,51 +151,51 @@ class InspectWriteMixin:
         self: _HasInspectState,
         vertex_id: str,
         *,
-        use_as_endpoint: Optional[bool] = None,
-        label: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        form_tags: Optional[list[str]] = None,
-        description: Optional[str] = None,
-        active: Optional[bool] = None,
-        sips_mode: Optional[InspectSipsMode | str] = None,
-        control: Optional[InspectControl | str] = None,
-        control_props: Optional[Any] = None,
-        extra_alert_filters: Optional[list[Any]] = None,
-        custom: Optional[dict[str, Any]] = None,
-        queueable: Optional[bool] = None,
-        destination_monitor_leader: Optional[bool] = None,
-        park_port: Optional[int] = None,
-        ip_address: Optional[str] = None,
-        ip_netmask: Optional[str] = None,
-        public: Optional[bool] = None,
-        vlan_id: Optional[str] = None,
-        vrf_id: Optional[str] = None,
-        supports_cpipe: Optional[bool] = None,
-        supports_igmp: Optional[bool] = None,
-        supports_mac_forwarding: Optional[bool] = None,
-        supports_nso: Optional[bool] = None,
-        supports_openflow: Optional[bool] = None,
-        supports_pseudo_wires: Optional[bool] = None,
-        supports_static_igmp: Optional[bool] = None,
-        supports_vlan: Optional[bool] = None,
-        supports_vpls: Optional[bool] = None,
-        supports_vxlan: Optional[bool] = None,
-        sdp_support: Optional[bool] = None,
-        is_igmp_source: Optional[bool] = None,
-        specific_type: Optional[str] = None,
-        codec_format: Optional[InspectCodecFormat | str] = None,
-        multiplicity: Optional[int] = None,
-        codec_public: Optional[bool] = None,
-        extra_formats: Optional[list[Any]] = None,
-        bidir_partner_id: Optional[str] = None,
-        partner_config: Optional[Any] = None,
-        service_id: Optional[Any] = None,
-        main_src_info: Optional[dict[str, Any]] = None,
-        main_dst_info: Optional[dict[str, Any]] = None,
-        spare_src_info: Optional[dict[str, Any]] = None,
-        spare_dst_info: Optional[dict[str, Any]] = None,
-        main_destination_port: Optional[int] = None,
-        spare_destination_port: Optional[int] = None,
+        use_as_endpoint: bool | None = None,
+        label: str | None = None,
+        tags: list[str] | None = None,
+        form_tags: list[str] | None = None,
+        description: str | None = None,
+        active: bool | None = None,
+        sips_mode: InspectSipsMode | str | None = None,
+        control: InspectControl | str | None = None,
+        control_props: Any | None = None,
+        extra_alert_filters: list[Any] | None = None,
+        custom: dict[str, Any] | None = None,
+        queueable: bool | None = None,
+        destination_monitor_leader: bool | None = None,
+        park_port: int | None = None,
+        ip_address: str | None = None,
+        ip_netmask: str | None = None,
+        public: bool | None = None,
+        vlan_id: str | None = None,
+        vrf_id: str | None = None,
+        supports_cpipe: bool | None = None,
+        supports_igmp: bool | None = None,
+        supports_mac_forwarding: bool | None = None,
+        supports_nso: bool | None = None,
+        supports_openflow: bool | None = None,
+        supports_pseudo_wires: bool | None = None,
+        supports_static_igmp: bool | None = None,
+        supports_vlan: bool | None = None,
+        supports_vpls: bool | None = None,
+        supports_vxlan: bool | None = None,
+        sdp_support: bool | None = None,
+        is_igmp_source: bool | None = None,
+        specific_type: str | None = None,
+        codec_format: InspectCodecFormat | str | None = None,
+        multiplicity: int | None = None,
+        codec_public: bool | None = None,
+        extra_formats: list[Any] | None = None,
+        bidir_partner_id: str | None = None,
+        partner_config: Any | None = None,
+        service_id: Any | None = None,
+        main_src_info: dict[str, Any] | None = None,
+        main_dst_info: dict[str, Any] | None = None,
+        spare_src_info: dict[str, Any] | None = None,
+        spare_dst_info: dict[str, Any] | None = None,
+        main_destination_port: int | None = None,
+        spare_destination_port: int | None = None,
     ) -> CommitResult:
         """Edit a vertex (single auto-committed change; update-only).
 
@@ -256,19 +257,19 @@ class InspectWriteMixin:
         self: _HasInspectState,
         edge_id: str,
         *,
-        label: Optional[str] = None,
-        description: Optional[str] = None,
-        weight: Optional[int] = None,
-        capacity: Optional[int] = None,
-        bandwidth: Optional[float] = None,
-        redundancy_mode: Optional[InspectRedundancyMode | str] = None,
-        conflict_priority: Optional[InspectConfigPriority | int | str] = None,
-        include_formats: Optional[list[str]] = None,
-        exclude_formats: Optional[list[str]] = None,
-        bandwidth_weight_factor: Optional[int] = None,
-        weight_per_service: Optional[int] = None,
-        active: Optional[bool] = None,
-        tags: Optional[list[str]] = None,
+        label: str | None = None,
+        description: str | None = None,
+        weight: int | None = None,
+        capacity: int | None = None,
+        bandwidth: float | None = None,
+        redundancy_mode: InspectRedundancyMode | str | None = None,
+        conflict_priority: InspectConfigPriority | int | str | None = None,
+        include_formats: list[str] | None = None,
+        exclude_formats: list[str] | None = None,
+        bandwidth_weight_factor: int | None = None,
+        weight_per_service: int | None = None,
+        active: bool | None = None,
+        tags: list[str] | None = None,
         also_opposite: bool = False,
     ) -> CommitResult:
         """Edit an existing edge's "Edit Edge" dialog fields (single auto-committed change).

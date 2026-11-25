@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from videoipath_automation_tool.connector.models.request_rest_v2 import RequestV2Patch, RequestV2Post
 from videoipath_automation_tool.connector.models.response_rest_v2 import ResponseV2Get, ResponseV2Patch, ResponseV2Post
@@ -6,7 +6,7 @@ from videoipath_automation_tool.connector.vip_base_connector import VideoIPathBa
 
 
 class VideoIPathRestConnector(VideoIPathBaseConnector):
-    ALLOWED_URLS = {
+    ALLOWED_URLS: ClassVar[dict[str, dict[str, set[str]]]] = {
         "GET": {
             "PREFIXES": {"/rest/v2/data/config/", "/rest/v2/data/status/"},
             "EXACT_MATCHES": {"/rest/v2/data/*"},

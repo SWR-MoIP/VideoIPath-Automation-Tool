@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from pydantic import IPvAnyAddress
 
@@ -124,7 +123,7 @@ class AllocationPools:
         return self.get_multicast_ranges().get_range_by_name(name=name)
 
     def create_multicast_range(
-        self, name: str, start_ip: Optional[IPvAnyAddress] = None, end_ip: Optional[IPvAnyAddress] = None
+        self, name: str, start_ip: IPvAnyAddress | None = None, end_ip: IPvAnyAddress | None = None
     ) -> MulticastRangeInfoEntry:
         """Create a local Multicast Range instance.
         Push to VideoIPath System Preferences with add_multicast_pool().
@@ -138,7 +137,7 @@ class AllocationPools:
         if start_ip and end_ip:
             instance.add_ip_range(start_ip=start_ip, end_ip=end_ip)
         elif start_ip or end_ip:
-            logging.warning("Both startip and endip must be provided to create a range.")
+            self._logger.warning("Both startip and endip must be provided to create a range.")
         return instance
 
     def remove_multicast_range(

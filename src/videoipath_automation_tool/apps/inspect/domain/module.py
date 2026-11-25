@@ -12,7 +12,7 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     format_repr,
 )
 from videoipath_automation_tool.apps.inspect.model.virtual import InspectApiVirtualModule
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _STAGED_MISSING
+from videoipath_automation_tool.apps.inspect.snapshot import _STAGED_MISSING, InspectSnapshot
 
 if TYPE_CHECKING:
     from videoipath_automation_tool.apps.inspect.domain.alarm import InspectAlarm

@@ -1,6 +1,6 @@
 import logging
 import urllib.parse
-from typing import List, Literal, Optional
+from typing import Literal
 
 from videoipath_automation_tool.apps.topology.model.actions.validate_topology_update import ValidateTopologyUpdateData
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_base_device import BaseDevice
@@ -27,7 +27,7 @@ from videoipath_automation_tool.validators.device_id_including_virtual import va
 
 
 class TopologyAPI:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """
         Class for VideoIPath topology API.
 
@@ -88,7 +88,7 @@ class TopologyAPI:
         | IpVertex
         | UnidirectionalEdge
         | NGraphResourceTransform
-        | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]
+        | list[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]
     ):
         """Get an element by its label.
 
@@ -196,7 +196,7 @@ class TopologyAPI:
 
     def _fetch_all_elements_from_nGraphFromDrivers_by_device_id(
         self, device_id: str
-    ) -> List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]:
+    ) -> list[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]:
         """Get all corresponding nGraphFromDrivers to a device (given by device id).
 
         Args:
@@ -223,15 +223,15 @@ class TopologyAPI:
                 return_data[key]["_rev"] = None
 
         nGraphElement_list = []
-        for element in return_data:
-            nGraphElement_list.append(self._validate_nGraphElement(return_data[element]))
+        for element in return_data.values():
+            nGraphElement_list.append(self._validate_nGraphElement(element))
 
         return nGraphElement_list
 
     def _build_device_configuration(
         self,
         device_id: str,
-        vertex_list: List[
+        vertex_list: list[
             BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform
         ],
     ) -> dict:
@@ -275,7 +275,7 @@ class TopologyAPI:
         type_filter: Literal[
             "codecVertex", "genericVertex", "ipVertex", "unidirectionalEdge", "baseDevice", "nGraphResourceTransform"
         ],
-    ) -> List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]:
+    ) -> list[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]:
         """Get a list type-filtered list of nGraphElement objects corresponding to a device (given by device id).
 
         Args:
@@ -864,7 +864,7 @@ class TopologyAPI:
         return element
 
     # --- Targeted Device Lookup Methods ---
-    def get_device_id_by_user_defined_label(self, label: str) -> Optional[str | List[str]]:
+    def get_device_id_by_user_defined_label(self, label: str) -> str | list[str] | None:
         """Method to get a device id by user-defined label from VideoIPath-Topology
 
         Args:
@@ -887,7 +887,7 @@ class TopologyAPI:
                 return [device["_id"] for device in response.data["config"]["network"]["nGraphElements"]["_items"]]
         return None
 
-    def _list_all_devices_in_topology(self) -> Optional[List[str]]:
+    def _list_all_devices_in_topology(self) -> list[str] | None:
         """List all device ids in the topology.
 
         Returns:
@@ -900,7 +900,7 @@ class TopologyAPI:
             return [device["_id"] for device in response.data["config"]["network"]["nGraphElements"]["_items"]]
         return None
 
-    def _list_all_element_ids_from_nGraphFromDrivers_by_device_id(self, device_id: str) -> List[str]:
+    def _list_all_element_ids_from_nGraphFromDrivers_by_device_id(self, device_id: str) -> list[str]:
         """List all corresponding nGraphFromDriver ids to a device (given by device id).
 
         Args:
@@ -924,7 +924,7 @@ class TopologyAPI:
             if key not in {"_id", "_vid"}
         ]
 
-    def _get_driver_device_id_by_factory_label(self, label: str) -> Optional[str | List[str]]:
+    def _get_driver_device_id_by_factory_label(self, label: str) -> str | list[str] | None:
         """Method to get a device id by factory label from nGraphFromDrivers
 
         Args:
@@ -943,7 +943,7 @@ class TopologyAPI:
         ids = []
         if response.data and response.data["status"]["network"]["nGraphFromDrivers"]["_items"]:
             for device in response.data["status"]["network"]["nGraphFromDrivers"]["_items"]:
-                if device["_id"] and device["_id"] in device.keys():
+                if device["_id"] and device["_id"] in device:
                     ids.append(device["_id"])
 
         if len(ids) == 1:
@@ -952,9 +952,7 @@ class TopologyAPI:
             return ids
         return None
 
-    def get_device_id_by_factory_label(
-        self, label: str, include_from_drivers: bool = True
-    ) -> Optional[str | List[str]]:
+    def get_device_id_by_factory_label(self, label: str, include_from_drivers: bool = True) -> str | list[str] | None:
         """Method to get a device id by factory label from VideoIPath-Topology
 
         Args:
@@ -998,9 +996,7 @@ class TopologyAPI:
             return all_ids
         return None
 
-    def get_device_id_by_canonical_label(
-        self, label: str, include_from_drivers: bool = True
-    ) -> Optional[str | List[str]]:
+    def get_device_id_by_canonical_label(self, label: str, include_from_drivers: bool = True) -> str | list[str] | None:
         """Method to get a device id by canonical label from VideoIPath-Topology
 
         Args:
@@ -1128,7 +1124,7 @@ class TopologyAPI:
 
         return x, y
 
-    def _convert_coordinate_to_float(self, coordinate: float | int) -> float:
+    def _convert_coordinate_to_float(self, coordinate: float) -> float:
         """
         Converts a coordinate to a float with `.0`, truncating any decimal places.
 
@@ -1153,8 +1149,8 @@ class TopologyAPI:
     def set_device_position(
         self,
         device_id: str,
-        x: int | float,
-        y: int | float,
+        x: float,
+        y: float,
         mode: Literal["absolute", "relative"] = "absolute",
         inspect_app_format=True,
     ) -> ResponseV2Patch:
@@ -1203,39 +1199,36 @@ class TopologyAPI:
     # --- Building the RequestRestV2Patch object ---
     def _generate_nGraphElements_patch_payload(
         self,
-        add_elements: Optional[
-            List[
-                BaseDevice
-                | CodecVertex
-                | GenericVertex
-                | IpVertex
-                | UnidirectionalEdge
-                | NGraphResourceTransform
-                | NGraphElement
-            ]
-        ],
-        update_elements: Optional[
-            List[
-                BaseDevice
-                | CodecVertex
-                | GenericVertex
-                | IpVertex
-                | UnidirectionalEdge
-                | NGraphResourceTransform
-                | NGraphElement
-            ]
-        ],
-        remove_elements: Optional[
-            List[
-                BaseDevice
-                | CodecVertex
-                | GenericVertex
-                | IpVertex
-                | UnidirectionalEdge
-                | NGraphResourceTransform
-                | NGraphElement
-            ]
-        ],
+        add_elements: list[
+            BaseDevice
+            | CodecVertex
+            | GenericVertex
+            | IpVertex
+            | UnidirectionalEdge
+            | NGraphResourceTransform
+            | NGraphElement
+        ]
+        | None,
+        update_elements: list[
+            BaseDevice
+            | CodecVertex
+            | GenericVertex
+            | IpVertex
+            | UnidirectionalEdge
+            | NGraphResourceTransform
+            | NGraphElement
+        ]
+        | None,
+        remove_elements: list[
+            BaseDevice
+            | CodecVertex
+            | GenericVertex
+            | IpVertex
+            | UnidirectionalEdge
+            | NGraphResourceTransform
+            | NGraphElement
+        ]
+        | None,
     ) -> "RequestV2Patch":
         """Generate a RequestRestV2Patch object for updating nGraphElements configuration.
 
@@ -1264,7 +1257,7 @@ class TopologyAPI:
 
         return body
 
-    def _merge_nGraphElement_payloads(self, payloads: List[RequestV2Patch]) -> "RequestV2Patch":
+    def _merge_nGraphElement_payloads(self, payloads: list[RequestV2Patch]) -> "RequestV2Patch":
         """Merge multiple RequestV2Patch payloads into one RequestV2Patch payload.
 
         Args:
@@ -1287,8 +1280,8 @@ class TopologyAPI:
     # --- Building the RequestRestV2Post object ---
     def _generate_validateTopologyUpdate_post_payload(
         self,
-        added_elements: List[NGraphElement],
-        removed_elements: List[NGraphElement],
+        added_elements: list[NGraphElement],
+        removed_elements: list[NGraphElement],
     ) -> "RequestV2Post":
         """
         Generate a RequestRestV2Post object for validating topology updates (/rest/v2/actions/status/pathman/validateTopologyUpdate).

@@ -153,7 +153,7 @@ class SnmpConfiguration(BaseModel, validate_assignment=True):
             SnmpConfiguration: An instance of SnmpConfiguration.
         """
         if len(data.keys()) == 1:
-            config_id = list(data.keys())[0]
+            config_id = next(iter(data.keys()))
             data = data[config_id]
             data["_id"] = config_id
         else:

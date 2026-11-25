@@ -54,7 +54,7 @@ class InspectCommitError(InspectError):
     typed response so callers can inspect ``validation.details`` and ``res.msg``.
     """
 
-    def __init__(self, response: "InspectApiUpdateTopologyResponse") -> None:
+    def __init__(self, response: InspectApiUpdateTopologyResponse) -> None:
         self.response = response
         self.result = response.data.res
         self.validation = response.data.validation
@@ -135,13 +135,13 @@ class InspectCommitConflictError(InspectError):
 
 
 __all__ = [
-    "InspectError",
-    "InspectEntityNotFoundError",
-    "InspectQueryTooLongError",
+    "InspectCommitConflictError",
     "InspectCommitError",
     "InspectConflict",
-    "InspectCommitConflictError",
-    "InspectUnsupportedFieldError",
-    "InspectSnapshotReplacedError",
+    "InspectEntityNotFoundError",
+    "InspectError",
     "InspectPendingEditsError",
+    "InspectQueryTooLongError",
+    "InspectSnapshotReplacedError",
+    "InspectUnsupportedFieldError",
 ]

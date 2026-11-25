@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from pydantic import BaseModel
 
 
@@ -8,7 +6,7 @@ class Header(BaseModel):
 
     caption: str  # Literal["Operation Successful", "Other Error"]
     id: int
-    msg: List[str]
+    msg: list[str]
     ok: bool
     status: str  # Literal["OK", "ERROR", "INVALID_REQUEST"]
 
@@ -17,4 +15,4 @@ class ResponseRPC(BaseModel, extra="forbid"):
     """RPC Response"""
 
     header: Header
-    data: Optional[dict | bool] = None
+    data: dict | bool | None = None

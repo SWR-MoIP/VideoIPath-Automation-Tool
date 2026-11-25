@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import Literal, Optional, overload
+from typing import Literal, overload
 
 from videoipath_automation_tool.apps.inventory.inventory_api import InventoryAPI
 from videoipath_automation_tool.apps.inventory.inventory_utils import construct_driver_id_from_info
@@ -1028,11 +1028,11 @@ class InventoryCreateDeviceFromDiscoveredDeviceMixin:
 
     @overload
     def create_device_from_discovered_device(
-        self, discovered_device_id: str, driver: Optional[DriverLiteral] = None, suggested_config_index: int = 0
+        self, discovered_device_id: str, driver: DriverLiteral | None = None, suggested_config_index: int = 0
     ) -> InventoryDevice: ...  # Workaround to list all overloads in Intellisense
 
     def create_device_from_discovered_device(
-        self, discovered_device_id: str, driver: Optional[DriverLiteral] = None, suggested_config_index: int = 0
+        self, discovered_device_id: str, driver: DriverLiteral | None = None, suggested_config_index: int = 0
     ) -> InventoryDevice:
         """Method to create a new device configuration for VideoIPath-Inventory using a discovered device as a template.
         Returns an InventoryDevice instance with custom settings schema for the given driver, which ensures IntelliSense support.

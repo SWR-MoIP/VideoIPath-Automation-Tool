@@ -44,14 +44,14 @@ def test_device_skeleton_uses_projection_and_parses(load: Callable[[str], dict[s
 
 def test_edge_skeleton_parses(load: Callable[[str], dict[str, Any]]) -> None:
     edge_items = load("edge_skeleton.json")["data"]["status"]["collector"]["externalEdgesByDeviceKey"]["_items"]
-    conn, rest = _connector(get_data=_collector(edge_items=edge_items))
+    conn, _rest = _connector(get_data=_collector(edge_items=edge_items))
     api = InspectAPI(conn)
     edges = api.get_edge_skeleton()
     assert len(edges) == len(edge_items)
 
 
 def test_device_detail_returns_none_when_absent() -> None:
-    conn, rest = _connector(get_data=_collector(node_items=[]))
+    conn, _rest = _connector(get_data=_collector(node_items=[]))
     api = InspectAPI(conn)
     assert api.get_device_detail("deviceX") is None
 

@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List
+from typing import Any
 
 from deepdiff import DeepDiff
 
@@ -60,7 +60,7 @@ class DriverSchemaComparator:
         return reduced_schema
 
     @staticmethod
-    def _map_drivers_by_id(items: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    def _map_drivers_by_id(items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
         """
         Maps a list of driver items to a dictionary keyed by their "_id" field.
         This simplifies comparison by ensuring each item can be uniquely identified.
@@ -76,7 +76,7 @@ class DriverSchemaComparator:
         return sorted(set(reference) - set(compare))
 
     @staticmethod
-    def _get_changed_drivers(compare: Dict[str, dict], reference: Dict[str, dict]) -> Dict[str, dict]:
+    def _get_changed_drivers(compare: dict[str, dict], reference: dict[str, dict]) -> dict[str, dict]:
         common_ids = set(compare) & set(reference)
         changed = {}
 

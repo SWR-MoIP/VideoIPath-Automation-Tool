@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from videoipath_automation_tool.apps.preferences.preferences_api import PreferencesAPI
 
@@ -19,7 +18,7 @@ class License:
 
         return self._preferences_api.get_license_activation_code()
 
-    def get_activation_codes(self) -> List[str]:
+    def get_activation_codes(self) -> list[str]:
         """
         Get all activation codes from the VideoIPath System Preferences / License.
 
@@ -46,7 +45,7 @@ class License:
         """
         return self._preferences_api.get_license_concurrent_users()
 
-    def get_advanced_functionality(self) -> List[str]:
+    def get_advanced_functionality(self) -> list[str]:
         """
         Get the licensed advanced functionality from the VideoIPath System Preferences / License.
 
@@ -107,7 +106,7 @@ class License:
             for key in num_devices_allowances
         }
 
-    def get_licenses(self) -> List[dict]:
+    def get_licenses(self) -> list[dict]:
         """
         Get all licenses from the VideoIPath System Preferences / License.
 

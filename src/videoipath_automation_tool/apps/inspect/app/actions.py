@@ -12,8 +12,9 @@ dedicated network actions.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable, Mapping
 from enum import IntEnum
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Protocol, Union
+from typing import TYPE_CHECKING, Protocol
 
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
 from videoipath_automation_tool.apps.inspect.domain.device import VirtualDeviceSpec
@@ -49,19 +50,19 @@ class ConflictStrategy(IntEnum):
 
 
 # (device_id, x, y) or just device_id (placed at 0,0).
-AddDeviceSpec = Union[str, tuple[str, float, float]]
+AddDeviceSpec = str | tuple[str, float, float]
 
 
 class _HasInspectApi(Protocol):
     _inspect_api: InspectAPI
     _logger: logging.Logger
-    _snapshot: Optional[InspectSnapshot]
+    _snapshot: InspectSnapshot | None
 
 
 class InspectActionsMixin:
     _inspect_api: InspectAPI
     _logger: logging.Logger
-    _snapshot: Optional[InspectSnapshot]
+    _snapshot: InspectSnapshot | None
 
     def get_sync_info(self: _HasInspectApi, device_ids: list[str]) -> dict[str, InspectApiLookupSyncInfoItem]:
         """Per-device sync differences (what would be added/removed/updated on the next sync)."""
@@ -189,7 +190,7 @@ class InspectActionsMixin:
             return False
         return True
 
-    def create_virtual_device(self: _HasInspectApi, spec: VirtualDeviceSpec) -> "InspectDevice":
+    def create_virtual_device(self: _HasInspectApi, spec: VirtualDeviceSpec) -> InspectDevice:
         """Create one virtual device from a module/port-template spec.
 
         The device is created unplaced (``coordinates`` null); use ``place_device`` /
@@ -203,7 +204,7 @@ class InspectActionsMixin:
         spec: VirtualDeviceSpec,
         *,
         copies: int = 1,
-    ) -> list["InspectDevice"]:
+    ) -> list[InspectDevice]:
         """Create one or more virtual devices from a module/port-template spec.
 
         Devices are created unplaced (``coordinates`` null); use ``place_device`` to position them
@@ -286,7 +287,7 @@ class InspectActionsMixin:
         self._refresh_after_network_action([device_id])
         return True
 
-    def _ensure_snapshot(self: _HasInspectApi) -> "InspectSnapshot":
+    def _ensure_snapshot(self: _HasInspectApi) -> InspectSnapshot:
         """Return the app snapshot, building it lazily when the read mixin is available."""
         get_snapshot = getattr(self, "_get_snapshot", None)
         if callable(get_snapshot):
@@ -314,4 +315,4 @@ def _to_add_item(spec: AddDeviceSpec) -> InspectApiAddDevicesItem:
     return InspectApiAddDevicesItem(id=device_id, x=x, y=y)
 
 
-__all__ = ["InspectActionsMixin", "ConflictStrategy", "AddDeviceSpec"]
+__all__ = ["AddDeviceSpec", "ConflictStrategy", "InspectActionsMixin"]

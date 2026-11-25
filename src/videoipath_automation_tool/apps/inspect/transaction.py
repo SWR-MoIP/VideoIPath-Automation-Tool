@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Sequence
+from collections.abc import Sequence
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import Field
 
@@ -128,9 +130,9 @@ class InspectTransaction:
 
     def __init__(
         self,
-        api: "InspectAPI",
-        snapshot: Optional["InspectSnapshot"] = None,
-        logger: Optional[logging.Logger] = None,
+        api: InspectAPI,
+        snapshot: InspectSnapshot | None = None,
+        logger: logging.Logger | None = None,
     ) -> None:
         self._api = api
         self._snapshot = snapshot
@@ -141,10 +143,12 @@ class InspectTransaction:
 
     # --- Context manager ---
 
-    def __enter__(self) -> "InspectTransaction":
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc: BaseException | None, tb: TracebackType | None
+    ) -> None:
         if exc_type is not None:
             self.discard()
             return
@@ -177,7 +181,7 @@ class InspectTransaction:
 
     # --- Staging: domain objects ---
 
-    def update(self, obj: Editable | Sequence[Editable]) -> "InspectTransaction":
+    def update(self, obj: Editable | Sequence[Editable]) -> InspectTransaction:
         """Flush pending domain-object setter edits into this transaction.
 
         Accepts an :class:`InspectDevice`, :class:`InspectVertex`, :class:`InspectEdge`,
@@ -209,7 +213,7 @@ class InspectTransaction:
 
     # --- Staging: devices ---
 
-    def place_device(self, device_id: str, x: float, y: float) -> "InspectTransaction":
+    def place_device(self, device_id: str, x: float, y: float) -> InspectTransaction:
         """Move a device to grid coordinates (``replaceDevices``)."""
         entry = self._stage_device(device_id)
         entry.intents["coordinates"] = {"x": x, "y": y}
@@ -219,17 +223,17 @@ class InspectTransaction:
         self,
         device_id: str,
         *,
-        label: Optional[str] = None,
-        description: Optional[str] = None,
-        icon_type: Optional[InspectIconType | str] = None,
-        icon_size: Optional[InspectIconSize | str] = None,
-        sdp_strategy: Optional[InspectSdpStrategy | str] = None,
-        site_id: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        local_assigned_tags: Optional[list[str]] = None,
-        coordinates: Optional[dict[str, float]] = None,
-        intents: Optional[dict[str, Any]] = None,
-    ) -> "InspectTransaction":
+        label: str | None = None,
+        description: str | None = None,
+        icon_type: InspectIconType | str | None = None,
+        icon_size: InspectIconSize | str | None = None,
+        sdp_strategy: InspectSdpStrategy | str | None = None,
+        site_id: str | None = None,
+        tags: list[str] | None = None,
+        local_assigned_tags: list[str] | None = None,
+        coordinates: dict[str, float] | None = None,
+        intents: dict[str, Any] | None = None,
+    ) -> InspectTransaction:
         """Edit a device's edit-dialog fields (``replaceDevices``).
 
         Covers the Inspect UI "Edit Device" dialog: ``label`` / ``description`` (the persisted
@@ -266,56 +270,56 @@ class InspectTransaction:
         self,
         vertex_id: str,
         *,
-        use_as_endpoint: Optional[bool] = None,
-        label: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        form_tags: Optional[list[str]] = None,
-        description: Optional[str] = None,
-        active: Optional[bool] = None,
-        sips_mode: Optional[InspectSipsMode | str] = None,
-        control: Optional[InspectControl | str] = None,
-        control_props: Optional[Any] = None,
-        extra_alert_filters: Optional[list[Any]] = None,
-        custom: Optional[dict[str, Any]] = None,
-        queueable: Optional[bool] = None,
-        destination_monitor_leader: Optional[bool] = None,
-        park_port: Optional[int] = None,
+        use_as_endpoint: bool | None = None,
+        label: str | None = None,
+        tags: list[str] | None = None,
+        form_tags: list[str] | None = None,
+        description: str | None = None,
+        active: bool | None = None,
+        sips_mode: InspectSipsMode | str | None = None,
+        control: InspectControl | str | None = None,
+        control_props: Any | None = None,
+        extra_alert_filters: list[Any] | None = None,
+        custom: dict[str, Any] | None = None,
+        queueable: bool | None = None,
+        destination_monitor_leader: bool | None = None,
+        park_port: int | None = None,
         # IP-vertex ``typeFields`` (only meaningful on IP vertices):
-        ip_address: Optional[str] = None,
-        ip_netmask: Optional[str] = None,
-        public: Optional[bool] = None,
-        vlan_id: Optional[str] = None,
-        vrf_id: Optional[str] = None,
-        supports_cpipe: Optional[bool] = None,
-        supports_igmp: Optional[bool] = None,
-        supports_mac_forwarding: Optional[bool] = None,
-        supports_nso: Optional[bool] = None,
-        supports_openflow: Optional[bool] = None,
-        supports_pseudo_wires: Optional[bool] = None,
-        supports_static_igmp: Optional[bool] = None,
-        supports_vlan: Optional[bool] = None,
-        supports_vpls: Optional[bool] = None,
-        supports_vxlan: Optional[bool] = None,
+        ip_address: str | None = None,
+        ip_netmask: str | None = None,
+        public: bool | None = None,
+        vlan_id: str | None = None,
+        vrf_id: str | None = None,
+        supports_cpipe: bool | None = None,
+        supports_igmp: bool | None = None,
+        supports_mac_forwarding: bool | None = None,
+        supports_nso: bool | None = None,
+        supports_openflow: bool | None = None,
+        supports_pseudo_wires: bool | None = None,
+        supports_static_igmp: bool | None = None,
+        supports_vlan: bool | None = None,
+        supports_vpls: bool | None = None,
+        supports_vxlan: bool | None = None,
         # Codec-vertex ``typeFields.specific`` / ``typeFields.generic``:
-        sdp_support: Optional[bool] = None,
-        is_igmp_source: Optional[bool] = None,
-        specific_type: Optional[str] = None,
-        codec_format: Optional[InspectCodecFormat | str] = None,
-        multiplicity: Optional[int] = None,
-        codec_public: Optional[bool] = None,
-        extra_formats: Optional[list[Any]] = None,
-        bidir_partner_id: Optional[str] = None,
-        partner_config: Optional[Any] = None,
-        service_id: Optional[Any] = None,
-        main_src_info: Optional[dict[str, Any]] = None,
-        main_dst_info: Optional[dict[str, Any]] = None,
-        spare_src_info: Optional[dict[str, Any]] = None,
-        spare_dst_info: Optional[dict[str, Any]] = None,
-        main_destination_port: Optional[int] = None,
-        spare_destination_port: Optional[int] = None,
+        sdp_support: bool | None = None,
+        is_igmp_source: bool | None = None,
+        specific_type: str | None = None,
+        codec_format: InspectCodecFormat | str | None = None,
+        multiplicity: int | None = None,
+        codec_public: bool | None = None,
+        extra_formats: list[Any] | None = None,
+        bidir_partner_id: str | None = None,
+        partner_config: Any | None = None,
+        service_id: Any | None = None,
+        main_src_info: dict[str, Any] | None = None,
+        main_dst_info: dict[str, Any] | None = None,
+        spare_src_info: dict[str, Any] | None = None,
+        spare_dst_info: dict[str, Any] | None = None,
+        main_destination_port: int | None = None,
+        spare_destination_port: int | None = None,
         # Wire-field intents plus semantic control (used by domain-object flush / update()):
-        intents: Optional[dict[str, Any]] = None,
-    ) -> "InspectTransaction":
+        intents: dict[str, Any] | None = None,
+    ) -> InspectTransaction:
         """Edit a vertex/port (``replaceVertices``; update-only — vertices cannot be created here).
 
         Covers the "Edit vertex" / bulk-edit dialogs: base fields, IP-vertex ``typeFields``, and
@@ -404,44 +408,44 @@ class InspectTransaction:
         self,
         edge_id: str,
         *,
-        label: Optional[str] = None,
-        description: Optional[str] = None,
-        weight: Optional[int] = None,
-        capacity: Optional[int] = None,
-        bandwidth: Optional[float] = None,
-        redundancy_mode: Optional[InspectRedundancyMode | str] = None,
-        conflict_priority: Optional[InspectConfigPriority | int | str] = None,
-        include_formats: Optional[list[str]] = None,
-        exclude_formats: Optional[list[str]] = None,
-        bandwidth_weight_factor: Optional[int] = None,
-        weight_per_service: Optional[int] = None,
-        active: Optional[bool] = None,
-        tags: Optional[list[str]] = None,
+        label: str | None = None,
+        description: str | None = None,
+        weight: int | None = None,
+        capacity: int | None = None,
+        bandwidth: float | None = None,
+        redundancy_mode: InspectRedundancyMode | str | None = None,
+        conflict_priority: InspectConfigPriority | int | str | None = None,
+        include_formats: list[str] | None = None,
+        exclude_formats: list[str] | None = None,
+        bandwidth_weight_factor: int | None = None,
+        weight_per_service: int | None = None,
+        active: bool | None = None,
+        tags: list[str] | None = None,
         also_opposite: bool = False,
-        intents: Optional[dict[str, Any]] = None,
-    ) -> "InspectTransaction":
+        intents: dict[str, Any] | None = None,
+    ) -> InspectTransaction:
         """Edit an existing edge's "Edit Edge" dialog fields (``replaceEdges``).
 
         With ``also_opposite`` the same changes are staged on the opposite directed edge (the reverse
         ``.out`` <-> ``.in`` edge, as the Inspect UI's "apply changes to opposite directed edge"
         option does); raises ``InspectEntityNotFoundError`` if that opposite edge does not exist.
         """
-        fields = dict(
-            label=label,
-            description=description,
-            weight=weight,
-            capacity=capacity,
-            bandwidth=bandwidth,
-            redundancy_mode=redundancy_mode,
-            conflict_priority=conflict_priority,
-            include_formats=include_formats,
-            exclude_formats=exclude_formats,
-            bandwidth_weight_factor=bandwidth_weight_factor,
-            weight_per_service=weight_per_service,
-            active=active,
-            tags=tags,
-            intents=intents,
-        )
+        fields = {
+            "label": label,
+            "description": description,
+            "weight": weight,
+            "capacity": capacity,
+            "bandwidth": bandwidth,
+            "redundancy_mode": redundancy_mode,
+            "conflict_priority": conflict_priority,
+            "include_formats": include_formats,
+            "exclude_formats": exclude_formats,
+            "bandwidth_weight_factor": bandwidth_weight_factor,
+            "weight_per_service": weight_per_service,
+            "active": active,
+            "tags": tags,
+            "intents": intents,
+        }
         self._apply_edge_update(edge_id, fields)
         if also_opposite:
             opposite_id = _opposite_edge_id(edge_id)
@@ -491,7 +495,7 @@ class InspectTransaction:
         bidirectional: bool = True,
         overwrite: bool = False,
         **edge_fields: Any,
-    ) -> "InspectTransaction":
+    ) -> InspectTransaction:
         """Create an edge from an out-vertex to an in-vertex (``replaceEdges``).
 
         With ``bidirectional`` (default) the reverse edge (``to``'s out -> ``from``'s in) is staged
@@ -505,7 +509,7 @@ class InspectTransaction:
             )
         return self
 
-    def disconnect(self, from_vertex: str, to_vertex: str, *, bidirectional: bool = True) -> "InspectTransaction":
+    def disconnect(self, from_vertex: str, to_vertex: str, *, bidirectional: bool = True) -> InspectTransaction:
         """Remove the edge from ``from_vertex`` to ``to_vertex`` (and its reverse if bidirectional)."""
         self.remove(_edge_key(from_vertex, to_vertex))
         if bidirectional:
@@ -514,14 +518,14 @@ class InspectTransaction:
 
     # --- Staging: removals ---
 
-    def remove(self, entity_id: str) -> "InspectTransaction":
+    def remove(self, entity_id: str) -> InspectTransaction:
         """Remove any entity by id (device / vertex / edge key). Last-writer-wins (no conflict check)."""
         self._ensure_open()
         kind = _entity_kind(entity_id)
         self._entries[(kind, entity_id)] = _Staged(kind=kind, entity_id=entity_id, remove=True)
         return self
 
-    def remove_device(self, device_id: str) -> "InspectTransaction":
+    def remove_device(self, device_id: str) -> InspectTransaction:
         """Remove a device (its baseDevice element) from the topology graph."""
         return self.remove(device_id)
 
@@ -531,9 +535,9 @@ class InspectTransaction:
         self,
         module_id: str,
         *,
-        tags: Optional[list[str]] = None,
-        intents: Optional[dict[str, Any]] = None,
-    ) -> "InspectTransaction":
+        tags: list[str] | None = None,
+        intents: dict[str, Any] | None = None,
+    ) -> InspectTransaction:
         """Edit a module's locally assigned tags (``assignTag`` / ``unassignTag`` on commit).
 
         Requires a bound snapshot so the current local tag set can be read for the diff. Tag ops
@@ -592,7 +596,7 @@ class InspectTransaction:
         self._logger.debug("Inspect commit applied %d change(s): %s", len(applied_ids), applied_ids)
         return result
 
-    def rebase(self) -> "InspectTransaction":
+    def rebase(self) -> InspectTransaction:
         """Re-fetch baselines for all staged entities, keeping the recorded intents.
 
         Use after ``InspectCommitConflictError`` to move the staged changes onto current server
@@ -739,7 +743,7 @@ class InspectTransaction:
             raise InspectEntityNotFoundError(entity_id, kind="edge")
         return form
 
-    def _lookup_device_form(self, device_id: str, required: bool) -> Optional[InspectApiLookupInspectDeviceFields]:
+    def _lookup_device_form(self, device_id: str, required: bool) -> InspectApiLookupInspectDeviceFields | None:
         try:
             response = self._api.lookup_inspect_device(device_id)
         except Exception as exc:  # connector-level miss
@@ -748,7 +752,7 @@ class InspectTransaction:
             return None
         return response.data.fields
 
-    def _lookup_vertex_form(self, vertex_id: str, required: bool) -> Optional[InspectApiVertexEditForm]:
+    def _lookup_vertex_form(self, vertex_id: str, required: bool) -> InspectApiVertexEditForm | None:
         response = self._api.lookup_vertices([vertex_id])
         item = response.data.get(vertex_id)
         if item is None:
@@ -757,7 +761,7 @@ class InspectTransaction:
             return None
         return item.fields
 
-    def _lookup_edge_form(self, edge_id: str) -> Optional[InspectApiEdgeForm]:
+    def _lookup_edge_form(self, edge_id: str) -> InspectApiEdgeForm | None:
         response = self._api.lookup_edges([edge_id])
         item = response.data.get(edge_id)
         return item.edge if item is not None else None
@@ -1011,7 +1015,7 @@ def _is_single_editable(obj: Any) -> bool:
     return isinstance(obj, (InspectDevice, InspectVertex, InspectEdge, InspectModule))
 
 
-def _require_live_object(snapshot: "InspectSnapshot", obj: Editable) -> None:
+def _require_live_object(snapshot: InspectSnapshot, obj: Editable) -> None:
     """Reject a domain object that is not bound to ``snapshot``, or a snapshot ``refresh()`` replaced."""
     if getattr(snapshot, "replaced", False) or obj.snapshot is not snapshot:
         raise InspectSnapshotReplacedError(obj.id)
@@ -1019,7 +1023,7 @@ def _require_live_object(snapshot: "InspectSnapshot", obj: Editable) -> None:
 
 def _stage_editable(
     tx: InspectTransaction,
-    snapshot: "InspectSnapshot",
+    snapshot: InspectSnapshot,
     obj: Editable,
 ) -> list[tuple[str, str]]:
     """Stage pending edits for ``obj`` (and cascade children for a device). Returns flushed keys."""
@@ -1124,7 +1128,7 @@ def _conflict_priority_to_wire(value: InspectConfigPriority | int | str) -> int 
 
 
 def _merged_weight_factors(
-    baseline: Any, bandwidth_weight_factor: Optional[int], weight_per_service: Optional[int]
+    baseline: Any, bandwidth_weight_factor: int | None, weight_per_service: int | None
 ) -> dict[str, Any]:
     """Merge the requested weight-factor changes onto a deep copy of the baseline ``weightFactors``
     (a nested dict), preserving untouched sub-values (e.g. ``service.max``)."""
@@ -1215,4 +1219,4 @@ def _pair_ids_for_edge(edge_id: str) -> tuple[str, ...]:
     return (f"{dev_a}::{dev_b}", f"{dev_b}::{dev_a}")
 
 
-__all__ = ["InspectTransaction", "CommitResult"]
+__all__ = ["CommitResult", "InspectTransaction"]

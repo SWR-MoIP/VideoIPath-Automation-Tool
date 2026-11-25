@@ -1,5 +1,3 @@
-from typing import List
-
 from deepdiff.diff import DeepDiff
 from pydantic import BaseModel, Field
 
@@ -109,7 +107,7 @@ class NGraphElementDiff(BaseModel):
                 "attribute_value_changed",  # Indicates changes in the value of an attribute
             ]
 
-            if any([diff_type in difference_keys for diff_type in disallowed_diff_types]):
+            if any(diff_type in difference_keys for diff_type in disallowed_diff_types):
                 raise ValueError(f"Disallowed differences in nGraphElement: {difference_keys} - {element_differences}")
 
             # Check allowed diff types
@@ -189,19 +187,19 @@ class NGraphElementDiff(BaseModel):
 class NGraphElementListComparison(BaseModel):
     """Class which contains the differences between two lists of nGraphElements. Categorized by added, removed and changed elements."""
 
-    added: List[NGraphElement] = []
-    removed: List[NGraphElement] = []
-    common: List[NGraphElementDiff] = []
+    added: list[NGraphElement] = []
+    removed: list[NGraphElement] = []
+    common: list[NGraphElementDiff] = []
 
-    def get_added(self) -> List[NGraphElement]:
+    def get_added(self) -> list[NGraphElement]:
         """Method to get the added nGraphElements."""
         return self.added
 
-    def get_removed(self) -> List[NGraphElement]:
+    def get_removed(self) -> list[NGraphElement]:
         """Method to get the removed nGraphElements."""
         return self.removed
 
-    def get_changed(self, include_rev=True) -> List[NGraphElementDiff]:
+    def get_changed(self, include_rev=True) -> list[NGraphElementDiff]:
         """Method to get the nGraphElements with changed values (including removed and added values)."""
         elements_with_changed_values = [
             element
@@ -296,18 +294,18 @@ class TopologyDeviceComparison(BaseModel):
 
     @staticmethod
     def create_compare_list(
-        reference_elements: List[NGraphElement]
-        | List[GenericVertex]
-        | List[IpVertex]
-        | List[CodecVertex]
-        | List[UnidirectionalEdge]
-        | List[NGraphResourceTransform],
-        staged_elements: List[NGraphElement]
-        | List[GenericVertex]
-        | List[IpVertex]
-        | List[CodecVertex]
-        | List[UnidirectionalEdge]
-        | List[NGraphResourceTransform],
+        reference_elements: list[NGraphElement]
+        | list[GenericVertex]
+        | list[IpVertex]
+        | list[CodecVertex]
+        | list[UnidirectionalEdge]
+        | list[NGraphResourceTransform],
+        staged_elements: list[NGraphElement]
+        | list[GenericVertex]
+        | list[IpVertex]
+        | list[CodecVertex]
+        | list[UnidirectionalEdge]
+        | list[NGraphResourceTransform],
     ) -> NGraphElementListComparison:
         """Method to create a comparison list between two lists of nGraphElements."""
         reference_element_ids = [element.id for element in reference_elements]
@@ -338,7 +336,7 @@ class TopologyDeviceComparison(BaseModel):
             added=added_nGraphElements, removed=removed_nGraphElements, common=common_nGraphElements
         )
 
-    def get_changed_elements(self, include_rev=False) -> List[NGraphElementDiff]:
+    def get_changed_elements(self, include_rev=False) -> list[NGraphElementDiff]:
         """Method to get the changed elements of the device."""
         changed_elements = []
 
@@ -369,7 +367,7 @@ class TopologyDeviceComparison(BaseModel):
 
         return changed_elements
 
-    def get_added_elements(self) -> List[NGraphElement]:
+    def get_added_elements(self) -> list[NGraphElement]:
         """Method to get the added elements of the device."""
         added_elements = []
         added_elements += self.generic_vertices.get_added()
@@ -380,7 +378,7 @@ class TopologyDeviceComparison(BaseModel):
         added_elements += self.resource_transform_edges.get_added()
         return added_elements
 
-    def get_removed_elements(self) -> List[NGraphElement]:
+    def get_removed_elements(self) -> list[NGraphElement]:
         """Method to get the removed elements of the device."""
         removed_elements = []
         removed_elements += self.generic_vertices.get_removed()

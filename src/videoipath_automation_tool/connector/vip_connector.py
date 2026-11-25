@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from videoipath_automation_tool.connector.vip_base_connector import VideoIPathBaseConnectorTimeouts
 from videoipath_automation_tool.connector.vip_rest_connector import (
@@ -19,7 +18,7 @@ class VideoIPathConnector:
         password: str,
         use_https: bool = True,
         verify_ssl_cert: bool = True,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         timeout_http_get: int = 10,
         timeout_http_patch: int = 10,
         timeout_http_post: int = 10,

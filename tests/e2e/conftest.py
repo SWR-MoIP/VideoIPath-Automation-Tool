@@ -25,9 +25,9 @@ network-builder architectures) in VideoIPath for manual inspection after the run
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from itertools import count
 from pathlib import Path
-from typing import Iterator, Optional
 
 import pytest
 
@@ -51,7 +51,7 @@ def _e2e_enabled() -> bool:
     return os.environ.get("VIPAT_E2E_ENABLED", "").strip() == "1"
 
 
-def _server_major(app: VideoIPathApp) -> Optional[int]:
+def _server_major(app: VideoIPathApp) -> int | None:
     parsed = _parse_version(app._videoipath_connector.videoipath_version)
     return parsed[0] if parsed is not None else None
 

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Literal, Optional
+from typing import Literal
 
 from typing_extensions import deprecated
 
@@ -22,7 +22,7 @@ from videoipath_automation_tool.validators.device_id import validate_device_id
 
 
 class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscoveredDeviceMixin, InventoryGetDeviceMixin):
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """Inventory App contains functionality to interact with VideoIPath-Inventory.
 
         Args:
@@ -147,7 +147,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         self._logger.info(f"Device '{online_device.label}' updated in Inventory with id '{online_device.device_id}'.")
         return online_device
 
-    def remove_device(self, device_id: str, check_remove: bool = True) -> Optional[InventoryDevice[CustomSettings]]:
+    def remove_device(self, device_id: str, check_remove: bool = True) -> InventoryDevice[CustomSettings] | None:
         """Method to remove a device from VideoIPath-Inventory.
         Method returns last device configuration before removal.
 
@@ -197,7 +197,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
 
     # Note: create_device(), create_device_from_discovered_device(), get_device() are implemented in the respective mixins.
 
-    def get_discovered_devices(self) -> List[DiscoveredInventoryDevice]:
+    def get_discovered_devices(self) -> list[DiscoveredInventoryDevice]:
         """Method to get all discovered devices from VideoIPath-Inventory.
 
         Returns:
@@ -212,7 +212,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
         ] = "canonical_label",
-    ) -> Optional[str | List[str]]:
+    ) -> str | list[str] | None:
         """Find a device id by its label.
 
         Args:
@@ -231,7 +231,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         else:
             raise ValueError(f"Invalid label_search_mode: {label_search_mode}")
 
-    def list_device_ids_by_driver(self, driver: DriverLiteral) -> List[str]:
+    def list_device_ids_by_driver(self, driver: DriverLiteral) -> list[str]:
         """Method to list all device ids by driver id.
 
         Args:
@@ -352,7 +352,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         return InventoryDevice.parse_configuration(config)
 
     # --- Global SNMP Configuration Helpers ---
-    def get_global_snmp_config_id_by_label(self, label: str) -> Optional[str | List[str]]:
+    def get_global_snmp_config_id_by_label(self, label: str) -> str | list[str] | None:
         """Method to get the global SNMP configuration id by label.
         Note: If multiple SNMP configurations with the same label exist, a list of ids is returned.
 
@@ -364,7 +364,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
         """
         return self._inventory_api.get_global_snmp_config_id_by_label(label=label)
 
-    def get_global_snmp_config_label_by_id(self, snmp_config_id: str) -> Optional[str]:
+    def get_global_snmp_config_label_by_id(self, snmp_config_id: str) -> str | None:
         """Method to get the global SNMP configuration label by id.
 
         Args:
@@ -432,7 +432,7 @@ class InventoryApp(InventoryCreateDeviceMixin, InventoryCreateDeviceFromDiscover
     @deprecated(
         "This method is deprecated and will be removed in future versions.",
     )
-    def check_device_exists(self, label: str) -> None | List[str]:
+    def check_device_exists(self, label: str) -> None | list[str]:
         """Method to check if a device with the given user-defined label exists in VideoIPath-Inventory.
         Returns List of device_ids with the given label.
         If no device with the given label exists, None is returned.
