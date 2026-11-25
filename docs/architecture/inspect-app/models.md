@@ -195,6 +195,10 @@ snapshot section). Each of `device` / `module` / `port` / `edge` / `service` exp
 `.alarms` — a list of `InspectAlarm` sorted worst-severity first. Device also has
 `status_message` (the worst alarm's text).
 
+`service.alarms` holds the service alarms of the booking, i.e. the alarms whose
+`pointId` is `["book", <booking id>]` (GUI: Events → Current, category Service).
+Configuration alarms that only reference a booking in their point path are not included.
+
 | Field / property | Meaning |
 | --- | --- |
 | `title` | Alarm title (`desc.alertId.label`); `None` when missing or empty |

@@ -417,7 +417,8 @@ class InspectSnapshot:
         return _sorted_alarms(items)
 
     def get_alarms_for_service(self, booking_id: str) -> list[InspectAlarm]:
-        return self.get_alarms_for_resource(booking_id)
+        """Service alarms of a booking: those whose ``pointId`` is ``["book", <booking id>]``."""
+        return self.get_alarms_for_resource(f"{_SERVICE_ALARM_POINT_PREFIX}.{booking_id}")
 
     # --- Bulk preload ---
 
@@ -1103,6 +1104,9 @@ class InspectSnapshot:
 # --- Internal ---
 
 _PRELOAD_WORKERS = 8
+
+# First ``pointId`` element of a service alarm; the second is the booking id.
+_SERVICE_ALARM_POINT_PREFIX = "book"
 
 _logger = logging.getLogger("videoipath_automation_tool_inspect_snapshot")
 
