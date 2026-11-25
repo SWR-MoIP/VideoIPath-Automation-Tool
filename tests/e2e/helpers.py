@@ -285,6 +285,7 @@ def sweep_e2e_namespace(app: "VideoIPathApp") -> None:
     """
     delete_test_tag(app)
     delete_module_test_tag(app)
+    _delete_catalog_tags_by_name(app, E2E_TAG)
 
     inventory_labels = app.inventory._inventory_api.fetch_devices_user_defined_labels_as_dict()
     inventory_ids = {i for i, label in inventory_labels.items() if (label or "").startswith(E2E_PREFIX)}
@@ -440,6 +441,14 @@ def _e2e_format_tree_id(app: "VideoIPathApp") -> str:
 def test_tag_id(app: "VideoIPathApp") -> str:
     """Full catalog id for the port/vertex E2E test tag under the resolved format tree."""
     return f"{_e2e_format_tree_id(app)}~~{TEST_TAG_NAME}"
+
+
+def create_e2e_tag(app: VideoIPathApp) -> str:
+    """Resolve/create the vipat-e2e catalog leaf; recent servers require full catalog IDs."""
+    tree_id = _e2e_format_tree_id(app)
+    if not catalog_tag_exists(app, path=(tree_id,), name=E2E_TAG):
+        create_catalog_tag(app, path=(tree_id,), name=E2E_TAG)
+    return f"{tree_id}~~{E2E_TAG}"
 
 
 def module_test_tag_id(app: "VideoIPathApp") -> str:

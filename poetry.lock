@@ -1021,7 +1021,7 @@ version = "6.0.4"
 description = "YAML parser and emitter for Python"
 optional = false
 python-versions = ">=3.10"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "pyyaml-6.0.4-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:78be5a1b05a5d1fd46d0290393e5deeb581fa617585462c1b84f7c6b0cb1e489"},
     {file = "pyyaml-6.0.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e39017e1cef43d03b2ba427f60213e4b36dbc6fb092235fa3de3a510ce064d3c"},
@@ -1217,4 +1217,4 @@ python-discovery = ">=1.6.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "191c2a565bca9f63cabbd21967c92a5d29e3a2ecd57429f8079020151cf6134f"
+content-hash = "271992875b030fb7ee23a66a55f89b8ba555ffa494c235ebeb8696e7e2610c76"

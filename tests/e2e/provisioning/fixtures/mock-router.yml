@@ -1,0 +1,49 @@
+schema_version: 1
+inputs:
+  ports:
+    type: integer
+    default: 2
+  modules:
+    type: integer
+    default: 1
+  x:
+    type: number
+    default: 0
+  y:
+    type: number
+    default: 0
+  endpoint_prefix:
+    type: string
+    default: endpoint
+  marker_tag:
+    type: string
+defaults:
+  inventory:
+    driver_id: com.nevion.mock-0.1.0
+    custom_settings:
+      num_router_modules: {$input: modules}
+      num_router_ports: {$input: ports}
+      num_codec_modules: 0
+  topology:
+    device:
+      coordinates:
+        x: {$input: x}
+        y: {$input: y}
+      tags:
+        add: [{$input: marker_tag}]
+    vertex_processor:
+      processor_type: example-org.e2e-router
+    naming:
+      endpoint_label: "{device.label}-{inputs.endpoint_prefix}-{endpoint.direction}-{endpoint.index:02d}"
+variants:
+  expanded:
+    inventory:
+      custom_settings:
+        num_router_ports: 3
+  matrix:
+    inventory:
+      custom_settings:
+        matrix_type: "N:N"
+    topology:
+      device:
+        icon_size: large

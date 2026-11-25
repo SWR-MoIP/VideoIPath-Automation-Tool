@@ -120,6 +120,16 @@ Response models live in `connector/models/` as Pydantic models.
 - `domain/` — thin view objects that hold a back-reference to the snapshot for cross-entity lookups
 - `model/` — raw Pydantic models for the API response (`collector.py`, etc.)
 
+### Provisioning (standalone)
+
+`provisioning/` is a standalone declarative configuration layer over the SDK (`ProvisioningEngine(app)`). Blueprints are reusable configuration templates within this layer. `VideoIPathApp` neither imports nor exposes it. Design record: [`docs/architecture/provisioning/`](docs/architecture/provisioning/README.md). YAML parsing (PyYAML, a regular dependency) lives only in `loader.py`.
+- `models.py` / `loader.py` / `resolution.py` — strict document models, safe YAML loading, ordered variant overlays + typed inputs + driver/parameter validation, JSON Schema
+- `engine.py` — `ProvisioningEngine`, read-only `plan()`, `ProvisioningPlan.apply()` executor (phases, conflicts, partial results); separate Inventory reachability (10s) and topology readiness (60s) budgets, with `require_reachable=False` for mock/static devices
+- `inventory.py` / `inspect.py` — the only modules that call `app.inventory` / `app.inspect` (managed-field diffs, fresh scoped reads, transaction/tag writes)
+- `naming.py` — `Text` / `Field` / `Join` naming blocks; `processors/` — `VertexProcessor` contract, per-engine `ProcessorRegistry`, built-in Matrox processor
+- `schemas/blueprint-v1.schema.json` is generated; `tests/provisioning/test_resolution.py` fails when it is stale. Regenerate with:
+  `poetry run python -c "import json, pathlib; from videoipath_automation_tool.provisioning import Blueprint, ProcessorRegistry; pathlib.Path('src/videoipath_automation_tool/provisioning/schemas/blueprint-v1.schema.json').write_text(json.dumps(Blueprint.json_schema(ProcessorRegistry()), indent=2, sort_keys=True) + '\n')"`
+
 ### Driver versioning
 
 Driver schemas (Pydantic models for device `custom_settings`) are auto-generated from the VideoIPath API's JSON schema and live under `apps/inventory/model/drivers.py`. Run `set-videoipath-version <version>` to regenerate them for a different server version. The CLI scripts are in `src/vipat_cli_scripts/`.

@@ -17,3 +17,4 @@ __intern/
 *.egg-info/
 .DS_Store
 .python-version
+.playwright-mcp/
