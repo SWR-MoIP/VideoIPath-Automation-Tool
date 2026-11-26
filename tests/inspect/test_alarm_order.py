@@ -7,7 +7,7 @@ from itertools import permutations
 import pytest
 
 from videoipath_automation_tool.apps.inspect.model.alarms import InspectApiAlarmItem
-from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot
+from videoipath_automation_tool.apps.inspect.snapshot import InspectSnapshot, _alarm_sort_key
 
 from .test_snapshot import FakeFetcher
 
@@ -66,6 +66,64 @@ def test_missing_severity_and_identity_sort_last() -> None:
     order, _ = _device_alarm_order(alarms)
 
     assert order == ("alarm-x", "alarm-empty")
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_missing_identity_sorts_last_on_equal_severity(reverse: bool) -> None:
+    alarms = [
+        InspectApiAlarmItem.model_validate(
+            {"_id": "alarm-no-identity", "id": {"pointId": ["leaf-a"]}, "info": {"severity": 5, "sa": 2}}
+        ),
+        _alarm("alarm-full", "z-alert", ["leaf-a"], severity=5, sa=2, title="Full identity"),
+    ]
+    if reverse:
+        alarms.reverse()
+
+    order, message = _device_alarm_order(alarms)
+
+    assert order == ("alarm-full", "alarm-no-identity")
+    assert message == "Full identity"
+
+
+def test_missing_component_sorts_last() -> None:
+    missing = _alarm("alarm-missing", "same-alert", ["leaf-a"], severity=5, sa=2, title="Missing")
+    present = _alarm("alarm-present", "same-alert", ["leaf-a"], severity=5, sa=2, title="Present")
+    assert missing.id is not None
+    missing.id.component = None
+
+    order, _ = _device_alarm_order([missing, present])
+
+    assert order == ("alarm-present", "alarm-missing")
+
+
+def test_missing_point_id_sorts_last() -> None:
+    # An alarm without ``pointId`` correlates to no device, so check the sort key directly.
+    missing = _alarm("alarm-a", "same-alert", [], severity=5, sa=2, title="Missing")
+    present = _alarm("alarm-b", "same-alert", ["leaf-a"], severity=5, sa=2, title="Present")
+
+    assert [item.id_field for item in sorted([missing, present], key=_alarm_sort_key)] == ["alarm-b", "alarm-a"]
+
+
+def test_missing_alarm_id_sorts_last() -> None:
+    with_id = _alarm("alarm-z", "same-alert", ["leaf-a"], severity=5, sa=2, title="With id")
+    without_id = _alarm("alarm-placeholder", "same-alert", ["leaf-a"], severity=5, sa=2, title="Without id")
+    without_id.id_field = None
+
+    order, _ = _device_alarm_order([without_id, with_id])
+
+    assert order == ("alarm-z", None)
+
+
+def test_point_id_parts_sort_naturally() -> None:
+    alarms = [
+        _alarm(f"alarm-{port}", "link-down", ["leaf-a", "1", port], severity=5, sa=2, title=f"Port {port}")
+        for port in ("51", "10", "3", "port-10", "port-9")
+    ]
+
+    order, message = _device_alarm_order(alarms)
+
+    assert order == ("alarm-3", "alarm-10", "alarm-51", "alarm-port-9", "alarm-port-10")
+    assert message == "Port 3"
 
 
 def _device_alarm_order(items: list[InspectApiAlarmItem]) -> tuple[tuple[str | None, ...], str | None]:

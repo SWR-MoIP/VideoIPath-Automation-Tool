@@ -14,6 +14,7 @@ touched entities via targeted scoped re-reads instead of a full reload.
 from __future__ import annotations
 
 import logging
+import re
 import threading
 from collections.abc import Callable, Iterable, Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -1126,25 +1127,47 @@ def _sorted_alarms(items: list[InspectApiAlarmItem]) -> list[InspectAlarm]:
     return [InspectAlarm(item=item) for item in sorted(items, key=_alarm_sort_key)]
 
 
-def _alarm_sort_key(item: InspectApiAlarmItem) -> tuple[int, int, str, tuple[str, ...], int, str]:
+def _alarm_sort_key(item: InspectApiAlarmItem) -> tuple[Any, ...]:
     """Documented, server-order-independent alarm order (see ``models.md``, "Active alarms"):
 
     1. worst ``severity`` first,
     2. then worst service-affecting severity (``sa``) first,
     3. then ascending by the alarm identity: ``alertId``, ``pointId``, ``component``, ``_id``.
 
-    Missing values sort after present ones. ``time`` is deliberately not used: it changes whenever
-    an alarm is raised again, which would make the order (and ``status_message``) flap.
+    ``pointId`` parts compare in natural order (``3`` before ``10``). Missing values sort after
+    present ones. ``time`` is deliberately not used: it changes whenever an alarm is raised again,
+    which would make the order (and ``status_message``) flap.
     """
     info = item.info
     alarm_id = item.id
+    point_id = alarm_id.pointId if alarm_id is not None else []
     return (
         -_severity_rank(info.severity if info is not None else None),
         -_severity_rank(info.sa if info is not None else None),
-        (alarm_id.alertId if alarm_id is not None else None) or "",
-        tuple(alarm_id.pointId) if alarm_id is not None else (),
-        alarm_id.component if alarm_id is not None and alarm_id.component is not None else -1,
-        item.id_field or "",
+        _missing_last(alarm_id.alertId if alarm_id is not None else None, ""),
+        _missing_last(tuple(_natural_key(part) for part in point_id) if point_id else None, ()),
+        _missing_last(alarm_id.component if alarm_id is not None else None, 0),
+        _missing_last(item.id_field, ""),
+    )
+
+
+def _missing_last(value: Any, placeholder: Any) -> tuple[bool, Any]:
+    """Sort key part: present values in their own order, ``None`` / empty after them."""
+    if value is None or value == "":
+        return (True, placeholder)
+    return (False, value)
+
+
+_DIGIT_RUN = re.compile(r"(\d+)")
+
+
+def _natural_key(value: str) -> tuple[tuple[int, int, str], ...]:
+    """Natural sort key: digit runs compare as numbers (``3`` < ``10``), text as strings."""
+    # ``split`` with a capture group puts the digit runs at the odd indices.
+    return tuple(
+        (0, int(chunk), chunk) if index % 2 else (1, 0, chunk)
+        for index, chunk in enumerate(_DIGIT_RUN.split(value))
+        if chunk
     )
 
 

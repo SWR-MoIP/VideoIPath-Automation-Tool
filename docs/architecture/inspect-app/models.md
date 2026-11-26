@@ -212,9 +212,10 @@ server returns the alarms in:
 1. worst `severity` first;
 2. on equal severity, worst service-affecting severity (`sa`) first;
 3. then ascending by alarm identity: `alert_id`, the point path (`pointId`), `component`,
-   and the alarm `id`.
+   and the alarm `id`. Point path parts compare in natural order, so port `3` comes
+   before port `10`, as in the GUI.
 
-Missing values sort last. `time` is not used, because it changes each time an alarm is
+Missing values sort last, at every step. `time` is not used, because it changes each time an alarm is
 raised again. `status_message` is the `message` of the first alarm in that order.
 
 ### `InspectDevice`
