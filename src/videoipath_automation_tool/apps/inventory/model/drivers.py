@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, Literal, Optional, Type, TypeVar, Union
+from typing import Literal, TypeVar, Union
 
 from pydantic import BaseModel, Field
 
@@ -70,7 +70,7 @@ Enable experimental alarms using IS-07\n
 Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
-    experimental_alarm_port: Optional[int] = Field(
+    experimental_alarm_port: int | None = Field(
         default=0, ge=0, le=65535, alias="com.nevion.NMOS.experimental_alarm_port"
     )
     """
@@ -126,7 +126,7 @@ Enable experimental alarms using IS-07\n
 Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
-    experimental_alarm_port: Optional[int] = Field(
+    experimental_alarm_port: int | None = Field(
         default=0, ge=0, le=65535, alias="com.nevion.NMOS_multidevice.experimental_alarm_port"
     )
     """
@@ -1198,7 +1198,7 @@ Enable experimental alarms using IS-07\n
 Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
-    experimental_alarm_port: Optional[int] = Field(
+    experimental_alarm_port: int | None = Field(
         default=0, ge=0, le=65535, alias="com.nevion.nxl_me80.experimental_alarm_port"
     )
     """
@@ -1508,7 +1508,7 @@ Enable experimental alarms using IS-07\n
 Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
-    experimental_alarm_port: Optional[int] = Field(
+    experimental_alarm_port: int | None = Field(
         default=0, ge=0, le=65535, alias="com.nevion.sony_nxlk-ip50y.experimental_alarm_port"
     )
     """
@@ -1568,7 +1568,7 @@ Enable experimental alarms using IS-07\n
 Enables experimental alarms over websockets using IS-07 on certain Vizrt devices. Disables alarms completely if disabled\n
 	"""
 
-    experimental_alarm_port: Optional[int] = Field(
+    experimental_alarm_port: int | None = Field(
         default=0, ge=0, le=65535, alias="com.nevion.sony_nxlk-ip51y.experimental_alarm_port"
     )
     """
@@ -2148,7 +2148,7 @@ Tracing (logging intensive)\n
 	"""
 
 
-DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {
+DRIVER_ID_TO_CUSTOM_SETTINGS: dict[str, type[DriverCustomSettings]] = {
     "com.nevion.NMOS-0.1.0": CustomSettings_com_nevion_NMOS_0_1_0,
     "com.nevion.NMOS_multidevice-0.1.0": CustomSettings_com_nevion_NMOS_multidevice_0_1_0,
     "com.nevion.abb_dpa_upscale_st-0.1.0": CustomSettings_com_nevion_abb_dpa_upscale_st_0_1_0,
@@ -2467,7 +2467,7 @@ DriverLiteral = Literal[
 # Important:
 # To make the discriminator work properly, the custom settings model must be included in the Union type!
 # This must be statically typed in order to make intellisense work, we can't reuse DRIVER_ID_TO_CUSTOM_SETTINGS here
-CustomSettings = Union[
+CustomSettings = Union[  # noqa: UP007 - kept as typing.Union for the pydantic discriminator
     CustomSettings_com_nevion_NMOS_0_1_0,
     CustomSettings_com_nevion_NMOS_multidevice_0_1_0,
     CustomSettings_com_nevion_abb_dpa_upscale_st_0_1_0,

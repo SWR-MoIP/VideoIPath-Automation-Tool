@@ -235,3 +235,23 @@ class DeviceConfiguration(BaseModel, Generic[CustomSettingsType], validate_assig
     @deprecated("The property `custom` is deprecated, use `custom_settings` instead.")
     def custom(self) -> CustomSettingsType:
         return self.custom_settings
+
+
+__all__ = [
+    "Auth",
+    "Cinfo",
+    "CinfoHttp",
+    "CinfoOverrides",
+    "CinfoOverridesHTTP",
+    "CinfoOverridesSNMP",
+    "CinfoSnmp",
+    "Config",
+    "Desc",
+    "DeviceConfiguration",
+    "DriverInfos",
+    "Protocol",
+    "Read",
+    "Security",
+    "Traps",
+    "Write",
+]

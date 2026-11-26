@@ -1,6 +1,6 @@
 import logging
 import warnings
-from typing import List, Literal, Optional
+from typing import Literal
 
 from typing_extensions import deprecated
 
@@ -27,7 +27,7 @@ _UNSUPPORTED_MAJOR = 2026
 
 
 class TopologyApp:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """TopologyApp contains functionality to interact with the VideoIPath Topology.
 
         Args:
@@ -226,7 +226,7 @@ class TopologyApp:
         | UnidirectionalEdge
         | GenericVertex
         | NGraphResourceTransform
-        | List[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]
+        | list[BaseDevice | CodecVertex | GenericVertex | IpVertex | UnidirectionalEdge | NGraphResourceTransform]
     ):
         """Get an element by its label.
 
@@ -262,14 +262,13 @@ class TopologyApp:
             RequestRestV2: RequestRestV2 object.
         """
         # For virtual devices, remove revision
-        if device.configuration.base_device.isVirtual:
-            if device.configuration.base_device.rev is None:
-                self._logger.info(
-                    f"Revision of virtual device '{device.configuration.base_device.label}' is None. It is assumed that the device does not yet exist on the server. Therefore the next free virtual device id will be determined automatically."
-                )
-                next_id = self._topology_api.get_next_virtual_device_id()
-                self._logger.info(f"Next free virtual device id: '{next_id}'")
-                device.set_virtual_device_id(next_id)
+        if device.configuration.base_device.isVirtual and device.configuration.base_device.rev is None:
+            self._logger.info(
+                f"Revision of virtual device '{device.configuration.base_device.label}' is None. It is assumed that the device does not yet exist on the server. Therefore the next free virtual device id will be determined automatically."
+            )
+            next_id = self._topology_api.get_next_virtual_device_id()
+            self._logger.info(f"Next free virtual device id: '{next_id}'")
+            device.set_virtual_device_id(next_id)
 
         return self._topology_api.add_device_initially(device)
 
@@ -280,7 +279,7 @@ class TopologyApp:
         label_search_mode: Literal[
             "canonical_label", "factory_label_only", "user_defined_label_only"
         ] = "canonical_label",
-    ) -> Optional[str | List[str]]:
+    ) -> str | list[str] | None:
         """Find a device id by its label.
 
         Args:
@@ -374,7 +373,7 @@ class TopologyApp:
         | UnidirectionalEdge
         | GenericVertex
         | NGraphResourceTransform
-        | List[BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform]
+        | list[BaseDevice | CodecVertex | IpVertex | UnidirectionalEdge | GenericVertex | NGraphResourceTransform]
     ):
         self._logger.warning(
             "Method 'get_vertex_by_label' is deprecated. It will be removed in future versions. Please use 'get_element_by_label' instead."
@@ -404,10 +403,10 @@ class TopologyApp:
         device_1_vertex_factory_label: str,
         device_2_id: str,
         device_2_vertex_factory_label: str,
-        bandwidth: Optional[int] = None,
-        bandwidth_factor: Optional[float] = None,
-        redundancy_mode: Optional[str] = None,
-        fixed_weight: Optional[int] = None,
+        bandwidth: int | None = None,
+        bandwidth_factor: float | None = None,
+        redundancy_mode: str | None = None,
+        fixed_weight: int | None = None,
     ) -> list[UnidirectionalEdge]:
         """
         This method automatically determines the correct edge configuration based on the vertex configuration of the devices.
@@ -437,7 +436,7 @@ class TopologyApp:
         )
 
 
-def _parse_version(version: str) -> Optional[tuple[int, int]]:
+def _parse_version(version: str) -> tuple[int, int] | None:
     parts = version.split(".")
     if len(parts) < 2:
         return None
@@ -459,8 +458,8 @@ class TopologyExperimental:
         self,
         source_device: TopologyDevice,
         new_device_id: str,
-        clear_revision: Optional[bool] = True,
-        clear_external_edges: Optional[bool] = False,
+        clear_revision: bool | None = True,
+        clear_external_edges: bool | None = False,
     ) -> TopologyDevice:
         """Replace the device id of a device in the topology.
         Usefull for transferring a device to another VideoIPath-Server.
@@ -523,10 +522,10 @@ class TopologyExperimental:
         device_1_vertex_factory_label: str,
         device_2_id: str,
         device_2_vertex_factory_label: str,
-        bandwidth: Optional[int] = None,
-        bandwidth_factor: Optional[float] = None,
-        redundancy_mode: Optional[str] = None,
-        fixed_weight: Optional[int] = None,
+        bandwidth: int | None = None,
+        bandwidth_factor: float | None = None,
+        redundancy_mode: str | None = None,
+        fixed_weight: int | None = None,
     ) -> list[UnidirectionalEdge]:
         """
         The method will automatically determine the correct edge configuration based on the vertex configuration of the devices.
@@ -586,13 +585,12 @@ class TopologyExperimental:
                     from_ip_vertex=device_2_vertices["out"], to_ip_vertex=device_1_vertices["in"]
                 )
             )
-        elif device_1_status == "both" and device_2_status == "in":
-            edges.append(
-                UnidirectionalEdge.build_edge_from_vertices(
-                    from_ip_vertex=device_1_vertices["out"], to_ip_vertex=device_2_vertices["in"]
-                )
-            )
-        elif device_1_status == "out" and device_2_status == "both":
+        elif (
+            device_1_status == "both"
+            and device_2_status == "in"
+            or device_1_status == "out"
+            and device_2_status == "both"
+        ):
             edges.append(
                 UnidirectionalEdge.build_edge_from_vertices(
                     from_ip_vertex=device_1_vertices["out"], to_ip_vertex=device_2_vertices["in"]

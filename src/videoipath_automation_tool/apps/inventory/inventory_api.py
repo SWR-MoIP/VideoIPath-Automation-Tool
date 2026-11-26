@@ -1,7 +1,6 @@
 import logging
 import time
 import urllib.parse
-from typing import List, Optional, Type
 from uuid import uuid4
 
 from pydantic import IPvAnyAddress
@@ -28,7 +27,7 @@ class InventoryAPI:
     STATUS_FETCH_RETRY_DEFAULT = 20
     STATUS_FETCH_DELAY_DEFAULT = 2
 
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """
         Class for VideoIPath Inventory API.
         """
@@ -44,7 +43,7 @@ class InventoryAPI:
     def get_device(
         self,
         device_id: str,
-        custom_settings_type: Optional[Type[CustomSettingsType]] = None,
+        custom_settings_type: type[CustomSettingsType] | None = None,
         config_only: bool = False,
         status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT,
         status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT,
@@ -361,19 +360,20 @@ class InventoryAPI:
         response = self.vip_connector.rest.get(
             f"/rest/v2/data/config/devman/devices/* where id='{escaped_device_id}' /_id"
         )
-        if response.data and response.data["config"]["devman"]["devices"]["_items"] != []:
-            if "_id" in response.data["config"]["devman"]["devices"]["_items"][0]:
-                return True
-        return False
+        return bool(
+            response.data
+            and response.data["config"]["devman"]["devices"]["_items"] != []
+            and "_id" in response.data["config"]["devman"]["devices"]["_items"][0]
+        )
 
-    def fetch_device_ids_list(self) -> List[str]:
+    def fetch_device_ids_list(self) -> list[str]:
         url_path = "/rest/v2/data/config/devman/devices/*"
         response = self.vip_connector.rest.get(url_path)
         if not response.data:
             raise ValueError("Response data is empty.")
         return [device["_id"] for device in response.data["config"]["devman"]["devices"]["_items"]]
 
-    def fetch_device_ids_by_driver(self, driver: DriverLiteral) -> List[str]:
+    def fetch_device_ids_by_driver(self, driver: DriverLiteral) -> list[str]:
         """Fetch all device IDs by driver ID from VideoIPath-Inventory with natural sorting."""
         driver_organization, driver_name, driver_version = extract_driver_info_from_id(driver_id=driver)
 
@@ -442,7 +442,7 @@ class InventoryAPI:
             device["_id"]: device["canonicalLabel"] for device in response.data["status"]["devman"]["devices"]["_items"]
         }
 
-    def filter_ids_from_label_dict(self, label_dict: dict, label: str) -> Optional[str | List[str]]:
+    def filter_ids_from_label_dict(self, label_dict: dict, label: str) -> str | list[str] | None:
         """
         Method to filter device ids from a label dictionary by given label.
         If label is not found, None is returned.
@@ -467,7 +467,7 @@ class InventoryAPI:
             return device_ids
 
     # --- Targeted Device Lookup Methods ---
-    def get_device_id_by_user_defined_label(self, label: str) -> Optional[str | List[str]]:
+    def get_device_id_by_user_defined_label(self, label: str) -> str | list[str] | None:
         """Method to get a device id by user-defined label from VideoIPath-Inventory
 
         Args:
@@ -490,7 +490,7 @@ class InventoryAPI:
                 return [device["_id"] for device in response.data["config"]["devman"]["devices"]["_items"]]
         return None
 
-    def get_device_id_by_canonical_label(self, label: str) -> Optional[str | List[str]]:
+    def get_device_id_by_canonical_label(self, label: str) -> str | list[str] | None:
         """Method to get a device id by canonical label from VideoIPath-Inventory
 
         Args:
@@ -513,7 +513,7 @@ class InventoryAPI:
                 return [device["_id"] for device in response.data["status"]["devman"]["devices"]["_items"]]
         return None
 
-    def get_device_id_by_factory_label(self, label: str) -> Optional[str | List[str]]:
+    def get_device_id_by_factory_label(self, label: str) -> str | list[str] | None:
         """Method to get a device id by factory label from VideoIPath-Inventory
 
         Args:
@@ -536,7 +536,7 @@ class InventoryAPI:
                 return [device["_id"] for device in response.data["status"]["devman"]["devices"]["_items"]]
         return None
 
-    def get_device_id_by_address(self, address: str, include_alt_addresses: bool = True) -> Optional[str | List[str]]:
+    def get_device_id_by_address(self, address: str, include_alt_addresses: bool = True) -> str | list[str] | None:
         """Method to get a device id by address from VideoIPath-Inventory
 
         Args:
@@ -575,7 +575,7 @@ class InventoryAPI:
         else:
             return device_ids
 
-    def get_device_id_by_meta_field_value(self, meta_field: str, value: str) -> Optional[str | List[str]]:
+    def get_device_id_by_meta_field_value(self, meta_field: str, value: str) -> str | list[str] | None:
         """Method to get a device id by given meta field value from VideoIPath-Inventory
 
         Args:
@@ -611,7 +611,7 @@ class InventoryAPI:
             return device_ids
 
     # --- Discovered Device Management Methods ---
-    def get_discovered_devices(self) -> List[DiscoveredInventoryDevice]:
+    def get_discovered_devices(self) -> list[DiscoveredInventoryDevice]:
         """Method to get all discovered devices from VideoIPath-Inventory
 
         Returns:
@@ -667,7 +667,7 @@ class InventoryAPI:
         )
 
     # --- Global SNMP Configuration Helpers ---
-    def get_global_snmp_config_id_by_label(self, label: str) -> Optional[str | List[str]]:
+    def get_global_snmp_config_id_by_label(self, label: str) -> str | list[str] | None:
         """Method to get the global SNMP configuration id by label.
         Note: If multiple SNMP configurations with the same label exist, a list of ids is returned.
 
@@ -686,7 +686,7 @@ class InventoryAPI:
         if response.data and response.data["config"]["system"]["snmp"]["session"]:
             matches = response.data["config"]["system"]["snmp"]["session"]
             if len(matches) == 1:
-                return list(matches.keys())[0]
+                return next(iter(matches.keys()))
             elif len(matches) > 1:
                 self._logger.warning(
                     f"Multiple SNMP configurations found with label '{label}''. Returning all matching ids."
@@ -694,7 +694,7 @@ class InventoryAPI:
                 return list(matches.keys())
         return None
 
-    def get_global_snmp_config_label_by_id(self, snmp_config_id: str) -> Optional[str]:
+    def get_global_snmp_config_label_by_id(self, snmp_config_id: str) -> str | None:
         """Method to get the global SNMP configuration label by id.
 
         Args:
@@ -708,9 +708,12 @@ class InventoryAPI:
 
         url = f"/rest/v2/data/config/system/snmp/session/{snmp_config_id}/descriptor/label"
         response = self.vip_connector.rest.get(url, node_check=False)
-        if response.data and response.data["config"]["system"]["snmp"]["session"]:
-            if snmp_config_id in response.data["config"]["system"]["snmp"]["session"]:
-                return response.data["config"]["system"]["snmp"]["session"][snmp_config_id]["descriptor"]["label"]
+        if (
+            response.data
+            and response.data["config"]["system"]["snmp"]["session"]
+            and snmp_config_id in response.data["config"]["system"]["snmp"]["session"]
+        ):
+            return response.data["config"]["system"]["snmp"]["session"][snmp_config_id]["descriptor"]["label"]
         return None
 
     def get_all_global_snmp_config_ids(self) -> dict[str, str]:
@@ -833,7 +836,7 @@ class InventoryAPI:
     @deprecated(
         "The method `fetch_device_ids_list` is deprecated and will be removed in a future release. ",
     )
-    def get_device_ids_legacy(self, address: Optional[IPvAnyAddress | str] = None, label: Optional[str] = None) -> dict:
+    def get_device_ids_legacy(self, address: IPvAnyAddress | str | None = None, label: str | None = None) -> dict:
         """Method to get device id/s from VideoIPath-Inventory filtered by ip_address or label.
             Note: Only one of 'ip_address' or 'label' can be provided! Label filtering only works for manually set labels.
 
@@ -883,7 +886,7 @@ class InventoryAPI:
     @deprecated(
         "The method `get_device_id_list` is deprecated and will be removed in a future release. Please use `fetch_device_ids` instead. ",
     )
-    def get_device_id_list(self) -> List[str]:
+    def get_device_id_list(self) -> list[str]:
         """Method to get a list of all device ids in VideoIPath-Inventory"""
         return self.fetch_device_ids_list()
 
@@ -897,7 +900,7 @@ class InventoryAPI:
     @deprecated(
         "The method `device_label_exists` is deprecated and will be removed in a future release. Please use `check_device_user_defined_label_exists` instead. ",
     )
-    def device_label_exists(self, label: str) -> Optional[str | List[str]]:
+    def device_label_exists(self, label: str) -> str | list[str] | None:
         """Method to check if a device with given user-defined label exists in VideoIPath-Inventory
 
         Args:

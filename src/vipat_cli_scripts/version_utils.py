@@ -1,7 +1,6 @@
 import importlib.util
 from pathlib import Path
 from types import ModuleType
-from typing import Union
 
 from videoipath_automation_tool.apps.inventory.model.drivers import SELECTED_SCHEMA_VERSION
 
@@ -22,15 +21,13 @@ def list_videoipath_versions():
     print("Available VideoIPath driver schema versions:")
     for version in versions:
         print(f"- {version}")
-    return None
 
 
 def get_videoipath_version():
     print(f"Active VideoIPath driver schema version: {SELECTED_SCHEMA_VERSION}")
-    return None
 
 
-def load_module(module_name: str, file_path: Union[str, Path]) -> ModuleType:
+def load_module(module_name: str, file_path: str | Path) -> ModuleType:
     file_path = Path(file_path).resolve()
 
     if not file_path.exists():

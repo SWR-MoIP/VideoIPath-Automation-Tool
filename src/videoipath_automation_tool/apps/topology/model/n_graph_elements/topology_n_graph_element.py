@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -34,7 +34,7 @@ NGraphElementType = Literal[
     "routerVertex",  # Note: Not implemented yet
 ]
 
-VertexType = Literal["BiDirectional", "In", "Internal", "Out", "Undecided", "Internal"]
+VertexType = Literal["BiDirectional", "In", "Internal", "Out", "Undecided"]
 
 ConfigPriority = Literal["high", "low", "off"]
 
@@ -87,7 +87,7 @@ class NGraphElement(BaseModel, validate_assignment=True):
     """
 
     id: str = Field(..., alias="_id")
-    rev: Optional[str] = Field(..., alias="_rev")
+    rev: str | None = Field(..., alias="_rev")
     vid: str = Field(..., alias="_vid")
     descriptor: Descriptor
     fDescriptor: Descriptor

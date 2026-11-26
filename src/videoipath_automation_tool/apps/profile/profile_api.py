@@ -1,6 +1,6 @@
 import logging
 import urllib.parse
-from typing import List, Literal, Optional
+from typing import Literal
 
 from deepdiff.diff import DeepDiff
 
@@ -13,7 +13,7 @@ from videoipath_automation_tool.utils.cross_app_utils import create_fallback_log
 
 
 class ProfileAPI:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """
         Class for VideoIPath Profile API.
 
@@ -29,7 +29,7 @@ class ProfileAPI:
         self._logger.debug("Profile API logger initialized.")
 
     def _generate_profile_action_request_body(
-        self, add_list: List[SuperProfile | Profile], update_list: List[Profile], remove_list: List[Profile]
+        self, add_list: list[SuperProfile | Profile], update_list: list[Profile], remove_list: list[Profile]
     ):
         """
         Generate a RequestV2Patch object for Profile actions (add, update, remove).
@@ -60,13 +60,13 @@ class ProfileAPI:
         if not response.header.ok:
             raise ValueError(f"Response not OK: {response.header}")
         if response.data:
-            if "_items" not in response.data["config"]["pathman"]["profiles"].keys():
+            if "_items" not in response.data["config"]["pathman"]["profiles"]:
                 raise ValueError("No _items key in response data.")
             return response.data["config"]["pathman"]["profiles"]["_items"]
         else:
             raise ValueError("No data in response.")
 
-    def get_profiles_name_id_rev(self) -> Optional[List[dict]]:
+    def get_profiles_name_id_rev(self) -> list[dict] | None:
         """
         Get all VideoIPath Profile names, IDs and revision numbers.
 
@@ -79,7 +79,7 @@ class ProfileAPI:
         data = self._validate_response(response)
         return data if data else None
 
-    def get_profiles(self) -> List[Profile] | None:
+    def get_profiles(self) -> list[Profile] | None:
         """
         Get all VideoIPath Profile configurations.
 
@@ -97,7 +97,7 @@ class ProfileAPI:
         else:
             return [Profile.model_validate(item) for item in data]
 
-    def get_profile_by_name(self, name: str) -> Profile | List[Profile] | None:
+    def get_profile_by_name(self, name: str) -> Profile | list[Profile] | None:
         """
         Get a VideoIPath Profile by its name.
         If multiple Profiles are found with the same name, a list of Profiles is returned.
@@ -119,7 +119,7 @@ class ProfileAPI:
         elif len(data) == 1:
             self._logger.debug(f"Profile found with name '{name}'. Returning Profile.")
             return Profile(**data[0])
-        elif len(data) > 1:
+        else:
             self._logger.warning(f"Multiple Profiles found with name '{name}'. Returning list of Profiles.")
             return [Profile.model_validate(item) for item in data]
 
@@ -161,13 +161,12 @@ class ProfileAPI:
         response = self.vip_connector.rest.patch("/rest/v2/data/config/pathman/profiles", body)
 
         # Check if response is OK and if the Profile was added, then fetch the Profile by ID and return it
-        if response.header.ok and response.result:
-            if response.result.items[0].id:
-                return_value = self.get_profile_by_id(response.result.items[0].id)
-                if not return_value:
-                    raise ValueError("Profile not found after adding.")
-                else:
-                    self._logger.debug(f"Profile '{return_value.name}' added successfully with ID '{return_value.id}'.")
+        if response.header.ok and response.result and response.result.items[0].id:
+            return_value = self.get_profile_by_id(response.result.items[0].id)
+            if not return_value:
+                raise ValueError("Profile not found after adding.")
+            else:
+                self._logger.debug(f"Profile '{return_value.name}' added successfully with ID '{return_value.id}'.")
 
         if return_value and type(return_value) is Profile:
             return return_value
@@ -199,7 +198,7 @@ class ProfileAPI:
         else:
             return None
 
-    def remove_profile(self, profile: Profile | List[Profile]):
+    def remove_profile(self, profile: Profile | list[Profile]):
         """Remove a Profile from the VideoIPath System.
 
         Args:
@@ -223,7 +222,7 @@ class ProfileAPI:
         response = self.vip_connector.rest.patch("/rest/v2/data/config/pathman/profiles", body)
         return response
 
-    def get_all_profile_tags(self, mode: Literal["all", "exclude_hidden", "hidden_only"] = "all") -> List[str]:
+    def get_all_profile_tags(self, mode: Literal["all", "exclude_hidden", "hidden_only"] = "all") -> list[str]:
         """
         Get a list of all Profile tags. Optionally filtered by hidden status.
 
@@ -276,7 +275,7 @@ class ProfileAPI:
             return None
         return self.analyze_profile_configuration_changes_local(reference_profile, staged_profile)
 
-    def get_services_using_profile(self, profile_id: str) -> Optional[List[str] | str]:
+    def get_services_using_profile(self, profile_id: str) -> list[str] | str | None:
         """
         Get a list of all Services using a Profile.
 

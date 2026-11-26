@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import BaseModel, Field
 from pydantic.networks import IPvAnyAddress
 
@@ -22,11 +20,11 @@ class MulticastRangeInfoEntry(BaseModel, validate_assignment=True):
 
     id: str = Field(default_factory=str, alias="_id")
     vid: str = Field(default_factory=str, alias="_vid")
-    ranges: List[Range]
+    ranges: list[Range]
     utilization: Utilization
 
     @classmethod
-    def create(cls, id: str, vid: str, ranges: List[Range]) -> "MulticastRangeInfoEntry":
+    def create(cls, id: str, vid: str, ranges: list[Range]) -> "MulticastRangeInfoEntry":
         """Method to create a local Multicast Pool instance."""
         utilization = Utilization(percentage=0, total=0, used=0)
         return cls(_id=id, _vid=vid, ranges=ranges, utilization=utilization)
@@ -71,11 +69,11 @@ class MulticastRangeInfoEntry(BaseModel, validate_assignment=True):
 
 
 class MulticastRanges(BaseModel):
-    available_ranges: List[str] = Field(default_factory=list)
-    _pool_list: List[MulticastRangeInfoEntry]
+    available_ranges: list[str] = Field(default_factory=list)
+    _pool_list: list[MulticastRangeInfoEntry]
 
     @classmethod
-    def create(cls, pools: List[MulticastRangeInfoEntry]) -> "MulticastRanges":
+    def create(cls, pools: list[MulticastRangeInfoEntry]) -> "MulticastRanges":
         """Method to create a Multicast Range instance from a "API style" dictionary."""
         instance = cls()
 
@@ -87,7 +85,7 @@ class MulticastRanges(BaseModel):
         return instance
 
     @property
-    def allocator_range_list(self) -> List[MulticastRangeInfoEntry]:
+    def allocator_range_list(self) -> list[MulticastRangeInfoEntry]:
         return self._pool_list
 
     def get_range_by_name(self, name: str) -> MulticastRangeInfoEntry:

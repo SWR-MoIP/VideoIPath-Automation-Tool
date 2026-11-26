@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -240,11 +239,11 @@ class ExactFramerateEnum(str, Enum):
     _24 = "24"
     _25 = "25"
     _29_97 = "30000/1001"
-    _30000_1001 = "30000/1001"
+    _30000_1001 = "30000/1001"  # noqa: PIE796 - intentional alias of _29_97
     _30 = "30"
     _50 = "50"
     _59_94 = "60000/1001"
-    _60000_1001 = "60000/1001"
+    _60000_1001 = "60000/1001"  # noqa: PIE796 - intentional alias of _59_94
     _60 = "60"
 
 
@@ -314,10 +313,10 @@ class MetricOptions(BaseModel):
 
 class ConstraintSets(BaseModel):
     useConstraintSets: bool = Field(default=False, description="Use constraint sets")
-    mainFormatsOpt1: List[str] = Field(default=[], description="MainFormats: Constrainer set 1")
-    mainFormatsOpt2: List[str] = Field(default=[], description="MainFormats: Constrainer set 2")
-    spareFormatsOpt1: List[str] = Field(default=[], description="SpareFormats: Constrainer set 1")
-    spareFormatsOpt2: List[str] = Field(default=[], description="SpareFormats: Constrainer set 2")
+    mainFormatsOpt1: list[str] = Field(default=[], description="MainFormats: Constrainer set 1")
+    mainFormatsOpt2: list[str] = Field(default=[], description="MainFormats: Constrainer set 2")
+    spareFormatsOpt1: list[str] = Field(default=[], description="SpareFormats: Constrainer set 1")
+    spareFormatsOpt2: list[str] = Field(default=[], description="SpareFormats: Constrainer set 2")
 
 
 class RoutingOptions(BaseModel):
@@ -411,7 +410,7 @@ class Smpte2110Cfg(BaseModel):
 class AudioPair(BaseModel):
     codec: AudioCodec = Field(default=AudioCodec.MPEG_1_LAYER_2, description="Codec")
     enabled: bool = Field(default=False, description="Enable")
-    rate: Union[int, RateEnumMPEG1Layer2, RateEnumAAC, RateEnumDolbyDigital] = Field(
+    rate: int | RateEnumMPEG1Layer2 | RateEnumAAC | RateEnumDolbyDigital = Field(
         description="Bitrate (Kbit/s)", default=384
     )  # New GUI-Profile Default: 384
 
@@ -421,15 +420,15 @@ class AudioPair(BaseModel):
 
         # Konvertiere die Enum-Werte in eine Liste der Integer-Werte
         if codec == AudioCodec.MPEG_1_LAYER_2 and rate not in [e.value for e in RateEnumMPEG1Layer2]:
-            raise ValueError(f"Invalid rate for {codec}. Must be one of {list(e.value for e in RateEnumMPEG1Layer2)}")
+            raise ValueError(f"Invalid rate for {codec}. Must be one of {[e.value for e in RateEnumMPEG1Layer2]}")
         elif codec in (AudioCodec.AAC_LC, AudioCodec.AAC_HE) and rate not in [e.value for e in RateEnumAAC]:
-            raise ValueError(f"Invalid rate for {codec}. Must be one of {list(e.value for e in RateEnumAAC)}")
+            raise ValueError(f"Invalid rate for {codec}. Must be one of {[e.value for e in RateEnumAAC]}")
         elif codec == AudioCodec.SMPTE_302M and rate != SMPTE_302M_FIXED_RATE:
             raise ValueError(f"Invalid rate for {codec}. Rate must be {SMPTE_302M_FIXED_RATE}")
         elif codec == AudioCodec.DOLBY_E and not (16 <= rate <= 640):
             raise ValueError(f"Invalid rate for {codec}. Rate must be between 16 and 640")
         elif codec == AudioCodec.DOLBY_DIGITAL and rate not in [e.value for e in RateEnumDolbyDigital]:
-            raise ValueError(f"Invalid rate for {codec}. Must be one of {list(e.value for e in RateEnumDolbyDigital)}")
+            raise ValueError(f"Invalid rate for {codec}. Must be one of {[e.value for e in RateEnumDolbyDigital]}")
 
         return rate
 
@@ -462,7 +461,7 @@ class SuperProfile(BaseModel):
     hidden: bool = Field(default=False, description="Hide profile for manual connection")
     name: str = Field(default="", description="Profile name")
     description: str = Field(default="", description="Description")
-    tags: List[str] = []
+    tags: list[str] = []
     # - Templates and alarms
     alarmTemplate: None | AlarmTemplate = Field(
         default=None, description="Alarm template"
@@ -474,7 +473,7 @@ class SuperProfile(BaseModel):
     metricOptions: MetricOptions = Field(default_factory=MetricOptions)  # also in Network!
     # NETWORK
     # - Constraints
-    formats: List[str] = Field(default=[], description="Allowed formats (optional)")
+    formats: list[str] = Field(default=[], description="Allowed formats (optional)")
     maxBand: float | int = Field(default=20, ge=0, description="Maximum IP bandwidth (Mbit/s)")
     doIngressPolice: bool = Field(default=False, description="Configure ingress policy")
     # - Constraint sets
@@ -484,9 +483,9 @@ class SuperProfile(BaseModel):
     # - Ethernet/IP
     constraints: Constraints = Field(default_factory=Constraints)
     ttl: int = Field(default=20, ge=0, le=255, description="Time to live")
-    defaultUdpPorts: Optional[DefaultUdpPorts] = Field(default=None, description="Assign Default UDP ports")
-    defaultTxVlans: Optional[DefaultTxVlans] = Field(default=None, description="Assign Default TX VLANs")
-    defaultMCPools: Optional[DefaultMCPools] = Field(default=None, description="Assign Default Multicast pools")
+    defaultUdpPorts: DefaultUdpPorts | None = Field(default=None, description="Assign Default UDP ports")
+    defaultTxVlans: DefaultTxVlans | None = Field(default=None, description="Assign Default TX VLANs")
+    defaultMCPools: DefaultMCPools | None = Field(default=None, description="Assign Default Multicast pools")
     # - Transport Stream
     tsband: float | int = Field(default=10, ge=0, description="TS bandwidth (Mbit/s)")
     packets: int = Field(default=7, ge=1, le=7, description="TS packets per frame")

@@ -1,5 +1,4 @@
 from logging import Logger
-from typing import Optional
 
 from videoipath_automation_tool.apps.security.model.domain_model import Domain, DomainDesc
 from videoipath_automation_tool.apps.security.security_api import SecurityAPI
@@ -76,7 +75,7 @@ class SecurityDomains:
         except Exception as e:
             self._logger.error(f"Error removing domain: {e}")
 
-    def create_domain(self, name: str, description: Optional[str] = "") -> Domain:
+    def create_domain(self, name: str, description: str | None = "") -> Domain:
         """Creates a new domain with the given name and optional description on the VideoIPath server.
 
         Args:

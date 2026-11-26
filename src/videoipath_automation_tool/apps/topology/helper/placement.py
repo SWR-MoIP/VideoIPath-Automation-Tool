@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import List, Literal
+from typing import Literal
 
 from videoipath_automation_tool.apps.topology.model.topology_device import TopologyDevice
 from videoipath_automation_tool.apps.topology.topology_api import TopologyAPI
@@ -29,8 +29,8 @@ class TopologyPlacement:
     def set_device_position(
         self,
         device_id: str,
-        x: int | float,
-        y: int | float,
+        x: float,
+        y: float,
         mode: Literal["absolute", "relative"] = "absolute",
         inspect_app_format=True,
         fetch_device=True,
@@ -143,7 +143,7 @@ class TopologyPlacementGrid:
 
     def calculate_positions(
         self,
-        device_ids: List[str],
+        device_ids: list[str],
         start_position: tuple[float, float] = (0.0, 0.0),
         columns: int = 2,
         row_spacing: float = 250.0,
@@ -228,7 +228,7 @@ class TopologyPlacementGrid:
 
     def apply_positions(
         self,
-        device_ids: List[str],
+        device_ids: list[str],
         start_position: tuple[float, float] = (0.0, 0.0),
         columns: int = 2,
         row_spacing: float = 250.0,

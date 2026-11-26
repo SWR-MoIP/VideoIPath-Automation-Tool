@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from videoipath_automation_tool.apps.security.app.security_domains_app import SecurityDomains
 from videoipath_automation_tool.apps.security.app.security_resources_app import SecurityResources
@@ -9,7 +8,7 @@ from videoipath_automation_tool.utils.cross_app_utils import create_fallback_log
 
 
 class SecurityApp:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """SecurityApp contains functionality to interact with the VideoIPath Security App.
 
         Args:

@@ -14,7 +14,8 @@ connect ports).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Iterator
+from collections.abc import Iterable, Iterator
+from typing import TYPE_CHECKING, Any, Self
 from uuid import uuid4
 
 import requests
@@ -49,7 +50,7 @@ def unique_name(base: str) -> str:
 # --- Device build path (inventory -> inspect) ------------------------------------------------------
 
 
-def create_mock_device(app: "VideoIPathApp", *, label: str, address: str, ports: int) -> str:
+def create_mock_device(app: VideoIPathApp, *, label: str, address: str, ports: int) -> str:
     """Create a virtual (mock-driver) device in the inventory and return its device id.
 
     Mirrors the inventory example: create a device from a driver, set its typed ``custom_settings``,
@@ -66,7 +67,7 @@ def create_mock_device(app: "VideoIPathApp", *, label: str, address: str, ports:
     return online.configuration.device_id
 
 
-def router_ports(device: "InspectDevice") -> list[tuple[str, str]]:
+def router_ports(device: InspectDevice) -> list[tuple[str, str]]:
     """Ordered ``(out-vertex-id, in-vertex-id)`` pairs for a mock router device, one per port slot.
 
     A mock router device exposes separate "Router Out N" and "Router In N" ports; this pairs them by
@@ -104,7 +105,7 @@ class PortCursor:
         return pair
 
 
-def discover_port_cursors(app: "VideoIPathApp", device_ids: Iterable[str]) -> dict[str, PortCursor]:
+def discover_port_cursors(app: VideoIPathApp, device_ids: Iterable[str]) -> dict[str, PortCursor]:
     """A next-free-port cursor per device: refresh the view, hydrate in one batch, read the ports."""
     ids = list(device_ids)
     app.inspect.refresh()
@@ -118,7 +119,7 @@ def discover_port_cursors(app: "VideoIPathApp", device_ids: Iterable[str]) -> di
     return cursors
 
 
-def edges_between(app: "VideoIPathApp", id_a: str, id_b: str) -> list["InspectEdge"]:
+def edges_between(app: VideoIPathApp, id_a: str, id_b: str) -> list[InspectEdge]:
     """All directed edges between two devices (either direction)."""
     return [
         edge
@@ -138,8 +139,8 @@ class NetworkBuild:
 
     def __init__(
         self,
-        app: "VideoIPathApp",
-        network: "Network",
+        app: VideoIPathApp,
+        network: Network,
         offset: tuple[int, int],
         addresses: Iterator[str],
     ) -> None:
@@ -194,7 +195,7 @@ class TopologyBuilder:
     builders never stack on the same map coordinates.
     """
 
-    def __init__(self, app: "VideoIPathApp", addresses: Iterator[str], *, x: int, y: int) -> None:
+    def __init__(self, app: VideoIPathApp, addresses: Iterator[str], *, x: int, y: int) -> None:
         self._app = app
         self._addresses = addresses
         self.origin = (x, y)
@@ -242,7 +243,7 @@ class TopologyBuilder:
 # --- Cleanup ---------------------------------------------------------------------------------------
 
 
-def remove_devices(app: "VideoIPathApp", device_ids: set[str]) -> None:
+def remove_devices(app: VideoIPathApp, device_ids: set[str]) -> None:
     """Remove the given devices — edges first, then the topology node, then the inventory entry.
 
     A device lives in two places — the inventory and the Inspect topology graph — and removing it
@@ -276,7 +277,7 @@ def remove_devices(app: "VideoIPathApp", device_ids: set[str]) -> None:
             pass
 
 
-def sweep_e2e_namespace(app: "VideoIPathApp") -> None:
+def sweep_e2e_namespace(app: VideoIPathApp) -> None:
     """Remove every ``E2E-`` artifact so a run starts from a clean namespace (best-effort).
 
     Covers devices (in both the inventory and the topology graph, catching orphans from an aborted
@@ -297,7 +298,7 @@ def sweep_e2e_namespace(app: "VideoIPathApp") -> None:
     _sweep_multicast_pools(app)
 
 
-def _sweep_profiles(app: "VideoIPathApp") -> None:
+def _sweep_profiles(app: VideoIPathApp) -> None:
     try:
         profiles = app.profile.get_profiles() or []
         for profile in profiles:
@@ -307,7 +308,7 @@ def _sweep_profiles(app: "VideoIPathApp") -> None:
         pass
 
 
-def _sweep_domains(app: "VideoIPathApp") -> None:
+def _sweep_domains(app: VideoIPathApp) -> None:
     try:
         for domain in app.security.domains.get_all_domains():
             if (domain.name or "").startswith(E2E_PREFIX):
@@ -316,7 +317,7 @@ def _sweep_domains(app: "VideoIPathApp") -> None:
         pass
 
 
-def _sweep_multicast_pools(app: "VideoIPathApp") -> None:
+def _sweep_multicast_pools(app: VideoIPathApp) -> None:
     try:
         pools = app.preferences.system_configuration.allocation_pools.get_multicast_ranges()
         e2e_pools = [name for name in pools.available_ranges if name.startswith(E2E_PREFIX)]
@@ -334,7 +335,7 @@ class FetchSpy:
         self._orig = api.get_device_detail
         self.count = 0
 
-    def __enter__(self) -> "FetchSpy":
+    def __enter__(self) -> Self:
         def counting(device_id: str) -> Any:
             self.count += 1
             return self._orig(device_id)
@@ -349,7 +350,7 @@ class FetchSpy:
 # --- Test tag catalog (simple API requests) --------------------------------------------------------
 
 
-def create_catalog_tag(app: "VideoIPathApp", *, path: tuple[str, ...], name: str) -> str:
+def create_catalog_tag(app: VideoIPathApp, *, path: tuple[str, ...], name: str) -> str:
     """Create a catalog tag under ``path`` (idempotent). Returns the ``~~``-joined id.
 
     ``path`` is ``(root_tree_id, *intermediate_node_names)``, e.g. ``(\"Format\", \"Video\")``.
@@ -391,7 +392,7 @@ def create_catalog_tag(app: "VideoIPathApp", *, path: tuple[str, ...], name: str
     return "~~".join((*path, name))
 
 
-def catalog_tag_exists(app: "VideoIPathApp", *, path: tuple[str, ...], name: str) -> bool:
+def catalog_tag_exists(app: VideoIPathApp, *, path: tuple[str, ...], name: str) -> bool:
     if not path:
         return False
     root_id, *intermediates = path
@@ -406,7 +407,7 @@ def catalog_tag_exists(app: "VideoIPathApp", *, path: tuple[str, ...], name: str
     return name in node_children
 
 
-def delete_catalog_tag(app: "VideoIPathApp", tag_id: str) -> None:
+def delete_catalog_tag(app: VideoIPathApp, tag_id: str) -> None:
     """Force-delete a catalog tag (removes it and any resource bindings) if it exists."""
     parts = tag_id.split("~~")
     if len(parts) < 2:
@@ -423,7 +424,7 @@ def delete_catalog_tag(app: "VideoIPathApp", tag_id: str) -> None:
     )
 
 
-def _e2e_format_tree_id(app: "VideoIPathApp") -> str:
+def _e2e_format_tree_id(app: VideoIPathApp) -> str:
     """Prefer the ``Format`` tree; otherwise the first tree with ``type == format``."""
     items = _tag_trees(app)
     for item in items:
@@ -437,17 +438,17 @@ def _e2e_format_tree_id(app: "VideoIPathApp") -> str:
     raise RuntimeError("No format tag tree found on the server.")
 
 
-def test_tag_id(app: "VideoIPathApp") -> str:
+def test_tag_id(app: VideoIPathApp) -> str:
     """Full catalog id for the port/vertex E2E test tag under the resolved format tree."""
     return f"{_e2e_format_tree_id(app)}~~{TEST_TAG_NAME}"
 
 
-def module_test_tag_id(app: "VideoIPathApp") -> str:
+def module_test_tag_id(app: VideoIPathApp) -> str:
     """Full catalog id for the module E2E test tag under the resolved format tree."""
     return f"{_e2e_format_tree_id(app)}~~{MODULE_TEST_TAG_NAME}"
 
 
-def _catalog_tag_ids_by_name(app: "VideoIPathApp", name: str) -> list[str]:
+def _catalog_tag_ids_by_name(app: VideoIPathApp, name: str) -> list[str]:
     """All ``~~``-joined catalog ids whose leaf node matches ``name`` (any tree, any depth)."""
     results: list[str] = []
 
@@ -467,12 +468,12 @@ def _catalog_tag_ids_by_name(app: "VideoIPathApp", name: str) -> list[str]:
     return results
 
 
-def _delete_catalog_tags_by_name(app: "VideoIPathApp", name: str) -> None:
+def _delete_catalog_tags_by_name(app: VideoIPathApp, name: str) -> None:
     for tag_id in _catalog_tag_ids_by_name(app, name):
         delete_catalog_tag(app, tag_id)
 
 
-def create_test_tag(app: "VideoIPathApp") -> None:
+def create_test_tag(app: VideoIPathApp) -> None:
     """Create the E2E port/vertex test video tag in the catalog (idempotent)."""
     tree_id = _e2e_format_tree_id(app)
     path = (tree_id,)
@@ -481,12 +482,12 @@ def create_test_tag(app: "VideoIPathApp") -> None:
     create_catalog_tag(app, path=path, name=TEST_TAG_NAME)
 
 
-def delete_test_tag(app: "VideoIPathApp") -> None:
+def delete_test_tag(app: VideoIPathApp) -> None:
     """Force-delete the port/vertex test tag (removes it and any port bindings) if it exists."""
     _delete_catalog_tags_by_name(app, TEST_TAG_NAME)
 
 
-def create_module_test_tag(app: "VideoIPathApp") -> None:
+def create_module_test_tag(app: VideoIPathApp) -> None:
     """Create the E2E module test tag in the catalog (idempotent)."""
     tree_id = _e2e_format_tree_id(app)
     path = (tree_id,)
@@ -495,7 +496,7 @@ def create_module_test_tag(app: "VideoIPathApp") -> None:
     create_catalog_tag(app, path=path, name=MODULE_TEST_TAG_NAME)
 
 
-def delete_module_test_tag(app: "VideoIPathApp") -> None:
+def delete_module_test_tag(app: VideoIPathApp) -> None:
     """Force-delete the module test tag (removes it and any module bindings) if it exists."""
     _delete_catalog_tags_by_name(app, MODULE_TEST_TAG_NAME)
 
@@ -508,7 +509,7 @@ def _vertex_slot(vertex_id: str) -> int:
     return int(vertex_id.rsplit(".", 1)[-1])
 
 
-def _raw_request(app: "VideoIPathApp", method: str, path: str, body: dict[str, Any]) -> requests.Response:
+def _raw_request(app: VideoIPathApp, method: str, path: str, body: dict[str, Any]) -> requests.Response:
     """A minimal authenticated REST call (for tag-catalog management, which the package's connector
     allow-list intentionally does not cover)."""
     rc = app._videoipath_connector.rest
@@ -519,12 +520,12 @@ def _raw_request(app: "VideoIPathApp", method: str, path: str, body: dict[str, A
     return response
 
 
-def _tag_trees(app: "VideoIPathApp") -> list[dict[str, Any]]:
+def _tag_trees(app: VideoIPathApp) -> list[dict[str, Any]]:
     trees = app._videoipath_connector.rest.get("/rest/v2/data/config/tags/tagTrees/**")
     return trees.data["config"]["tags"]["tagTrees"].get("_items", [])
 
 
-def _tag_category(app: "VideoIPathApp", category: str) -> dict[str, Any] | None:
+def _tag_category(app: VideoIPathApp, category: str) -> dict[str, Any] | None:
     for item in _tag_trees(app):
         if item.get("_id") == category:
             return item

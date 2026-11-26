@@ -48,8 +48,8 @@ def main() -> None:
     spine = app.inspect.find_device_by_label("spine-1")
     assert leaf is not None and spine is not None
 
-    leaf_out, leaf_in = first_free_port_vertices(leaf)
-    spine_out, spine_in = first_free_port_vertices(spine)
+    leaf_out, _leaf_in = first_free_port_vertices(leaf)
+    _spine_out, spine_in = first_free_port_vertices(spine)
 
     # --- 2. Create the bidirectional link -------------------------------------
     # bidirectional=True also stages the reverse edge. Extra edge fields (bandwidth, weight,

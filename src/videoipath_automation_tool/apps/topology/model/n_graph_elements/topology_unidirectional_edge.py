@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -64,12 +64,12 @@ class UnidirectionalEdge(NGraphElement):
     )  # 65535 => not set
     conflictPri: ConfigPriority = ConfigPriority.off
     descriptor: Descriptor
-    excludeFormats: List[str] = Field(default=[], description="List of formats to exclude from the edge.")
+    excludeFormats: list[str] = Field(default=[], description="List of formats to exclude from the edge.")
     fDescriptor: Descriptor
     fromId: str
-    includeFormats: List[str] = Field(default=[], description="List of formats to include in the edge.")
+    includeFormats: list[str] = Field(default=[], description="List of formats to include in the edge.")
     redundancyMode: RedundancyMode = "Any"
-    tags: List[str] = Field(default=[], description="List of tags.")
+    tags: list[str] = Field(default=[], description="List of tags.")
     toId: str
     weight: int = Field(default=0, ge=0, description="The edge weight/cost for routing.", title="Fixed weight")
     weightFactors: WeightFactors = Field(
@@ -78,22 +78,22 @@ class UnidirectionalEdge(NGraphElement):
     type: Literal["unidirectionalEdge"] = "unidirectionalEdge"
 
     @property
-    def include_formats(self) -> List[str]:
+    def include_formats(self) -> list[str]:
         """Include Formats: List of formats to include in the edge."""
         return self.includeFormats
 
     @include_formats.setter
-    def include_formats(self, value: List[str]):
+    def include_formats(self, value: list[str]):
         """Include Formats: List of formats to include in the edge."""
         self.includeFormats = value
 
     @property
-    def exclude_formats(self) -> List[str]:
+    def exclude_formats(self) -> list[str]:
         """Exclude Formats: List of formats to exclude from the edge."""
         return self.excludeFormats
 
     @exclude_formats.setter
-    def exclude_formats(self, value: List[str]):
+    def exclude_formats(self, value: list[str]):
         """Exclude Formats: List of formats to exclude from the edge."""
         self.excludeFormats = value
 
@@ -215,16 +215,16 @@ class UnidirectionalEdge(NGraphElement):
         from_ip_vertex: IpVertex,
         to_ip_vertex: IpVertex,
         description: str = "",
-        tags: List[str] = [],
-        include_formats: List[str] = [],
-        exclude_formats: List[str] = [],
+        tags: list[str] | None = None,
+        include_formats: list[str] | None = None,
+        exclude_formats: list[str] | None = None,
         conflict_priority: Literal["high", "low", "normal", "off"] = "off",
         redundancy_mode: RedundancyMode = "Any",
         fixed_weight: int = 1,
         bandwidth_capacity: float = -1.0,
         services_capacity: int = 65535,
         bandwidth_weight_factor: int = 0,
-        weight_per_service: Service | tuple[int, int] = Service(max=100, weight=0),
+        weight_per_service: Service | tuple[int, int] | None = None,
         active: bool = True,
     ) -> "UnidirectionalEdge":
         """Create a new UnidirectionalEdge instance for edge between two given IP Vertices.
@@ -242,7 +242,7 @@ class UnidirectionalEdge(NGraphElement):
             bandwidth_capacity (float): Max allowed bandwidth.
             services_capacity (int): Max number of simultaneous services.
             bandwidth_weight_factor (int): Bandwidth weight factor: Enables bandwidth-based weight calculation. The number corresponds to the weight at 100 percent link utilization.
-            weight_per_service (Service | tuple[int, int]): Weight per service: Enables service-based weight calculation. The given number is the weight that each service contributes with.
+            weight_per_service (Service | tuple[int, int] | None): Weight per service: Enables service-based weight calculation. The given number is the weight that each service contributes with. Defaults to `Service(max=100, weight=0)`.
             active (bool): Active state of the edge.
         """
 
@@ -257,8 +257,14 @@ class UnidirectionalEdge(NGraphElement):
         key = f"{from_ip_vertex.id}::{to_ip_vertex.id}"
         label = f"{from_ip_vertex.fDescriptor.label} -\u003e {to_ip_vertex.fDescriptor.label}"
 
+        # Fresh defaults per call so instances never share mutable state
+        tags = list(tags) if tags is not None else []
+        include_formats = list(include_formats) if include_formats is not None else []
+        exclude_formats = list(exclude_formats) if exclude_formats is not None else []
+        if weight_per_service is None:
+            weight_per_service = Service(max=100, weight=0)
         # Convert weight_per_service if it's a tuple
-        if isinstance(weight_per_service, tuple):
+        elif isinstance(weight_per_service, tuple):
             weight_per_service = Service(max=weight_per_service[0], weight=weight_per_service[1])
 
         return cls(

@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import requests
 
 from videoipath_automation_tool.connector.models.request_rpc import RequestRPC
@@ -6,8 +8,8 @@ from videoipath_automation_tool.connector.vip_base_connector import VideoIPathBa
 
 
 class VideoIPathRPCConnector(VideoIPathBaseConnector):
-    ALLOWED_PREFIXES = set()
-    ALLOWED_EXACT_MATCHES = {
+    ALLOWED_PREFIXES: ClassVar[set[str]] = set()
+    ALLOWED_EXACT_MATCHES: ClassVar[set[str]] = {
         "/api/getUtcTime",
         "/api/getCurrentUser",
         "/api/updateDevices",

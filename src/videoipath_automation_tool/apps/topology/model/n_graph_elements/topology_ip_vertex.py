@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic.networks import IPvAnyAddress
 
 from videoipath_automation_tool.apps.topology.model.n_graph_elements.topology_vertex import Vertex
@@ -27,8 +25,8 @@ class IpVertex(Vertex):
         vrfId (Optional[str]): ID of VRF to use
     """
 
-    ipAddress: Optional[IPvAnyAddress]
-    ipNetmask: Optional[IPvAnyAddress]
+    ipAddress: IPvAnyAddress | None
+    ipNetmask: IPvAnyAddress | None
     public: bool = False
     supportsCpipeCfg: bool = True
     supportsIgmpCfg: bool = True
@@ -40,38 +38,38 @@ class IpVertex(Vertex):
     supportsVlanCfg: bool = True
     supportsVplsCfg: bool = True
     supportsVxlanCfg: bool = True
-    vlanId: Optional[str]
-    vrfId: Optional[str]
+    vlanId: str | None
+    vrfId: str | None
 
     # --- Getters and Setters ---
 
     @property
-    def ip_address(self) -> Optional[IPvAnyAddress]:
+    def ip_address(self) -> IPvAnyAddress | None:
         """IP Address"""
         return self.ipAddress
 
     @ip_address.setter
-    def ip_address(self, value: Optional[IPvAnyAddress]):
+    def ip_address(self, value: IPvAnyAddress | None):
         """IP Address"""
         self.ipAddress = value
 
     @property
-    def ip_netmask(self) -> Optional[IPvAnyAddress]:
+    def ip_netmask(self) -> IPvAnyAddress | None:
         """IP Netmask"""
         return self.ipNetmask
 
     @ip_netmask.setter
-    def ip_netmask(self, value: Optional[IPvAnyAddress]):
+    def ip_netmask(self, value: IPvAnyAddress | None):
         """IP Netmask"""
         self.ipNetmask = value
 
     @property
-    def vlan_id(self) -> Optional[str]:
+    def vlan_id(self) -> str | None:
         """Vlan Id"""
         return self.vlanId
 
     @vlan_id.setter
-    def vlan_id(self, value: Optional[str]):
+    def vlan_id(self, value: str | None):
         """Vlan Id"""
         self.vlanId = value
 

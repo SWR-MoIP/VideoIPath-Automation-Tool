@@ -1,5 +1,5 @@
 import re
-from typing import Callable
+from collections.abc import Callable
 
 from vipat_cli_scripts.version_utils import ROOT_DIR, load_module
 
@@ -27,7 +27,7 @@ def generate_create_device_from_discovered_device_overloads() -> str:
 def generate_get_device_overloads() -> str:
     return "\n".join(
         f"    @overload\n"
-        f'    def get_device(self, label: Optional[str] = None, device_id: Optional[str] = None, address: Optional[str] = None, custom_settings_type: Optional[Literal["{driver_id}"]] = None, config_only: bool = False, label_search_mode: Literal["canonical_label", "factory_label_only", "user_defined_label_only"] = "canonical_label", status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT, status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT) -> InventoryDevice[{custom_settings_type.__name__}]: ...\n'
+        f'    def get_device(self, label: str | None = None, device_id: str | None = None, address: str | None = None, custom_settings_type: Literal["{driver_id}"] | None = None, config_only: bool = False, label_search_mode: Literal["canonical_label", "factory_label_only", "user_defined_label_only"] = "canonical_label", status_fetch_retry: int = STATUS_FETCH_RETRY_DEFAULT, status_fetch_delay: int = STATUS_FETCH_DELAY_DEFAULT) -> InventoryDevice[{custom_settings_type.__name__}]: ...\n'
         for driver_id, custom_settings_type in DRIVER_ID_TO_CUSTOM_SETTINGS.items()
     )
 

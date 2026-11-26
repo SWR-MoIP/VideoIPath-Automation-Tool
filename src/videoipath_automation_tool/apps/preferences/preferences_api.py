@@ -1,6 +1,5 @@
 import json
 import warnings
-from typing import List
 
 from videoipath_automation_tool.apps.preferences.model import *
 from videoipath_automation_tool.apps.preferences.model.allocator_pools_models import MulticastRangeInfoEntry
@@ -79,7 +78,7 @@ class PreferencesAPI:
             raise ValueError("No data returned from VideoIPath API.")
         return InterfaceItem(name=name, **response.data["config"]["system"]["ip"]["interfaces"][name])
 
-    def get_all_dns_servers(self) -> List[str]:
+    def get_all_dns_servers(self) -> list[str]:
         """Get all DNS servers from the VideoIPath System Preferences.
 
         Returns:
@@ -102,7 +101,7 @@ class PreferencesAPI:
     # Alarm
 
     # Allocator Pools
-    def get_multicast_ranges(self) -> List[MulticastRangeInfoEntry]:
+    def get_multicast_ranges(self) -> list[MulticastRangeInfoEntry]:
         """
         Get all multicast pools from the VideoIPath System Preferences.
         """
@@ -114,7 +113,7 @@ class PreferencesAPI:
             multicast_pools.append(MulticastRangeInfoEntry.parse_online_configuration(pool))
         return multicast_pools
 
-    def remove_multicast_pool_by_label(self, remove_list: List[str]) -> ResponseRPC:
+    def remove_multicast_pool_by_label(self, remove_list: list[str]) -> ResponseRPC:
         """
         Remove one or multiple multicast pools from the VideoIPath System Preferences by label.
         """
@@ -125,7 +124,7 @@ class PreferencesAPI:
 
         return self.vip_connector.rpc.post("/api/updateMulticastRanges", body=body)
 
-    def update_multicast_pool(self, pools: MulticastRangeInfoEntry | List[MulticastRangeInfoEntry]):
+    def update_multicast_pool(self, pools: MulticastRangeInfoEntry | list[MulticastRangeInfoEntry]):
         """
         Update a multicast pool in the VideoIPath System Preferences.
         """
@@ -148,7 +147,7 @@ class PreferencesAPI:
     # Customize Background
 
     # --- Packages & Certificates ---
-    def get_all_packages(self) -> List[PackageItem]:
+    def get_all_packages(self) -> list[PackageItem]:
         """
         Get all packages from the VideoIPath System Preferences / Packages & Certificates.
         """
@@ -168,7 +167,7 @@ class PreferencesAPI:
         response = self.vip_connector.rest.get("/rest/v2/data/status/licensing/activationCode")
         return response.data["status"]["licensing"]["activationCode"]
 
-    def get_license_activation_codes(self) -> List[str]:
+    def get_license_activation_codes(self) -> list[str]:
         """
         Get all activation codes from the VideoIPath System Preferences / License.
         """
@@ -193,7 +192,7 @@ class PreferencesAPI:
         response = self.vip_connector.rest.get("/rest/v2/data/status/licensing/capabilityNow/users")
         return response.data["status"]["licensing"]["capabilityNow"]["users"]
 
-    def _fetch_license_advanced_functionality(self) -> List[str]:
+    def _fetch_license_advanced_functionality(self) -> list[str]:
         """
         Get the licensed advanced functionality from the VideoIPath System Preferences / License.
         """

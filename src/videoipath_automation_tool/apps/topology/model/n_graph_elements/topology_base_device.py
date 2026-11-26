@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import Field
 
@@ -35,9 +35,9 @@ class BaseDevice(NGraphElement):
     iconSize: IconSize = "medium"
     iconType: IconType = "default"
     isVirtual: bool = False
-    maps: List[MapsElement] = Field(default_factory=list)
+    maps: list[MapsElement] = Field(default_factory=list)
     sdpStrategy: SdpStrategy = "always"
-    siteId: Optional[str] = None
+    siteId: str | None = None
 
     # Note:
     # To facilitate access to the properties of `BaseDevice`, corresponding getter and setter methods

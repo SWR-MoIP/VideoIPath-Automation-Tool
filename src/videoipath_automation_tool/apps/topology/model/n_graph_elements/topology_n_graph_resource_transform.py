@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import Literal
 
 from pydantic import Field
 
@@ -18,10 +18,10 @@ class NGraphResourceTransform(NGraphElement):
     descriptor: Descriptor
     fDescriptor: Descriptor
     fromId: str
-    tags: List[str] = Field(default=[], description="List of tags.")
+    tags: list[str] = Field(default=[], description="List of tags.")
     toId: str
-    fResourceIds: List[str] = Field(default=[], description="Factory resource ids")
-    resourceIds: List[str] = Field(default=[], description="User resource ids")
+    fResourceIds: list[str] = Field(default=[], description="Factory resource ids")
+    resourceIds: list[str] = Field(default=[], description="User resource ids")
     type: Literal["nGraphResourceTransform"] = "nGraphResourceTransform"
 
     @property
@@ -35,11 +35,11 @@ class NGraphResourceTransform(NGraphElement):
         return self.toId
 
     @property
-    def factory_resource_ids(self) -> List[str]:
+    def factory_resource_ids(self) -> list[str]:
         """The factory resource IDs."""
         return self.fResourceIds
 
     @property
-    def resource_ids(self) -> List[str]:
+    def resource_ids(self) -> list[str]:
         """The user defined resource IDs."""
         return self.resourceIds

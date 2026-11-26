@@ -19,7 +19,6 @@ from videoipath_automation_tool.apps.inspect.model.common import (
     InspectVertexType,
 )
 
-
 InspectApiNGraphElementType = Literal[
     "baseDevice",
     "codecVertex",

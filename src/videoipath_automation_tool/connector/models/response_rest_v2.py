@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -15,9 +15,9 @@ class ResponseHeaderV2(BaseModel):
     auth: bool
     caption: str  # Literal["Operation Successful", "Other Error"]
     code: Literal["OK", "OTHER_ERROR", "INVALID_REQUEST"]
-    errorDetails: Optional[List[ErrorDetails]]
+    errorDetails: list[ErrorDetails] | None
     id: str
-    msg: Optional[List[str]]
+    msg: list[str] | None
     ok: bool
     user: str
 
@@ -55,7 +55,7 @@ class ResponseV2PatchDataStats(BaseModel):
 
 
 class ResponseV2PatchData(BaseModel):
-    items: List[ResponseV2PatchDataItem]
+    items: list[ResponseV2PatchDataItem]
     mode: str
     stats: ResponseV2PatchDataStats
     validateOnly: bool

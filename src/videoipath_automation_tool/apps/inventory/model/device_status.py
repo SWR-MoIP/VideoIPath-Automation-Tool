@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -17,7 +15,7 @@ class ModulesEntry(BaseModel):
     hw: Hw
     id: str
     label: str
-    ports: List[PortsEntry]
+    ports: list[PortsEntry]
     product: dict
     state: str
 
@@ -50,7 +48,7 @@ class DeviceInfo(BaseModel):
     hw: Hw
     label: str
     product: Product
-    report: List[ReportEntry]
+    report: list[ReportEntry]
 
 
 class DeviceStatus(BaseModel):
@@ -61,27 +59,27 @@ class DeviceStatus(BaseModel):
     canonicalLabel: str
     deviceInfo: DeviceInfo
     dynamicFn: dict
-    modules: List[ModulesEntry]
+    modules: list[ModulesEntry]
     reachable: bool
     softwareInfo: dict
     url: str
 
-    def list_modules_label(self) -> List[str]:
+    def list_modules_label(self) -> list[str]:
         """List all modules label."""
         return [module.label for module in self.modules]
 
-    def list_modules_id(self) -> List[str]:
+    def list_modules_id(self) -> list[str]:
         """List all modules id."""
         return [module.id for module in self.modules]
 
-    def get_module_by_id(self, module_id: str) -> Optional[ModulesEntry]:
+    def get_module_by_id(self, module_id: str) -> ModulesEntry | None:
         """Get module by id."""
         for module in self.modules:
             if module.id == module_id:
                 return module
         return None
 
-    def get_module_by_label(self, module_label: str) -> Optional[ModulesEntry]:
+    def get_module_by_label(self, module_label: str) -> ModulesEntry | None:
         """Returns the module with the specified label, or None if not found.
 
         Raises:

@@ -117,8 +117,7 @@ class TopologyDevice(BaseModel):
             vertex_id = vertex.id
             if vertex.vertex_type == "Internal" and vertex_id.split(".")[-1] == "0":
                 module_number = int(vertex_id.split(".")[-2])
-                if module_number > highest_module_number:
-                    highest_module_number = module_number
+                highest_module_number = max(highest_module_number, module_number)
         return highest_module_number + 1
 
     def _get_next_virtual_vertex_number(self) -> int:
@@ -138,8 +137,7 @@ class TopologyDevice(BaseModel):
         ):
             vertex_id = vertex.id
             vertex_number = int(vertex_id.split(".")[-1])
-            if vertex_number > highest_vertex_number:
-                highest_vertex_number = vertex_number
+            highest_vertex_number = max(highest_vertex_number, vertex_number)
 
         return highest_vertex_number + 1
 
@@ -614,7 +612,7 @@ class TopologyDevice(BaseModel):
         vertex = self.configuration.get_nGraphElement_by_id(vertex_id)
         if vertex is None:
             raise ValueError(f"Vertex {vertex_id} does not exist.")
-        if not (isinstance(vertex, CodecVertex) or isinstance(vertex, IpVertex) or isinstance(vertex, GenericVertex)):
+        if not (isinstance(vertex, (CodecVertex, IpVertex, GenericVertex))):
             raise ValueError("Vertex must be a CodecVertex, IpVertex or GenericVertex.")
 
         # get all edges connected to the vertex
@@ -622,11 +620,10 @@ class TopologyDevice(BaseModel):
         vertices = []
         vertices.append(vertex)
 
-        if isinstance(vertex, GenericVertex) and vertex.vertex_type == "Internal":
-            # get all internal vertices connected to the vertex
-            if edges is not None:
-                for edge in edges:
-                    vertices.append(self.configuration.get_internal_vertices_connected_to_edge(edge.id))
+        # get all internal vertices connected to the vertex
+        if isinstance(vertex, GenericVertex) and vertex.vertex_type == "Internal" and edges is not None:
+            for edge in edges:
+                vertices.append(self.configuration.get_internal_vertices_connected_to_edge(edge.id))
 
         if edges is not None:
             for edge in edges:

@@ -72,7 +72,7 @@ def _generate_driver_id_custom_settings_mapping(drivers: list[dict]) -> str:
     mapping = ",\n\t".join(
         [f'"{driver["_id"]}": {_get_custom_settings_class_name(driver["_id"])}' for driver in drivers]
     )
-    return f"DRIVER_ID_TO_CUSTOM_SETTINGS: Dict[str, Type[DriverCustomSettings]] = {{\n\t{mapping}\n}}"
+    return f"DRIVER_ID_TO_CUSTOM_SETTINGS: dict[str, type[DriverCustomSettings]] = {{\n\t{mapping}\n}}"
 
 
 def _generate_driver_literal(drivers: list[dict]) -> str:
@@ -81,7 +81,7 @@ def _generate_driver_literal(drivers: list[dict]) -> str:
 
 def _generate_custom_settings_type(drivers: list[dict]) -> str:
     custom_settings_classes = ",\n\t".join([_get_custom_settings_class_name(driver["_id"]) for driver in drivers])
-    return f"CustomSettings = Union[\n\t{custom_settings_classes}\n]"
+    return f"CustomSettings = Union[  # noqa: UP007 - kept as typing.Union for the pydantic discriminator\n\t{custom_settings_classes}\n]"
 
 
 def _get_custom_settings_class_name(driver_id: str) -> str:
@@ -107,7 +107,7 @@ def _get_attribute_range(field: dict) -> tuple[int | None, int | None]:
 def _get_attribute_type(field: dict) -> tuple[str, list[tuple[str | int | float, str, bool]] | None]:
     if "options" in field["_schema"] and len(field["_schema"]["options"]) > 0:
 
-        def format_value(value: str | int | float) -> str:
+        def format_value(value: str | float) -> str:
             if isinstance(value, str):
                 return f'"{value}"'
             return str(value)
@@ -130,7 +130,7 @@ def main(schema_file: Path = DEFAULT_SCHEMA_FILE, output_file: Path = DEFAULT_OU
     driver_models = "\n\n".join([_generate_driver_model(driver) for driver in drivers])
 
     code = f"""from abc import ABC
-from typing import Dict, Literal, Type, TypeVar, Union, Optional
+from typing import Literal, TypeVar, Union
 
 from pydantic import BaseModel, Field
 

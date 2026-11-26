@@ -435,7 +435,7 @@ def test_post_commit_refresh_does_not_replace_the_snapshot(snapshot: tuple[Inspe
 
 
 def test_post_commit_removes_locally_and_refreshes_pair(snapshot: tuple[InspectSnapshot, FakeFetcher]) -> None:
-    snap, fetcher = snapshot
+    snap, _fetcher = snapshot
     # remove a device locally
     snap.apply_post_commit(removed_ids=["spine-a"], mark_paths_stale=False)
     assert snap.get_device("spine-a") is None

@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 
 from videoipath_automation_tool.apps.security.model.domain_membership_model import LocalMemberships, ResourceType
 from videoipath_automation_tool.apps.security.model.domain_model import Domain
@@ -18,7 +17,7 @@ from videoipath_automation_tool.utils.cross_app_utils import create_fallback_log
 
 
 class SecurityAPI:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """
         Class for VideoIPath Security-App API.
 
@@ -35,7 +34,7 @@ class SecurityAPI:
 
     # --- Domain CRUD ---
 
-    def get_all_domains(self) -> List[Domain]:
+    def get_all_domains(self) -> list[Domain]:
         """
         Fetch all domains from the VideoIPath Security-App.
 
@@ -49,7 +48,7 @@ class SecurityAPI:
         else:
             raise ValueError("Response data is empty or malformed.")
 
-    def _build_domain_id_name_mapping(self, domains: List[Domain]) -> dict[str, str]:
+    def _build_domain_id_name_mapping(self, domains: list[Domain]) -> dict[str, str]:
         """
         Build a mapping of domain IDs to names for quick lookup.
 
@@ -61,7 +60,7 @@ class SecurityAPI:
         """
         return {domain.id: domain.name for domain in domains if domain.id and domain.name}
 
-    def _build_domain_name_id_mapping(self, domains: List[Domain]) -> dict[str, str]:
+    def _build_domain_name_id_mapping(self, domains: list[Domain]) -> dict[str, str]:
         """
         Build a mapping of domain names to IDs for quick lookup.
 
@@ -250,7 +249,7 @@ class SecurityAPI:
             raise ValueError(f"Domain with {filter_type} '{filter_value}' not found or malformed response.")
 
     def _generate_domain_action_request_body(
-        self, add_list: List[Domain], update_list: List[Domain], remove_list: List[Domain]
+        self, add_list: list[Domain], update_list: list[Domain], remove_list: list[Domain]
     ):
         """
         Generate a RequestV2Patch object for Profile actions (add, update, remove).
@@ -269,7 +268,7 @@ class SecurityAPI:
         return body
 
     # --- Resources ---
-    def get_all_memberships(self) -> List[LocalMemberships]:
+    def get_all_memberships(self) -> list[LocalMemberships]:
         """
         Fetch all local domain memberships from the VideoIPath Security-App.
 

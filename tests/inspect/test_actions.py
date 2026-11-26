@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
-from videoipath_automation_tool.apps.inspect.app.actions import ConflictStrategy, InspectActionsMixin
 from videoipath_automation_tool.apps.inspect.api import InspectAPI
+from videoipath_automation_tool.apps.inspect.app.actions import ConflictStrategy, InspectActionsMixin
 
 _ADD_DEVICES = "/rest/v2/actions/status/network/addDevices"
 _SYNC_DEVICES = "/rest/v2/actions/status/network/syncDevices"

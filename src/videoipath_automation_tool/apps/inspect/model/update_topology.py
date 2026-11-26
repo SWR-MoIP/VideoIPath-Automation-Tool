@@ -18,7 +18,6 @@ from videoipath_automation_tool.apps.inspect.model.ngraph import (
     InspectApiNGraphResourceTransform,
 )
 
-
 # The verified per-kind write shapes (2025.4.9):
 # - replaceDevices takes the device *edit form* (lookupInspectDevice.fields); the raw baseDevice
 #   element is rejected (coordinates + localAssignedTags are mandatory).

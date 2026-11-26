@@ -1,4 +1,4 @@
-from typing import Generic, Optional
+from typing import Generic
 
 from pydantic import BaseModel
 from typing_extensions import deprecated
@@ -20,7 +20,7 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
     """InventoryDevice class is used to represent a device configuration for VideoIPath inventory."""
 
     configuration: DeviceConfiguration[CustomSettingsType]
-    status: Optional[DeviceStatus] = None
+    status: DeviceStatus | None = None
 
     # --- Methods ---
     @classmethod
@@ -110,7 +110,7 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
             return self.configuration.config.desc.label
 
     @property
-    def factory_label(self) -> Optional[str]:
+    def factory_label(self) -> str | None:
         """The factory label of the device."""
         if self.status:
             return self.status.deviceInfo.label
@@ -118,7 +118,7 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
             return None
 
     @property
-    def ip_address(self) -> Optional[str | list[str]]:
+    def ip_address(self) -> str | list[str] | None:
         """The IP address of the device."""
 
         address = self.configuration.config.cinfo.address
@@ -136,7 +136,7 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
             return address_list
 
     @property
-    def reachable(self) -> Optional[bool]:
+    def reachable(self) -> bool | None:
         """The reachable status of the device."""
         if self.status:
             return self.status.reachable
@@ -144,7 +144,7 @@ class InventoryDevice(BaseModel, Generic[CustomSettingsType], validate_assignmen
             return None
 
     @property
-    def active(self) -> Optional[bool]:
+    def active(self) -> bool | None:
         """The active status (Enabled/Disabled) of the device."""
         return self.configuration.active
 

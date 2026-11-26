@@ -1,5 +1,5 @@
 import warnings
-from typing import Literal, Optional, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field
 from pydantic.networks import IPvAnyAddress
@@ -76,32 +76,32 @@ class CodecVertex(Vertex):
     """
 
     type: Literal["codecVertex"] = "codecVertex"
-    bidirPartnerId: Optional[str] = None
+    bidirPartnerId: str | None = None
     codecFormat: CodecFormat = "Video"
     extraFormats: list = Field(default_factory=list)
     isIgmpSource: bool = False
-    mainDstIp: Optional[Union[nAddress, nPoolId]]
-    mainDstMac: Optional[MacAddress]
-    mainDstPort: Optional[int]
-    mainDstVlan: Optional[Union[nVlan1Q, QinQ, nVlanPattern]]
-    mainSrcGateway: Optional[IPvAnyAddress]
-    mainSrcIp: Optional[IPvAnyAddress]
-    mainSrcMac: Optional[MacAddress]
-    mainSrcNetmask: Optional[IPvAnyAddress]
+    mainDstIp: nAddress | nPoolId | None
+    mainDstMac: MacAddress | None
+    mainDstPort: int | None
+    mainDstVlan: nVlan1Q | QinQ | nVlanPattern | None
+    mainSrcGateway: IPvAnyAddress | None
+    mainSrcIp: IPvAnyAddress | None
+    mainSrcMac: MacAddress | None
+    mainSrcNetmask: IPvAnyAddress | None
     multiplicity: int = Field(..., ge=1)
-    partnerConfig: Optional[dict[str, Union[str, int, bool]]]
+    partnerConfig: dict[str, str | int | bool] | None
     public: bool = False
     sdpSupport: bool = True
     exclusive: bool = False
-    serviceId: Optional[int]
-    spareDstIp: Optional[Union[nAddress, nPoolId]]
-    spareDstMac: Optional[MacAddress]
-    spareDstPort: Optional[int]
-    spareDstVlan: Optional[Union[nVlan1Q, QinQ, nVlanPattern]]
-    spareSrcGateway: Optional[IPvAnyAddress]
-    spareSrcIp: Optional[IPvAnyAddress]
-    spareSrcMac: Optional[MacAddress]
-    spareSrcNetmask: Optional[IPvAnyAddress]
+    serviceId: int | None
+    spareDstIp: nAddress | nPoolId | None
+    spareDstMac: MacAddress | None
+    spareDstPort: int | None
+    spareDstVlan: nVlan1Q | QinQ | nVlanPattern | None
+    spareSrcGateway: IPvAnyAddress | None
+    spareSrcIp: IPvAnyAddress | None
+    spareSrcMac: MacAddress | None
+    spareSrcNetmask: IPvAnyAddress | None
 
     @staticmethod
     def _warn_type_mismatch(component_name: str, actual: str, expected: str, method_name: str) -> None:
@@ -137,7 +137,7 @@ class CodecVertex(Vertex):
         self.extraFormats = formats
 
     @property
-    def bidirectional_partner_id(self) -> Optional[str]:
+    def bidirectional_partner_id(self) -> str | None:
         """Bidirectional partner ID"""
         return self.bidirPartnerId
 
@@ -178,7 +178,7 @@ class CodecVertex(Vertex):
 
     # - IP Defaults -
     @property
-    def main_source_ip(self) -> Optional[IPvAnyAddress]:
+    def main_source_ip(self) -> IPvAnyAddress | None:
         """IP Defaults | MAIN | Source IP"""
         return self.mainSrcIp
 
@@ -188,7 +188,7 @@ class CodecVertex(Vertex):
         self.mainSrcIp = ip_address
 
     @property
-    def spare_source_ip(self) -> Optional[IPvAnyAddress]:
+    def spare_source_ip(self) -> IPvAnyAddress | None:
         """IP Defaults | SPARE | Source IP"""
         return self.spareSrcIp
 
@@ -198,7 +198,7 @@ class CodecVertex(Vertex):
         self.spareSrcIp = ip_address
 
     @property
-    def main_source_gateway(self) -> Optional[IPvAnyAddress]:
+    def main_source_gateway(self) -> IPvAnyAddress | None:
         """IP Defaults | MAIN | Source Gateway"""
         return self.mainSrcGateway
 
@@ -208,7 +208,7 @@ class CodecVertex(Vertex):
         self.mainSrcGateway = ip_address
 
     @property
-    def spare_source_gateway(self) -> Optional[IPvAnyAddress]:
+    def spare_source_gateway(self) -> IPvAnyAddress | None:
         """IP Defaults | SPARE | Source Gateway"""
         return self.spareSrcGateway
 
@@ -218,7 +218,7 @@ class CodecVertex(Vertex):
         self.spareSrcGateway = ip_address
 
     @property
-    def main_source_netmask(self) -> Optional[IPvAnyAddress]:
+    def main_source_netmask(self) -> IPvAnyAddress | None:
         """IP Defaults | MAIN | Source Netmask"""
         return self.mainSrcNetmask
 
@@ -228,7 +228,7 @@ class CodecVertex(Vertex):
         self.mainSrcNetmask = ip_address
 
     @property
-    def spare_source_netmask(self) -> Optional[IPvAnyAddress]:
+    def spare_source_netmask(self) -> IPvAnyAddress | None:
         """IP Defaults | SPARE | Source Netmask"""
         return self.spareSrcNetmask
 
@@ -239,7 +239,7 @@ class CodecVertex(Vertex):
 
     # - Connection Defaults -
     @property
-    def main_destination_vlan_dot1Q(self) -> Optional[int]:
+    def main_destination_vlan_dot1Q(self) -> int | None:
         """Connection Defaults | MAIN | VLAN (dot1Q - IEEE 802.1Q)"""
         if self.mainDstVlan is None:
             return None
@@ -257,7 +257,7 @@ class CodecVertex(Vertex):
         self.mainDstVlan = nVlan1Q(vlan=vlan_tag)
 
     @property
-    def spare_destination_vlan_dot1Q(self) -> Optional[int]:
+    def spare_destination_vlan_dot1Q(self) -> int | None:
         """Connection Defaults | SPARE | VLAN (dot1Q - IEEE 802.1Q)"""
         if self.spareDstVlan is None:
             return None
@@ -275,7 +275,7 @@ class CodecVertex(Vertex):
         self.spareDstVlan = nVlan1Q(vlan=vlan_tag)
 
     @property
-    def main_destination_vlan_qinq(self) -> Optional[QinQ]:
+    def main_destination_vlan_qinq(self) -> QinQ | None:
         """Connection Defaults | MAIN | VLAN (QinQ - 802.1Q tunneling)"""
         if self.mainDstVlan is None:
             return None
@@ -297,7 +297,7 @@ class CodecVertex(Vertex):
             self.mainDstVlan = QinQ(vlanOuter=vlan_pair[0], vlanInner=vlan_pair[1])
 
     @property
-    def spare_destination_vlan_qinq(self) -> Optional[QinQ]:
+    def spare_destination_vlan_qinq(self) -> QinQ | None:
         """Connection Defaults | SPARE | VLAN (QinQ - 802.1Q tunneling)"""
         if self.spareDstVlan is None:
             return None
@@ -319,7 +319,7 @@ class CodecVertex(Vertex):
             self.spareDstVlan = QinQ(vlanOuter=vlan_pair[0], vlanInner=vlan_pair[1])
 
     @property
-    def main_destination_vlan_ranges(self) -> Optional[str]:
+    def main_destination_vlan_ranges(self) -> str | None:
         """Connection Defaults | MAIN | VLAN (Ranges)"""
         if self.mainDstVlan is None:
             return None
@@ -337,7 +337,7 @@ class CodecVertex(Vertex):
         self.mainDstVlan = nVlanPattern(vlanP=vlan_range)
 
     @property
-    def spare_destination_vlan_ranges(self) -> Optional[str]:
+    def spare_destination_vlan_ranges(self) -> str | None:
         """Connection Defaults | SPARE | VLAN (Ranges)"""
         if self.spareDstVlan is None:
             return None
@@ -355,7 +355,7 @@ class CodecVertex(Vertex):
         self.spareDstVlan = nVlanPattern(vlanP=vlan_range)
 
     @property
-    def main_destination_port(self) -> Optional[int]:
+    def main_destination_port(self) -> int | None:
         """Connection Defaults | MAIN | Port"""
         return self.mainDstPort
 
@@ -365,7 +365,7 @@ class CodecVertex(Vertex):
         self.mainDstPort = port
 
     @property
-    def spare_destination_port(self) -> Optional[int]:
+    def spare_destination_port(self) -> int | None:
         """Connection Defaults | SPARE | Port"""
         return self.spareDstPort
 
@@ -375,7 +375,7 @@ class CodecVertex(Vertex):
         self.spareDstPort = port
 
     @property
-    def main_destination_address_pool(self) -> Optional[str]:
+    def main_destination_address_pool(self) -> str | None:
         """Connection Defaults | MAIN | Multicast Address (poolId)"""
         if self.mainDstIp is None:
             return None
@@ -390,7 +390,7 @@ class CodecVertex(Vertex):
         self.mainDstIp = nPoolId(poolId=pool_label)
 
     @property
-    def spare_destination_address_pool(self) -> Optional[str]:
+    def spare_destination_address_pool(self) -> str | None:
         """Connection Defaults | SPARE | Multicast Address (poolId)"""
         if self.spareDstIp is None:
             return None
@@ -407,7 +407,7 @@ class CodecVertex(Vertex):
         self.spareDstIp = nPoolId(poolId=pool_label)
 
     @property
-    def main_destination_address_ip(self) -> Optional[IPvAnyAddress]:
+    def main_destination_address_ip(self) -> IPvAnyAddress | None:
         """Connection Defaults | MAIN | Multicast Address (address)"""
         if self.mainDstIp is None:
             return None
@@ -424,7 +424,7 @@ class CodecVertex(Vertex):
         self.mainDstIp = nAddress(addr=multicast_ip_address)
 
     @property
-    def spare_destination_address_ip(self) -> Optional[IPvAnyAddress]:
+    def spare_destination_address_ip(self) -> IPvAnyAddress | None:
         """Connection Defaults | SPARE | Multicast Address (address)"""
         if self.spareDstIp is None:
             return None
@@ -441,7 +441,7 @@ class CodecVertex(Vertex):
         self.spareDstIp = nAddress(addr=multicast_ip_address)
 
     @property
-    def main_source_mac(self) -> Optional[MacAddress]:
+    def main_source_mac(self) -> MacAddress | None:
         """Connection Defaults | MAIN | Source Mac-address"""
         return self.mainSrcMac
 
@@ -451,7 +451,7 @@ class CodecVertex(Vertex):
         self.mainSrcMac = mac_address
 
     @property
-    def spare_source_mac(self) -> Optional[MacAddress]:
+    def spare_source_mac(self) -> MacAddress | None:
         """Connection Defaults | SPARE | Source Mac-address"""
         return self.spareSrcMac
 
@@ -461,7 +461,7 @@ class CodecVertex(Vertex):
         self.spareSrcMac = mac_address
 
     @property
-    def main_destination_mac(self) -> Optional[MacAddress]:
+    def main_destination_mac(self) -> MacAddress | None:
         """Connection Defaults | MAIN | Destination Mac-address"""
         return self.mainDstMac
 
@@ -471,7 +471,7 @@ class CodecVertex(Vertex):
         self.mainDstMac = mac_address
 
     @property
-    def spare_destination_mac(self) -> Optional[MacAddress]:
+    def spare_destination_mac(self) -> MacAddress | None:
         """Connection Defaults | SPARE | Destination Mac-address"""
         return self.spareDstMac
 

@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 
 from videoipath_automation_tool.apps.profile.model.profile_model import Profile, SuperProfile
 from videoipath_automation_tool.apps.profile.profile_api import ProfileAPI
@@ -8,7 +7,7 @@ from videoipath_automation_tool.utils.cross_app_utils import create_fallback_log
 
 
 class ProfileApp:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """Profile App contains functionality to interact with VideoIPath Profile App.
 
         Args:
@@ -25,7 +24,7 @@ class ProfileApp:
 
         self._logger.debug("Profile APP initialized.")
 
-    def list_profile_names(self) -> Optional[List[str]]:
+    def list_profile_names(self) -> list[str] | None:
         """Get all VideoIPath Profile names.
 
         Returns:
@@ -34,7 +33,7 @@ class ProfileApp:
         data = self._profile_api.get_profiles_name_id_rev()
         return [item.get("name", "") for item in data] if data else None
 
-    def get_profile_ids_names(self) -> Optional[dict[str, str]]:
+    def get_profile_ids_names(self) -> dict[str, str] | None:
         """
         Get all VideoIPath Profile IDs with corresponding names.
 
@@ -44,7 +43,7 @@ class ProfileApp:
         data = self._profile_api.get_profiles_name_id_rev()
         return {item["_id"]: item.get("name", "") for item in data} if data else None
 
-    def get_profile(self, name: Optional[str] = None, id: Optional[str] = None) -> Profile | List[Profile] | None:
+    def get_profile(self, name: str | None = None, id: str | None = None) -> Profile | list[Profile] | None:
         """Get a VideoIPath Profile by its name or ID.
 
         Args:
@@ -66,12 +65,11 @@ class ProfileApp:
 
         if data is None or data == [] or data == [None]:
             return None
-        elif isinstance(data, Profile):
+        elif isinstance(data, (Profile, list)):
             return data
-        elif isinstance(data, list):
-            return data
+        return None
 
-    def get_profile_by_id(self, id: str) -> Optional[Profile]:
+    def get_profile_by_id(self, id: str) -> Profile | None:
         """Get a VideoIPath Profile by its ID.
 
         Args:
@@ -82,7 +80,7 @@ class ProfileApp:
         """
         return self._profile_api.get_profile_by_id(id)
 
-    def get_profile_by_name(self, name: str) -> Optional[Profile | List[Profile]]:
+    def get_profile_by_name(self, name: str) -> Profile | list[Profile] | None:
         """Get a VideoIPath Profile by its name.
 
         Args:
@@ -93,7 +91,7 @@ class ProfileApp:
         """
         return self._profile_api.get_profile_by_name(name)
 
-    def get_profiles(self) -> Optional[List[Profile]]:
+    def get_profiles(self) -> list[Profile] | None:
         """Get all VideoIPath Profiles.
 
         Returns:
@@ -120,7 +118,7 @@ class ProfileApp:
             raise ValueError(f"Error adding Profile: {e}")
 
     def remove_profile(
-        self, name: Optional[str] = None, id: Optional[str] = None, profile: Optional[Profile | List[Profile]] = None
+        self, name: str | None = None, id: str | None = None, profile: Profile | list[Profile] | None = None
     ):
         """Remove a Profile from the VideoIPath System by its name, id or Profile object.
 
@@ -150,7 +148,7 @@ class ProfileApp:
 
         profile_list = []
 
-        if type(profile_to_remove) is List[Profile]:
+        if type(profile_to_remove) is list[Profile]:
             self._logger.info("Multiple Profiles found, removing multiple Profiles.")
             profile_list.extend(profile_to_remove)
         else:

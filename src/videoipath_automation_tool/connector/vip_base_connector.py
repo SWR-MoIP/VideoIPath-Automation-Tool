@@ -1,7 +1,6 @@
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import requests
 
@@ -136,7 +135,7 @@ class VideoIPathBaseConnector(ABC):
         self._logger.debug(f"HTTP Response Headers: {response.headers}")
 
     def _execute_request(
-        self, method: str, url: str, timeout: int, request_payload: Optional[dict] = None
+        self, method: str, url: str, timeout: int, request_payload: dict | None = None
     ) -> requests.Response:
         """Executes an HTTP request and returns the response."""
 

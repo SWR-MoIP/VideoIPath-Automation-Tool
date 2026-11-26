@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from videoipath_automation_tool.apps.preferences.preferences_api import PreferencesAPI
 from videoipath_automation_tool.apps.preferences.sections.license import License
@@ -13,7 +12,7 @@ from videoipath_automation_tool.utils.cross_app_utils import create_fallback_log
 
 
 class PreferencesApp:
-    def __init__(self, vip_connector: VideoIPathConnector, logger: Optional[logging.Logger] = None):
+    def __init__(self, vip_connector: VideoIPathConnector, logger: logging.Logger | None = None):
         """PreferencesApp contains functionality to interact with the VideoIPath System Preferences App.
 
         Args:
