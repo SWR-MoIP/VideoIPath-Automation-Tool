@@ -279,7 +279,9 @@ class InspectDevice(InspectEditableModel):
         """Filter this device's ports by their vertices' attributes.
 
         ``vertex_type`` is the port-level direction (``"BiDirectional"`` for a two-vertex port, else
-        the single vertex's direction); ``active`` / ``controlled`` / ``endpoint`` aggregate the
+        the single vertex's direction). ``"BiDirectional"`` therefore matches both double ports and
+        ports with a single vertex of that type; :attr:`InspectPort.is_bidirectional` tells them
+        apart. ``active`` / ``controlled`` / ``endpoint`` aggregate the
         port's vertices (True if any vertex is True, False only if all are known False). These are
         evaluated offline from the already-hydrated ``vertexInfo``. ``kind`` (``"generic"`` / ``"ip"``
         / ``"codec"`` / ``"router"``) requires the vertex edit form: uncached vertices are resolved

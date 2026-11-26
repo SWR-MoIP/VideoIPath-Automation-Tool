@@ -269,9 +269,18 @@ external edge to another device.
 | `module_id` | Owning module |
 | `status` | Port status summary (`InspectSeverity` fields) |
 | `alarms` | Active alarms correlated to this port |
-| `vertex_id` | Linked topology vertex when available |
+| `is_bidirectional` | `True` for a double port (separate out and in vertices) |
+| `vertex_out` / `vertex_in` | The `Out` / `In` vertex (single vertex or one side of a double port); `None` otherwise |
+| `vertex_internal` | The single vertex whose `vertexType` is `Internal` (e.g. on network switches); `None` otherwise |
+| `vertex_bidirectional` | The *single* vertex whose `vertexType` is `BiDirectional`; always `None` on a double port |
+| `vertices` | Every vertex the port carries, whatever its type (batched lookup, like `module.vertices`) |
 | `tags` | Vertex tag bindings when hydrated (`tagsInfo` from `nodeStatus`) |
 | `edge` | External edge when this port connects to another device; otherwise `None` |
+
+"BiDirectional" has two meanings: the server reports it as the `vertexType` of a single
+vertex (`vertex_bidirectional`), and `device.filter_ports(vertex_type="BiDirectional")` also
+uses it as the port-level direction of a double port. The filter matches both; use
+`port.is_bidirectional` to tell them apart.
 
 ### `InspectVertex`
 
