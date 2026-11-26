@@ -72,7 +72,9 @@ class InspectService(InspectFrozenModel):
 
     @property
     def alarms(self) -> list[InspectAlarm]:
-        """Active alarms correlated to this service/booking (worst severity first)."""
+        """Active service alarms of this booking (worst severity first): the alarms whose
+        ``pointId`` is ``["book", <booking id>]`` (GUI: Events → Current, category Service).
+        Configuration alarms that merely reference the booking are not included."""
         return self.snapshot.get_alarms_for_service(self.booking_id)
 
     @property
