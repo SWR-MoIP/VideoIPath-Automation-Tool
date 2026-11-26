@@ -143,12 +143,15 @@ class InspectDevice(InspectEditableModel):
 
     @property
     def alarms(self) -> list[InspectAlarm]:
-        """Active alarms correlated to this device (worst severity first)."""
+        """Active alarms correlated to this device: worst ``severity`` first, ties broken by worst
+        ``sa``, then by alarm identity (``alertId``, ``pointId``, ``component``, ``_id``). The order
+        does not depend on the server's response order."""
         return self.snapshot.get_alarms_for_device(self.id)
 
     @property
     def status_message(self) -> str | None:
-        """GUI text of the worst active alarm on this device, if any."""
+        """GUI text (``message``) of the first alarm in :attr:`alarms`, if any: the worst active alarm,
+        with the documented tie-break when several alarms share the worst severity."""
         alarms = self.alarms
         return alarms[0].message if alarms else None
 

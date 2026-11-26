@@ -144,7 +144,7 @@ class InspectPort(InspectFrozenModel):
 
     @property
     def alarms(self) -> list[InspectAlarm]:
-        """Active alarms correlated to this port (worst severity first)."""
+        """Active alarms correlated to this port, in the same order as :attr:`InspectDevice.alarms`."""
         return self.snapshot.get_alarms_for_port(self.id, device_id=self.indexed.device_id)
 
     @property
